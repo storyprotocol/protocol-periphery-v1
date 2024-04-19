@@ -39,6 +39,6 @@
   "dependencies": {
     "@openzeppelin/contracts": "5.0.1",
     "@openzeppelin/contracts-upgradeable": "5.0.1",
-    "@story-protocol/protocol-core": "1.0.0-beta-rc6"
+    "@story-protocol/protocol-core": "github:storyprotocol/protocol-core-v1#v1.0.0"
   }
 }
