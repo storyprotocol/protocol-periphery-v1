@@ -7,6 +7,9 @@ library Errors {
     /// @notice Zero address provided as a param.
     error SPG__ZeroAddressParam();
 
+    /// @notice Zero address provided as a param.
+    error SPGNFT__ZeroAddressParam();
+
     /// @notice Insufficient amount for minting cost.
     error SPGNFT__InsufficientMintCost();
 

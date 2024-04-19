@@ -33,8 +33,15 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
         uint256 mintCost,
         address owner
     ) public {
+        if (owner == address(0)) revert Errors.SPGNFT__ZeroAddressParam();
         _grantRole(DEFAULT_ADMIN_ROLE, owner);
         _grantRole(DEFAULT_MINTER_ROLE, owner);
+
+        // grant roles to SPG
+        if (owner != msg.sender) {
+            _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+            _grantRole(DEFAULT_MINTER_ROLE, msg.sender);
+        }
 
         SPGNFTStorage storage $ = _getSPGNFTStorage();
         $.maxSupply = maxSupply;
