@@ -9,11 +9,6 @@ import { ISPGNFT } from "./interfaces/ISPGNFT.sol";
 import { Errors } from "./lib/Errors.sol";
 
 contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
-
     /// @custom:storage-location erc7201:story-protocol-periphery.SPGNFT
     struct SPGNFTStorage {
         uint32 maxSupply;
@@ -24,8 +19,20 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.SPGNFT")) - 1)) & ~bytes32(uint256(0xff));
     bytes32 private constant SPGNFTStorageLocation = 0x66c08f80d8d0ae818983b725b864514cf274647be6eb06de58ff94d1defb6d00;
 
+    /// @dev The default minter role, 0x1.
     bytes32 public constant DEFAULT_MINTER_ROLE = bytes32(uint256(1));
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /// @dev Initializes the NFT collection.
+    /// @param name The name of the collection.
+    /// @param symbol The symbol of the collection.
+    /// @param maxSupply The maximum supply of the collection.
+    /// @param mintCost The cost to mint an NFT from the collection.
+    /// @param owner The owner of the collection.
     function initialize(
         string memory name,
         string memory symbol,
@@ -50,10 +57,15 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
         __ERC721_init(name, symbol);
     }
 
+    /// @dev Sets the cost to mint an NFT from the collection. Payment is in native currency of the chain. Only callable
+    /// by the admin role.
+    /// @param cost The new mint cost in native currency of the chain.
     function setMintCost(uint256 cost) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _getSPGNFTStorage().mintCost = cost;
     }
 
+    /// @notice Mints an NFT from the collection. Only callable by the minter role.
+    /// @param to The address of the recipient of the minted NFT.
     function mint(address to) public payable onlyRole(DEFAULT_MINTER_ROLE) returns (uint256 tokenId) {
         if (msg.value < _getSPGNFTStorage().mintCost) revert Errors.SPGNFT__InsufficientMintCost();
 
@@ -64,6 +76,8 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
         _mint(to, tokenId);
     }
 
+    /// @dev Supports ERC165 interface.
+    /// @param interfaceId The interface identifier.
     function supportsInterface(
         bytes4 interfaceId
     ) public view virtual override(AccessControlUpgradeable, ERC721Upgradeable, IERC165) returns (bool) {

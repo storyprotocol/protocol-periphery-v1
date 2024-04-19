@@ -4,6 +4,12 @@ pragma solidity ^0.8.23;
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 interface ISPGNFT is IERC721 {
+    /// @dev Initializes the NFT collection.
+    /// @param name The name of the collection.
+    /// @param symbol The symbol of the collection.
+    /// @param maxSupply The maximum supply of the collection.
+    /// @param mintCost The cost to mint an NFT from the collection.
+    /// @param owner The owner of the collection.
     function initialize(
         string memory name,
         string memory symbol,
@@ -12,7 +18,12 @@ interface ISPGNFT is IERC721 {
         address owner
     ) external;
 
+    /// @dev Sets the cost to mint an NFT from the collection. Payment is in native currency of the chain. Only callable
+    /// by the admin role.
+    /// @param cost The new mint cost in native currency of the chain.
     function setMintCost(uint256 cost) external;
 
+    /// @notice Mints an NFT from the collection. Only callable by the minter role.
+    /// @param to The address of the recipient of the minted NFT.
     function mint(address to) external payable returns (uint256 tokenId);
 }
