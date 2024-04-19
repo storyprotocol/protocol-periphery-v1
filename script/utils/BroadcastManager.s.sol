@@ -16,7 +16,7 @@ contract BroadcastManager is Script {
             deployer = vm.envAddress("MAINNET_DEPLOYER_ADDRESS");
             multisig = vm.envAddress("MAINNET_MULTISIG_ADDRESS");
             vm.startBroadcast(deployerPrivateKey);
-        } else if (block.chainid == 11155111) {
+        } else if (block.chainid == 1513 || block.chainid == 11155111) {
             deployerPrivateKey = vm.envUint("SEPOLIA_PRIVATEKEY");
             deployer = vm.envAddress("SEPOLIA_DEPLOYER_ADDRESS");
             multisig = vm.envAddress("SEPOLIA_MULTISIG_ADDRESS");

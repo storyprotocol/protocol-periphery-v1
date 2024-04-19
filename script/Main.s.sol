@@ -1,24 +1,30 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.23;
-
-import { IPAssetRegistry } from "@storyprotocol/contracts/registries/IPAssetRegistry.sol";
+/* solhint-disable no-console */
 
 import { console2 } from "forge-std/console2.sol";
 import { Script } from "forge-std/Script.sol";
 import { stdJson } from "forge-std/StdJson.sol";
 
+import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
+import { IPAssetRegistry } from "@storyprotocol/core/registries/IPAssetRegistry.sol";
 
-import { StoryProtocolGateway } from "contracts/StoryProtocolGateway.sol";
+import { StoryProtocolGateway } from "../contracts/StoryProtocolGateway.sol";
+import { SPGNFT } from "../contracts/SPGNFT.sol";
+
 import { StoryProtocolCoreAddressManager } from "./utils/StoryProtocolCoreAddressManager.sol";
 import { StringUtil } from "./utils/StringUtil.sol";
 import { BroadcastManager } from "./utils/BroadcastManager.s.sol";
 import { JsonDeploymentHandler } from "./utils/JsonDeploymentHandler.s.sol";
 
-contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, JsonDeploymentHandler {
+import { TestProxyHelper } from "../test/utils/TestProxyHelper.t.sol";
 
+contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, JsonDeploymentHandler {
     using StringUtil for uint256;
 
-    StoryProtocolGateway public spg;
+    StoryProtocolGateway private spg;
+    SPGNFT private spgNftImpl;
+    UpgradeableBeacon private spgNftBeacon;
 
     constructor() JsonDeploymentHandler("main") {}
 
@@ -34,25 +40,36 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
 
     function _deployProtocolContracts(address accessControlDeployer) private {
         string memory contractKey;
+        address impl;
 
-        contractKey = "SPG";
-        _predeploy(contractKey);
-        spg = new StoryProtocolGateway(
-            accessControllerAddr,
-            ipAssetRegistryAddr,
-            licensingModuleAddr,
-            pilPolicyFrameworkManagerAddr,
-            ipResolverAddr
+        _predeploy("SPGNFTImpl");
+        spgNftImpl = new SPGNFT();
+        _postdeploy("SPGNFTImpl", address(spgNftImpl));
+
+        _predeploy("SPGNFTBeacon");
+        // Transfer Ownership to RoyaltyPolicyLAP later
+        spgNftBeacon = new UpgradeableBeacon(address(spgNftImpl), deployer);
+        _postdeploy("SPGNFTBeacon", address(spgNftBeacon));
+
+        _predeploy("SPG");
+        impl = address(
+            new StoryProtocolGateway(
+                accessControllerAddr,
+                ipAssetRegistryAddr,
+                licensingModuleAddr,
+                coreMetadataModuleAddr,
+                pilTemplateAddr,
+                address(spgNftBeacon)
+            )
         );
-        _postdeploy(contractKey, address(spg));
-
-        contractKey = "SPNFTImpl";
-        _predeploy(contractKey);
-        _postdeploy(contractKey, address(spg.SP_NFT_IMPL()));
-
-        contractKey = "MetadataProviderImpl";
-        _predeploy(contractKey);
-        _postdeploy(contractKey, address(spg.METADATA_PROVIDER_IMPL()));
+        spg = StoryProtocolGateway(
+            TestProxyHelper.deployUUPSProxy(
+                impl,
+                abi.encodeCall(StoryProtocolGateway.initialize, (address(protocolAccessManagerAddr)))
+            )
+        );
+        impl = address(0);
+        _postdeploy("SPG", address(spg));
     }
 
     function _predeploy(string memory contractKey) private view {
@@ -63,6 +80,4 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
         _writeAddress(contractKey, newAddress);
         console2.log(string.concat(contractKey, " deployed to:"), newAddress);
     }
-
 }
-
