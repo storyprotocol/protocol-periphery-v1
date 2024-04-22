@@ -8,15 +8,18 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 // solhint-disable-next-line max-line-length
 import { AccessManagedUpgradeable } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import { AccessControlled } from "@storyprotocol/core/access/AccessControlled.sol";
-import { IIPAssetRegistry } from "@storyprotocol/core/interfaces/registries/IIPAssetRegistry.sol";
-import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
+import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 // solhint-disable-next-line max-line-length
 import { IPILicenseTemplate, PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
+import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
 import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
+import { IIPAssetRegistry } from "@storyprotocol/core/interfaces/registries/IIPAssetRegistry.sol";
+import { AccessPermission } from "@storyprotocol/core/lib/AccessPermission.sol";
 
 import { IStoryProtocolGateway } from "./interfaces/IStoryProtocolGateway.sol";
 import { ISPGNFT } from "./interfaces/ISPGNFT.sol";
 import { Errors } from "./lib/Errors.sol";
+import { SPGNFTLib } from "./lib/SPGNFTLib.sol";
 
 contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, AccessManagedUpgradeable, UUPSUpgradeable {
     using ERC165Checker for address;
@@ -30,6 +33,13 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
     IPILicenseTemplate public immutable PIL_TEMPLATE;
 
     address public immutable NFT_CONTRACT_BEACON;
+
+    /// @notice Check that the caller has the minter role for the provided SPG NFT.
+    /// @param nftContract The address of the SPG NFT.
+    modifier onlyCallerWithMinterRole(address nftContract) {
+        if (!ISPGNFT(nftContract).hasRole(SPGNFTLib.MINTER_ROLE, msg.sender)) revert Errors.SPG__CallerNotMinterRole();
+        _;
+    }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
@@ -95,7 +105,10 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
     /// @param recipient The address of the recipient of the minted NFT.
     /// @return tokenId The ID of the minted NFT.
     /// @return ipId The ID of the registered IP.
-    function mintAndRegisterIp(address nftContract, address recipient) public returns (uint256 tokenId, address ipId) {
+    function mintAndRegisterIp(
+        address nftContract,
+        address recipient
+    ) external onlyCallerWithMinterRole(nftContract) returns (uint256 tokenId, address ipId) {
         tokenId = ISPGNFT(nftContract).mint(recipient);
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
     }
@@ -114,7 +127,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
         string memory metadataURI,
         bytes32 metadataHash,
         bytes32 nftMetadataHash
-    ) external returns (address ipId, uint256 tokenId) {
+    ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId) {
         tokenId = ISPGNFT(nftContract).mint(address(this));
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
@@ -146,7 +159,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
         address nftContract,
         address recipient,
         PILTerms memory terms
-    ) external returns (address ipId, uint256 tokenId, uint256 licenseTermsId) {
+    ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId, uint256 licenseTermsId) {
         tokenId = ISPGNFT(nftContract).mint(address(this));
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
@@ -173,7 +186,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
         bytes32 metadataHash,
         bytes32 nftMetadataHash,
         PILTerms memory terms
-    ) external returns (address ipId, uint256 tokenId, uint256 licenseTermsId) {
+    ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId, uint256 licenseTermsId) {
         tokenId = ISPGNFT(nftContract).mint(address(this));
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
@@ -185,19 +198,32 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
     }
 
     /// @notice Register a given NFT as an IP and attach Programmable IP License Terms.
+    /// @dev Because IP Account is created in this function, we need to set the permission via signature to allow this
+    /// contract to attach PIL Terms to the newly created IP Account in the same function.
     /// @param nftContract The address of the NFT collection.
     /// @param tokenId The ID of the NFT.
     /// @param terms The PIL terms to be registered.
+    /// @param signer The address of the signer for execution with signature.
+    /// @param deadline The deadline for the signature.
+    /// @param signature The signature for the execution via IP Account.
     /// @return ipId The ID of the registered IP.
     /// @return licenseTermsId The ID of the registered PIL terms.
     function registerIpAndAttachPILTerms(
         address nftContract,
         uint256 tokenId,
-        PILTerms memory terms
+        PILTerms memory terms,
+        address signer,
+        uint256 deadline,
+        bytes calldata signature
     ) external returns (address ipId, uint256 licenseTermsId) {
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        _verifyPermission(ipId);
-
+        _setPermissionInLicensingModule(
+            ipId,
+            signer,
+            deadline,
+            signature,
+            ILicensingModule.attachLicenseTerms.selector
+        );
         licenseTermsId = _registerPILTermsAndAttach(ipId, terms);
     }
 
@@ -208,6 +234,9 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
     /// @param metadataHash The hash of the metadata for the IP.
     /// @param nftMetadataHash The hash of the metadata for the IP NFT.
     /// @param terms The PIL terms to be registered.
+    /// @param signer The address of the signer for execution with signature.
+    /// @param deadline The deadline for the signature.
+    /// @param signature The signature for the execution via IP Account.
     /// @return ipId The ID of the registered IP.
     /// @return licenseTermsId The ID of the registered PIL terms.
     function registerIpAndAttachPILTerms(
@@ -216,14 +245,72 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
         string memory metadataURI,
         bytes32 metadataHash,
         bytes32 nftMetadataHash,
-        PILTerms memory terms
+        PILTerms memory terms,
+        address signer,
+        uint256 deadline,
+        bytes calldata signature
     ) external returns (address ipId, uint256 licenseTermsId) {
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        _verifyPermission(ipId);
-
         CORE_METADATA_MODULE.setAll(ipId, metadataURI, metadataHash, nftMetadataHash);
-
+        _setPermissionInLicensingModule(
+            ipId,
+            signer,
+            deadline,
+            signature,
+            ILicensingModule.attachLicenseTerms.selector
+        );
         licenseTermsId = _registerPILTermsAndAttach(ipId, terms);
+    }
+
+    /// @notice Mint an NFT from a collection and register it as a derivative IP using license tokens.
+    /// @dev Caller must have the minter role for the provided SPG NFT.
+    /// @param nftContract The address of the NFT collection.
+    /// @param licenseTokenIds The IDs of the license tokens to be burned for linking the IP to parent IPs.
+    /// @param royaltyContext The context for royalty module, should be empty for Royalty Policy LAP.
+    /// @param recipient The address to receive the minted NFT.
+    /// @return ipId The ID of the registered IP.
+    /// @return tokenId The ID of the minted NFT.
+    function registerAndMakeDerivativeWithLicenseTokens(
+        address nftContract,
+        uint256[] calldata licenseTokenIds,
+        bytes calldata royaltyContext,
+        address recipient
+    ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId) {
+        tokenId = ISPGNFT(nftContract).mint(address(this));
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
+
+        LICENSING_MODULE.registerDerivativeWithLicenseTokens(ipId, licenseTokenIds, royaltyContext);
+
+        ISPGNFT(nftContract).safeTransferFrom(address(this), recipient, tokenId, "");
+    }
+
+    /// @notice Register the given NFT as a derivative IP using license tokens.
+    /// @param nftContract The address of the NFT collection.
+    /// @param tokenId The ID of the NFT.
+    /// @param licenseTokenIds The IDs of the license tokens to be burned for linking the IP to parent IPs.
+    /// @param royaltyContext The context for royalty module, should be empty for Royalty Policy LAP.
+    /// @param signer The address of the signer for execution with signature.
+    /// @param deadline The deadline for the signature.
+    /// @param signature The signature for the execution via IP Account.
+    /// @return ipId The ID of the registered IP.
+    function registerAndMakeDerivativeWithLicenseTokens(
+        address nftContract,
+        uint256 tokenId,
+        uint256[] calldata licenseTokenIds,
+        bytes calldata royaltyContext,
+        address signer,
+        uint256 deadline,
+        bytes calldata signature
+    ) external returns (address ipId) {
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
+        _setPermissionInLicensingModule(
+            ipId,
+            signer,
+            deadline,
+            signature,
+            ILicensingModule.registerDerivativeWithLicenseTokens.selector
+        );
+        LICENSING_MODULE.registerDerivativeWithLicenseTokens(ipId, licenseTokenIds, royaltyContext);
     }
 
     /// @dev Registers PIL License Terms and attaches them to the given IP.
@@ -233,6 +320,37 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
     function _registerPILTermsAndAttach(address ipId, PILTerms memory terms) internal returns (uint256 licenseTermsId) {
         licenseTermsId = PIL_TEMPLATE.registerLicenseTerms(terms);
         LICENSING_MODULE.attachLicenseTerms(ipId, address(PIL_TEMPLATE), licenseTermsId);
+    }
+
+    /// @dev Sets permission via signature to allow this contract to interact with the Licensing Module on behalf of the
+    /// provided IP Account.
+    /// @param ipId The ID of the IP.
+    /// @param signer The address of the signer for execution with signature.
+    /// @param deadline The deadline for the signature.
+    /// @param signature The signature for the execution via IP Account.
+    /// @param selector The selector of the function to be permitted for execution.
+    function _setPermissionInLicensingModule(
+        address ipId,
+        address signer,
+        uint256 deadline,
+        bytes calldata signature,
+        bytes4 selector
+    ) internal {
+        IIPAccount(payable(ipId)).executeWithSig(
+            address(ACCESS_CONTROLLER),
+            0,
+            abi.encodeWithSignature(
+                "setPermission(address,address,address,bytes4,uint8)",
+                address(ipId),
+                address(this),
+                address(LICENSING_MODULE),
+                selector,
+                AccessPermission.ALLOW
+            ),
+            signer,
+            deadline,
+            signature
+        );
     }
 
     //

@@ -7,6 +7,9 @@ library Errors {
     /// @notice Zero address provided as a param.
     error SPG__ZeroAddressParam();
 
+    /// @notice Caller does not have the minter role.
+    error SPG__CallerNotMinterRole();
+
     /// @notice Zero address provided as a param.
     error SPGNFT__ZeroAddressParam();
 

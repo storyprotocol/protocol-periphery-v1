@@ -7,6 +7,7 @@ import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol
 
 import { ISPGNFT } from "./interfaces/ISPGNFT.sol";
 import { Errors } from "./lib/Errors.sol";
+import { SPGNFTLib } from "./lib/SPGNFTLib.sol";
 
 contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
     /// @custom:storage-location erc7201:story-protocol-periphery.SPGNFT
@@ -18,9 +19,6 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
 
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.SPGNFT")) - 1)) & ~bytes32(uint256(0xff));
     bytes32 private constant SPGNFTStorageLocation = 0x66c08f80d8d0ae818983b725b864514cf274647be6eb06de58ff94d1defb6d00;
-
-    /// @dev The default minter role, 0x1.
-    bytes32 public constant DEFAULT_MINTER_ROLE = bytes32(uint256(1));
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -42,12 +40,12 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
     ) public {
         if (owner == address(0)) revert Errors.SPGNFT__ZeroAddressParam();
         _grantRole(DEFAULT_ADMIN_ROLE, owner);
-        _grantRole(DEFAULT_MINTER_ROLE, owner);
+        _grantRole(SPGNFTLib.MINTER_ROLE, owner);
 
         // grant roles to SPG
         if (owner != msg.sender) {
             _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-            _grantRole(DEFAULT_MINTER_ROLE, msg.sender);
+            _grantRole(SPGNFTLib.MINTER_ROLE, msg.sender);
         }
 
         SPGNFTStorage storage $ = _getSPGNFTStorage();
@@ -66,7 +64,7 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
 
     /// @notice Mints an NFT from the collection. Only callable by the minter role.
     /// @param to The address of the recipient of the minted NFT.
-    function mint(address to) public payable onlyRole(DEFAULT_MINTER_ROLE) returns (uint256 tokenId) {
+    function mint(address to) public payable onlyRole(SPGNFTLib.MINTER_ROLE) returns (uint256 tokenId) {
         if (msg.value < _getSPGNFTStorage().mintCost) revert Errors.SPGNFT__InsufficientMintCost();
 
         SPGNFTStorage storage $ = _getSPGNFTStorage();

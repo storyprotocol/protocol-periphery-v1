@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.23;
 
+import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import { IERC721Metadata } from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 
-interface ISPGNFT is IERC721 {
+interface ISPGNFT is IAccessControl, IERC721, IERC721Metadata {
     /// @dev Initializes the NFT collection.
     /// @param name The name of the collection.
     /// @param symbol The symbol of the collection.
