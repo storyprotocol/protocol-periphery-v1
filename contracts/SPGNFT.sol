@@ -3,6 +3,7 @@ pragma solidity ^0.8.23;
 
 import { AccessControlUpgradeable } from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 import { ISPGNFT } from "./interfaces/ISPGNFT.sol";
@@ -10,11 +11,17 @@ import { Errors } from "./lib/Errors.sol";
 import { SPGNFTLib } from "./lib/SPGNFTLib.sol";
 
 contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
+    /// @dev Storage structure for the SPGNFTSotrage.
+    /// @param maxSupply The maximum supply of the collection.
+    /// @param totalSupply The total minted supply of the collection.
+    /// @param mintCost The cost to mint an NFT from the collection.
+    /// @param mintToken The token to pay for minting.
     /// @custom:storage-location erc7201:story-protocol-periphery.SPGNFT
     struct SPGNFTStorage {
         uint32 maxSupply;
         uint32 totalSupply;
         uint256 mintCost;
+        address mintToken;
     }
 
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.SPGNFT")) - 1)) & ~bytes32(uint256(0xff));
@@ -25,53 +32,90 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
         _disableInitializers();
     }
 
+    receive() external payable {}
+
     /// @dev Initializes the NFT collection.
+    /// @dev If mint cost is non-zero, mint token must be set.
     /// @param name The name of the collection.
     /// @param symbol The symbol of the collection.
     /// @param maxSupply The maximum supply of the collection.
     /// @param mintCost The cost to mint an NFT from the collection.
+    /// @param mintToken The token to pay for minting.
     /// @param owner The owner of the collection.
     function initialize(
         string memory name,
         string memory symbol,
         uint32 maxSupply,
         uint256 mintCost,
+        address mintToken,
         address owner
-    ) public {
-        if (owner == address(0)) revert Errors.SPGNFT__ZeroAddressParam();
-        _grantRole(DEFAULT_ADMIN_ROLE, owner);
+    ) public initializer {
+        if (owner == address(0) || (mintCost > 0 && mintToken == address(0))) revert Errors.SPGNFT__ZeroAddressParam();
+        if (maxSupply == 0) revert Errors.SPGNFT_ZeroMaxSupply();
+
+        _grantRole(SPGNFTLib.ADMIN_ROLE, owner);
         _grantRole(SPGNFTLib.MINTER_ROLE, owner);
 
         // grant roles to SPG
         if (owner != msg.sender) {
-            _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+            _grantRole(SPGNFTLib.ADMIN_ROLE, msg.sender);
             _grantRole(SPGNFTLib.MINTER_ROLE, msg.sender);
         }
 
         SPGNFTStorage storage $ = _getSPGNFTStorage();
         $.maxSupply = maxSupply;
         $.mintCost = mintCost;
+        $.mintToken = mintToken;
 
         __ERC721_init(name, symbol);
     }
 
-    /// @dev Sets the cost to mint an NFT from the collection. Payment is in native currency of the chain. Only callable
-    /// by the admin role.
-    /// @param cost The new mint cost in native currency of the chain.
-    function setMintCost(uint256 cost) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    /// @notice Returns the total minted supply of the collection.
+    function totalSupply() public view returns (uint256) {
+        return uint256(_getSPGNFTStorage().totalSupply);
+    }
+
+    /// @notice Returns the current mint token of the collection.
+    function mintToken() public view returns (address) {
+        return _getSPGNFTStorage().mintToken;
+    }
+
+    /// @notice Returns the current mint cost of the collection.
+    function mintCost() public view returns (uint256) {
+        return _getSPGNFTStorage().mintCost;
+    }
+
+    /// @notice Sets the mint token for the collection.
+    /// @dev Only callable by the admin role.
+    /// @param token The new mint token for mint payment.
+    function setMintToken(address token) public onlyRole(SPGNFTLib.ADMIN_ROLE) {
+        _getSPGNFTStorage().mintToken = token;
+    }
+
+    /// @notice Sets the cost to mint an NFT from the collection. Payment is in the designated currency.
+    /// @dev Only callable by the admin role.
+    /// @param cost The new mint cost paid in the mint token.
+    function setMintCost(uint256 cost) public onlyRole(SPGNFTLib.ADMIN_ROLE) {
         _getSPGNFTStorage().mintCost = cost;
     }
 
     /// @notice Mints an NFT from the collection. Only callable by the minter role.
     /// @param to The address of the recipient of the minted NFT.
-    function mint(address to) public payable onlyRole(SPGNFTLib.MINTER_ROLE) returns (uint256 tokenId) {
-        if (msg.value < _getSPGNFTStorage().mintCost) revert Errors.SPGNFT__InsufficientMintCost();
-
+    function mint(address to) public onlyRole(SPGNFTLib.MINTER_ROLE) returns (uint256 tokenId) {
         SPGNFTStorage storage $ = _getSPGNFTStorage();
-        if ($.totalSupply < $.maxSupply) revert Errors.SPGNFT__MaxSupplyReached();
+        if ($.totalSupply + 1 > $.maxSupply) revert Errors.SPGNFT__MaxSupplyReached();
+
+        IERC20($.mintToken).transferFrom(msg.sender, address(this), $.mintCost);
 
         tokenId = ++$.totalSupply;
         _mint(to, tokenId);
+    }
+
+    /// @dev Withdraws the contract's token balance to the recipient.
+    /// @param recipient The token to withdraw.
+    /// @param recipient The address to receive the withdrawn balance.
+    function withdrawToken(address token, address recipient) public onlyRole(SPGNFTLib.ADMIN_ROLE) {
+        IERC20(token).transfer(recipient, IERC20(token).balanceOf(address(this)));
     }
 
     /// @dev Supports ERC165 interface.

@@ -13,8 +13,8 @@ library Errors {
     /// @notice Zero address provided as a param.
     error SPGNFT__ZeroAddressParam();
 
-    /// @notice Insufficient amount for minting cost.
-    error SPGNFT__InsufficientMintCost();
+    /// @notice Zero max supply provided.
+    error SPGNFT_ZeroMaxSupply();
 
     /// @notice Max mint supply reached.
     error SPGNFT__MaxSupplyReached();

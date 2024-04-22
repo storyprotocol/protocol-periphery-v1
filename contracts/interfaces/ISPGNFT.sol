@@ -7,25 +7,44 @@ import { IERC721Metadata } from "@openzeppelin/contracts/token/ERC721/extensions
 
 interface ISPGNFT is IAccessControl, IERC721, IERC721Metadata {
     /// @dev Initializes the NFT collection.
+    /// @dev If mint cost is non-zero, mint token must be set.
     /// @param name The name of the collection.
     /// @param symbol The symbol of the collection.
     /// @param maxSupply The maximum supply of the collection.
     /// @param mintCost The cost to mint an NFT from the collection.
+    /// @param mintToken The token to pay for minting.
     /// @param owner The owner of the collection.
     function initialize(
         string memory name,
         string memory symbol,
         uint32 maxSupply,
         uint256 mintCost,
+        address mintToken,
         address owner
     ) external;
 
-    /// @dev Sets the cost to mint an NFT from the collection. Payment is in native currency of the chain. Only callable
-    /// by the admin role.
-    /// @param cost The new mint cost in native currency of the chain.
+    /// @notice Returns the total minted supply of the collection.
+    function totalSupply() external view returns (uint256);
+
+    /// @notice Returns the current mint cost of the collection.
+    function mintCost() external view returns (uint256);
+
+    /// @notice Sets the mint token for the collection.
+    /// @dev Only callable by the admin role.
+    /// @param token The new mint token for mint payment.
+    function setMintToken(address token) external;
+
+    /// @notice Sets the cost to mint an NFT from the collection. Payment is in the designated currency.
+    /// @dev Only callable by the admin role.
+    /// @param cost The new mint cost paid in the mint token.
     function setMintCost(uint256 cost) external;
 
     /// @notice Mints an NFT from the collection. Only callable by the minter role.
     /// @param to The address of the recipient of the minted NFT.
-    function mint(address to) external payable returns (uint256 tokenId);
+    function mint(address to) external returns (uint256 tokenId);
+
+    /// @dev Withdraws the contract's token balance to the recipient.
+    /// @param recipient The token to withdraw.
+    /// @param recipient The address to receive the withdrawn balance.
+    function withdrawToken(address token, address recipient) external;
 }

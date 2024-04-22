@@ -24,6 +24,16 @@ import { SPGNFTLib } from "./lib/SPGNFTLib.sol";
 contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, AccessManagedUpgradeable, UUPSUpgradeable {
     using ERC165Checker for address;
 
+    /// @dev Storage structure for the SPG
+    /// @param nftContractBeacon The address of the NFT contract beacon.
+    /// @custom:storage-location erc7201:story-protocol-periphery.SPG
+    struct SPGStorage {
+        address nftContractBeacon;
+    }
+
+    // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.SPG")) - 1)) & ~bytes32(uint256(0xff));
+    bytes32 private constant SPGStorageLocation = 0xb4cca15568cb3dbdd3e7ab1af5e15d861de93bb129f4c24bf0ef4e27377e7300;
+
     IIPAssetRegistry public immutable IP_ASSET_REGISTRY;
 
     ILicensingModule public immutable LICENSING_MODULE;
@@ -31,8 +41,6 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
     ICoreMetadataModule public immutable CORE_METADATA_MODULE;
 
     IPILicenseTemplate public immutable PIL_TEMPLATE;
-
-    address public immutable NFT_CONTRACT_BEACON;
 
     /// @notice Check that the caller has the minter role for the provided SPG NFT.
     /// @param nftContract The address of the SPG NFT.
@@ -47,22 +55,19 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
         address ipAssetRegistry,
         address licensingModule,
         address coreMetadataModule,
-        address pilTemplate,
-        address nftContractBeacon
+        address pilTemplate
     ) AccessControlled(accessController, ipAssetRegistry) {
         if (
             accessController == address(0) ||
             ipAssetRegistry == address(0) ||
             licensingModule == address(0) ||
-            coreMetadataModule == address(0) ||
-            nftContractBeacon == address(0)
+            coreMetadataModule == address(0)
         ) revert Errors.SPG__ZeroAddressParam();
 
         IP_ASSET_REGISTRY = IIPAssetRegistry(ipAssetRegistry);
         LICENSING_MODULE = ILicensingModule(licensingModule);
         CORE_METADATA_MODULE = ICoreMetadataModule(coreMetadataModule);
         PIL_TEMPLATE = IPILicenseTemplate(pilTemplate);
-        NFT_CONTRACT_BEACON = nftContractBeacon;
 
         _disableInitializers();
     }
@@ -75,11 +80,17 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
         __UUPSUpgradeable_init();
     }
 
+    function setNftContractBeacon(address newNftContractBeacon) external restricted {
+        if (newNftContractBeacon == address(0)) revert Errors.SPG__ZeroAddressParam();
+        SPGStorage storage $ = _getSPGStorage();
+        $.nftContractBeacon = newNftContractBeacon;
+    }
+
     /// @dev Upgrades the NFT contract beacon. Restricted to only the protocol access manager.
     /// @param newNftContract The address of the new NFT contract implemenetation.
     function upgradeCollections(address newNftContract) public restricted {
         // UpgradeableBeacon checks for newImplementation.bytecode.length > 0, so no need to check for zero address.
-        UpgradeableBeacon(NFT_CONTRACT_BEACON).upgradeTo(newNftContract);
+        UpgradeableBeacon(_getSPGStorage().nftContractBeacon).upgradeTo(newNftContract);
     }
 
     /// @notice Creates a new NFT collection to be used by SPG.
@@ -87,6 +98,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
     /// @param symbol The symbol of the collection.
     /// @param maxSupply The maximum supply of the collection.
     /// @param mintCost The cost to mint an NFT from the collection.
+    /// @param mintToken The token to be used for mint payment.
     /// @param owner The owner of the collection.
     /// @return nftContract The address of the newly created NFT collection.
     function createCollection(
@@ -94,10 +106,11 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
         string memory symbol,
         uint32 maxSupply,
         uint256 mintCost,
+        address mintToken,
         address owner
     ) external returns (address nftContract) {
-        nftContract = address(new BeaconProxy(NFT_CONTRACT_BEACON, ""));
-        ISPGNFT(nftContract).initialize(name, symbol, maxSupply, mintCost, owner);
+        nftContract = address(new BeaconProxy(_getSPGStorage().nftContractBeacon, ""));
+        ISPGNFT(nftContract).initialize(name, symbol, maxSupply, mintCost, mintToken, owner);
     }
 
     /// @notice Mint an NFT from a collection and register it as an IP.
@@ -356,6 +369,13 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
     //
     // Upgrade
     //
+
+    /// @dev Returns the storage struct of SPG.
+    function _getSPGStorage() private pure returns (SPGStorage storage $) {
+        assembly {
+            $.slot := SPGStorageLocation
+        }
+    }
 
     /// @dev Hook to authorize the upgrade according to UUPSUpgradeable
     /// @param newImplementation The address of the new implementation
