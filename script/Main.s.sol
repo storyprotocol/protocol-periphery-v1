@@ -39,7 +39,6 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
     }
 
     function _deployProtocolContracts(address accessControlDeployer) private {
-        string memory contractKey;
         address impl;
 
         _predeploy("SPGNFTImpl");
@@ -47,8 +46,7 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
         _postdeploy("SPGNFTImpl", address(spgNftImpl));
 
         _predeploy("SPGNFTBeacon");
-        // Transfer Ownership to RoyaltyPolicyLAP later
-        spgNftBeacon = new UpgradeableBeacon(address(spgNftImpl), deployer);
+        spgNftBeacon = new UpgradeableBeacon(address(spgNftImpl), accessControlDeployer);
         _postdeploy("SPGNFTBeacon", address(spgNftBeacon));
 
         _predeploy("SPG");
@@ -58,8 +56,7 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
                 ipAssetRegistryAddr,
                 licensingModuleAddr,
                 coreMetadataModuleAddr,
-                pilTemplateAddr,
-                address(spgNftBeacon)
+                pilTemplateAddr
             )
         );
         spg = StoryProtocolGateway(
@@ -70,9 +67,11 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
         );
         impl = address(0);
         _postdeploy("SPG", address(spg));
+
+        spg.setNftContractBeacon(address(spgNftBeacon));
     }
 
-    function _predeploy(string memory contractKey) private view {
+    function _predeploy(string memory contractKey) private pure {
         console2.log(string.concat("Deploying ", contractKey, "..."));
     }
 
