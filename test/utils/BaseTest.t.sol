@@ -55,9 +55,11 @@ contract BaseTest is Test {
         create3Deployer = new Create3Deployer();
         create3SaltSeed = 0;
 
+        vm.startPrank(deployer);
         setUp_test_Core();
         setUp_test_Periphery();
         setUp_test_Misc();
+        vm.stopPrank();
     }
 
     function setUp_test_Core() public {
@@ -282,6 +284,8 @@ contract BaseTest is Test {
                 )
             )
         );
+
+        moduleRegistry.registerModule(coreMetadataModule.name(), address(coreMetadataModule));
     }
 
     function setUp_test_Periphery() public {
@@ -307,7 +311,6 @@ contract BaseTest is Test {
             )
         );
 
-        vm.prank(deployer);
         spg.setNftContractBeacon(address(spgNftBeacon));
 
         // bytes4[] memory selectors = new bytes4[](1);
