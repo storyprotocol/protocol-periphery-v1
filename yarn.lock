@@ -446,9 +446,13 @@
   resolved "https://registry.yarnpkg.com/@solidity-parser/parser/-/parser-0.18.0.tgz#8e77a02a09ecce957255a2f48c9a7178ec191908"
   integrity sha512-yfORGUIPgLck41qyN7nbwJRAx17/jAIXCTanHOJZhB6PJ1iAk/84b/xlsVKFSyNyLXIj0dhppoE0+CRws7wlzA==
 
-"@story-protocol/protocol-core@github:storyprotocol/protocol-core-v1#v1.0.0":
+"@story-protocol/create3-deployer@github:storyprotocol/create3-deployer#main":
+  version "0.0.0"
+  resolved "https://codeload.github.com/storyprotocol/create3-deployer/tar.gz/094147bda866490dd1c3e8261bb3dfee65e7af54"
+
+"@story-protocol/protocol-core@github:storyprotocol/protocol-core-v1#main":
   version "1.0.0"
-  resolved "https://codeload.github.com/storyprotocol/protocol-core-v1/tar.gz/c785b19ae9a361e585256a73db72ea545b8269db"
+  resolved "https://codeload.github.com/storyprotocol/protocol-core-v1/tar.gz/972c20154a32b10b37703c297d4f9c76860ded9f"
   dependencies:
     "@openzeppelin/contracts" "5.0.2"
     "@openzeppelin/contracts-upgradeable" "5.0.2"
@@ -2338,6 +2342,11 @@ solady@^0.0.191:
   version "0.0.191"
   resolved "https://registry.yarnpkg.com/solady/-/solady-0.0.191.tgz#a4a285ddbcc0d5a8860128ffdd6ea1564b673199"
   integrity sha512-wiab1exBWHT7tLv8m+MnIppa0cn1PBhYskdYqe9/WYgL5Tn2cph5uZVLgy3H3fXXrya68Y5K5oe17hvOyrU87Q==
+
+solady@^0.0.192:
+  version "0.0.192"
+  resolved "https://registry.yarnpkg.com/solady/-/solady-0.0.192.tgz#f80ea061903ba1914d2c96c3c69f53d66865f88f"
+  integrity sha512-96A4dhYkSB/xUyZIuc6l8RMbQ+nqk7GFr0hEci7/64D3G63Ial06puqXA14ZVy/xFe8nzBJbz3Mxssn7SH/1Ag==
 
 solhint-plugin-prettier@^0.1.0:
   version "0.1.0"
