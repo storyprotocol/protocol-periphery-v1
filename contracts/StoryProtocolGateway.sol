@@ -122,7 +122,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
         address nftContract,
         address recipient
     ) external onlyCallerWithMinterRole(nftContract) returns (uint256 tokenId, address ipId) {
-        tokenId = ISPGNFT(nftContract).mint(recipient);
+        tokenId = ISPGNFT(nftContract).mintBySPG({ to: recipient, payer: msg.sender });
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
     }
 
@@ -141,7 +141,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
         bytes32 metadataHash,
         bytes32 nftMetadataHash
     ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId) {
-        tokenId = ISPGNFT(nftContract).mint(address(this));
+        tokenId = ISPGNFT(nftContract).mintBySPG({ to: address(this), payer: msg.sender });
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
         CORE_METADATA_MODULE.setAll(ipId, metadataURI, metadataHash, nftMetadataHash);
@@ -173,7 +173,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
         address recipient,
         PILTerms memory terms
     ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId, uint256 licenseTermsId) {
-        tokenId = ISPGNFT(nftContract).mint(address(this));
+        tokenId = ISPGNFT(nftContract).mintBySPG({ to: address(this), payer: msg.sender });
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
         licenseTermsId = _registerPILTermsAndAttach(ipId, terms);
@@ -200,7 +200,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
         bytes32 nftMetadataHash,
         PILTerms memory terms
     ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId, uint256 licenseTermsId) {
-        tokenId = ISPGNFT(nftContract).mint(address(this));
+        tokenId = ISPGNFT(nftContract).mintBySPG({ to: address(this), payer: msg.sender });
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
         CORE_METADATA_MODULE.setAll(ipId, metadataURI, metadataHash, nftMetadataHash);
@@ -289,7 +289,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
         bytes calldata royaltyContext,
         address recipient
     ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId) {
-        tokenId = ISPGNFT(nftContract).mint(address(this));
+        tokenId = ISPGNFT(nftContract).mintBySPG({ to: address(this), payer: msg.sender });
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
         LICENSING_MODULE.registerDerivativeWithLicenseTokens(ipId, licenseTokenIds, royaltyContext);

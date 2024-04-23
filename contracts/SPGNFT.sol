@@ -27,8 +27,17 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.SPGNFT")) - 1)) & ~bytes32(uint256(0xff));
     bytes32 private constant SPGNFTStorageLocation = 0x66c08f80d8d0ae818983b725b864514cf274647be6eb06de58ff94d1defb6d00;
 
+    address public immutable SPG_ADDRESS;
+
+    modifier onlySPG() {
+        if (msg.sender != SPG_ADDRESS) revert Errors.SPGNFT__CallerNotSPG();
+        _;
+    }
+
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
+    constructor(address spg) {
+        SPG_ADDRESS = spg;
+
         _disableInitializers();
     }
 
@@ -57,9 +66,9 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
         _grantRole(SPGNFTLib.MINTER_ROLE, owner);
 
         // grant roles to SPG
-        if (owner != msg.sender) {
-            _grantRole(SPGNFTLib.ADMIN_ROLE, msg.sender);
-            _grantRole(SPGNFTLib.MINTER_ROLE, msg.sender);
+        if (owner != SPG_ADDRESS) {
+            _grantRole(SPGNFTLib.ADMIN_ROLE, SPG_ADDRESS);
+            _grantRole(SPGNFTLib.MINTER_ROLE, SPG_ADDRESS);
         }
 
         SPGNFTStorage storage $ = _getSPGNFTStorage();
@@ -101,14 +110,17 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
 
     /// @notice Mints an NFT from the collection. Only callable by the minter role.
     /// @param to The address of the recipient of the minted NFT.
+    /// @return tokenId The ID of the minted NFT.
     function mint(address to) public onlyRole(SPGNFTLib.MINTER_ROLE) returns (uint256 tokenId) {
-        SPGNFTStorage storage $ = _getSPGNFTStorage();
-        if ($.totalSupply + 1 > $.maxSupply) revert Errors.SPGNFT__MaxSupplyReached();
+        tokenId = _mintToken({ to: to, payer: msg.sender });
+    }
 
-        IERC20($.mintToken).transferFrom(msg.sender, address(this), $.mintCost);
-
-        tokenId = ++$.totalSupply;
-        _mint(to, tokenId);
+    /// @notice Mints an NFT from the collection. Only callable by the SPG.
+    /// @param to The address of the recipient of the minted NFT.
+    /// @param payer The address of the payer for the mint cost.
+    /// @return tokenId The ID of the minted NFT.
+    function mintBySPG(address to, address payer) public onlySPG returns (uint256 tokenId) {
+        tokenId = _mintToken({ to: to, payer: payer });
     }
 
     /// @dev Withdraws the contract's token balance to the recipient.
@@ -124,6 +136,20 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
         bytes4 interfaceId
     ) public view virtual override(AccessControlUpgradeable, ERC721Upgradeable, IERC165) returns (bool) {
         return interfaceId == type(ISPGNFT).interfaceId || super.supportsInterface(interfaceId);
+    }
+
+    /// @dev Mints an NFT from the collection.
+    /// @param to The address of the recipient of the minted NFT.
+    /// @param payer The address of the payer for the mint cost.
+    /// @return tokenId The ID of the minted NFT.
+    function _mintToken(address to, address payer) internal returns (uint256 tokenId) {
+        SPGNFTStorage storage $ = _getSPGNFTStorage();
+        if ($.totalSupply + 1 > $.maxSupply) revert Errors.SPGNFT__MaxSupplyReached();
+
+        IERC20($.mintToken).transferFrom(payer, address(this), $.mintCost);
+
+        tokenId = ++$.totalSupply;
+        _mint(to, tokenId);
     }
 
     //

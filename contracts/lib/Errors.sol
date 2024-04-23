@@ -18,4 +18,7 @@ library Errors {
 
     /// @notice Max mint supply reached.
     error SPGNFT__MaxSupplyReached();
+
+    /// @notice Caller is not the StoryProtocolGateway.
+    error SPGNFT__CallerNotSPG();
 }
