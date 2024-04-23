@@ -25,9 +25,9 @@ interface IStoryProtocolGateway {
     /// @dev Caller must have the minter role for the provided SPG NFT.
     /// @param nftContract The address of the NFT collection.
     /// @param recipient The address of the recipient of the minted NFT.
-    /// @return tokenId The ID of the minted NFT.
     /// @return ipId The ID of the registered IP.
-    function mintAndRegisterIp(address nftContract, address recipient) external returns (uint256 tokenId, address ipId);
+    /// @return tokenId The ID of the minted NFT.
+    function mintAndRegisterIp(address nftContract, address recipient) external returns (address ipId, uint256 tokenId);
 
     /// @notice Mint an NFT from a collection and register it with metadata as an IP.
     /// @dev Caller must have the minter role for the provided SPG NFT.

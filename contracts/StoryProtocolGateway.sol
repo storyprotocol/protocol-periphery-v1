@@ -116,12 +116,12 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
     /// @notice Mint an NFT from a collection and register it as an IP.
     /// @param nftContract The address of the NFT collection.
     /// @param recipient The address of the recipient of the minted NFT.
-    /// @return tokenId The ID of the minted NFT.
     /// @return ipId The ID of the registered IP.
+    /// @return tokenId The ID of the minted NFT.
     function mintAndRegisterIp(
         address nftContract,
         address recipient
-    ) external onlyCallerWithMinterRole(nftContract) returns (uint256 tokenId, address ipId) {
+    ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId) {
         tokenId = ISPGNFT(nftContract).mintBySPG({ to: recipient, payer: msg.sender });
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
     }
