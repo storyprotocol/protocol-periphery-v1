@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 import { BeaconProxy } from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
-import { IERC20, IERC20Errors } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { IERC20Errors } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import { SPGNFT } from "../contracts/SPGNFT.sol";
 import { ISPGNFT } from "../contracts/interfaces/ISPGNFT.sol";
@@ -13,7 +13,7 @@ import { Errors } from "../contracts/lib/Errors.sol";
 
 import { BaseTest } from "./utils/BaseTest.t.sol";
 
-contract StoryProtocolGatewayTest is BaseTest {
+contract SPGNFTTest is BaseTest {
     ISPGNFT internal nftContract;
 
     function setUp() public override {
@@ -32,7 +32,7 @@ contract StoryProtocolGatewayTest is BaseTest {
     }
 
     function test_SPGNFT_initialize() public {
-        address spgNftImpl = address(new SPGNFT());
+        address spgNftImpl = address(new SPGNFT(address(spg)));
         address NFT_CONTRACT_BEACON = address(new UpgradeableBeacon(spgNftImpl, deployer));
         ISPGNFT anotherNftContract = ISPGNFT(address(new BeaconProxy(NFT_CONTRACT_BEACON, "")));
 
@@ -53,7 +53,7 @@ contract StoryProtocolGatewayTest is BaseTest {
     }
 
     function test_SPGNFT_initialize_revert_zeroParams() public {
-        address spgNftImpl = address(new SPGNFT());
+        address spgNftImpl = address(new SPGNFT(address(spg)));
         address NFT_CONTRACT_BEACON = address(new UpgradeableBeacon(spgNftImpl, deployer));
         nftContract = ISPGNFT(address(new BeaconProxy(NFT_CONTRACT_BEACON, "")));
 

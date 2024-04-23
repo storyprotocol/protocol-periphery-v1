@@ -5,6 +5,7 @@ pragma solidity ^0.8.23;
 import { console2 } from "forge-std/console2.sol";
 import { Script } from "forge-std/Script.sol";
 import { stdJson } from "forge-std/StdJson.sol";
+import { ICreate3Deployer } from "@create3-deployer/contracts/Create3Deployer.sol";
 
 import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import { IPAssetRegistry } from "@storyprotocol/core/registries/IPAssetRegistry.sol";
@@ -21,6 +22,9 @@ import { TestProxyHelper } from "../test/utils/TestProxyHelper.t.sol";
 
 contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, JsonDeploymentHandler {
     using StringUtil for uint256;
+
+    ICreate3Deployer private constant create3Deployer = ICreate3Deployer(0x384a891dFDE8180b054f04D66379f16B7a678Ad6);
+    uint256 private constant create3SaltSeed = 0;
 
     StoryProtocolGateway private spg;
     SPGNFT private spgNftImpl;
@@ -42,7 +46,7 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
         address impl;
 
         _predeploy("SPGNFTImpl");
-        spgNftImpl = new SPGNFT();
+        spgNftImpl = new SPGNFT(create3Deployer.getDeployed(_getSalt(type(StoryProtocolGateway).name)));
         _postdeploy("SPGNFTImpl", address(spgNftImpl));
 
         _predeploy("SPGNFTBeacon");
@@ -61,8 +65,10 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
         );
         spg = StoryProtocolGateway(
             TestProxyHelper.deployUUPSProxy(
+                create3Deployer,
+                _getSalt(type(StoryProtocolGateway).name),
                 impl,
-                abi.encodeCall(StoryProtocolGateway.initialize, (address(protocolAccessManagerAddr)))
+                abi.encodeCall(StoryProtocolGateway.initialize, address(protocolAccessManagerAddr))
             )
         );
         impl = address(0);
@@ -78,5 +84,9 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
     function _postdeploy(string memory contractKey, address newAddress) private {
         _writeAddress(contractKey, newAddress);
         console2.log(string.concat(contractKey, " deployed to:"), newAddress);
+    }
+
+    function _getSalt(string memory name) private view returns (bytes32 salt) {
+        salt = keccak256(abi.encode(name, create3SaltSeed));
     }
 }
