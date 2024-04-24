@@ -17,6 +17,7 @@ import { LicensingModule } from "@storyprotocol/core/modules/licensing/Licensing
 import { DisputeModule } from "@storyprotocol/core/modules/dispute/DisputeModule.sol";
 import { RoyaltyModule } from "@storyprotocol/core/modules/royalty/RoyaltyModule.sol";
 import { CoreMetadataModule } from "@storyprotocol/core/modules/metadata/CoreMetadataModule.sol";
+import { CoreMetadataViewModule } from "@storyprotocol/core/modules/metadata/CoreMetadataViewModule.sol";
 
 import { StoryProtocolGateway } from "../../contracts/StoryProtocolGateway.sol";
 import { SPGNFT } from "../../contracts/SPGNFT.sol";
@@ -36,9 +37,12 @@ contract BaseTest is Test {
     AccessController internal accessController;
     ModuleRegistry internal moduleRegistry;
     IPAssetRegistry internal ipAssetRegistry;
+    LicenseRegistry internal licenseRegistry;
     LicensingModule internal licensingModule;
     CoreMetadataModule internal coreMetadataModule;
+    CoreMetadataViewModule internal coreMetadataViewModule;
     PILicenseTemplate internal pilTemplate;
+    LicenseToken internal licenseToken;
 
     StoryProtocolGateway internal spg;
     SPGNFT internal spgNftImpl;
@@ -136,7 +140,7 @@ contract BaseTest is Test {
                 _getDeployedAddress(type(DisputeModule).name)
             )
         );
-        LicenseRegistry licenseRegistry = LicenseRegistry(
+        licenseRegistry = LicenseRegistry(
             TestProxyHelper.deployUUPSProxy(
                 create3Deployer,
                 _getSalt(type(LicenseRegistry).name),
@@ -231,7 +235,7 @@ contract BaseTest is Test {
         require(_loadProxyImpl(address(licensingModule)) == impl, "LicensingModule Proxy Implementation Mismatch");
 
         impl = address(new LicenseToken(address(licensingModule), address(disputeModule)));
-        LicenseToken licenseToken = LicenseToken(
+        licenseToken = LicenseToken(
             TestProxyHelper.deployUUPSProxy(
                 create3Deployer,
                 _getSalt(type(LicenseToken).name),
@@ -290,10 +294,24 @@ contract BaseTest is Test {
             )
         );
 
+        coreMetadataViewModule = CoreMetadataViewModule(
+            create3Deployer.deploy(
+                _getSalt(type(CoreMetadataViewModule).name),
+                abi.encodePacked(
+                    type(CoreMetadataViewModule).creationCode,
+                    abi.encode(address(ipAssetRegistry), address(moduleRegistry))
+                )
+            )
+        );
+
         moduleRegistry.registerModule("DISPUTE_MODULE", address(disputeModule));
         moduleRegistry.registerModule("LICENSING_MODULE", address(licensingModule));
         moduleRegistry.registerModule("ROYALTY_MODULE", address(royaltyModule));
         moduleRegistry.registerModule("CORE_METADATA_MODULE", address(coreMetadataModule));
+        moduleRegistry.registerModule("CORE_METADATA_VIEW_MODULE", address(coreMetadataViewModule));
+
+        coreMetadataViewModule.updateCoreMetadataModule();
+        licenseRegistry.registerLicenseTemplate(address(pilTemplate));
     }
 
     function setUp_test_Periphery() public {
@@ -307,7 +325,8 @@ contract BaseTest is Test {
                 address(ipAssetRegistry),
                 address(licensingModule),
                 address(coreMetadataModule),
-                address(pilTemplate)
+                address(pilTemplate),
+                address(licenseToken)
             )
         );
         spg = StoryProtocolGateway(

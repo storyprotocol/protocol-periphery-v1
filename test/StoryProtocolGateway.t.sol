@@ -96,6 +96,9 @@ contract StoryProtocolGatewayTest is BaseTest {
         });
         assertEq(tokenId2, 2);
         assertTrue(ipAssetRegistry.isRegistered(ipId2));
+        assertEq(coreMetadataViewModule.getMetadataURI(ipId2), "test-uri");
+        assertEq(coreMetadataViewModule.getMetadataHash(ipId2), "test-hash");
+        assertEq(coreMetadataViewModule.getNftMetadataHash(ipId2), "test-nft-hash");
     }
 
     modifier withIp(address owner) {
@@ -118,7 +121,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         bytes memory data = abi.encodeWithSignature(
             "setPermission(address,address,address,bytes4,uint8)",
             ipId,
-            address(this),
+            address(spg),
             address(licensingModule),
             ILicensingModule.attachLicenseTerms.selector,
             AccessPermission.ALLOW
@@ -140,6 +143,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePk, digest);
         bytes memory signature = abi.encodePacked(r, s, v);
 
+        vm.prank(address(0x111));
         IIPAccount(ipId).executeWithSig({
             to: address(accessController),
             value: 0,
@@ -157,5 +161,127 @@ contract StoryProtocolGatewayTest is BaseTest {
         });
 
         assertEq(licenseTermsId, ltAmt + 1);
+    }
+
+    function test_SPG_mintAndRegisterIpAndAttachPILTerms() public withCollection whenCallerHasMinterRole {
+        mockToken.mint(address(caller), 200 * 10 ** mockToken.decimals());
+        mockToken.approve(address(nftContract), 200 * 10 ** mockToken.decimals());
+
+        (address ipId1, uint256 tokenId1, uint256 licenseTermsId1) = spg.mintAndRegisterIpAndAttachPILTerms({
+            nftContract: address(nftContract),
+            recipient: caller,
+            terms: PILFlavors.nonCommercialSocialRemixing()
+        });
+        assertTrue(ipAssetRegistry.isRegistered(ipId1));
+        assertEq(tokenId1, 1);
+        assertEq(licenseTermsId1, 1);
+        (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId1, 0);
+        assertEq(licenseTemplate, address(pilTemplate));
+        assertEq(licenseTermsId, licenseTermsId1);
+
+        (address ipId2, uint256 tokenId2, uint256 licenseTermsId2) = spg.mintAndRegisterIpAndAttachPILTerms({
+            nftContract: address(nftContract),
+            recipient: caller,
+            metadataURI: "test-uri",
+            metadataHash: "test-hash",
+            nftMetadataHash: "test-nft-hash",
+            terms: PILFlavors.nonCommercialSocialRemixing()
+        });
+        assertTrue(ipAssetRegistry.isRegistered(ipId2));
+        assertEq(tokenId2, 2);
+        assertEq(licenseTermsId1, licenseTermsId2);
+        assertEq(coreMetadataViewModule.getMetadataURI(ipId2), "test-uri");
+        assertEq(coreMetadataViewModule.getMetadataHash(ipId2), "test-hash");
+        assertEq(coreMetadataViewModule.getNftMetadataHash(ipId2), "test-nft-hash");
+    }
+
+    function test_SPG_registerIpAndAttachPILTerms() public withCollection whenCallerHasMinterRole {
+        mockToken.mint(address(caller), 200 * 10 ** mockToken.decimals());
+        mockToken.approve(address(nftContract), 200 * 10 ** mockToken.decimals());
+
+        uint256 tokenId = nftContract.mint(address(caller));
+        address payable ipId = payable(ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenId));
+        ipAsset[1] = IPAsset({ ipId: ipId, tokenId: tokenId, owner: caller });
+
+        uint256 deadline = block.timestamp + 1000;
+
+        bytes memory data = abi.encodeWithSignature(
+            "setPermission(address,address,address,bytes4,uint8)",
+            ipId,
+            address(spg),
+            address(licensingModule),
+            ILicensingModule.attachLicenseTerms.selector,
+            AccessPermission.ALLOW
+        );
+
+        bytes32 digest = MessageHashUtils.toTypedDataHash(
+            MetaTx.calculateDomainSeparator(ipId),
+            MetaTx.getExecuteStructHash(
+                MetaTx.Execute({ to: address(accessController), value: 0, data: data, nonce: 1, deadline: deadline })
+            )
+        );
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePk, digest);
+        bytes memory signature = abi.encodePacked(r, s, v);
+
+        (address ipIdOut, uint256 licenseTermsIdOut) = spg.registerIpAndAttachPILTerms({
+            nftContract: address(nftContract),
+            tokenId: tokenId,
+            terms: PILFlavors.nonCommercialSocialRemixing(),
+            signer: alice,
+            deadline: deadline,
+            signature: signature
+        });
+    }
+
+    function test_SPG_registerAndMakeDerivativeWithLicenseTokens() public withCollection whenCallerHasMinterRole {
+        mockToken.mint(address(caller), 1000 * 10 ** mockToken.decimals());
+        mockToken.approve(address(nftContract), 1000 * 10 ** mockToken.decimals());
+
+        (address ipIdParent, uint256 tokenIdParent, ) = spg.mintAndRegisterIpAndAttachPILTerms({
+            nftContract: address(nftContract),
+            recipient: caller,
+            terms: PILFlavors.nonCommercialSocialRemixing()
+        });
+        (address licenseTemplateParent, uint256 licenseTermsIdParent) = licenseRegistry.getAttachedLicenseTerms(
+            ipIdParent,
+            0
+        );
+
+        uint256 startLicenseTokenId = licensingModule.mintLicenseTokens({
+            licensorIpId: ipIdParent,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: licenseTermsIdParent,
+            amount: 1,
+            receiver: caller,
+            royaltyContext: ""
+        });
+
+        licenseToken.setApprovalForAll(address(spg), true);
+
+        uint256[] memory licenseTokenIds = new uint256[](1);
+        licenseTokenIds[0] = startLicenseTokenId;
+
+        (address ipIdChild, uint256 tokenIdChild) = spg.registerAndMakeDerivativeWithLicenseTokens({
+            nftContract: address(nftContract),
+            licenseTokenIds: licenseTokenIds,
+            royaltyContext: "",
+            recipient: caller
+        });
+
+        assertTrue(ipAssetRegistry.isRegistered(ipIdChild));
+        assertEq(tokenIdChild, 2);
+        (address licenseTemplateChild, uint256 licenseTermsIdChild) = licenseRegistry.getAttachedLicenseTerms(
+            ipIdChild,
+            0
+        );
+        assertEq(licenseTemplateChild, licenseTemplateParent);
+        assertEq(licenseTermsIdChild, licenseTermsIdParent);
+
+        assertTrue(licenseRegistry.hasDerivativeIps(ipIdParent));
+        assertTrue(licenseRegistry.isDerivativeIp(ipIdChild));
+        assertTrue(licenseRegistry.isParentIp({ parentIpId: ipIdParent, childIpId: ipIdChild }));
+        assertEq(licenseRegistry.getParentIpCount(ipIdChild), 1);
+        assertEq(licenseRegistry.getParentIp(ipIdChild, 0), ipIdParent);
     }
 }
