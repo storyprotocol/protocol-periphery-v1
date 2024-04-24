@@ -24,7 +24,7 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
     using StringUtil for uint256;
 
     ICreate3Deployer private constant create3Deployer = ICreate3Deployer(0x384a891dFDE8180b054f04D66379f16B7a678Ad6);
-    uint256 private constant create3SaltSeed = 0;
+    uint256 private constant create3SaltSeed = 3;
 
     StoryProtocolGateway private spg;
     SPGNFT private spgNftImpl;
@@ -40,18 +40,13 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
         _deployProtocolContracts(deployer);
         _writeDeployment();
         _endBroadcast();
+
+        // Set beacon contract via multisig.
+        // spg.setNftContractBeacon(address(spgNftBeacon));
     }
 
     function _deployProtocolContracts(address accessControlDeployer) private {
         address impl;
-
-        _predeploy("SPGNFTImpl");
-        spgNftImpl = new SPGNFT(create3Deployer.getDeployed(_getSalt(type(StoryProtocolGateway).name)));
-        _postdeploy("SPGNFTImpl", address(spgNftImpl));
-
-        _predeploy("SPGNFTBeacon");
-        spgNftBeacon = new UpgradeableBeacon(address(spgNftImpl), accessControlDeployer);
-        _postdeploy("SPGNFTBeacon", address(spgNftBeacon));
 
         _predeploy("SPG");
         impl = address(
@@ -60,7 +55,8 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
                 ipAssetRegistryAddr,
                 licensingModuleAddr,
                 coreMetadataModuleAddr,
-                pilTemplateAddr
+                pilTemplateAddr,
+                licenseTokenAddr
             )
         );
         spg = StoryProtocolGateway(
@@ -74,7 +70,23 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
         impl = address(0);
         _postdeploy("SPG", address(spg));
 
-        spg.setNftContractBeacon(address(spgNftBeacon));
+        _predeploy("SPGNFTImpl");
+        spgNftImpl = SPGNFT(
+            create3Deployer.deploy(
+                _getSalt(type(SPGNFT).name),
+                abi.encodePacked(type(SPGNFT).creationCode, abi.encode(address(spg)))
+            )
+        );
+        _postdeploy("SPGNFTImpl", address(spgNftImpl));
+
+        _predeploy("SPGNFTBeacon");
+        spgNftBeacon = UpgradeableBeacon(
+            create3Deployer.deploy(
+                _getSalt(type(UpgradeableBeacon).name),
+                abi.encodePacked(type(UpgradeableBeacon).creationCode, abi.encode(address(spgNftImpl), deployer))
+            )
+        );
+        _postdeploy("SPGNFTBeacon", address(spgNftBeacon));
     }
 
     function _predeploy(string memory contractKey) private pure {
