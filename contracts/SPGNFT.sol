@@ -41,8 +41,6 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
         _disableInitializers();
     }
 
-    receive() external payable {}
-
     /// @dev Initializes the NFT collection.
     /// @dev If mint cost is non-zero, mint token must be set.
     /// @param name The name of the collection.
