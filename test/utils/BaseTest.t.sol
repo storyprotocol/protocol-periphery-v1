@@ -62,7 +62,7 @@ contract BaseTest is Test {
 
     function setUp() public virtual {
         create3Deployer = new Create3Deployer();
-        create3SaltSeed = 0;
+        create3SaltSeed = 1;
 
         vm.startPrank(deployer);
         setUp_test_Core();
@@ -315,10 +315,6 @@ contract BaseTest is Test {
     }
 
     function setUp_test_Periphery() public {
-        spgNftImpl = new SPGNFT(_getDeployedAddress(type(StoryProtocolGateway).name));
-
-        spgNftBeacon = new UpgradeableBeacon(address(spgNftImpl), deployer);
-
         address impl = address(
             new StoryProtocolGateway(
                 address(accessController),
@@ -335,6 +331,20 @@ contract BaseTest is Test {
                 _getSalt(type(StoryProtocolGateway).name),
                 impl,
                 abi.encodeCall(StoryProtocolGateway.initialize, address(protocolAccessManager))
+            )
+        );
+
+        spgNftImpl = SPGNFT(
+            create3Deployer.deploy(
+                _getSalt(type(SPGNFT).name),
+                abi.encodePacked(type(SPGNFT).creationCode, abi.encode(address(spg)))
+            )
+        );
+
+        spgNftBeacon = UpgradeableBeacon(
+            create3Deployer.deploy(
+                _getSalt(type(UpgradeableBeacon).name),
+                abi.encodePacked(type(UpgradeableBeacon).creationCode, abi.encode(address(spgNftImpl), deployer))
             )
         );
 
