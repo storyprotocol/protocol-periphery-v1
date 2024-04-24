@@ -10,6 +10,9 @@ library Errors {
     /// @notice Caller does not have the minter role.
     error SPG__CallerNotMinterRole();
 
+    /// @notice License token list is empty.
+    error SPG__EmptyLicenseTokens();
+
     /// @notice Zero address provided as a param.
     error SPGNFT__ZeroAddressParam();
 

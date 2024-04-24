@@ -9,6 +9,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { AccessManagedUpgradeable } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import { AccessControlled } from "@storyprotocol/core/access/AccessControlled.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
+import { ILicenseToken } from "@storyprotocol/core/interfaces/ILicenseToken.sol";
 // solhint-disable-next-line max-line-length
 import { IPILicenseTemplate, PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
@@ -42,6 +43,8 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
 
     IPILicenseTemplate public immutable PIL_TEMPLATE;
 
+    ILicenseToken public immutable LICENSE_TOKEN;
+
     /// @notice Check that the caller has the minter role for the provided SPG NFT.
     /// @param nftContract The address of the SPG NFT.
     modifier onlyCallerWithMinterRole(address nftContract) {
@@ -55,19 +58,22 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
         address ipAssetRegistry,
         address licensingModule,
         address coreMetadataModule,
-        address pilTemplate
+        address pilTemplate,
+        address licenseToken
     ) AccessControlled(accessController, ipAssetRegistry) {
         if (
             accessController == address(0) ||
             ipAssetRegistry == address(0) ||
             licensingModule == address(0) ||
-            coreMetadataModule == address(0)
+            coreMetadataModule == address(0) ||
+            licenseToken == address(0)
         ) revert Errors.SPG__ZeroAddressParam();
 
         IP_ASSET_REGISTRY = IIPAssetRegistry(ipAssetRegistry);
         LICENSING_MODULE = ILicensingModule(licensingModule);
         CORE_METADATA_MODULE = ICoreMetadataModule(coreMetadataModule);
         PIL_TEMPLATE = IPILicenseTemplate(pilTemplate);
+        LICENSE_TOKEN = ILicenseToken(licenseToken);
 
         _disableInitializers();
     }
@@ -153,10 +159,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
     /// @param ipId The ID of the IP.
     /// @param terms The PIL terms to be registered.
     /// @return licenseTermsId The ID of the registered PIL terms.
-    function registerPILTermsAndAttach(
-        address ipId,
-        PILTerms memory terms
-    ) external verifyPermission(ipId) returns (uint256 licenseTermsId) {
+    function registerPILTermsAndAttach(address ipId, PILTerms memory terms) external returns (uint256 licenseTermsId) {
         licenseTermsId = _registerPILTermsAndAttach(ipId, terms);
     }
 
@@ -240,41 +243,6 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
         licenseTermsId = _registerPILTermsAndAttach(ipId, terms);
     }
 
-    /// @notice Register a given NFT as an IP with metadata and attach Programmable IP License Terms.
-    /// @param nftContract The address of the NFT collection.
-    /// @param tokenId The ID of the NFT.
-    /// @param metadataURI The URI of the metadata for the IP.
-    /// @param metadataHash The hash of the metadata for the IP.
-    /// @param nftMetadataHash The hash of the metadata for the IP NFT.
-    /// @param terms The PIL terms to be registered.
-    /// @param signer The address of the signer for execution with signature.
-    /// @param deadline The deadline for the signature.
-    /// @param signature The signature for the execution via IP Account.
-    /// @return ipId The ID of the registered IP.
-    /// @return licenseTermsId The ID of the registered PIL terms.
-    function registerIpAndAttachPILTerms(
-        address nftContract,
-        uint256 tokenId,
-        string memory metadataURI,
-        bytes32 metadataHash,
-        bytes32 nftMetadataHash,
-        PILTerms memory terms,
-        address signer,
-        uint256 deadline,
-        bytes calldata signature
-    ) external returns (address ipId, uint256 licenseTermsId) {
-        ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        CORE_METADATA_MODULE.setAll(ipId, metadataURI, metadataHash, nftMetadataHash);
-        _setPermissionInLicensingModule(
-            ipId,
-            signer,
-            deadline,
-            signature,
-            ILicensingModule.attachLicenseTerms.selector
-        );
-        licenseTermsId = _registerPILTermsAndAttach(ipId, terms);
-    }
-
     /// @notice Mint an NFT from a collection and register it as a derivative IP using license tokens.
     /// @dev Caller must have the minter role for the provided SPG NFT.
     /// @param nftContract The address of the NFT collection.
@@ -289,6 +257,11 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
         bytes calldata royaltyContext,
         address recipient
     ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId) {
+        if (licenseTokenIds.length == 0) revert Errors.SPG__EmptyLicenseTokens();
+        for (uint256 i = 0; i < licenseTokenIds.length; i++) {
+            LICENSE_TOKEN.transferFrom(msg.sender, address(this), licenseTokenIds[i]);
+        }
+
         tokenId = ISPGNFT(nftContract).mintBySPG({ to: address(this), payer: msg.sender });
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
@@ -315,6 +288,11 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
         uint256 deadline,
         bytes calldata signature
     ) external returns (address ipId) {
+        if (licenseTokenIds.length == 0) revert Errors.SPG__EmptyLicenseTokens();
+        for (uint256 i = 0; i < licenseTokenIds.length; i++) {
+            LICENSE_TOKEN.transferFrom(msg.sender, address(this), licenseTokenIds[i]);
+        }
+
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
         _setPermissionInLicensingModule(
             ipId,

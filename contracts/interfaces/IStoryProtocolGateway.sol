@@ -108,30 +108,6 @@ interface IStoryProtocolGateway {
         bytes calldata signature
     ) external returns (address ipId, uint256 licenseTermsId);
 
-    /// @notice Register a given NFT as an IP with metadata and attach Programmable IP License Terms.
-    /// @param nftContract The address of the NFT collection.
-    /// @param tokenId The ID of the NFT.
-    /// @param metadataURI The URI of the metadata for the IP.
-    /// @param metadataHash The hash of the metadata for the IP.
-    /// @param nftMetadataHash The hash of the metadata for the IP NFT.
-    /// @param terms The PIL terms to be registered.
-    /// @param signer The address of the signer for execution with signature.
-    /// @param deadline The deadline for the signature.
-    /// @param signature The signature for the execution via IP Account.
-    /// @return ipId The ID of the registered IP.
-    /// @return licenseTermsId The ID of the registered PIL terms.
-    function registerIpAndAttachPILTerms(
-        address nftContract,
-        uint256 tokenId,
-        string memory metadataURI,
-        bytes32 metadataHash,
-        bytes32 nftMetadataHash,
-        PILTerms memory terms,
-        address signer,
-        uint256 deadline,
-        bytes calldata signature
-    ) external returns (address ipId, uint256 licenseTermsId);
-
     /// @notice Mint an NFT from a collection and register it as a derivative IP using license tokens.
     /// @dev Caller must have the minter role for the provided SPG NFT.
     /// @param nftContract The address of the NFT collection.
