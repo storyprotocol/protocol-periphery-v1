@@ -46,10 +46,15 @@ contract BaseTest is Test {
 
     MockERC20 internal mockToken;
 
-    address payable internal deployer = payable(vm.addr(0xddd111));
-    address payable internal alice = payable(vm.addr(0xa11ce));
-    address payable internal bob = payable(vm.addr(0xb0b));
-    address payable internal cal = payable(vm.addr(0xca1));
+    uint256 internal deployerPk = 0xddd111;
+    uint256 internal alicePk = 0xa11ce;
+    uint256 internal bobPk = 0xb0b;
+    uint256 internal calPk = 0xca1;
+
+    address payable internal deployer = payable(vm.addr(deployerPk));
+    address payable internal alice = payable(vm.addr(alicePk));
+    address payable internal bob = payable(vm.addr(bobPk));
+    address payable internal cal = payable(vm.addr(calPk));
 
     function setUp() public virtual {
         create3Deployer = new Create3Deployer();
@@ -285,7 +290,10 @@ contract BaseTest is Test {
             )
         );
 
-        moduleRegistry.registerModule(coreMetadataModule.name(), address(coreMetadataModule));
+        moduleRegistry.registerModule("DISPUTE_MODULE", address(disputeModule));
+        moduleRegistry.registerModule("LICENSING_MODULE", address(licensingModule));
+        moduleRegistry.registerModule("ROYALTY_MODULE", address(royaltyModule));
+        moduleRegistry.registerModule("CORE_METADATA_MODULE", address(coreMetadataModule));
     }
 
     function setUp_test_Periphery() public {
