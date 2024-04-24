@@ -1,6 +1,6 @@
 -include .env
 
-.PHONY: all test clean coverage typechain deploy-main
+.PHONY: all test clean coverage typechain deploy-main abi
 
 all: clean install build
 
@@ -51,16 +51,10 @@ coverage:
 	genhtml coverage/lcov.info -o coverage --rc branch_coverage=1 --ignore-errors category
 
 abi:
+	rm -rf abi
 	mkdir -p abi
-	@$(call generate_abi,"AccessController",".")
-	@$(call generate_abi,"DisputeModule","./modules/dispute-module")
-	@$(call generate_abi,"RoyaltyModule","./modules/royalty-module")
-	@$(call generate_abi,"TaggingModule","./modules/tagging")
-	@$(call generate_abi,"IPAccountRegistry","./registries")
-	@$(call generate_abi,"IPRecordRegistry","./registries")
-	@$(call generate_abi,"LicenseRegistry","./registries")
-	@$(call generate_abi,"ModuleRegistry","./registries")
-	@$(call generate_abi,"IPMetadataResolver","./resolvers")
+	@$(call generate_abi,"StoryProtocolGateway",".")
+	@$(call generate_abi,"SPGNFT",".")
 
 # typechain:
 # 	make abi
@@ -71,8 +65,7 @@ typechain :; npx hardhat typechain
 # solhint should be installed globally
 lint :; npx solhint contracts/**/*.sol && npx solhint contracts/*.sol
 
-deploy-goerli :; npx hardhat run ./script/deploy-reveal-engine.js --network goerli
-verify-goerli :; npx hardhat verify --network goerli ${contract}
+deploy-sepolia :; forge script script/Main.s.sol:Main --rpc-url ${RPC_URL} -vvvv --broadcast --etherscan-api-key ${ETHERSCAN_API_KEY} --verify --priority-gas-price 1
 
 anvil :; anvil -m 'test test test test test test test test test test test junk'
 
