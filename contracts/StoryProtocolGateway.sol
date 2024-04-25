@@ -7,9 +7,9 @@ import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/Upgradea
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 // solhint-disable-next-line max-line-length
 import { AccessManagedUpgradeable } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import { AccessControlled } from "@storyprotocol/core/access/AccessControlled.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { ILicenseToken } from "@storyprotocol/core/interfaces/ILicenseToken.sol";
+import { IAccessController } from "@storyprotocol/core/interfaces/access/IAccessController.sol";
 // solhint-disable-next-line max-line-length
 import { IPILicenseTemplate, PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
@@ -22,7 +22,7 @@ import { ISPGNFT } from "./interfaces/ISPGNFT.sol";
 import { Errors } from "./lib/Errors.sol";
 import { SPGNFTLib } from "./lib/SPGNFTLib.sol";
 
-contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, AccessManagedUpgradeable, UUPSUpgradeable {
+contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable, UUPSUpgradeable {
     using ERC165Checker for address;
 
     /// @dev Storage structure for the SPG
@@ -34,6 +34,9 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
 
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.SPG")) - 1)) & ~bytes32(uint256(0xff));
     bytes32 private constant SPGStorageLocation = 0xb4cca15568cb3dbdd3e7ab1af5e15d861de93bb129f4c24bf0ef4e27377e7300;
+
+    /// @notice The address of the Access Controller.
+    IAccessController public immutable ACCESS_CONTROLLER;
 
     /// @notice The address of the IP Asset Registry.
     IIPAssetRegistry public immutable IP_ASSET_REGISTRY;
@@ -65,7 +68,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
         address coreMetadataModule,
         address pilTemplate,
         address licenseToken
-    ) AccessControlled(accessController, ipAssetRegistry) {
+    ) {
         if (
             accessController == address(0) ||
             ipAssetRegistry == address(0) ||
@@ -74,6 +77,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
             licenseToken == address(0)
         ) revert Errors.SPG__ZeroAddressParam();
 
+        ACCESS_CONTROLLER = IAccessController(accessController);
         IP_ASSET_REGISTRY = IIPAssetRegistry(ipAssetRegistry);
         LICENSING_MODULE = ILicensingModule(licensingModule);
         CORE_METADATA_MODULE = ICoreMetadataModule(coreMetadataModule);
