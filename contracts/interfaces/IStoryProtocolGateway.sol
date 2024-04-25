@@ -4,6 +4,10 @@ pragma solidity ^0.8.23;
 import { PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 
 interface IStoryProtocolGateway {
+    /// @notice Event emitted when a new NFT collection is created.
+    /// @param nftContract The address of the newly created NFT collection.
+    event CollectionCreated(address indexed nftContract);
+
     /// @notice Struct for metadata for an IP.
     /// @param metadataURI The URI of the metadata for the IP.
     /// @param metadataHash The hash of the metadata for the IP.

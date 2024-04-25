@@ -124,6 +124,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
     ) external returns (address nftContract) {
         nftContract = address(new BeaconProxy(_getSPGStorage().nftContractBeacon, ""));
         ISPGNFT(nftContract).initialize(name, symbol, maxSupply, mintCost, mintToken, owner);
+        emit CollectionCreated(nftContract);
     }
 
     /// @notice Mint an NFT from a collection and register it with metadata as an IP.
