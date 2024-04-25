@@ -27,8 +27,10 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.SPGNFT")) - 1)) & ~bytes32(uint256(0xff));
     bytes32 private constant SPGNFTStorageLocation = 0x66c08f80d8d0ae818983b725b864514cf274647be6eb06de58ff94d1defb6d00;
 
+    /// @dev The address of the SPG contract.
     address public immutable SPG_ADDRESS;
 
+    /// @notice Modifier to restrict access to the SPG contract.
     modifier onlySPG() {
         if (msg.sender != SPG_ADDRESS) revert Errors.SPGNFT__CallerNotSPG();
         _;
@@ -154,6 +156,7 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
     // Upgrade
     //
 
+    /// @dev Returns the storage struct of SPGNFT.
     function _getSPGNFTStorage() private pure returns (SPGNFTStorage storage $) {
         assembly {
             $.slot := SPGNFTStorageLocation

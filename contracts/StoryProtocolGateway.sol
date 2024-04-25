@@ -35,14 +35,19 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.SPG")) - 1)) & ~bytes32(uint256(0xff));
     bytes32 private constant SPGStorageLocation = 0xb4cca15568cb3dbdd3e7ab1af5e15d861de93bb129f4c24bf0ef4e27377e7300;
 
+    /// @notice The address of the IP Asset Registry.
     IIPAssetRegistry public immutable IP_ASSET_REGISTRY;
 
+    /// @notice The address of the Licensing Module.
     ILicensingModule public immutable LICENSING_MODULE;
 
+    /// @notice The address of the Core Metadata Module.
     ICoreMetadataModule public immutable CORE_METADATA_MODULE;
 
+    /// @notice The address of the PIL License Template.
     IPILicenseTemplate public immutable PIL_TEMPLATE;
 
+    /// @notice The address of the License Token.
     ILicenseToken public immutable LICENSE_TOKEN;
 
     /// @notice Check that the caller has the minter role for the provided SPG NFT.
@@ -86,6 +91,8 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessControlled, Access
         __UUPSUpgradeable_init();
     }
 
+    /// @dev Sets the NFT contract beacon address.
+    /// @param newNftContractBeacon The address of the new NFT contract beacon.
     function setNftContractBeacon(address newNftContractBeacon) external restricted {
         if (newNftContractBeacon == address(0)) revert Errors.SPG__ZeroAddressParam();
         SPGStorage storage $ = _getSPGStorage();
