@@ -24,8 +24,8 @@ contract SPGNFTTest is BaseTest {
                 name: "Test Collection",
                 symbol: "TEST",
                 maxSupply: 100,
-                mintCost: 100 * 10 ** mockToken.decimals(),
-                mintToken: address(mockToken),
+                mintFee: 100 * 10 ** mockToken.decimals(),
+                mintFeeToken: address(mockToken),
                 owner: alice
             })
         );
@@ -40,8 +40,8 @@ contract SPGNFTTest is BaseTest {
             name: "Test Collection",
             symbol: "TEST",
             maxSupply: 100,
-            mintCost: 100 * 10 ** mockToken.decimals(),
-            mintToken: address(mockToken),
+            mintFee: 100 * 10 ** mockToken.decimals(),
+            mintFeeToken: address(mockToken),
             owner: alice
         });
 
@@ -49,7 +49,7 @@ contract SPGNFTTest is BaseTest {
         assertEq(nftContract.symbol(), anotherNftContract.symbol());
         assertEq(nftContract.totalSupply(), anotherNftContract.totalSupply());
         assertTrue(anotherNftContract.hasRole(SPGNFTLib.MINTER_ROLE, alice));
-        assertEq(anotherNftContract.mintCost(), 100 * 10 ** mockToken.decimals());
+        assertEq(anotherNftContract.mintFee(), 100 * 10 ** mockToken.decimals());
     }
 
     function test_SPGNFT_initialize_revert_zeroParams() public {
@@ -62,8 +62,8 @@ contract SPGNFTTest is BaseTest {
             name: "Test Collection",
             symbol: "TEST",
             maxSupply: 100,
-            mintCost: 0,
-            mintToken: address(mockToken),
+            mintFee: 0,
+            mintFeeToken: address(mockToken),
             owner: address(0)
         });
 
@@ -72,8 +72,8 @@ contract SPGNFTTest is BaseTest {
             name: "Test Collection",
             symbol: "TEST",
             maxSupply: 100,
-            mintCost: 1,
-            mintToken: address(0),
+            mintFee: 1,
+            mintFeeToken: address(0),
             owner: alice
         });
 
@@ -82,8 +82,8 @@ contract SPGNFTTest is BaseTest {
             name: "Test Collection",
             symbol: "TEST",
             maxSupply: 0,
-            mintCost: 0,
-            mintToken: address(mockToken),
+            mintFee: 0,
+            mintFeeToken: address(mockToken),
             owner: alice
         });
     }
@@ -94,7 +94,7 @@ contract SPGNFTTest is BaseTest {
         mockToken.mint(address(alice), 1000 * 10 ** mockToken.decimals());
         mockToken.approve(address(nftContract), 1000 * 10 ** mockToken.decimals());
 
-        uint256 mintCost = nftContract.mintCost();
+        uint256 mintFee = nftContract.mintFee();
         uint256 balanceBeforeAlice = mockToken.balanceOf(alice);
         uint256 balanceBeforeContract = mockToken.balanceOf(address(nftContract));
         uint256 tokenId = nftContract.mint(bob);
@@ -102,8 +102,8 @@ contract SPGNFTTest is BaseTest {
         assertEq(nftContract.totalSupply(), 1);
         assertEq(nftContract.balanceOf(bob), 1);
         assertEq(nftContract.ownerOf(tokenId), bob);
-        assertEq(mockToken.balanceOf(alice), balanceBeforeAlice - mintCost);
-        assertEq(mockToken.balanceOf(address(nftContract)), balanceBeforeContract + mintCost);
+        assertEq(mockToken.balanceOf(alice), balanceBeforeAlice - mintFee);
+        assertEq(mockToken.balanceOf(address(nftContract)), balanceBeforeContract + mintFee);
         balanceBeforeAlice = mockToken.balanceOf(alice);
         balanceBeforeContract = mockToken.balanceOf(address(nftContract));
 
@@ -111,32 +111,32 @@ contract SPGNFTTest is BaseTest {
         assertEq(nftContract.totalSupply(), 2);
         assertEq(nftContract.balanceOf(bob), 2);
         assertEq(nftContract.ownerOf(tokenId), bob);
-        assertEq(mockToken.balanceOf(alice), balanceBeforeAlice - mintCost);
-        assertEq(mockToken.balanceOf(address(nftContract)), balanceBeforeContract + mintCost);
+        assertEq(mockToken.balanceOf(alice), balanceBeforeAlice - mintFee);
+        assertEq(mockToken.balanceOf(address(nftContract)), balanceBeforeContract + mintFee);
         balanceBeforeAlice = mockToken.balanceOf(alice);
         balanceBeforeContract = mockToken.balanceOf(address(nftContract));
 
         // change mint cost
-        nftContract.setMintCost(200 * 10 ** mockToken.decimals());
-        mintCost = nftContract.mintCost();
+        nftContract.setMintFee(200 * 10 ** mockToken.decimals());
+        mintFee = nftContract.mintFee();
 
         tokenId = nftContract.mint(cal);
         assertEq(mockToken.balanceOf(address(nftContract)), 400 * 10 ** mockToken.decimals());
         assertEq(nftContract.totalSupply(), 3);
         assertEq(nftContract.balanceOf(cal), 1);
         assertEq(nftContract.ownerOf(tokenId), cal);
-        assertEq(mockToken.balanceOf(alice), balanceBeforeAlice - mintCost);
-        assertEq(mockToken.balanceOf(address(nftContract)), balanceBeforeContract + mintCost);
+        assertEq(mockToken.balanceOf(alice), balanceBeforeAlice - mintFee);
+        assertEq(mockToken.balanceOf(address(nftContract)), balanceBeforeContract + mintFee);
 
         vm.stopPrank();
     }
 
     function test_SPGNFT_revert_mint_erc20InsufficientAllowance() public {
-        uint256 mintCost = nftContract.mintCost();
-        mockToken.mint(address(alice), mintCost);
+        uint256 mintFee = nftContract.mintFee();
+        mockToken.mint(address(alice), mintFee);
 
         vm.expectRevert(
-            abi.encodeWithSelector(IERC20Errors.ERC20InsufficientAllowance.selector, address(nftContract), 0, mintCost)
+            abi.encodeWithSelector(IERC20Errors.ERC20InsufficientAllowance.selector, address(nftContract), 0, mintFee)
         );
         vm.prank(alice);
         nftContract.mint(bob);
@@ -151,32 +151,44 @@ contract SPGNFTTest is BaseTest {
                 IERC20Errors.ERC20InsufficientBalance.selector,
                 address(alice),
                 0,
-                nftContract.mintCost()
+                nftContract.mintFee()
             )
         );
         nftContract.mint(bob);
         vm.stopPrank();
     }
 
-    function test_SPGNFT_setMintCost() public {
+    function test_SPGNFT_setMintFee() public {
         vm.startPrank(alice);
 
-        nftContract.setMintCost(200 * 10 ** mockToken.decimals());
-        assertEq(nftContract.mintCost(), 200 * 10 ** mockToken.decimals());
+        nftContract.setMintFee(200 * 10 ** mockToken.decimals());
+        assertEq(nftContract.mintFee(), 200 * 10 ** mockToken.decimals());
 
-        nftContract.setMintCost(300 * 10 ** mockToken.decimals());
-        assertEq(nftContract.mintCost(), 300 * 10 ** mockToken.decimals());
+        nftContract.setMintFee(300 * 10 ** mockToken.decimals());
+        assertEq(nftContract.mintFee(), 300 * 10 ** mockToken.decimals());
 
         vm.stopPrank();
     }
 
-    function test_SPGNFT_revert_setMintCost_accessControlUnauthorizedAccount() public {
+    function test_SPGNFT_setMintFeeToken() public {
+        vm.startPrank(alice);
+
+        nftContract.setMintFeeToken(address(1));
+        assertEq(nftContract.mintFeeToken(), address(1));
+
+        nftContract.setMintFeeToken(address(mockToken));
+        assertEq(nftContract.mintFeeToken(), address(mockToken));
+
+        vm.stopPrank();
+    }
+
+    function test_SPGNFT_revert_setMintFee_accessControlUnauthorizedAccount() public {
         vm.startPrank(bob);
 
         vm.expectRevert(
             abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, bob, SPGNFTLib.ADMIN_ROLE)
         );
-        nftContract.setMintCost(2);
+        nftContract.setMintFee(2);
 
         vm.stopPrank();
     }
@@ -187,16 +199,16 @@ contract SPGNFTTest is BaseTest {
         mockToken.mint(address(alice), 1000 * 10 ** mockToken.decimals());
         mockToken.approve(address(nftContract), 1000 * 10 ** mockToken.decimals());
 
-        uint256 mintCost = nftContract.mintCost();
+        uint256 mintFee = nftContract.mintFee();
 
         nftContract.mint(bob);
-        assertEq(mockToken.balanceOf(address(nftContract)), mintCost);
+        assertEq(mockToken.balanceOf(address(nftContract)), mintFee);
 
         uint256 balanceBeforeBob = mockToken.balanceOf(bob);
 
         nftContract.withdrawToken(address(mockToken), bob);
         assertEq(mockToken.balanceOf(address(nftContract)), 0);
-        assertEq(mockToken.balanceOf(bob), balanceBeforeBob + mintCost);
+        assertEq(mockToken.balanceOf(bob), balanceBeforeBob + mintFee);
 
         vm.stopPrank();
     }

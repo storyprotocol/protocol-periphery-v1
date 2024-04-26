@@ -44,16 +44,16 @@ interface IStoryProtocolGateway {
     /// @param name The name of the collection.
     /// @param symbol The symbol of the collection.
     /// @param maxSupply The maximum supply of the collection.
-    /// @param mintCost The cost to mint an NFT from the collection.
-    /// @param mintToken The token to be used for mint payment.
+    /// @param mintFee The cost to mint an NFT from the collection.
+    /// @param mintFeeToken The token to be used for mint payment.
     /// @param owner The owner of the collection.
     /// @return nftContract The address of the newly created NFT collection.
     function createCollection(
         string calldata name,
         string calldata symbol,
         uint32 maxSupply,
-        uint256 mintCost,
-        address mintToken,
+        uint256 mintFee,
+        address mintFeeToken,
         address owner
     ) external returns (address nftContract);
 

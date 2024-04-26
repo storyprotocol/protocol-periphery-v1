@@ -11,33 +11,36 @@ interface ISPGNFT is IAccessControl, IERC721, IERC721Metadata {
     /// @param name The name of the collection.
     /// @param symbol The symbol of the collection.
     /// @param maxSupply The maximum supply of the collection.
-    /// @param mintCost The cost to mint an NFT from the collection.
-    /// @param mintToken The token to pay for minting.
+    /// @param mintFee The cost to mint an NFT from the collection.
+    /// @param mintFeeToken The token to pay for minting.
     /// @param owner The owner of the collection.
     function initialize(
         string memory name,
         string memory symbol,
         uint32 maxSupply,
-        uint256 mintCost,
-        address mintToken,
+        uint256 mintFee,
+        address mintFeeToken,
         address owner
     ) external;
 
     /// @notice Returns the total minted supply of the collection.
     function totalSupply() external view returns (uint256);
 
-    /// @notice Returns the current mint cost of the collection.
-    function mintCost() external view returns (uint256);
+    /// @notice Returns the current mint token of the collection.
+    function mintFeeToken() external view returns (address);
+
+    /// @notice Returns the current mint fee of the collection.
+    function mintFee() external view returns (uint256);
 
     /// @notice Sets the mint token for the collection.
     /// @dev Only callable by the admin role.
     /// @param token The new mint token for mint payment.
-    function setMintToken(address token) external;
+    function setMintFeeToken(address token) external;
 
-    /// @notice Sets the cost to mint an NFT from the collection. Payment is in the designated currency.
+    /// @notice Sets the fee to mint an NFT from the collection. Payment is in the designated currency.
     /// @dev Only callable by the admin role.
-    /// @param cost The new mint cost paid in the mint token.
-    function setMintCost(uint256 cost) external;
+    /// @param fee The new mint fee paid in the mint token.
+    function setMintFee(uint256 fee) external;
 
     /// @notice Mints an NFT from the collection. Only callable by the minter role.
     /// @param to The address of the recipient of the minted NFT.
@@ -46,7 +49,7 @@ interface ISPGNFT is IAccessControl, IERC721, IERC721Metadata {
 
     /// @notice Mints an NFT from the collection. Only callable by the SPG.
     /// @param to The address of the recipient of the minted NFT.
-    /// @param payer The address of the payer for the mint cost.
+    /// @param payer The address of the payer for the mint fee.
     /// @return tokenId The ID of the minted NFT.
     function mintBySPG(address to, address payer) external returns (uint256 tokenId);
 

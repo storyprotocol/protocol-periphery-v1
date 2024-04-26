@@ -50,8 +50,8 @@ contract StoryProtocolGatewayTest is BaseTest {
                 name: "Test Collection",
                 symbol: "TEST",
                 maxSupply: 100,
-                mintCost: 100 * 10 ** mockToken.decimals(),
-                mintToken: address(mockToken),
+                mintFee: 100 * 10 ** mockToken.decimals(),
+                mintFeeToken: address(mockToken),
                 owner: minter
             })
         );
@@ -59,13 +59,13 @@ contract StoryProtocolGatewayTest is BaseTest {
     }
 
     function test_SPG_createCollection() public withCollection {
-        uint256 mintCost = nftContract.mintCost();
+        uint256 mintFee = nftContract.mintFee();
 
         assertEq(nftContract.name(), "Test Collection");
         assertEq(nftContract.symbol(), "TEST");
         assertEq(nftContract.totalSupply(), 0);
         assertTrue(nftContract.hasRole(SPGNFTLib.MINTER_ROLE, alice));
-        assertEq(mintCost, 100 * 10 ** mockToken.decimals());
+        assertEq(mintFee, 100 * 10 ** mockToken.decimals());
     }
 
     modifier whenCallerDoesNotHaveMinterRole() {
