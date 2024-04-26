@@ -59,7 +59,8 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
         address mintFeeToken,
         address owner
     ) public initializer {
-        if (owner == address(0) || (mintFee > 0 && mintFeeToken == address(0))) revert Errors.SPGNFT__ZeroAddressParam();
+        if (owner == address(0) || (mintFee > 0 && mintFeeToken == address(0)))
+            revert Errors.SPGNFT__ZeroAddressParam();
         if (maxSupply == 0) revert Errors.SPGNFT_ZeroMaxSupply();
 
         _grantRole(SPGNFTLib.ADMIN_ROLE, owner);
