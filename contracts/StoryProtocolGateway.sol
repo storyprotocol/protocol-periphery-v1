@@ -349,6 +349,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
     function _transferLicenseTokens(uint256[] calldata licenseTokenIds) internal {
         if (licenseTokenIds.length == 0) revert Errors.SPG__EmptyLicenseTokens();
         for (uint256 i = 0; i < licenseTokenIds.length; i++) {
+            if (LICENSE_TOKEN.ownerOf(licenseTokenIds[i]) == address(this)) continue;
             LICENSE_TOKEN.transferFrom(msg.sender, address(this), licenseTokenIds[i]);
         }
     }
@@ -388,8 +389,8 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
     function _setMetadata(IPMetadata calldata metadata, address ipId) internal {
         if (
             keccak256(abi.encodePacked(metadata.metadataURI)) != keccak256("") ||
-            metadata.metadataHash.length != 0 ||
-            metadata.nftMetadataHash.length != 0
+            metadata.metadataHash != bytes32(0) ||
+            metadata.nftMetadataHash != bytes32(0)
         ) {
             CORE_METADATA_MODULE.setAll(ipId, metadata.metadataURI, metadata.metadataHash, metadata.nftMetadataHash);
         }
