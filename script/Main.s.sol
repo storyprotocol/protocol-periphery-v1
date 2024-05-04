@@ -24,7 +24,7 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
     using StringUtil for uint256;
 
     ICreate3Deployer private constant create3Deployer = ICreate3Deployer(0x384a891dFDE8180b054f04D66379f16B7a678Ad6);
-    uint256 private constant create3SaltSeed = 3;
+    uint256 private constant create3SaltSeed = 12;
 
     StoryProtocolGateway private spg;
     SPGNFT private spgNftImpl;
@@ -40,6 +40,9 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
         _deployProtocolContracts(deployer);
         _writeDeployment();
         _endBroadcast();
+
+        // Transfer ownership of beacon proxy to SPG
+        spgNftBeacon.transferOwnership(address(spg));
 
         // Set beacon contract via multisig.
         // spg.setNftContractBeacon(address(spgNftBeacon));
