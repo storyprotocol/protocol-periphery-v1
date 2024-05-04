@@ -113,7 +113,7 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
     /// @param to The address of the recipient of the minted NFT.
     /// @return tokenId The ID of the minted NFT.
     function mint(address to) public onlyRole(SPGNFTLib.MINTER_ROLE) returns (uint256 tokenId) {
-        tokenId = _mintFeeToken({ to: to, payer: msg.sender });
+        tokenId = _mintToken({ to: to, payer: msg.sender });
     }
 
     /// @notice Mints an NFT from the collection. Only callable by the SPG.
@@ -121,7 +121,7 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
     /// @param payer The address of the payer for the mint fee.
     /// @return tokenId The ID of the minted NFT.
     function mintBySPG(address to, address payer) public onlySPG returns (uint256 tokenId) {
-        tokenId = _mintFeeToken({ to: to, payer: payer });
+        tokenId = _mintToken({ to: to, payer: payer });
     }
 
     /// @dev Withdraws the contract's token balance to the recipient.
@@ -143,11 +143,13 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
     /// @param to The address of the recipient of the minted NFT.
     /// @param payer The address of the payer for the mint fee.
     /// @return tokenId The ID of the minted NFT.
-    function _mintFeeToken(address to, address payer) internal returns (uint256 tokenId) {
+    function _mintToken(address to, address payer) internal returns (uint256 tokenId) {
         SPGNFTStorage storage $ = _getSPGNFTStorage();
         if ($.totalSupply + 1 > $.maxSupply) revert Errors.SPGNFT__MaxSupplyReached();
 
-        IERC20($.mintFeeToken).transferFrom(payer, address(this), $.mintFee);
+        if ($.mintFeeToken != address(0) && $.mintFee > 0) {
+            IERC20($.mintFeeToken).transferFrom(payer, address(this), $.mintFee);
+        }
 
         tokenId = ++$.totalSupply;
         _mint(to, tokenId);
