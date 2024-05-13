@@ -15,6 +15,7 @@ import { Errors } from "../contracts/lib/Errors.sol";
 import { SPGNFTLib } from "../contracts/lib/SPGNFTLib.sol";
 
 import { BaseTest } from "./utils/BaseTest.t.sol";
+import { MockERC721 } from "./mocks/MockERC721.sol";
 
 contract StoryProtocolGatewayTest is BaseTest {
     struct IPAsset {
@@ -110,6 +111,33 @@ contract StoryProtocolGatewayTest is BaseTest {
         assertEq(tokenId2, 2);
         assertTrue(ipAssetRegistry.isRegistered(ipId2));
         assertMetadata(ipId2, metadataDefault);
+    }
+
+    function test_SPG_registerIp() public withCollection {
+        MockERC721 nftContract = new MockERC721("Test NFT");
+        uint256 tokenId = nftContract.mint(address(alice));
+        address expectedIpId = ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenId);
+
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory sigMetadata, ) = _getSetPermissionSignatureForSPG({
+            ipId: expectedIpId,
+            module: address(coreMetadataModule),
+            selector: ICoreMetadataModule.setAll.selector,
+            deadline: deadline,
+            nonce: 1,
+            signerPk: alicePk
+        });
+
+        address actualIpId = spg.registerIp({
+            nftContract: address(nftContract),
+            tokenId: tokenId,
+            metadata: metadataDefault,
+            sigMetadata: ISPG.SignatureData({ signer: alice, deadline: deadline, signature: sigMetadata })
+        });
+
+        assertEq(actualIpId, expectedIpId);
+        assertMetadata(actualIpId, metadataDefault);
     }
 
     modifier withIp(address owner) {
