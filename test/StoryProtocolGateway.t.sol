@@ -137,6 +137,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         });
 
         assertEq(actualIpId, expectedIpId);
+        assertTrue(ipAssetRegistry.isRegistered(actualIpId));
         assertMetadata(actualIpId, metadataDefault);
     }
 
