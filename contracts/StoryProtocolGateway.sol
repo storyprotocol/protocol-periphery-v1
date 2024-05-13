@@ -149,6 +149,22 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
         ISPGNFT(nftContract).safeTransferFrom(address(this), recipient, tokenId, "");
     }
 
+    /// @notice Registers an NFT as IP with metadata.
+    /// @param nftContract The address of the NFT collection.
+    /// @param tokenId The ID of the NFT.
+    /// @param metadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
+    /// @return ipId The ID of the registered IP.
+    function registerIp(
+        address nftContract,
+        uint256 tokenId,
+        IPMetadata calldata metadata,
+        SignatureData calldata sigMetadata
+    ) external returns (address ipId) {
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
+        _setMetadataWithSig(metadata, ipId, sigMetadata);
+    }
+
     /// @notice Register Programmable IP License Terms (if unregistered) and attach it to IP.
     /// @param ipId The ID of the IP.
     /// @param terms The PIL terms to be registered.

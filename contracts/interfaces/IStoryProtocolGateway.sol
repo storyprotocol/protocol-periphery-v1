@@ -70,6 +70,19 @@ interface IStoryProtocolGateway {
         IPMetadata calldata metadata
     ) external returns (address ipId, uint256 tokenId);
 
+    /// @notice Registers an NFT as IP with metadata.
+    /// @param nftContract The address of the NFT collection.
+    /// @param tokenId The ID of the NFT.
+    /// @param metadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
+    /// @return ipId The ID of the registered IP.
+    function registerIp(
+        address nftContract,
+        uint256 tokenId,
+        IPMetadata calldata metadata,
+        SignatureData calldata sigMetadata
+    ) external returns (address ipId);
+
     /// @notice Register Programmable IP License Terms (if unregistered) and attach it to IP.
     /// @param ipId The ID of the IP.
     /// @param terms The PIL terms to be registered.
