@@ -1,0 +1,63 @@
+name: Foundry CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+
+  # Add a timestamp to the build
+  Timestamp:
+    uses: storyprotocol/gha-workflows/.github/workflows/reusable-timestamp.yml@main
+
+  foundry-test:
+    strategy:
+      fail-fast: true
+    name: Foundry Unit Test
+    runs-on: ubuntu-latest
+    needs: [Timestamp]
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          submodules: recursive
+          fetch-depth: 0
+          
+      - name: Run install
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: install # will run `yarn install` command
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      # first, build contracts excluding the tests and scripts. Check contract sizes in this step.
+      - name: Run Contract Size check
+        run: |
+          forge --version
+          forge build --force --sizes --skip test --skip script
+      
+      # This step requires full build to be run first
+      - name: Upgrade Safety test
+        run: |
+          forge clean && forge build --build-info
+      # npx @openzeppelin/upgrades-core validate out/build-info
+
+      - name: Run Forge tests
+        run: |
+          forge test -vvv
+        id: forge-test
+
+      - name: Run solhint
+        run: npx solhint contracts/**/*.sol
+
+  Coverage:
+    needs: [foundry-test]
+    uses: storyprotocol/gha-workflows/.github/workflows/reusable-forge-code-coverage.yml@main
+    # FOR LOCAL TESTING ONLY
+    # uses: ./../gha-workflows/.github/workflows/reusable-forge-code-coverage.yml
+    with:
+      exclude_paths: 'test/*, script/*'
+      branch_coverage: true
