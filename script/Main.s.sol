@@ -39,13 +39,14 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
         _beginBroadcast();
         _deployProtocolContracts(deployer);
         _writeDeployment();
-        _endBroadcast();
 
         // Transfer ownership of beacon proxy to SPG
         spgNftBeacon.transferOwnership(address(spg));
 
         // Set beacon contract via multisig.
         // spg.setNftContractBeacon(address(spgNftBeacon));
+
+        _endBroadcast();
     }
 
     function _deployProtocolContracts(address accessControlDeployer) private {
