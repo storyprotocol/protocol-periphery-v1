@@ -20,7 +20,7 @@ contract UpgradeSPGNFT is Script, StoryProtocolPeripheryAddressManager, Broadcas
     using StringUtil for uint256;
 
     ICreate3Deployer private constant create3Deployer = ICreate3Deployer(0x384a891dFDE8180b054f04D66379f16B7a678Ad6);
-    uint256 private constant create3SaltSeed = 13;
+    uint256 private constant create3SaltSeed = 15;
 
     StoryProtocolGateway private spg;
     SPGNFT private spgNftImpl;
