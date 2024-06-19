@@ -4,23 +4,27 @@ pragma solidity ^0.8.23;
 
 import { console2 } from "forge-std/console2.sol";
 import { Script } from "forge-std/Script.sol";
-import { ICreate3Deployer } from "@create3-deployer/contracts/Create3Deployer.sol";
-
 import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 
 import { StoryProtocolGateway } from "../contracts/StoryProtocolGateway.sol";
 import { SPGNFT } from "../contracts/SPGNFT.sol";
 
+import { StoryProtocolCoreAddressManager } from "./utils/StoryProtocolCoreAddressManager.sol";
 import { StoryProtocolPeripheryAddressManager } from "./utils/StoryProtocolPeripheryAddressManager.sol";
 import { StringUtil } from "./utils/StringUtil.sol";
 import { BroadcastManager } from "./utils/BroadcastManager.s.sol";
 import { JsonDeploymentHandler } from "./utils/JsonDeploymentHandler.s.sol";
 
-contract UpgradeSPGNFT is Script, StoryProtocolPeripheryAddressManager, BroadcastManager, JsonDeploymentHandler {
-    using StringUtil for uint256;
+import { TestProxyHelper } from "../test/utils/TestProxyHelper.t.sol";
 
-    ICreate3Deployer private constant create3Deployer = ICreate3Deployer(0x384a891dFDE8180b054f04D66379f16B7a678Ad6);
-    uint256 private constant create3SaltSeed = 15;
+contract UpgradeSPG is
+    Script,
+    StoryProtocolCoreAddressManager,
+    StoryProtocolPeripheryAddressManager,
+    BroadcastManager,
+    JsonDeploymentHandler
+{
+    using StringUtil for uint256;
 
     StoryProtocolGateway private spg;
     SPGNFT private spgNftImpl;
@@ -29,8 +33,9 @@ contract UpgradeSPGNFT is Script, StoryProtocolPeripheryAddressManager, Broadcas
     constructor() JsonDeploymentHandler("main") {}
 
     /// @dev To use, run the following command (e.g. for Sepolia):
-    /// forge script script/UpgradeSPGNFT.s.sol:UpgradeSPGNFT --rpc-url $RPC_URL --broadcast --verify -vvvv
+    /// forge script script/UpgradeSPG.s.sol:UpgradeSPG --rpc-url $RPC_URL --broadcast --verify -vvvv
     function run() public {
+        _readStoryProtocolCoreAddresses();
         _readStoryProtocolPeripheryAddresses();
 
         spg = StoryProtocolGateway(spgAddr);
@@ -38,27 +43,32 @@ contract UpgradeSPGNFT is Script, StoryProtocolPeripheryAddressManager, Broadcas
         spgNftBeacon = UpgradeableBeacon(spgNftBeaconAddr);
 
         _beginBroadcast();
-        _deploySPGNFT(deployer);
-
-        // Upgrade the collections via multisig (can't do here).
-        // spg.upgradeCollections(address(spgNftImpl));
+        _deploySPG();
 
         _writeDeployment();
         _endBroadcast();
     }
 
-    function _deploySPGNFT(address accessControlDeployer) private {
-        _writeAddress("SPG", address(spg));
-        _writeAddress("SPGNFTBeacon", address(spgNftBeacon));
-
-        _predeploy("SPGNFTImpl");
-        spgNftImpl = SPGNFT(
-            create3Deployer.deploy(
-                _getSalt(type(SPGNFT).name),
-                abi.encodePacked(type(SPGNFT).creationCode, abi.encode(address(spg)))
+    function _deploySPG() private {
+        _predeploy("SPG");
+        address newSpgImpl = address(
+            new StoryProtocolGateway(
+                accessControllerAddr,
+                ipAssetRegistryAddr,
+                licensingModuleAddr,
+                coreMetadataModuleAddr,
+                pilTemplateAddr,
+                licenseTokenAddr
             )
         );
-        _postdeploy("SPGNFTImpl", address(spgNftImpl));
+        console2.log("New SPG Implementation", newSpgImpl);
+
+        // Upgrade via multisig (can't do here).
+        // spg.upgradeToAndCall(address(newSpgImpl), "");
+
+        _postdeploy("SPG", address(spg));
+        _writeAddress("SPGNFTBeacon", address(spgNftBeacon));
+        _writeAddress("SPGNFTImpl", address(spgNftImpl));
     }
 
     function _predeploy(string memory contractKey) private pure {
@@ -68,9 +78,5 @@ contract UpgradeSPGNFT is Script, StoryProtocolPeripheryAddressManager, Broadcas
     function _postdeploy(string memory contractKey, address newAddress) private {
         _writeAddress(contractKey, newAddress);
         console2.log(string.concat(contractKey, " deployed to:"), newAddress);
-    }
-
-    function _getSalt(string memory name) private view returns (bytes32 salt) {
-        salt = keccak256(abi.encode(name, create3SaltSeed));
     }
 }
