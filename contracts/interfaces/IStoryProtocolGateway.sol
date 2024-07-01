@@ -46,7 +46,11 @@ interface IStoryProtocolGateway {
     /// @param maxSupply The maximum supply of the collection.
     /// @param mintFee The cost to mint an NFT from the collection.
     /// @param mintFeeToken The token to be used for mint payment.
-    /// @param owner The owner of the collection.
+    /// @param mintFeeRecipient The address to receive mint fees.
+    /// @param owner The owner of the collection. Zero address indicates no owner.
+    /// @param mintOpen Whether the collection is open for minting on creation. Configurable by the owner.
+    /// @param isPublicMinting If true, anyone can mint from the collection. If false, only the addresses with the
+    /// minter role can mint. Configurable by the owner.
     /// @return nftContract The address of the newly created NFT collection.
     function createCollection(
         string calldata name,
@@ -54,7 +58,10 @@ interface IStoryProtocolGateway {
         uint32 maxSupply,
         uint256 mintFee,
         address mintFeeToken,
-        address owner
+        address mintFeeRecipient,
+        address owner,
+        bool mintOpen,
+        bool isPublicMinting
     ) external returns (address nftContract);
 
     /// @notice Mint an NFT from a collection and register it with metadata as an IP.
