@@ -26,6 +26,7 @@ contract StoryProtocolGatewayTest is BaseTest {
 
     ISPGNFT internal nftContract;
     address internal minter;
+    address internal feeRecipient;
     address internal caller;
     mapping(uint256 index => IPAsset) internal ipAsset;
     address internal ipIdParent;
@@ -36,6 +37,7 @@ contract StoryProtocolGatewayTest is BaseTest {
     function setUp() public override {
         super.setUp();
         minter = alice;
+        feeRecipient = bob;
 
         metadataEmpty = ISPG.IPMetadata({ metadataURI: "", metadataHash: "", nftMetadataHash: "" });
         metadataDefault = ISPG.IPMetadata({
@@ -53,20 +55,25 @@ contract StoryProtocolGatewayTest is BaseTest {
                 maxSupply: 100,
                 mintFee: 100 * 10 ** mockToken.decimals(),
                 mintFeeToken: address(mockToken),
-                owner: minter
+                mintFeeRecipient: feeRecipient,
+                owner: minter,
+                mintOpen: true,
+                isPublicMinting: false
             })
         );
         _;
     }
 
     function test_SPG_createCollection() public withCollection {
-        uint256 mintFee = nftContract.mintFee();
-
         assertEq(nftContract.name(), "Test Collection");
         assertEq(nftContract.symbol(), "TEST");
         assertEq(nftContract.totalSupply(), 0);
         assertTrue(nftContract.hasRole(SPGNFTLib.MINTER_ROLE, alice));
-        assertEq(mintFee, 100 * 10 ** mockToken.decimals());
+        assertEq(nftContract.mintFee(), 100 * 10 ** mockToken.decimals());
+        assertEq(nftContract.mintFeeToken(), address(mockToken));
+        assertEq(nftContract.mintFeeRecipient(), bob);
+        assertTrue(nftContract.mintOpen());
+        assertFalse(nftContract.publicMinting());
     }
 
     modifier whenCallerDoesNotHaveMinterRole() {
