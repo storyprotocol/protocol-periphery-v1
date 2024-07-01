@@ -16,12 +16,17 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
     /// @param totalSupply The total minted supply of the collection.
     /// @param mintFee The fee to mint an NFT from the collection.
     /// @param mintFeeToken The token to pay for minting.
+    /// @param mintFeeRecipient The address to receive mint fees.
+    /// @param mintOpen The status of minting, whether it is open or not.
     /// @custom:storage-location erc7201:story-protocol-periphery.SPGNFT
     struct SPGNFTStorage {
         uint32 maxSupply;
         uint32 totalSupply;
         uint256 mintFee;
         address mintFeeToken;
+        address mintFeeRecipient;
+        bool mintOpen;
+        bool publicMinting;
     }
 
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.SPGNFT")) - 1)) & ~bytes32(uint256(0xff));
@@ -50,18 +55,24 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
     /// @param maxSupply The maximum supply of the collection.
     /// @param mintFee The fee to mint an NFT from the collection.
     /// @param mintFeeToken The token to pay for minting.
-    /// @param owner The owner of the collection.
+    /// @param mintFeeRecipient The address to receive mint fees.
+    /// @param owner The owner of the collection. Zero address indicates no owner.
+    /// @param mintOpen Whether the collection is open for minting on creation. Configurable by the owner.
+    /// @param isPublicMinting If true, anyone can mint from the collection. If false, only the addresses with the
+    /// minter role can mint. Configurable by the owner.
     function initialize(
         string memory name,
         string memory symbol,
         uint32 maxSupply,
         uint256 mintFee,
         address mintFeeToken,
-        address owner
+        address mintFeeRecipient,
+        address owner,
+        bool mintOpen,
+        bool isPublicMinting
     ) public initializer {
-        if (owner == address(0) || (mintFee > 0 && mintFeeToken == address(0)))
-            revert Errors.SPGNFT__ZeroAddressParam();
-        if (maxSupply == 0) revert Errors.SPGNFT_ZeroMaxSupply();
+        if (mintFee > 0 && mintFeeToken == address(0)) revert Errors.SPGNFT__ZeroAddressParam();
+        if (maxSupply == 0) revert Errors.SPGNFT__ZeroMaxSupply();
 
         _grantRole(SPGNFTLib.ADMIN_ROLE, owner);
         _grantRole(SPGNFTLib.MINTER_ROLE, owner);
@@ -76,6 +87,9 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
         $.maxSupply = maxSupply;
         $.mintFee = mintFee;
         $.mintFeeToken = mintFeeToken;
+        $.mintFeeRecipient = mintFeeRecipient;
+        $.mintOpen = mintOpen;
+        $.publicMinting = isPublicMinting;
 
         __ERC721_init(name, symbol);
     }
@@ -85,21 +99,29 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
         return uint256(_getSPGNFTStorage().totalSupply);
     }
 
-    /// @notice Returns the current mint token of the collection.
-    function mintFeeToken() public view returns (address) {
-        return _getSPGNFTStorage().mintFeeToken;
-    }
-
     /// @notice Returns the current mint fee of the collection.
     function mintFee() public view returns (uint256) {
         return _getSPGNFTStorage().mintFee;
     }
 
-    /// @notice Sets the mint token for the collection.
-    /// @dev Only callable by the admin role.
-    /// @param token The new mint token for mint payment.
-    function setMintFeeToken(address token) public onlyRole(SPGNFTLib.ADMIN_ROLE) {
-        _getSPGNFTStorage().mintFeeToken = token;
+    /// @notice Returns the current mint token of the collection.
+    function mintFeeToken() public view returns (address) {
+        return _getSPGNFTStorage().mintFeeToken;
+    }
+
+    /// @notice Returns the current mint fee recipient of the collection.
+    function mintFeeRecipient() public view returns (address) {
+        return _getSPGNFTStorage().mintFeeRecipient;
+    }
+
+    /// @notice Returns true if the collection is open for minting.
+    function mintOpen() public view returns (bool) {
+        return _getSPGNFTStorage().mintOpen;
+    }
+
+    /// @notice Returns true if the collection is open for public minting.
+    function publicMinting() public view returns (bool) {
+        return _getSPGNFTStorage().publicMinting;
     }
 
     /// @notice Sets the fee to mint an NFT from the collection. Payment is in the designated currency.
@@ -109,10 +131,44 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
         _getSPGNFTStorage().mintFee = fee;
     }
 
+    /// @notice Sets the mint token for the collection.
+    /// @dev Only callable by the admin role.
+    /// @param token The new mint token for mint payment.
+    function setMintFeeToken(address token) public onlyRole(SPGNFTLib.ADMIN_ROLE) {
+        _getSPGNFTStorage().mintFeeToken = token;
+    }
+
+    /// @notice Sets the recipient of mint fees.
+    /// @dev Only callable by the fee recipient.
+    /// @param newFeeRecipient The new fee recipient.
+    function setMintFeeRecipient(address newFeeRecipient) public {
+        if (msg.sender != _getSPGNFTStorage().mintFeeRecipient) {
+            revert Errors.SPGNFT__CallerNotFeeRecipient();
+        }
+        _getSPGNFTStorage().mintFeeRecipient = newFeeRecipient;
+    }
+
+    /// @notice Sets the minting status.
+    /// @dev Only callable by the admin role.
+    /// @param mintOpen Whether minting is open or not.
+    function setMintOpen(bool mintOpen) public onlyRole(SPGNFTLib.ADMIN_ROLE) {
+        _getSPGNFTStorage().mintOpen = mintOpen;
+    }
+
+    /// @notice Sets the public minting status.
+    /// @dev Only callable by the admin role.
+    /// @param isPublicMinting Whether the collection is open for public minting or not.
+    function setPublicMinting(bool isPublicMinting) public onlyRole(SPGNFTLib.ADMIN_ROLE) {
+        _getSPGNFTStorage().publicMinting = isPublicMinting;
+    }
+
     /// @notice Mints an NFT from the collection. Only callable by the minter role.
     /// @param to The address of the recipient of the minted NFT.
     /// @return tokenId The ID of the minted NFT.
-    function mint(address to) public onlyRole(SPGNFTLib.MINTER_ROLE) returns (uint256 tokenId) {
+    function mint(address to) public returns (uint256 tokenId) {
+        if (!_getSPGNFTStorage().publicMinting && !hasRole(SPGNFTLib.MINTER_ROLE, msg.sender)) {
+            revert Errors.SPGNFT__MintingDenied();
+        }
         tokenId = _mintToken({ to: to, payer: msg.sender });
     }
 
@@ -124,11 +180,10 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
         tokenId = _mintToken({ to: to, payer: payer });
     }
 
-    /// @dev Withdraws the contract's token balance to the recipient.
-    /// @param recipient The token to withdraw.
-    /// @param recipient The address to receive the withdrawn balance.
-    function withdrawToken(address token, address recipient) public onlyRole(SPGNFTLib.ADMIN_ROLE) {
-        IERC20(token).transfer(recipient, IERC20(token).balanceOf(address(this)));
+    /// @dev Withdraws the contract's token balance to the fee recipient.
+    /// @param token The token to withdraw.
+    function withdrawToken(address token) public {
+        IERC20(token).transfer(_getSPGNFTStorage().mintFeeRecipient, IERC20(token).balanceOf(address(this)));
     }
 
     /// @dev Supports ERC165 interface.
@@ -145,6 +200,7 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
     /// @return tokenId The ID of the minted NFT.
     function _mintToken(address to, address payer) internal returns (uint256 tokenId) {
         SPGNFTStorage storage $ = _getSPGNFTStorage();
+        if (!$.mintOpen) revert Errors.SPGNFT__MintingClosed();
         if ($.totalSupply + 1 > $.maxSupply) revert Errors.SPGNFT__MaxSupplyReached();
 
         if ($.mintFeeToken != address(0) && $.mintFee > 0) {

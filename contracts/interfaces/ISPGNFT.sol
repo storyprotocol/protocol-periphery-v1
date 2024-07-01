@@ -7,40 +7,71 @@ import { IERC721Metadata } from "@openzeppelin/contracts/token/ERC721/extensions
 
 interface ISPGNFT is IAccessControl, IERC721, IERC721Metadata {
     /// @dev Initializes the NFT collection.
-    /// @dev If mint cost is non-zero, mint token must be set.
+    /// @dev If mint fee is non-zero, mint token must be set.
     /// @param name The name of the collection.
     /// @param symbol The symbol of the collection.
     /// @param maxSupply The maximum supply of the collection.
-    /// @param mintFee The cost to mint an NFT from the collection.
+    /// @param mintFee The fee to mint an NFT from the collection.
     /// @param mintFeeToken The token to pay for minting.
-    /// @param owner The owner of the collection.
+    /// @param mintFeeRecipient The address to receive mint fees.
+    /// @param owner The owner of the collection. Zero address indicates no owner.
+    /// @param mintOpen Whether the collection is open for minting on creation. Configurable by the owner.
+    /// @param isPublicMinting If true, anyone can mint from the collection. If false, only the addresses with the
+    /// minter role can mint. Configurable by the owner.
     function initialize(
         string memory name,
         string memory symbol,
         uint32 maxSupply,
         uint256 mintFee,
         address mintFeeToken,
-        address owner
+        address mintFeeRecipient,
+        address owner,
+        bool mintOpen,
+        bool isPublicMinting
     ) external;
 
     /// @notice Returns the total minted supply of the collection.
     function totalSupply() external view returns (uint256);
 
+    /// @notice Returns the current mint fee of the collection.
+    function mintFee() external view returns (uint256);
+
     /// @notice Returns the current mint token of the collection.
     function mintFeeToken() external view returns (address);
 
-    /// @notice Returns the current mint fee of the collection.
-    function mintFee() external view returns (uint256);
+    /// @notice Returns the current mint fee recipient of the collection.
+    function mintFeeRecipient() external view returns (address);
+
+    /// @notice Returns true if the collection is open for minting.
+    function mintOpen() external view returns (bool);
+
+    /// @notice Returns true if the collection is open for public minting.
+    function publicMinting() external view returns (bool);
+
+    /// @notice Sets the fee to mint an NFT from the collection. Payment is in the designated currency.
+    /// @dev Only callable by the admin role.
+    /// @param fee The new mint fee paid in the mint token.
+    function setMintFee(uint256 fee) external;
 
     /// @notice Sets the mint token for the collection.
     /// @dev Only callable by the admin role.
     /// @param token The new mint token for mint payment.
     function setMintFeeToken(address token) external;
 
-    /// @notice Sets the fee to mint an NFT from the collection. Payment is in the designated currency.
+    /// @notice Sets the recipient of mint fees.
+    /// @dev Only callable by the fee recipient.
+    /// @param newFeeRecipient The new fee recipient.
+    function setMintFeeRecipient(address newFeeRecipient) external;
+
+    /// @notice Sets the minting status.
     /// @dev Only callable by the admin role.
-    /// @param fee The new mint fee paid in the mint token.
-    function setMintFee(uint256 fee) external;
+    /// @param mintOpen Whether minting is open or not.
+    function setMintOpen(bool mintOpen) external;
+
+    /// @notice Sets the public minting status.
+    /// @dev Only callable by the admin role.
+    /// @param isPublicMinting Whether the collection is open for public minting or not.
+    function setPublicMinting(bool isPublicMinting) external;
 
     /// @notice Mints an NFT from the collection. Only callable by the minter role.
     /// @param to The address of the recipient of the minted NFT.
@@ -53,8 +84,7 @@ interface ISPGNFT is IAccessControl, IERC721, IERC721Metadata {
     /// @return tokenId The ID of the minted NFT.
     function mintBySPG(address to, address payer) external returns (uint256 tokenId);
 
-    /// @dev Withdraws the contract's token balance to the recipient.
-    /// @param recipient The token to withdraw.
-    /// @param recipient The address to receive the withdrawn balance.
-    function withdrawToken(address token, address recipient) external;
+    /// @dev Withdraws the contract's token balance to the fee recipient.
+    /// @param token The token to withdraw.
+    function withdrawToken(address token) external;
 }

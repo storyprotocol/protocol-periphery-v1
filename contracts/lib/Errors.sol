@@ -17,11 +17,20 @@ library Errors {
     error SPGNFT__ZeroAddressParam();
 
     /// @notice Zero max supply provided.
-    error SPGNFT_ZeroMaxSupply();
+    error SPGNFT__ZeroMaxSupply();
 
     /// @notice Max mint supply reached.
     error SPGNFT__MaxSupplyReached();
 
+    /// @notice Minting is denied if the public minting is false (=> private) but caller does not have the minter role.
+    error SPGNFT__MintingDenied();
+
     /// @notice Caller is not the StoryProtocolGateway.
     error SPGNFT__CallerNotSPG();
+
+    /// @notice Caller is not the fee recipient.
+    error SPGNFT__CallerNotFeeRecipient();
+
+    /// @notice Minting is closed.
+    error SPGNFT__MintingClosed();
 }
