@@ -119,7 +119,7 @@ contract BaseTest is Test {
 
         address ipAccountRegistry = address(ipAssetRegistry);
 
-        impl = address(new AccessController(address(ipAssetRegistry), address(moduleRegistry)));
+        impl = address(new AccessController());
         accessController = AccessController(
             TestProxyHelper.deployUUPSProxy(
                 create3Deployer,
@@ -134,12 +134,7 @@ contract BaseTest is Test {
         );
         require(_loadProxyImpl(address(accessController)) == impl, "AccessController Proxy Implementation Mismatch");
 
-        impl = address(
-            new LicenseRegistry(
-                _getDeployedAddress(type(LicensingModule).name),
-                _getDeployedAddress(type(DisputeModule).name)
-            )
-        );
+        impl = address(new LicenseRegistry());
         licenseRegistry = LicenseRegistry(
             TestProxyHelper.deployUUPSProxy(
                 create3Deployer,
@@ -190,7 +185,6 @@ contract BaseTest is Test {
 
         impl = address(
             new RoyaltyModule(
-                _getDeployedAddress(type(LicensingModule).name),
                 address(disputeModule),
                 address(licenseRegistry)
             )
@@ -213,7 +207,6 @@ contract BaseTest is Test {
             new LicensingModule(
                 address(accessController),
                 address(ipAccountRegistry),
-                address(moduleRegistry),
                 address(royaltyModule),
                 address(licenseRegistry),
                 address(disputeModule),
@@ -234,7 +227,7 @@ contract BaseTest is Test {
         );
         require(_loadProxyImpl(address(licensingModule)) == impl, "LicensingModule Proxy Implementation Mismatch");
 
-        impl = address(new LicenseToken(address(licensingModule), address(disputeModule)));
+        impl = address(new LicenseToken());
         licenseToken = LicenseToken(
             TestProxyHelper.deployUUPSProxy(
                 create3Deployer,
@@ -309,6 +302,13 @@ contract BaseTest is Test {
         moduleRegistry.registerModule("ROYALTY_MODULE", address(royaltyModule));
         moduleRegistry.registerModule("CORE_METADATA_MODULE", address(coreMetadataModule));
         moduleRegistry.registerModule("CORE_METADATA_VIEW_MODULE", address(coreMetadataViewModule));
+
+        accessController.setAddresses(address(ipAssetRegistry), address(moduleRegistry));
+        licenseRegistry.setDisputeModule(address(disputeModule));
+        licenseRegistry.setLicensingModule(address(licensingModule));
+        licenseToken.setLicensingModule(address(licensingModule));
+        licenseToken.setDisputeModule(address(disputeModule));
+        royaltyModule.setLicensingModule(address(licensingModule));
 
         coreMetadataViewModule.updateCoreMetadataModule();
         licenseRegistry.registerLicenseTemplate(address(pilTemplate));
