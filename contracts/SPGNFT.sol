@@ -2,7 +2,7 @@
 pragma solidity ^0.8.23;
 
 import { AccessControlUpgradeable } from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import { ERC721URIStorageUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
@@ -10,7 +10,7 @@ import { ISPGNFT } from "./interfaces/ISPGNFT.sol";
 import { Errors } from "./lib/Errors.sol";
 import { SPGNFTLib } from "./lib/SPGNFTLib.sol";
 
-contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
+contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeable {
     /// @dev Storage structure for the SPGNFTSotrage.
     /// @param maxSupply The maximum supply of the collection.
     /// @param totalSupply The total minted supply of the collection.
@@ -111,17 +111,26 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
 
     /// @notice Mints an NFT from the collection. Only callable by the minter role.
     /// @param to The address of the recipient of the minted NFT.
+    /// @param nftMetadata OPTIONAL. The desired metadata for the newly minted NFT.
     /// @return tokenId The ID of the minted NFT.
-    function mint(address to) public onlyRole(SPGNFTLib.MINTER_ROLE) returns (uint256 tokenId) {
-        tokenId = _mintToken({ to: to, payer: msg.sender });
+    function mint(
+        address to,
+        string calldata nftMetadata
+    ) public onlyRole(SPGNFTLib.MINTER_ROLE) returns (uint256 tokenId) {
+        tokenId = _mintToken({ to: to, payer: msg.sender, nftMetadata: nftMetadata });
     }
 
     /// @notice Mints an NFT from the collection. Only callable by the SPG.
     /// @param to The address of the recipient of the minted NFT.
     /// @param payer The address of the payer for the mint fee.
+    /// @param nftMetadata OPTIONAL. The desired metadata for the newly minted NFT.
     /// @return tokenId The ID of the minted NFT.
-    function mintBySPG(address to, address payer) public onlySPG returns (uint256 tokenId) {
-        tokenId = _mintToken({ to: to, payer: payer });
+    function mintBySPG(
+        address to,
+        address payer,
+        string calldata nftMetadata
+    ) public onlySPG returns (uint256 tokenId) {
+        tokenId = _mintToken({ to: to, payer: payer, nftMetadata: nftMetadata });
     }
 
     /// @dev Withdraws the contract's token balance to the recipient.
@@ -135,15 +144,16 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
     /// @param interfaceId The interface identifier.
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(AccessControlUpgradeable, ERC721Upgradeable, IERC165) returns (bool) {
+    ) public view virtual override(AccessControlUpgradeable, ERC721URIStorageUpgradeable, IERC165) returns (bool) {
         return interfaceId == type(ISPGNFT).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /// @dev Mints an NFT from the collection.
     /// @param to The address of the recipient of the minted NFT.
     /// @param payer The address of the payer for the mint fee.
+    /// @param nftMetadata OPTIONAL. The desired metadata for the newly minted NFT.
     /// @return tokenId The ID of the minted NFT.
-    function _mintToken(address to, address payer) internal returns (uint256 tokenId) {
+    function _mintToken(address to, address payer, string calldata nftMetadata) internal returns (uint256 tokenId) {
         SPGNFTStorage storage $ = _getSPGNFTStorage();
         if ($.totalSupply + 1 > $.maxSupply) revert Errors.SPGNFT__MaxSupplyReached();
 
@@ -153,6 +163,8 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
 
         tokenId = ++$.totalSupply;
         _mint(to, tokenId);
+
+        if (bytes(nftMetadata).length > 0) _setTokenURI(tokenId, nftMetadata);
     }
 
     //

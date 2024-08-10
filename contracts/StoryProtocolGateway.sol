@@ -135,34 +135,36 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
     /// @dev Caller must have the minter role for the provided SPG NFT.
     /// @param nftContract The address of the NFT collection.
     /// @param recipient The address of the recipient of the minted NFT.
-    /// @param metadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param nftMetadata OPTIONAL. The desired metadata for the newly minted NFT.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @return ipId The ID of the registered IP.
     /// @return tokenId The ID of the minted NFT.
     function mintAndRegisterIp(
         address nftContract,
         address recipient,
-        IPMetadata calldata metadata
+        string calldata nftMetadata,
+        IPMetadata calldata ipMetadata
     ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId) {
-        tokenId = ISPGNFT(nftContract).mintBySPG({ to: address(this), payer: msg.sender });
+        tokenId = ISPGNFT(nftContract).mintBySPG({ to: address(this), payer: msg.sender, nftMetadata: nftMetadata });
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        _setMetadata(metadata, ipId);
+        _setMetadata(ipMetadata, ipId);
         ISPGNFT(nftContract).safeTransferFrom(address(this), recipient, tokenId, "");
     }
 
     /// @notice Registers an NFT as IP with metadata.
     /// @param nftContract The address of the NFT collection.
     /// @param tokenId The ID of the NFT.
-    /// @param metadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
     /// @return ipId The ID of the registered IP.
     function registerIp(
         address nftContract,
         uint256 tokenId,
-        IPMetadata calldata metadata,
+        IPMetadata calldata ipMetadata,
         SignatureData calldata sigMetadata
     ) external returns (address ipId) {
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        _setMetadataWithSig(metadata, ipId, sigMetadata);
+        _setMetadataWithSig(ipMetadata, ipId, sigMetadata);
     }
 
     /// @notice Register Programmable IP License Terms (if unregistered) and attach it to IP.
@@ -181,7 +183,8 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
     /// @dev Caller must have the minter role for the provided SPG NFT.
     /// @param nftContract The address of the NFT collection.
     /// @param recipient The address of the recipient of the minted NFT.
-    /// @param metadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param nftMetadata OPTIONAL. The desired metadata for the newly minted NFT.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param terms The PIL terms to be registered.
     /// @return ipId The ID of the registered IP.
     /// @return tokenId The ID of the minted NFT.
@@ -189,12 +192,13 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
     function mintAndRegisterIpAndAttachPILTerms(
         address nftContract,
         address recipient,
-        IPMetadata calldata metadata,
+        string calldata nftMetadata,
+        IPMetadata calldata ipMetadata,
         PILTerms calldata terms
     ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId, uint256 licenseTermsId) {
-        tokenId = ISPGNFT(nftContract).mintBySPG({ to: address(this), payer: msg.sender });
+        tokenId = ISPGNFT(nftContract).mintBySPG({ to: address(this), payer: msg.sender, nftMetadata: nftMetadata });
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        _setMetadata(metadata, ipId);
+        _setMetadata(ipMetadata, ipId);
 
         licenseTermsId = _registerPILTermsAndAttach(ipId, terms);
         ISPGNFT(nftContract).safeTransferFrom(address(this), recipient, tokenId, "");
@@ -205,7 +209,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
     /// contract to attach PIL Terms to the newly created IP Account in the same function.
     /// @param nftContract The address of the NFT collection.
     /// @param tokenId The ID of the NFT.
-    /// @param metadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param terms The PIL terms to be registered.
     /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
     /// @param sigAttach Signature data for attachLicenseTerms to the IP via the Licensing Module. The nonce of this
@@ -215,13 +219,13 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
     function registerIpAndAttachPILTerms(
         address nftContract,
         uint256 tokenId,
-        IPMetadata calldata metadata,
+        IPMetadata calldata ipMetadata,
         PILTerms calldata terms,
         SignatureData calldata sigMetadata,
         SignatureData calldata sigAttach
     ) external returns (address ipId, uint256 licenseTermsId) {
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        _setMetadataWithSig(metadata, ipId, sigMetadata);
+        _setMetadataWithSig(ipMetadata, ipId, sigMetadata);
         _setPermissionForModule(
             ipId,
             sigAttach,
@@ -235,18 +239,20 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
     /// @dev Caller must have the minter role for the provided SPG NFT.
     /// @param nftContract The address of the NFT collection.
     /// @param derivData The derivative data to be used for registerDerivative.
-    /// @param metadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param nftMetadata OPTIONAL. The desired metadata for the newly minted NFT.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @return ipId The ID of the registered IP.
     /// @return tokenId The ID of the minted NFT.
     function mintAndRegisterIpAndMakeDerivative(
         address nftContract,
         MakeDerivative calldata derivData,
-        IPMetadata calldata metadata,
+        string calldata nftMetadata,
+        IPMetadata calldata ipMetadata,
         address recipient
     ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId) {
-        tokenId = ISPGNFT(nftContract).mintBySPG({ to: address(this), payer: msg.sender });
+        tokenId = ISPGNFT(nftContract).mintBySPG({ to: address(this), payer: msg.sender, nftMetadata: nftMetadata });
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        _setMetadata(metadata, ipId);
+        _setMetadata(ipMetadata, ipId);
 
         LICENSING_MODULE.registerDerivative({
             childIpId: ipId,
@@ -263,7 +269,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
     /// @param nftContract The address of the NFT collection.
     /// @param tokenId The ID of the NFT.
     /// @param derivData The derivative data to be used for registerDerivative.
-    /// @param metadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
     /// @param sigRegister Signature data for registerDerivative for the IP via the Licensing Module.
     /// @return ipId The ID of the registered IP.
@@ -271,12 +277,12 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
         address nftContract,
         uint256 tokenId,
         MakeDerivative calldata derivData,
-        IPMetadata calldata metadata,
+        IPMetadata calldata ipMetadata,
         SignatureData calldata sigMetadata,
         SignatureData calldata sigRegister
     ) external returns (address ipId) {
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        _setMetadataWithSig(metadata, ipId, sigMetadata);
+        _setMetadataWithSig(ipMetadata, ipId, sigMetadata);
         _setPermissionForModule(
             ipId,
             sigRegister,
@@ -297,7 +303,8 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
     /// @param nftContract The address of the NFT collection.
     /// @param licenseTokenIds The IDs of the license tokens to be burned for linking the IP to parent IPs.
     /// @param royaltyContext The context for royalty module, should be empty for Royalty Policy LAP.
-    /// @param metadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param nftMetadata OPTIONAL. The desired metadata for the newly minted NFT.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param recipient The address to receive the minted NFT.
     /// @return ipId The ID of the registered IP.
     /// @return tokenId The ID of the minted NFT.
@@ -305,14 +312,15 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
         address nftContract,
         uint256[] calldata licenseTokenIds,
         bytes calldata royaltyContext,
-        IPMetadata calldata metadata,
+        string calldata nftMetadata,
+        IPMetadata calldata ipMetadata,
         address recipient
     ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId) {
         _transferLicenseTokens(licenseTokenIds);
 
-        tokenId = ISPGNFT(nftContract).mintBySPG({ to: address(this), payer: msg.sender });
+        tokenId = ISPGNFT(nftContract).mintBySPG({ to: address(this), payer: msg.sender, nftMetadata: nftMetadata });
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        _setMetadata(metadata, ipId);
+        _setMetadata(ipMetadata, ipId);
 
         LICENSING_MODULE.registerDerivativeWithLicenseTokens(ipId, licenseTokenIds, royaltyContext);
 
@@ -324,7 +332,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
     /// @param tokenId The ID of the NFT.
     /// @param licenseTokenIds The IDs of the license tokens to be burned for linking the IP to parent IPs.
     /// @param royaltyContext The context for royalty module, should be empty for Royalty Policy LAP.
-    /// @param metadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
     /// @param sigRegister Signature data for registerDerivativeWithLicenseTokens for the IP via the Licensing Module.
     /// @return ipId The ID of the registered IP.
@@ -333,12 +341,12 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
         uint256 tokenId,
         uint256[] calldata licenseTokenIds,
         bytes calldata royaltyContext,
-        IPMetadata calldata metadata,
+        IPMetadata calldata ipMetadata,
         SignatureData calldata sigMetadata,
         SignatureData calldata sigRegister
     ) external returns (address ipId) {
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        _setMetadataWithSig(metadata, ipId, sigMetadata);
+        _setMetadataWithSig(ipMetadata, ipId, sigMetadata);
         _setPermissionForModule(
             ipId,
             sigRegister,
@@ -400,28 +408,37 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
     }
 
     /// @dev Sets the metadata for the given IP if metadata is non-empty.
-    /// @param metadata The metadata to set.
+    /// @param ipMetadata The metadata to set.
     /// @param ipId The ID of the IP.
-    function _setMetadata(IPMetadata calldata metadata, address ipId) internal {
+    function _setMetadata(IPMetadata calldata ipMetadata, address ipId) internal {
         if (
-            keccak256(abi.encodePacked(metadata.metadataURI)) != keccak256("") ||
-            metadata.metadataHash != bytes32(0) ||
-            metadata.nftMetadataHash != bytes32(0)
+            keccak256(abi.encodePacked(ipMetadata.metadataURI)) != keccak256("") ||
+            ipMetadata.metadataHash != bytes32(0) ||
+            ipMetadata.nftMetadataHash != bytes32(0)
         ) {
-            CORE_METADATA_MODULE.setAll(ipId, metadata.metadataURI, metadata.metadataHash, metadata.nftMetadataHash);
+            CORE_METADATA_MODULE.setAll(
+                ipId,
+                ipMetadata.metadataURI,
+                ipMetadata.metadataHash,
+                ipMetadata.nftMetadataHash
+            );
         }
     }
 
     /// @dev Sets the permission for SPG to set the metadata for the given IP, and the metadata for the given IP if
     /// metadata is non-empty and sets the metadata via signature.
-    /// @param metadata The metadata to set.
+    /// @param ipMetadata The metadata to set.
     /// @param ipId The ID of the IP.
     /// @param sigData Signature data for setAll for this IP by SPG via the Core Metadata Module.
-    function _setMetadataWithSig(IPMetadata calldata metadata, address ipId, SignatureData calldata sigData) internal {
+    function _setMetadataWithSig(
+        IPMetadata calldata ipMetadata,
+        address ipId,
+        SignatureData calldata sigData
+    ) internal {
         if (sigData.signer != address(0) && sigData.deadline != 0 && sigData.signature.length != 0) {
             _setPermissionForModule(ipId, sigData, address(CORE_METADATA_MODULE), ICoreMetadataModule.setAll.selector);
         }
-        _setMetadata(metadata, ipId);
+        _setMetadata(ipMetadata, ipId);
     }
 
     //

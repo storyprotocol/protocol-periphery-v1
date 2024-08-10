@@ -61,25 +61,27 @@ interface IStoryProtocolGateway {
     /// @dev Caller must have the minter role for the provided SPG NFT.
     /// @param nftContract The address of the NFT collection.
     /// @param recipient The address of the recipient of the minted NFT.
-    /// @param metadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param nftMetadata OPTIONAL. The desired metadata for the newly minted NFT.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @return ipId The ID of the registered IP.
     /// @return tokenId The ID of the minted NFT.
     function mintAndRegisterIp(
         address nftContract,
         address recipient,
-        IPMetadata calldata metadata
+        string calldata nftMetadata,
+        IPMetadata calldata ipMetadata
     ) external returns (address ipId, uint256 tokenId);
 
     /// @notice Registers an NFT as IP with metadata.
     /// @param nftContract The address of the NFT collection.
     /// @param tokenId The ID of the NFT.
-    /// @param metadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
     /// @return ipId The ID of the registered IP.
     function registerIp(
         address nftContract,
         uint256 tokenId,
-        IPMetadata calldata metadata,
+        IPMetadata calldata ipMetadata,
         SignatureData calldata sigMetadata
     ) external returns (address ipId);
 
@@ -94,7 +96,8 @@ interface IStoryProtocolGateway {
     /// @dev Caller must have the minter role for the provided SPG NFT.
     /// @param nftContract The address of the NFT collection.
     /// @param recipient The address of the recipient of the minted NFT.
-    /// @param metadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param nftMetadata OPTIONAL. The desired metadata for the newly minted NFT.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param terms The PIL terms to be registered.
     /// @return ipId The ID of the registered IP.
     /// @return tokenId The ID of the minted NFT.
@@ -102,7 +105,8 @@ interface IStoryProtocolGateway {
     function mintAndRegisterIpAndAttachPILTerms(
         address nftContract,
         address recipient,
-        IPMetadata calldata metadata,
+        string calldata nftMetadata,
+        IPMetadata calldata ipMetadata,
         PILTerms calldata terms
     ) external returns (address ipId, uint256 tokenId, uint256 licenseTermsId);
 
@@ -111,7 +115,7 @@ interface IStoryProtocolGateway {
     /// contract to attach PIL Terms to the newly created IP Account in the same function.
     /// @param nftContract The address of the NFT collection.
     /// @param tokenId The ID of the NFT.
-    /// @param metadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param terms The PIL terms to be registered.
     /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
     /// @param sigAttach Signature data for attachLicenseTerms to the IP via the Licensing Module.
@@ -120,7 +124,7 @@ interface IStoryProtocolGateway {
     function registerIpAndAttachPILTerms(
         address nftContract,
         uint256 tokenId,
-        IPMetadata calldata metadata,
+        IPMetadata calldata ipMetadata,
         PILTerms calldata terms,
         SignatureData calldata sigMetadata,
         SignatureData calldata sigAttach
@@ -130,13 +134,15 @@ interface IStoryProtocolGateway {
     /// @dev Caller must have the minter role for the provided SPG NFT.
     /// @param nftContract The address of the NFT collection.
     /// @param derivData The derivative data to be used for registerDerivative.
-    /// @param metadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param nftMetadata OPTIONAL. The desired metadata for the newly minted NFT.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @return ipId The ID of the registered IP.
     /// @return tokenId The ID of the minted NFT.
     function mintAndRegisterIpAndMakeDerivative(
         address nftContract,
         MakeDerivative calldata derivData,
-        IPMetadata calldata metadata,
+        string calldata nftMetadata,
+        IPMetadata calldata ipMetadata,
         address recipient
     ) external returns (address ipId, uint256 tokenId);
 
@@ -144,7 +150,7 @@ interface IStoryProtocolGateway {
     /// @param nftContract The address of the NFT collection.
     /// @param tokenId The ID of the NFT.
     /// @param derivData The derivative data to be used for registerDerivative.
-    /// @param metadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
     /// @param sigRegister Signature data for registerDerivative for the IP via the Licensing Module.
     /// @return ipId The ID of the registered IP.
@@ -152,7 +158,7 @@ interface IStoryProtocolGateway {
         address nftContract,
         uint256 tokenId,
         MakeDerivative calldata derivData,
-        IPMetadata calldata metadata,
+        IPMetadata calldata ipMetadata,
         SignatureData calldata sigMetadata,
         SignatureData calldata sigRegister
     ) external returns (address ipId);
@@ -162,7 +168,8 @@ interface IStoryProtocolGateway {
     /// @param nftContract The address of the NFT collection.
     /// @param licenseTokenIds The IDs of the license tokens to be burned for linking the IP to parent IPs.
     /// @param royaltyContext The context for royalty module, should be empty for Royalty Policy LAP.
-    /// @param metadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param nftMetadata OPTIONAL. The desired metadata for the newly minted NFT.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param recipient The address to receive the minted NFT.
     /// @return ipId The ID of the registered IP.
     /// @return tokenId The ID of the minted NFT.
@@ -170,7 +177,8 @@ interface IStoryProtocolGateway {
         address nftContract,
         uint256[] calldata licenseTokenIds,
         bytes calldata royaltyContext,
-        IPMetadata calldata metadata,
+        string calldata nftMetadata,
+        IPMetadata calldata ipMetadata,
         address recipient
     ) external returns (address ipId, uint256 tokenId);
 
@@ -179,7 +187,7 @@ interface IStoryProtocolGateway {
     /// @param tokenId The ID of the NFT.
     /// @param licenseTokenIds The IDs of the license tokens to be burned for linking the IP to parent IPs.
     /// @param royaltyContext The context for royalty module, should be empty for Royalty Policy LAP.
-    /// @param metadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
     /// @param sigRegister Signature data for registerDerivativeWithLicenseTokens for the IP via the Licensing Module.
     /// @return ipId The ID of the registered IP.
@@ -188,7 +196,7 @@ interface IStoryProtocolGateway {
         uint256 tokenId,
         uint256[] calldata licenseTokenIds,
         bytes calldata royaltyContext,
-        IPMetadata calldata metadata,
+        IPMetadata calldata ipMetadata,
         SignatureData calldata sigMetadata,
         SignatureData calldata sigRegister
     ) external returns (address ipId);
