@@ -13,9 +13,17 @@ import { IAccessController } from "@storyprotocol/core/interfaces/access/IAccess
 // solhint-disable-next-line max-line-length
 import { IPILicenseTemplate, PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
+import { ILicenseTemplate } from "@storyprotocol/core/interfaces/modules/licensing/ILicenseTemplate.sol";
+import { ILicenseRegistry } from "@storyprotocol/core/interfaces/registries/ILicenseRegistry.sol";
+import { ILicensingHook } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingHook.sol";
+import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
+import { IRoyaltyModule } from "@storyprotocol/core/interfaces/modules/royalty/IRoyaltyModule.sol";
+
 import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
 import { IIPAssetRegistry } from "@storyprotocol/core/interfaces/registries/IIPAssetRegistry.sol";
 import { AccessPermission } from "@storyprotocol/core/lib/AccessPermission.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { IStoryProtocolGateway } from "./interfaces/IStoryProtocolGateway.sol";
 import { ISPGNFT } from "./interfaces/ISPGNFT.sol";
@@ -24,6 +32,7 @@ import { SPGNFTLib } from "./lib/SPGNFTLib.sol";
 
 contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable, UUPSUpgradeable {
     using ERC165Checker for address;
+    using SafeERC20 for IERC20;
 
     /// @dev Storage structure for the SPG
     /// @param nftContractBeacon The address of the NFT contract beacon.
@@ -43,6 +52,12 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
 
     /// @notice The address of the Licensing Module.
     ILicensingModule public immutable LICENSING_MODULE;
+
+    /// @notice The address of the License Registry.
+    ILicenseRegistry public immutable LICENSE_REGISTRY;
+
+    /// @notice The address of the Royalty Module.
+    IRoyaltyModule public immutable ROYALTY_MODULE;
 
     /// @notice The address of the Core Metadata Module.
     ICoreMetadataModule public immutable CORE_METADATA_MODULE;
@@ -65,6 +80,8 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
         address accessController,
         address ipAssetRegistry,
         address licensingModule,
+        address licenseRegistry,
+        address royaltyModule,
         address coreMetadataModule,
         address pilTemplate,
         address licenseToken
@@ -73,6 +90,8 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
             accessController == address(0) ||
             ipAssetRegistry == address(0) ||
             licensingModule == address(0) ||
+            licenseRegistry == address(0) ||
+            royaltyModule == address(0) ||
             coreMetadataModule == address(0) ||
             licenseToken == address(0)
         ) revert Errors.SPG__ZeroAddressParam();
@@ -80,6 +99,8 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
         ACCESS_CONTROLLER = IAccessController(accessController);
         IP_ASSET_REGISTRY = IIPAssetRegistry(ipAssetRegistry);
         LICENSING_MODULE = ILicensingModule(licensingModule);
+        LICENSE_REGISTRY = ILicenseRegistry(licenseRegistry);
+        ROYALTY_MODULE = IRoyaltyModule(royaltyModule);
         CORE_METADATA_MODULE = ICoreMetadataModule(coreMetadataModule);
         PIL_TEMPLATE = IPILicenseTemplate(pilTemplate);
         LICENSE_TOKEN = ILicenseToken(licenseToken);
@@ -254,6 +275,14 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
         _setMetadata(ipMetadata, ipId);
 
+        _collectMintFeesAndSetApproval(
+            msg.sender,
+            ipId,
+            derivData.parentIpIds,
+            derivData.licenseTemplate,
+            derivData.licenseTermsIds
+        );
+
         LICENSING_MODULE.registerDerivative({
             childIpId: ipId,
             parentIpIds: derivData.parentIpIds,
@@ -289,6 +318,15 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
             address(LICENSING_MODULE),
             ILicensingModule.registerDerivative.selector
         );
+
+        _collectMintFeesAndSetApproval(
+            msg.sender,
+            ipId,
+            derivData.parentIpIds,
+            derivData.licenseTemplate,
+            derivData.licenseTermsIds
+        );
+
         LICENSING_MODULE.registerDerivative({
             childIpId: ipId,
             parentIpIds: derivData.parentIpIds,
@@ -439,6 +477,109 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
             _setPermissionForModule(ipId, sigData, address(CORE_METADATA_MODULE), ICoreMetadataModule.setAll.selector);
         }
         _setMetadata(ipMetadata, ipId);
+    }
+
+    /// @dev Collect mint fees for all parent IPs from the payer and set approval for Royalty Module to spend mint fees.
+    /// @param payerAddress The address of the payer for the license mint fees.
+    /// @param childIpId The ID of the derivative IP.
+    /// @param parentIpIds The IDs of all the parent IPs.
+    /// @param licenseTemplate The address of the license template.
+    /// @param licenseTermsIds The IDs of the license terms for each corresponding parent IP.
+    function _collectMintFeesAndSetApproval(
+        address payerAddress,
+        address childIpId,
+        address[] calldata parentIpIds,
+        address licenseTemplate,
+        uint256[] calldata licenseTermsIds
+    ) private {
+        // Get currency token and royalty policy, assumes all parent IPs have the same currency token.
+        ILicenseTemplate lct = ILicenseTemplate(licenseTemplate);
+        (address royaltyPolicy, , , address mintFeeCurrencyToken) = lct.getRoyaltyPolicy(licenseTermsIds[0]);
+
+        if (royaltyPolicy != address(0)) {
+            // Get total mint fee for all parent IPs
+            uint256 totalMintFee = _aggregateMintFees(parentIpIds, childIpId, licenseTemplate, licenseTermsIds);
+
+            if (totalMintFee != 0) {
+                // Transfer mint fee from payer to this contract
+                IERC20(mintFeeCurrencyToken).safeTransferFrom(payerAddress, address(this), totalMintFee);
+
+                // Approve Royalty Policy to spend mint fee
+                IERC20(mintFeeCurrencyToken).forceApprove(royaltyPolicy, totalMintFee);
+            }
+        }
+    }
+
+    /// @dev Aggregate license mint fees for all parent IPs.
+    /// @param parentIpIds The IDs of all the parent IPs.
+    /// @param childIpId The ID of the derivative IP.
+    /// @param licenseTemplate The address of the license template.
+    /// @param licenseTermsIds The IDs of the license terms for each corresponding parent IP.
+    /// @return totalMintFee The sum of license mint fees across all parent IPs.
+    function _aggregateMintFees(
+        address[] calldata parentIpIds,
+        address childIpId,
+        address licenseTemplate,
+        uint256[] calldata licenseTermsIds
+    ) private returns (uint256 totalMintFee) {
+        totalMintFee = 0;
+
+        for (uint256 i = 0; i < parentIpIds.length; i++) {
+            totalMintFee += _getMintFeeForSingleParent(
+                childIpId,
+                parentIpIds[i],
+                licenseTemplate,
+                licenseTermsIds[i],
+                1
+            );
+        }
+    }
+
+    /// @dev Fetch the license token mint fee from the licensing hook or license terms for the given parent IP.
+    /// @param childIpId The ID of the derivative IP.
+    /// @param parentIpId The ID of the parent IP.
+    /// @param licenseTemplate The address of the license template.
+    /// @param licenseTermsId The ID of the license terms for the parent IP.
+    /// @param amount The amount of licenses to mint.
+    function _getMintFeeForSingleParent(
+        address childIpId,
+        address parentIpId,
+        address licenseTemplate,
+        uint256 licenseTermsId,
+        uint256 amount
+    ) private returns (uint256) {
+        ILicenseTemplate lct = ILicenseTemplate(licenseTemplate);
+
+        // Get mint fee set by license terms
+        (address royaltyPolicy, , uint256 mintFeeSetByLicenseTerms, ) = lct.getRoyaltyPolicy(licenseTermsId);
+
+        // If no royalty policy, return 0
+        if (royaltyPolicy == address(0)) return 0;
+
+        uint256 mintFeeSetByHook = 0;
+
+        Licensing.LicensingConfig memory licensingConfig = LICENSE_REGISTRY.getLicensingConfig(
+            parentIpId,
+            licenseTemplate,
+            licenseTermsId
+        );
+
+        // Get mint fee from licensing hook
+        if (licensingConfig.licensingHook != address(0)) {
+            mintFeeSetByHook = ILicensingHook(licensingConfig.licensingHook).beforeRegisterDerivative(
+                address(this),
+                childIpId,
+                parentIpId,
+                licenseTemplate,
+                licenseTermsId,
+                licensingConfig.hookData
+            );
+        }
+
+        if (!licensingConfig.isSet) return mintFeeSetByLicenseTerms * amount;
+        if (licensingConfig.licensingHook == address(0)) return licensingConfig.mintingFee * amount;
+
+        return mintFeeSetByHook;
     }
 
     //
