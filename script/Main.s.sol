@@ -57,6 +57,8 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
                 accessControllerAddr,
                 ipAssetRegistryAddr,
                 licensingModuleAddr,
+                licenseRegistryAddr,
+                royaltyModuleAddr,
                 coreMetadataModuleAddr,
                 pilTemplateAddr,
                 licenseTokenAddr

@@ -10,6 +10,8 @@ contract StoryProtocolCoreAddressManager is Script {
     address internal protocolAccessManagerAddr;
     address internal ipAssetRegistryAddr;
     address internal licensingModuleAddr;
+    address internal licenseRegistryAddr;
+    address internal royaltyModuleAddr;
     address internal coreMetadataModuleAddr;
     address internal accessControllerAddr;
     address internal pilTemplateAddr;
@@ -31,6 +33,8 @@ contract StoryProtocolCoreAddressManager is Script {
         protocolAccessManagerAddr = json.readAddress(".main.ProtocolAccessManager");
         ipAssetRegistryAddr = json.readAddress(".main.IPAssetRegistry");
         licensingModuleAddr = json.readAddress(".main.LicensingModule");
+        licenseRegistryAddr = json.readAddress(".main.LicenseRegistry");
+        royaltyModuleAddr = json.readAddress(".main.RoyaltyModule");
         coreMetadataModuleAddr = json.readAddress(".main.CoreMetadataModule");
         accessControllerAddr = json.readAddress(".main.AccessController");
         pilTemplateAddr = json.readAddress(".main.PILicenseTemplate");

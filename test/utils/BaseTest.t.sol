@@ -16,6 +16,8 @@ import { PILicenseTemplate } from "@storyprotocol/core/modules/licensing/PILicen
 import { LicensingModule } from "@storyprotocol/core/modules/licensing/LicensingModule.sol";
 import { DisputeModule } from "@storyprotocol/core/modules/dispute/DisputeModule.sol";
 import { RoyaltyModule } from "@storyprotocol/core/modules/royalty/RoyaltyModule.sol";
+import { RoyaltyPolicyLAP } from "@storyprotocol/core/modules/royalty/policies/RoyaltyPolicyLAP.sol";
+import { IpRoyaltyVault } from "@storyprotocol/core/modules/royalty/policies/IpRoyaltyVault.sol";
 import { CoreMetadataModule } from "@storyprotocol/core/modules/metadata/CoreMetadataModule.sol";
 import { CoreMetadataViewModule } from "@storyprotocol/core/modules/metadata/CoreMetadataViewModule.sol";
 
@@ -39,6 +41,10 @@ contract BaseTest is Test {
     IPAssetRegistry internal ipAssetRegistry;
     LicenseRegistry internal licenseRegistry;
     LicensingModule internal licensingModule;
+    RoyaltyModule internal royaltyModule;
+    RoyaltyPolicyLAP internal royaltyPolicyLAP;
+    UpgradeableBeacon internal ipRoyaltyVaultBeacon;
+    IpRoyaltyVault internal ipRoyaltyVaultImpl;
     CoreMetadataModule internal coreMetadataModule;
     CoreMetadataViewModule internal coreMetadataViewModule;
     PILicenseTemplate internal pilTemplate;
@@ -195,7 +201,7 @@ contract BaseTest is Test {
                 address(licenseRegistry)
             )
         );
-        RoyaltyModule royaltyModule = RoyaltyModule(
+        royaltyModule = RoyaltyModule(
             TestProxyHelper.deployUUPSProxy(
                 create3Deployer,
                 _getSalt(type(RoyaltyModule).name),
@@ -233,6 +239,41 @@ contract BaseTest is Test {
             "Deploy: Licensing Module Address Mismatch"
         );
         require(_loadProxyImpl(address(licensingModule)) == impl, "LicensingModule Proxy Implementation Mismatch");
+
+        impl = address(new RoyaltyPolicyLAP(address(royaltyModule), address(licensingModule)));
+        royaltyPolicyLAP = RoyaltyPolicyLAP(
+            TestProxyHelper.deployUUPSProxy(
+                create3Deployer,
+                _getSalt(type(RoyaltyPolicyLAP).name),
+                impl,
+                abi.encodeCall(RoyaltyPolicyLAP.initialize, address(protocolAccessManager))
+            )
+        );
+        require(
+            _getDeployedAddress(type(RoyaltyPolicyLAP).name) == address(royaltyPolicyLAP),
+            "Deploy: Royalty Policy LAP Address Mismatch"
+        );
+        require(_loadProxyImpl(address(royaltyPolicyLAP)) == impl, "RoyaltyPolicyLAP Proxy Implementation Mismatch");
+
+        ipRoyaltyVaultImpl = IpRoyaltyVault(
+            create3Deployer.deploy(
+                _getSalt(type(IpRoyaltyVault).name),
+                abi.encodePacked(
+                    type(IpRoyaltyVault).creationCode,
+                    abi.encode(address(royaltyPolicyLAP), address(disputeModule))
+                )
+            )
+        );
+
+        ipRoyaltyVaultBeacon = UpgradeableBeacon(
+            create3Deployer.deploy(
+                _getSalt("ipRoyaltyVaultBeacon"),
+                abi.encodePacked(
+                    type(UpgradeableBeacon).creationCode,
+                    abi.encode(address(ipRoyaltyVaultImpl), deployer)
+                )
+            )
+        );
 
         impl = address(new LicenseToken(address(licensingModule), address(disputeModule)));
         licenseToken = LicenseToken(
@@ -312,6 +353,10 @@ contract BaseTest is Test {
 
         coreMetadataViewModule.updateCoreMetadataModule();
         licenseRegistry.registerLicenseTemplate(address(pilTemplate));
+
+        royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLAP), true);
+        royaltyPolicyLAP.setIpRoyaltyVaultBeacon(address(ipRoyaltyVaultBeacon));
+        ipRoyaltyVaultBeacon.transferOwnership(address(royaltyPolicyLAP));
     }
 
     function setUp_test_Periphery() public {
@@ -320,6 +365,8 @@ contract BaseTest is Test {
                 address(accessController),
                 address(ipAssetRegistry),
                 address(licensingModule),
+                address(licenseRegistry),
+                address(royaltyModule),
                 address(coreMetadataModule),
                 address(pilTemplate),
                 address(licenseToken)
@@ -358,6 +405,7 @@ contract BaseTest is Test {
 
     function setUp_test_Misc() public {
         mockToken = new MockERC20();
+        royaltyModule.whitelistRoyaltyToken(address(mockToken), true);
 
         vm.label(alice, "Alice");
         vm.label(bob, "Bob");
