@@ -403,6 +403,11 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
         PILTerms calldata terms
     ) internal returns (uint256 licenseTermsId) {
         licenseTermsId = PIL_TEMPLATE.registerLicenseTerms(terms);
+
+        // Returns the license terms ID if already attached.
+        if (LICENSE_REGISTRY.hasIpAttachedLicenseTerms(ipId, address(PIL_TEMPLATE), licenseTermsId))
+            return licenseTermsId;
+
         LICENSING_MODULE.attachLicenseTerms(ipId, address(PIL_TEMPLATE), licenseTermsId);
     }
 
