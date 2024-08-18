@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.23;
 
-import "forge-std/console.sol";
 import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { AccessPermission } from "@storyprotocol/core/lib/AccessPermission.sol";
@@ -135,7 +134,7 @@ contract StoryProtocolGatewayTest is BaseTest {
 
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory sigMetadata, bytes32 expectedState ,) = _getSetPermissionSignatureForSPG({
+        (bytes memory sigMetadata, bytes32 expectedState, ) = _getSetPermissionSignatureForSPG({
             ipId: expectedIpId,
             module: address(coreMetadataModule),
             selector: ICoreMetadataModule.setAll.selector,
@@ -176,7 +175,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         address payable ipId = ipAsset[1].ipId;
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory signature, ,bytes memory data) = _getSetPermissionSignatureForSPG({
+        (bytes memory signature, , bytes memory data) = _getSetPermissionSignatureForSPG({
             ipId: ipId,
             module: address(licensingModule),
             selector: ILicensingModule.attachLicenseTerms.selector,
@@ -264,7 +263,7 @@ contract StoryProtocolGatewayTest is BaseTest {
             signerPk: alicePk
         });
 
-        (bytes memory sigAttach, ,) = _getSetPermissionSignatureForSPG({
+        (bytes memory sigAttach, , ) = _getSetPermissionSignatureForSPG({
             ipId: ipId,
             module: address(licensingModule),
             selector: ILicensingModule.attachLicenseTerms.selector,
@@ -437,7 +436,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         licenseTokenIds[0] = startLicenseTokenId;
         licenseToken.approve(address(spg), startLicenseTokenId);
 
-        (bytes memory sigMetadata, bytes32 expectedState,) = _getSetPermissionSignatureForSPG({
+        (bytes memory sigMetadata, bytes32 expectedState, ) = _getSetPermissionSignatureForSPG({
             ipId: ipIdChild,
             module: address(coreMetadataModule),
             selector: ICoreMetadataModule.setAll.selector,
@@ -523,7 +522,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         bytes32 state,
         uint256 signerPk
     ) internal returns (bytes memory signature, bytes32 expectedState, bytes memory data) {
-            expectedState = keccak256(
+        expectedState = keccak256(
             abi.encode(
                 state, // ipAccount.state()
                 abi.encodeWithSignature(
@@ -631,7 +630,7 @@ contract StoryProtocolGatewayTest is BaseTest {
             state: bytes32(0),
             signerPk: alicePk
         });
-        (bytes memory sigRegister, ,) = _getSetPermissionSignatureForSPG({
+        (bytes memory sigRegister, , ) = _getSetPermissionSignatureForSPG({
             ipId: ipIdChild,
             module: address(licensingModule),
             selector: ILicensingModule.registerDerivative.selector,

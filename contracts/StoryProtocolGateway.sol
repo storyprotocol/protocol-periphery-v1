@@ -487,7 +487,8 @@ contract StoryProtocolGateway is IStoryProtocolGateway, ERC721Holder, AccessMana
             address tokenOwner = LICENSE_TOKEN.ownerOf(licenseTokenIds[i]);
 
             if (tokenOwner == address(this)) continue;
-            if (tokenOwner != address(msg.sender)) revert Errors.SPG__CallerAndNotTokenOwner(licenseTokenIds[i], msg.sender, tokenOwner);
+            if (tokenOwner != address(msg.sender))
+                revert Errors.SPG__CallerAndNotTokenOwner(licenseTokenIds[i], msg.sender, tokenOwner);
 
             LICENSE_TOKEN.safeTransferFrom(msg.sender, address(this), licenseTokenIds[i]);
         }

@@ -14,11 +14,7 @@ library Errors {
     error SPG__EmptyLicenseTokens();
 
     /// @notice License token is not owned by the either caller.
-     error SPG__CallerAndNotTokenOwner(
-        uint256 tokenId,
-        address caller,
-        address actualTokenOwner
-    );
+    error SPG__CallerAndNotTokenOwner(uint256 tokenId, address caller, address actualTokenOwner);
 
     /// @notice Zero address provided as a param.
     error SPGNFT__ZeroAddressParam();
