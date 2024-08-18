@@ -117,7 +117,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     function mint(
         address to,
         string calldata nftMetadata
-    ) public onlyRole(SPGNFTLib.MINTER_ROLE) returns (uint256 tokenId) {
+    ) public virtual onlyRole(SPGNFTLib.MINTER_ROLE) returns (uint256 tokenId) {
         tokenId = _mintToken({ to: to, payer: msg.sender, nftMetadata: nftMetadata });
     }
 
@@ -130,7 +130,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         address to,
         address payer,
         string calldata nftMetadata
-    ) public onlySPG returns (uint256 tokenId) {
+    ) public virtual onlySPG returns (uint256 tokenId) {
         tokenId = _mintToken({ to: to, payer: payer, nftMetadata: nftMetadata });
     }
 
