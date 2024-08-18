@@ -41,6 +41,7 @@
     "@openzeppelin/contracts-upgradeable": "5.0.1",
     "@story-protocol/create3-deployer": "github:storyprotocol/create3-deployer#main",
     "@story-protocol/protocol-core": "github:storyprotocol/protocol-core-v1#main",
+    "erc6551": "^0.3.1",
     "solady": "^0.0.192"
   }
 }
