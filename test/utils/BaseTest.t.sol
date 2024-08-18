@@ -25,6 +25,7 @@ import { StoryProtocolGateway } from "../../contracts/StoryProtocolGateway.sol";
 import { SPGNFT } from "../../contracts/SPGNFT.sol";
 import { TestProxyHelper } from "./TestProxyHelper.t.sol";
 import { MockERC20 } from "../mocks/MockERC20.sol";
+import { MockIPGraph } from "../mocks/MockIPGraph.sol";
 
 /// @title Base Test Contract
 contract BaseTest is Test {
@@ -55,6 +56,7 @@ contract BaseTest is Test {
     UpgradeableBeacon internal spgNftBeacon;
 
     MockERC20 internal mockToken;
+    MockIPGraph ipGraph = MockIPGraph(address(0x1A));
 
     uint256 internal deployerPk = 0xddd111;
     uint256 internal alicePk = 0xa11ce;
@@ -70,6 +72,7 @@ contract BaseTest is Test {
         create3Deployer = new Create3Deployer();
         create3SaltSeed = 1;
 
+        vm.etch(address(0x1A), address(new MockIPGraph()).code);
         vm.startPrank(deployer);
         setUp_test_Core();
         setUp_test_Periphery();

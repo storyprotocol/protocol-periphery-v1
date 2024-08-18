@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.23;
 
+import "forge-std/console.sol";
 import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { AccessPermission } from "@storyprotocol/core/lib/AccessPermission.sol";
@@ -134,12 +135,12 @@ contract StoryProtocolGatewayTest is BaseTest {
 
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory sigMetadata, ) = _getSetPermissionSignatureForSPG({
+        (bytes memory sigMetadata, bytes32 expectedState ,) = _getSetPermissionSignatureForSPG({
             ipId: expectedIpId,
             module: address(coreMetadataModule),
             selector: ICoreMetadataModule.setAll.selector,
             deadline: deadline,
-            nonce: 1,
+            state: bytes32(0),
             signerPk: alicePk
         });
 
@@ -150,6 +151,7 @@ contract StoryProtocolGatewayTest is BaseTest {
             sigMetadata: ISPG.SignatureData({ signer: alice, deadline: deadline, signature: sigMetadata })
         });
 
+        assertEq(IIPAccount(payable(actualIpId)).state(), expectedState);
         assertEq(actualIpId, expectedIpId);
         assertTrue(ipAssetRegistry.isRegistered(actualIpId));
         assertMetadata(actualIpId, ipMetadataDefault);
@@ -174,12 +176,12 @@ contract StoryProtocolGatewayTest is BaseTest {
         address payable ipId = ipAsset[1].ipId;
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory signature, bytes memory data) = _getSetPermissionSignatureForSPG({
+        (bytes memory signature, ,bytes memory data) = _getSetPermissionSignatureForSPG({
             ipId: ipId,
             module: address(licensingModule),
             selector: ILicensingModule.attachLicenseTerms.selector,
             deadline: deadline,
-            nonce: IIPAccount(ipId).state() + 1,
+            state: IIPAccount(ipId).state(),
             signerPk: alicePk
         });
 
@@ -253,21 +255,21 @@ contract StoryProtocolGatewayTest is BaseTest {
 
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory sigMetadata, ) = _getSetPermissionSignatureForSPG({
+        (bytes memory sigMetadata, bytes32 expectedState, ) = _getSetPermissionSignatureForSPG({
             ipId: ipId,
             module: address(coreMetadataModule),
             selector: ICoreMetadataModule.setAll.selector,
             deadline: deadline,
-            nonce: 1,
+            state: bytes32(0),
             signerPk: alicePk
         });
 
-        (bytes memory sigAttach, ) = _getSetPermissionSignatureForSPG({
+        (bytes memory sigAttach, ,) = _getSetPermissionSignatureForSPG({
             ipId: ipId,
             module: address(licensingModule),
             selector: ILicensingModule.attachLicenseTerms.selector,
             deadline: deadline,
-            nonce: 2,
+            state: expectedState,
             signerPk: alicePk
         });
 
@@ -433,21 +435,22 @@ contract StoryProtocolGatewayTest is BaseTest {
 
         uint256[] memory licenseTokenIds = new uint256[](1);
         licenseTokenIds[0] = startLicenseTokenId;
+        licenseToken.approve(address(spg), startLicenseTokenId);
 
-        (bytes memory sigMetadata, ) = _getSetPermissionSignatureForSPG({
+        (bytes memory sigMetadata, bytes32 expectedState,) = _getSetPermissionSignatureForSPG({
             ipId: ipIdChild,
             module: address(coreMetadataModule),
             selector: ICoreMetadataModule.setAll.selector,
             deadline: deadline,
-            nonce: 1,
+            state: bytes32(0),
             signerPk: alicePk
         });
-        (bytes memory sigRegister, ) = _getSetPermissionSignatureForSPG({
+        (bytes memory sigRegister, , ) = _getSetPermissionSignatureForSPG({
             ipId: ipIdChild,
             module: address(licensingModule),
             selector: ILicensingModule.registerDerivativeWithLicenseTokens.selector,
             deadline: deadline,
-            nonce: 2,
+            state: expectedState,
             signerPk: alicePk
         });
 
@@ -509,7 +512,7 @@ contract StoryProtocolGatewayTest is BaseTest {
     /// @param module The address of the module to set the permission for.
     /// @param selector The selector of the function to be permitted for execution.
     /// @param deadline The deadline for the signature.
-    /// @param nonce The IP's nonce for the signature.
+    /// @param state IPAccount's internal nonce
     /// @param signerPk The private key of the signer.
     /// @return signature The signature for setting the permission.
     function _getSetPermissionSignatureForSPG(
@@ -517,9 +520,28 @@ contract StoryProtocolGatewayTest is BaseTest {
         address module,
         bytes4 selector,
         uint256 deadline,
-        uint256 nonce,
+        bytes32 state,
         uint256 signerPk
-    ) internal returns (bytes memory signature, bytes memory data) {
+    ) internal returns (bytes memory signature, bytes32 expectedState, bytes memory data) {
+            expectedState = keccak256(
+            abi.encode(
+                state, // ipAccount.state()
+                abi.encodeWithSignature(
+                    "execute(address,uint256,bytes)",
+                    address(accessController),
+                    0, // amount of ether to send
+                    abi.encodeWithSignature(
+                        "setPermission(address,address,address,bytes4,uint8)",
+                        ipId,
+                        address(spg),
+                        address(module),
+                        selector,
+                        AccessPermission.ALLOW
+                    )
+                )
+            )
+        );
+
         data = abi.encodeWithSignature(
             "setPermission(address,address,address,bytes4,uint8)",
             ipId,
@@ -536,7 +558,7 @@ contract StoryProtocolGatewayTest is BaseTest {
                     to: address(accessController),
                     value: 0,
                     data: data,
-                    nonce: nonce,
+                    nonce: expectedState,
                     deadline: deadline
                 })
             )
@@ -601,20 +623,20 @@ contract StoryProtocolGatewayTest is BaseTest {
 
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory sigMetadata, ) = _getSetPermissionSignatureForSPG({
+        (bytes memory sigMetadata, bytes32 expectedState, ) = _getSetPermissionSignatureForSPG({
             ipId: ipIdChild,
             module: address(coreMetadataModule),
             selector: ICoreMetadataModule.setAll.selector,
             deadline: deadline,
-            nonce: 1,
+            state: bytes32(0),
             signerPk: alicePk
         });
-        (bytes memory sigRegister, ) = _getSetPermissionSignatureForSPG({
+        (bytes memory sigRegister, ,) = _getSetPermissionSignatureForSPG({
             ipId: ipIdChild,
             module: address(licensingModule),
             selector: ILicensingModule.registerDerivative.selector,
             deadline: deadline,
-            nonce: 2,
+            state: expectedState,
             signerPk: alicePk
         });
 
