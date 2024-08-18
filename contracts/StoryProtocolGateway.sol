@@ -3,6 +3,7 @@ pragma solidity ^0.8.23;
 
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import { BeaconProxy } from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
+import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 // solhint-disable-next-line max-line-length
@@ -30,7 +31,7 @@ import { ISPGNFT } from "./interfaces/ISPGNFT.sol";
 import { Errors } from "./lib/Errors.sol";
 import { SPGNFTLib } from "./lib/SPGNFTLib.sol";
 
-contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable, UUPSUpgradeable {
+contract StoryProtocolGateway is IStoryProtocolGateway, ERC721Holder, AccessManagedUpgradeable, UUPSUpgradeable {
     using ERC165Checker for address;
     using SafeERC20 for IERC20;
 
@@ -336,8 +337,9 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
         });
     }
 
-    /// @notice Mint an NFT from a collection and register it as a derivative IP using license tokens.
-    /// @dev Caller must have the minter role for the provided SPG NFT.
+    /// @notice Mint an NFT from a collection and register it as a derivative IP using license tokens
+    /// @dev Caller must have the minter role for the provided SPG NFT. Caller must own the license tokens and have
+    /// approved SPG to transfer them.
     /// @param nftContract The address of the NFT collection.
     /// @param licenseTokenIds The IDs of the license tokens to be burned for linking the IP to parent IPs.
     /// @param royaltyContext The context for royalty module, should be empty for Royalty Policy LAP.
@@ -354,7 +356,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
         IPMetadata calldata ipMetadata,
         address recipient
     ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId) {
-        _transferLicenseTokens(licenseTokenIds);
+        _collectLicenseTokens(licenseTokenIds);
 
         tokenId = ISPGNFT(nftContract).mintBySPG({ to: address(this), payer: msg.sender, nftMetadata: nftMetadata });
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
@@ -366,6 +368,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
     }
 
     /// @notice Register the given NFT as a derivative IP using license tokens.
+    /// @dev Caller must own the license tokens and have approved SPG to transfer them.
     /// @param nftContract The address of the NFT collection.
     /// @param tokenId The ID of the NFT.
     /// @param licenseTokenIds The IDs of the license tokens to be burned for linking the IP to parent IPs.
@@ -383,6 +386,8 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
         SignatureData calldata sigMetadata,
         SignatureData calldata sigRegister
     ) external returns (address ipId) {
+        _collectLicenseTokens(licenseTokenIds);
+
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
         _setMetadataWithSig(ipMetadata, ipId, sigMetadata);
         _setPermissionForModule(
@@ -409,16 +414,6 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
             return licenseTermsId;
 
         LICENSING_MODULE.attachLicenseTerms(ipId, address(PIL_TEMPLATE), licenseTermsId);
-    }
-
-    /// @dev Transfers the license tokens from the caller to this contract.
-    /// @param licenseTokenIds The IDs of the license tokens to be transferred.
-    function _transferLicenseTokens(uint256[] calldata licenseTokenIds) internal {
-        if (licenseTokenIds.length == 0) revert Errors.SPG__EmptyLicenseTokens();
-        for (uint256 i = 0; i < licenseTokenIds.length; i++) {
-            if (LICENSE_TOKEN.ownerOf(licenseTokenIds[i]) == address(this)) continue;
-            LICENSE_TOKEN.transferFrom(msg.sender, address(this), licenseTokenIds[i]);
-        }
     }
 
     /// @dev Sets permission via signature to allow this contract to interact with the Licensing Module on behalf of the
@@ -484,6 +479,20 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
         _setMetadata(ipMetadata, ipId);
     }
 
+    /// @dev Collects license tokens from the caller. Assumes SPG has permission to transfer the license tokens.
+    /// @param licenseTokenIds The IDs of the license tokens to be collected.
+    function _collectLicenseTokens(uint256[] calldata licenseTokenIds) internal {
+        if (licenseTokenIds.length == 0) revert Errors.SPG__EmptyLicenseTokens();
+        for (uint256 i = 0; i < licenseTokenIds.length; i++) {
+            address tokenOwner = LICENSE_TOKEN.ownerOf(licenseTokenIds[i]);
+
+            if (tokenOwner == address(this)) continue;
+            if (tokenOwner != address(msg.sender)) revert Errors.SPG__CallerAndNotTokenOwner(licenseTokenIds[i], msg.sender, tokenOwner);
+
+            LICENSE_TOKEN.safeTransferFrom(msg.sender, address(this), licenseTokenIds[i]);
+        }
+    }
+
     /// @dev Collect mint fees for all parent IPs from the payer and set approval for Royalty Module to spend mint fees.
     /// @param payerAddress The address of the payer for the license mint fees.
     /// @param childIpId The ID of the derivative IP.
@@ -496,7 +505,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
         address[] calldata parentIpIds,
         address licenseTemplate,
         uint256[] calldata licenseTermsIds
-    ) private {
+    ) internal {
         // Get currency token and royalty policy, assumes all parent IPs have the same currency token.
         ILicenseTemplate lct = ILicenseTemplate(licenseTemplate);
         (address royaltyPolicy, , , address mintFeeCurrencyToken) = lct.getRoyaltyPolicy(licenseTermsIds[0]);
@@ -526,7 +535,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
         address childIpId,
         address licenseTemplate,
         uint256[] calldata licenseTermsIds
-    ) private returns (uint256 totalMintFee) {
+    ) internal returns (uint256 totalMintFee) {
         totalMintFee = 0;
 
         for (uint256 i = 0; i < parentIpIds.length; i++) {
@@ -552,7 +561,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, AccessManagedUpgradeable
         address licenseTemplate,
         uint256 licenseTermsId,
         uint256 amount
-    ) private returns (uint256) {
+    ) internal returns (uint256) {
         ILicenseTemplate lct = ILicenseTemplate(licenseTemplate);
 
         // Get mint fee set by license terms
