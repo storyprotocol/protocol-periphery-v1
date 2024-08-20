@@ -136,6 +136,7 @@ interface IStoryProtocolGateway {
     /// @param derivData The derivative data to be used for registerDerivative.
     /// @param nftMetadata OPTIONAL. The desired metadata for the newly minted NFT.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param recipient The address to receive the minted NFT.
     /// @return ipId The ID of the registered IP.
     /// @return tokenId The ID of the minted NFT.
     function mintAndRegisterIpAndMakeDerivative(

@@ -594,7 +594,6 @@ contract StoryProtocolGatewayTest is BaseTest {
         assertTrue(ipAssetRegistry.isRegistered(ipIdChild));
         assertEq(tokenIdChild, 2);
         assertMetadata(ipIdChild, ipMetadataDefault);
-        assertMetadata(ipIdChild, ipMetadataDefault);
         (address licenseTemplateChild, uint256 licenseTermsIdChild) = licenseRegistry.getAttachedLicenseTerms(
             ipIdChild,
             0
