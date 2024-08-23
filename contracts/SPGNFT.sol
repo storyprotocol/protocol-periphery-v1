@@ -112,26 +112,26 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
 
     /// @notice Mints an NFT from the collection. Only callable by the minter role.
     /// @param to The address of the recipient of the minted NFT.
-    /// @param nftMetadata OPTIONAL. The desired metadata for the newly minted NFT.
+    /// @param nftMetadataURI OPTIONAL. The URI of the desired metadata for the newly minted NFT.
     /// @return tokenId The ID of the minted NFT.
     function mint(
         address to,
-        string calldata nftMetadata
+        string calldata nftMetadataURI
     ) public virtual onlyRole(SPGNFTLib.MINTER_ROLE) returns (uint256 tokenId) {
-        tokenId = _mintToken({ to: to, payer: msg.sender, nftMetadata: nftMetadata });
+        tokenId = _mintToken({ to: to, payer: msg.sender, nftMetadataURI: nftMetadataURI });
     }
 
     /// @notice Mints an NFT from the collection. Only callable by the SPG.
     /// @param to The address of the recipient of the minted NFT.
     /// @param payer The address of the payer for the mint fee.
-    /// @param nftMetadata OPTIONAL. The desired metadata for the newly minted NFT.
+    /// @param nftMetadataURI OPTIONAL. The URI of the desired metadata for the newly minted NFT.
     /// @return tokenId The ID of the minted NFT.
     function mintBySPG(
         address to,
         address payer,
-        string calldata nftMetadata
+        string calldata nftMetadataURI
     ) public virtual onlySPG returns (uint256 tokenId) {
-        tokenId = _mintToken({ to: to, payer: payer, nftMetadata: nftMetadata });
+        tokenId = _mintToken({ to: to, payer: payer, nftMetadataURI: nftMetadataURI });
     }
 
     /// @dev Withdraws the contract's token balance to the recipient.
@@ -152,9 +152,9 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @dev Mints an NFT from the collection.
     /// @param to The address of the recipient of the minted NFT.
     /// @param payer The address of the payer for the mint fee.
-    /// @param nftMetadata OPTIONAL. The desired metadata for the newly minted NFT.
+    /// @param nftMetadataURI OPTIONAL. The URI of the desired metadata for the newly minted NFT.
     /// @return tokenId The ID of the minted NFT.
-    function _mintToken(address to, address payer, string calldata nftMetadata) internal returns (uint256 tokenId) {
+    function _mintToken(address to, address payer, string calldata nftMetadataURI) internal returns (uint256 tokenId) {
         SPGNFTStorage storage $ = _getSPGNFTStorage();
         if ($.totalSupply + 1 > $.maxSupply) revert Errors.SPGNFT__MaxSupplyReached();
 
@@ -165,7 +165,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         tokenId = ++$.totalSupply;
         _mint(to, tokenId);
 
-        if (bytes(nftMetadata).length > 0) _setTokenURI(tokenId, nftMetadata);
+        if (bytes(nftMetadataURI).length > 0) _setTokenURI(tokenId, nftMetadataURI);
     }
 
     //

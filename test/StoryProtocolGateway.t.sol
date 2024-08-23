@@ -30,8 +30,6 @@ contract StoryProtocolGatewayTest is BaseTest {
     mapping(uint256 index => IPAsset) internal ipAsset;
     address internal ipIdParent;
 
-    string internal nftMetadataEmpty;
-    string internal nftMetadataDefault;
     ISPG.IPMetadata internal ipMetadataEmpty;
     ISPG.IPMetadata internal ipMetadataDefault;
 
@@ -39,13 +37,16 @@ contract StoryProtocolGatewayTest is BaseTest {
         super.setUp();
         minter = alice;
 
-        nftMetadataEmpty = "";
-        nftMetadataDefault = "test-metadata";
-
-        ipMetadataEmpty = ISPG.IPMetadata({ metadataURI: "", metadataHash: "", nftMetadataHash: "" });
+        ipMetadataEmpty = ISPG.IPMetadata({
+            ipMetadataURI: "",
+            ipMetadataHash: "",
+            nftMetadataURI: "",
+            nftMetadataHash: ""
+        });
         ipMetadataDefault = ISPG.IPMetadata({
-            metadataURI: "test-uri",
-            metadataHash: "test-hash",
+            ipMetadataURI: "test-ip-uri",
+            ipMetadataHash: "test-ip-hash",
+            nftMetadataURI: "test-nft-uri",
             nftMetadataHash: "test-nft-hash"
         });
     }
@@ -86,12 +87,7 @@ contract StoryProtocolGatewayTest is BaseTest {
     {
         vm.expectRevert(Errors.SPG__CallerNotMinterRole.selector);
         vm.prank(caller);
-        spg.mintAndRegisterIp({
-            nftContract: address(nftContract),
-            recipient: bob,
-            nftMetadata: nftMetadataEmpty,
-            ipMetadata: ipMetadataEmpty
-        });
+        spg.mintAndRegisterIp({ nftContract: address(nftContract), recipient: bob, ipMetadata: ipMetadataEmpty });
     }
 
     modifier whenCallerHasMinterRole() {
@@ -107,23 +103,21 @@ contract StoryProtocolGatewayTest is BaseTest {
         (address ipId1, uint256 tokenId1) = spg.mintAndRegisterIp({
             nftContract: address(nftContract),
             recipient: bob,
-            nftMetadata: nftMetadataEmpty,
             ipMetadata: ipMetadataEmpty
         });
         assertEq(tokenId1, 1);
         assertTrue(ipAssetRegistry.isRegistered(ipId1));
-        assertSPGNFTMetadata(tokenId1, nftMetadataEmpty);
+        assertSPGNFTMetadata(tokenId1, ipMetadataEmpty.nftMetadataURI);
         assertMetadata(ipId1, ipMetadataEmpty);
 
         (address ipId2, uint256 tokenId2) = spg.mintAndRegisterIp({
             nftContract: address(nftContract),
             recipient: bob,
-            nftMetadata: nftMetadataDefault,
             ipMetadata: ipMetadataDefault
         });
         assertEq(tokenId2, 2);
         assertTrue(ipAssetRegistry.isRegistered(ipId2));
-        assertSPGNFTMetadata(tokenId2, nftMetadataDefault);
+        assertSPGNFTMetadata(tokenId2, ipMetadataDefault.nftMetadataURI);
         assertMetadata(ipId2, ipMetadataDefault);
     }
 
@@ -163,7 +157,6 @@ contract StoryProtocolGatewayTest is BaseTest {
         (address ipId, uint256 tokenId) = spg.mintAndRegisterIp({
             nftContract: address(nftContract),
             recipient: owner,
-            nftMetadata: nftMetadataDefault,
             ipMetadata: ipMetadataDefault
         });
         ipAsset[1] = IPAsset({ ipId: payable(ipId), tokenId: tokenId, owner: owner });
@@ -221,14 +214,13 @@ contract StoryProtocolGatewayTest is BaseTest {
         (address ipId1, uint256 tokenId1, uint256 licenseTermsId1) = spg.mintAndRegisterIpAndAttachPILTerms({
             nftContract: address(nftContract),
             recipient: caller,
-            nftMetadata: nftMetadataEmpty,
             ipMetadata: ipMetadataEmpty,
             terms: PILFlavors.nonCommercialSocialRemixing()
         });
         assertTrue(ipAssetRegistry.isRegistered(ipId1));
         assertEq(tokenId1, 1);
         assertEq(licenseTermsId1, 1);
-        assertSPGNFTMetadata(tokenId1, nftMetadataEmpty);
+        assertSPGNFTMetadata(tokenId1, ipMetadataEmpty.nftMetadataURI);
         assertMetadata(ipId1, ipMetadataEmpty);
         (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId1, 0);
         assertEq(licenseTemplate, address(pilTemplate));
@@ -237,19 +229,18 @@ contract StoryProtocolGatewayTest is BaseTest {
         (address ipId2, uint256 tokenId2, uint256 licenseTermsId2) = spg.mintAndRegisterIpAndAttachPILTerms({
             nftContract: address(nftContract),
             recipient: caller,
-            nftMetadata: nftMetadataDefault,
             ipMetadata: ipMetadataDefault,
             terms: PILFlavors.nonCommercialSocialRemixing()
         });
         assertTrue(ipAssetRegistry.isRegistered(ipId2));
         assertEq(tokenId2, 2);
         assertEq(licenseTermsId1, licenseTermsId2);
-        assertSPGNFTMetadata(tokenId2, nftMetadataDefault);
+        assertSPGNFTMetadata(tokenId2, ipMetadataDefault.nftMetadataURI);
         assertMetadata(ipId2, ipMetadataDefault);
     }
 
     function test_SPG_registerIpAndAttachPILTerms() public withCollection whenCallerHasMinterRole withEnoughTokens {
-        uint256 tokenId = nftContract.mint(address(caller), nftMetadataEmpty);
+        uint256 tokenId = nftContract.mint(address(caller), ipMetadataEmpty.nftMetadataURI);
         address payable ipId = payable(ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenId));
 
         uint256 deadline = block.timestamp + 1000;
@@ -286,7 +277,6 @@ contract StoryProtocolGatewayTest is BaseTest {
         (ipIdParent, , ) = spg.mintAndRegisterIpAndAttachPILTerms({
             nftContract: address(nftContract),
             recipient: caller,
-            nftMetadata: nftMetadataDefault,
             ipMetadata: ipMetadataDefault,
             terms: PILFlavors.nonCommercialSocialRemixing()
         });
@@ -317,7 +307,6 @@ contract StoryProtocolGatewayTest is BaseTest {
         (ipIdParent, , ) = spg.mintAndRegisterIpAndAttachPILTerms({
             nftContract: address(nftContract),
             recipient: caller,
-            nftMetadata: nftMetadataDefault,
             ipMetadata: ipMetadataDefault,
             terms: PILFlavors.commercialUse({
                 mintingFee: 100 * 10 ** mockToken.decimals(),
@@ -379,13 +368,12 @@ contract StoryProtocolGatewayTest is BaseTest {
             nftContract: address(nftContract),
             licenseTokenIds: licenseTokenIds,
             royaltyContext: "",
-            nftMetadata: nftMetadataDefault,
             ipMetadata: ipMetadataDefault,
             recipient: caller
         });
         assertTrue(ipAssetRegistry.isRegistered(ipIdChild));
         assertEq(tokenIdChild, 2);
-        assertSPGNFTMetadata(tokenIdChild, nftMetadataDefault);
+        assertSPGNFTMetadata(tokenIdChild, ipMetadataDefault.nftMetadataURI);
         assertMetadata(ipIdChild, ipMetadataDefault);
         (address licenseTemplateChild, uint256 licenseTermsIdChild) = licenseRegistry.getAttachedLicenseTerms(
             ipIdChild,
@@ -418,7 +406,7 @@ contract StoryProtocolGatewayTest is BaseTest {
             0
         );
 
-        uint256 tokenIdChild = nftContract.mint(address(caller), nftMetadataEmpty);
+        uint256 tokenIdChild = nftContract.mint(address(caller), ipMetadataEmpty.nftMetadataURI);
         address ipIdChild = ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenIdChild);
 
         uint256 deadline = block.timestamp + 1000;
@@ -487,8 +475,8 @@ contract StoryProtocolGatewayTest is BaseTest {
 
     /// @dev Assert metadata for the IP.
     function assertMetadata(address ipId, ISPG.IPMetadata memory expectedMetadata) internal {
-        assertEq(coreMetadataViewModule.getMetadataURI(ipId), expectedMetadata.metadataURI);
-        assertEq(coreMetadataViewModule.getMetadataHash(ipId), expectedMetadata.metadataHash);
+        assertEq(coreMetadataViewModule.getMetadataURI(ipId), expectedMetadata.ipMetadataURI);
+        assertEq(coreMetadataViewModule.getMetadataHash(ipId), expectedMetadata.ipMetadataHash);
         assertEq(coreMetadataViewModule.getNftMetadataHash(ipId), expectedMetadata.nftMetadataHash);
     }
 
@@ -521,7 +509,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         uint256 deadline,
         bytes32 state,
         uint256 signerPk
-    ) internal returns (bytes memory signature, bytes32 expectedState, bytes memory data) {
+    ) internal view returns (bytes memory signature, bytes32 expectedState, bytes memory data) {
         expectedState = keccak256(
             abi.encode(
                 state, // ipAccount.state()
@@ -587,7 +575,6 @@ contract StoryProtocolGatewayTest is BaseTest {
                 licenseTermsIds: licenseTermsIds,
                 royaltyContext: ""
             }),
-            nftMetadata: nftMetadataDefault,
             ipMetadata: ipMetadataDefault,
             recipient: caller
         });
@@ -616,7 +603,7 @@ contract StoryProtocolGatewayTest is BaseTest {
             0
         );
 
-        uint256 tokenIdChild = nftContract.mint(address(caller), nftMetadataEmpty);
+        uint256 tokenIdChild = nftContract.mint(address(caller), ipMetadataEmpty.nftMetadataURI);
         address ipIdChild = ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenIdChild);
 
         uint256 deadline = block.timestamp + 1000;
