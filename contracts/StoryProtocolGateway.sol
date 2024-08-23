@@ -1,37 +1,44 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.23;
 
-import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { BeaconProxy } from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { MulticallUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 // solhint-disable-next-line max-line-length
 import { AccessManagedUpgradeable } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+
+import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
+import { AccessPermission } from "@storyprotocol/core/lib/AccessPermission.sol";
 import { ILicenseToken } from "@storyprotocol/core/interfaces/ILicenseToken.sol";
 import { IAccessController } from "@storyprotocol/core/interfaces/access/IAccessController.sol";
-// solhint-disable-next-line max-line-length
-import { IPILicenseTemplate, PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
+import { ILicenseRegistry } from "@storyprotocol/core/interfaces/registries/ILicenseRegistry.sol";
+import { IIPAssetRegistry } from "@storyprotocol/core/interfaces/registries/IIPAssetRegistry.sol";
+import { IRoyaltyModule } from "@storyprotocol/core/interfaces/modules/royalty/IRoyaltyModule.sol";
+import { ILicensingHook } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingHook.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
 import { ILicenseTemplate } from "@storyprotocol/core/interfaces/modules/licensing/ILicenseTemplate.sol";
-import { ILicenseRegistry } from "@storyprotocol/core/interfaces/registries/ILicenseRegistry.sol";
-import { ILicensingHook } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingHook.sol";
-import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
-import { IRoyaltyModule } from "@storyprotocol/core/interfaces/modules/royalty/IRoyaltyModule.sol";
-
 import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
-import { IIPAssetRegistry } from "@storyprotocol/core/interfaces/registries/IIPAssetRegistry.sol";
-import { AccessPermission } from "@storyprotocol/core/lib/AccessPermission.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+// solhint-disable-next-line max-line-length
+import { IPILicenseTemplate, PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 
 import { IStoryProtocolGateway } from "./interfaces/IStoryProtocolGateway.sol";
 import { ISPGNFT } from "./interfaces/ISPGNFT.sol";
 import { Errors } from "./lib/Errors.sol";
 import { SPGNFTLib } from "./lib/SPGNFTLib.sol";
 
-contract StoryProtocolGateway is IStoryProtocolGateway, ERC721Holder, AccessManagedUpgradeable, UUPSUpgradeable {
+contract StoryProtocolGateway is
+    IStoryProtocolGateway,
+    MulticallUpgradeable,
+    ERC721Holder,
+    AccessManagedUpgradeable,
+    UUPSUpgradeable
+{
     using ERC165Checker for address;
     using SafeERC20 for IERC20;
 
