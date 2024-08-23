@@ -157,19 +157,21 @@ contract StoryProtocolGateway is IStoryProtocolGateway, ERC721Holder, AccessMana
     /// @dev Caller must have the minter role for the provided SPG NFT.
     /// @param nftContract The address of the NFT collection.
     /// @param recipient The address of the recipient of the minted NFT.
-    /// @param nftMetadata OPTIONAL. The desired metadata for the newly minted NFT.
-    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param metadata OPTIONAL. The desired metadata for the newly minted NFT and newly registered IP.
     /// @return ipId The ID of the registered IP.
     /// @return tokenId The ID of the minted NFT.
     function mintAndRegisterIp(
         address nftContract,
         address recipient,
-        string calldata nftMetadata,
-        IPMetadata calldata ipMetadata
+        Metadata calldata metadata
     ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId) {
-        tokenId = ISPGNFT(nftContract).mintBySPG({ to: address(this), payer: msg.sender, nftMetadata: nftMetadata });
+        tokenId = ISPGNFT(nftContract).mintBySPG({
+            to: address(this),
+            payer: msg.sender,
+            nftMetadataURI: metadata.nftMetadataURI
+        });
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        _setMetadata(ipMetadata, ipId);
+        _setMetadata(metadata.ipMetadataURI, metadata.ipMetadataHash, metadata.nftMetadataHash, ipId);
         ISPGNFT(nftContract).safeTransferFrom(address(this), recipient, tokenId, "");
     }
 
@@ -205,8 +207,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, ERC721Holder, AccessMana
     /// @dev Caller must have the minter role for the provided SPG NFT.
     /// @param nftContract The address of the NFT collection.
     /// @param recipient The address of the recipient of the minted NFT.
-    /// @param nftMetadata OPTIONAL. The desired metadata for the newly minted NFT.
-    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param metadata OPTIONAL. The desired metadata for the newly minted NFT and newly registered IP.
     /// @param terms The PIL terms to be registered.
     /// @return ipId The ID of the registered IP.
     /// @return tokenId The ID of the minted NFT.
@@ -214,13 +215,16 @@ contract StoryProtocolGateway is IStoryProtocolGateway, ERC721Holder, AccessMana
     function mintAndRegisterIpAndAttachPILTerms(
         address nftContract,
         address recipient,
-        string calldata nftMetadata,
-        IPMetadata calldata ipMetadata,
+        Metadata calldata metadata,
         PILTerms calldata terms
     ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId, uint256 licenseTermsId) {
-        tokenId = ISPGNFT(nftContract).mintBySPG({ to: address(this), payer: msg.sender, nftMetadata: nftMetadata });
+        tokenId = ISPGNFT(nftContract).mintBySPG({
+            to: address(this),
+            payer: msg.sender,
+            nftMetadataURI: metadata.nftMetadataURI
+        });
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        _setMetadata(ipMetadata, ipId);
+        _setMetadata(metadata.ipMetadataURI, metadata.ipMetadataHash, metadata.nftMetadataHash, ipId);
 
         licenseTermsId = _registerPILTermsAndAttach(ipId, terms);
         ISPGNFT(nftContract).safeTransferFrom(address(this), recipient, tokenId, "");
@@ -261,21 +265,23 @@ contract StoryProtocolGateway is IStoryProtocolGateway, ERC721Holder, AccessMana
     /// @dev Caller must have the minter role for the provided SPG NFT.
     /// @param nftContract The address of the NFT collection.
     /// @param derivData The derivative data to be used for registerDerivative.
-    /// @param nftMetadata OPTIONAL. The desired metadata for the newly minted NFT.
-    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param metadata OPTIONAL. The desired metadata for the newly minted NFT and newly registered IP.
     /// @param recipient The address to receive the minted NFT.
     /// @return ipId The ID of the registered IP.
     /// @return tokenId The ID of the minted NFT.
     function mintAndRegisterIpAndMakeDerivative(
         address nftContract,
         MakeDerivative calldata derivData,
-        string calldata nftMetadata,
-        IPMetadata calldata ipMetadata,
+        Metadata calldata metadata,
         address recipient
     ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId) {
-        tokenId = ISPGNFT(nftContract).mintBySPG({ to: address(this), payer: msg.sender, nftMetadata: nftMetadata });
+        tokenId = ISPGNFT(nftContract).mintBySPG({
+            to: address(this),
+            payer: msg.sender,
+            nftMetadataURI: metadata.nftMetadataURI
+        });
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        _setMetadata(ipMetadata, ipId);
+        _setMetadata(metadata.ipMetadataURI, metadata.ipMetadataHash, metadata.nftMetadataHash, ipId);
 
         _collectMintFeesAndSetApproval(
             msg.sender,
@@ -344,8 +350,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, ERC721Holder, AccessMana
     /// @param nftContract The address of the NFT collection.
     /// @param licenseTokenIds The IDs of the license tokens to be burned for linking the IP to parent IPs.
     /// @param royaltyContext The context for royalty module, should be empty for Royalty Policy LAP.
-    /// @param nftMetadata OPTIONAL. The desired metadata for the newly minted NFT.
-    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param metadata OPTIONAL. The desired metadata for the newly minted NFT and newly registered IP.
     /// @param recipient The address to receive the minted NFT.
     /// @return ipId The ID of the registered IP.
     /// @return tokenId The ID of the minted NFT.
@@ -353,15 +358,18 @@ contract StoryProtocolGateway is IStoryProtocolGateway, ERC721Holder, AccessMana
         address nftContract,
         uint256[] calldata licenseTokenIds,
         bytes calldata royaltyContext,
-        string calldata nftMetadata,
-        IPMetadata calldata ipMetadata,
+        Metadata calldata metadata,
         address recipient
     ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId) {
         _collectLicenseTokens(licenseTokenIds);
 
-        tokenId = ISPGNFT(nftContract).mintBySPG({ to: address(this), payer: msg.sender, nftMetadata: nftMetadata });
+        tokenId = ISPGNFT(nftContract).mintBySPG({
+            to: address(this),
+            payer: msg.sender,
+            nftMetadataURI: metadata.nftMetadataURI
+        });
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        _setMetadata(ipMetadata, ipId);
+        _setMetadata(metadata.ipMetadataURI, metadata.ipMetadataHash, metadata.nftMetadataHash, ipId);
 
         LICENSING_MODULE.registerDerivativeWithLicenseTokens(ipId, licenseTokenIds, royaltyContext);
 
@@ -447,20 +455,22 @@ contract StoryProtocolGateway is IStoryProtocolGateway, ERC721Holder, AccessMana
     }
 
     /// @dev Sets the metadata for the given IP if metadata is non-empty.
-    /// @param ipMetadata The metadata to set.
+    /// @param ipMetadataURI The URI of the metadata for the IP.
+    /// @param ipMetadataHash The hash of the metadata for the IP.
+    /// @param nftMetadataHash The hash of the metadata for the NFT.
     /// @param ipId The ID of the IP.
-    function _setMetadata(IPMetadata calldata ipMetadata, address ipId) internal {
+    function _setMetadata(
+        string calldata ipMetadataURI,
+        bytes32 ipMetadataHash,
+        bytes32 nftMetadataHash,
+        address ipId
+    ) internal {
         if (
-            keccak256(abi.encodePacked(ipMetadata.metadataURI)) != keccak256("") ||
-            ipMetadata.metadataHash != bytes32(0) ||
-            ipMetadata.nftMetadataHash != bytes32(0)
+            keccak256(abi.encodePacked(ipMetadataURI)) != keccak256("") ||
+            ipMetadataHash != bytes32(0) ||
+            nftMetadataHash != bytes32(0)
         ) {
-            CORE_METADATA_MODULE.setAll(
-                ipId,
-                ipMetadata.metadataURI,
-                ipMetadata.metadataHash,
-                ipMetadata.nftMetadataHash
-            );
+            CORE_METADATA_MODULE.setAll(ipId, ipMetadataURI, ipMetadataHash, nftMetadataHash);
         }
     }
 
@@ -477,7 +487,7 @@ contract StoryProtocolGateway is IStoryProtocolGateway, ERC721Holder, AccessMana
         if (sigData.signer != address(0) && sigData.deadline != 0 && sigData.signature.length != 0) {
             _setPermissionForModule(ipId, sigData, address(CORE_METADATA_MODULE), ICoreMetadataModule.setAll.selector);
         }
-        _setMetadata(ipMetadata, ipId);
+        _setMetadata(ipMetadata.ipMetadataURI, ipMetadata.ipMetadataHash, ipMetadata.nftMetadataHash, ipId);
     }
 
     /// @dev Collects license tokens from the caller. Assumes SPG has permission to transfer the license tokens.
