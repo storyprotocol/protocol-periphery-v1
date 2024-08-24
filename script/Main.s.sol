@@ -46,8 +46,6 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
 
         // Set beacon contract via multisig.
         // spg.setNftContractBeacon(address(spgNftBeacon));
-
-        _endBroadcast();
     }
 
     function _deployProtocolContracts(address accessControlDeployer) private {
