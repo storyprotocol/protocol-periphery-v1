@@ -1,6 +1,6 @@
 {
   "name": "@story-protocol/protocol-periphery",
-  "version": "v1.0.0-rc1",
+  "version": "v1.1.0",
   "description": "Story Protocol periphery smart contracts",
   "main": "",
   "directories": {
