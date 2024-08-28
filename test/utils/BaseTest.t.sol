@@ -16,10 +16,15 @@ import { PILicenseTemplate } from "@storyprotocol/core/modules/licensing/PILicen
 import { LicensingModule } from "@storyprotocol/core/modules/licensing/LicensingModule.sol";
 import { DisputeModule } from "@storyprotocol/core/modules/dispute/DisputeModule.sol";
 import { RoyaltyModule } from "@storyprotocol/core/modules/royalty/RoyaltyModule.sol";
-import { RoyaltyPolicyLAP } from "@storyprotocol/core/modules/royalty/policies/RoyaltyPolicyLAP.sol";
+import { RoyaltyPolicyLAP } from "@storyprotocol/core/modules/royalty/policies/LAP/RoyaltyPolicyLAP.sol";
 import { IpRoyaltyVault } from "@storyprotocol/core/modules/royalty/policies/IpRoyaltyVault.sol";
 import { CoreMetadataModule } from "@storyprotocol/core/modules/metadata/CoreMetadataModule.sol";
 import { CoreMetadataViewModule } from "@storyprotocol/core/modules/metadata/CoreMetadataViewModule.sol";
+import { LicenseToken } from "@storyprotocol/core/LicenseToken.sol";
+import { GroupNFT } from "@storyprotocol/core/GroupNFT.sol";
+import { GroupingModule } from "@storyprotocol/core/modules/grouping/GroupingModule.sol";
+import { MockEvenSplitGroupPool } from "../mocks/MockEvenSplitGroupPool.sol";
+import { IPGraphACL } from "@storyprotocol/core/access/IPGraphACL.sol";
 
 import { StoryProtocolGateway } from "../../contracts/StoryProtocolGateway.sol";
 import { SPGNFT } from "../../contracts/SPGNFT.sol";
@@ -50,6 +55,10 @@ contract BaseTest is Test {
     CoreMetadataViewModule internal coreMetadataViewModule;
     PILicenseTemplate internal pilTemplate;
     LicenseToken internal licenseToken;
+    GroupingModule internal groupingModule;
+    GroupNFT internal groupNFT;
+    IPGraphACL internal ipGraphACL;
+    MockEvenSplitGroupPool public rewardPool;
 
     StoryProtocolGateway internal spg;
     SPGNFT internal spgNftImpl;
@@ -81,7 +90,7 @@ contract BaseTest is Test {
     }
 
     function setUp_test_Core() public {
-        address impl;
+        address impl = address(0); // Make sure we don't deploy wrong impl
 
         ERC6551Registry erc6551Registry = new ERC6551Registry();
 
@@ -111,7 +120,14 @@ contract BaseTest is Test {
         );
         require(_loadProxyImpl(address(moduleRegistry)) == impl, "ModuleRegistry Proxy Implementation Mismatch");
 
-        impl = address(new IPAssetRegistry(address(erc6551Registry), _getDeployedAddress(type(IPAccountImpl).name)));
+        impl = address(0); // Make sure we don't deploy wrong impl
+        impl = address(
+            new IPAssetRegistry(
+                address(erc6551Registry),
+                _getDeployedAddress(type(IPAccountImpl).name),
+                _getDeployedAddress(type(GroupingModule).name)
+            )
+        );
         ipAssetRegistry = IPAssetRegistry(
             TestProxyHelper.deployUUPSProxy(
                 create3Deployer,
@@ -126,6 +142,7 @@ contract BaseTest is Test {
         );
         require(_loadProxyImpl(address(ipAssetRegistry)) == impl, "IPAssetRegistry Proxy Implementation Mismatch");
 
+        impl = address(0); // Make sure we don't deploy wrong impl
         address ipAccountRegistry = address(ipAssetRegistry);
 
         impl = address(new AccessController(address(ipAssetRegistry), address(moduleRegistry)));
@@ -143,10 +160,16 @@ contract BaseTest is Test {
         );
         require(_loadProxyImpl(address(accessController)) == impl, "AccessController Proxy Implementation Mismatch");
 
+        ipGraphACL = new IPGraphACL(address(protocolAccessManager));
+        ipGraphACL.whitelistAddress(_getDeployedAddress(type(RoyaltyPolicyLAP).name));
+        ipGraphACL.whitelistAddress(_getDeployedAddress(type(LicenseRegistry).name));
+
+        impl = address(0); // Make sure we don't deploy wrong impl
         impl = address(
             new LicenseRegistry(
                 _getDeployedAddress(type(LicensingModule).name),
-                _getDeployedAddress(type(DisputeModule).name)
+                _getDeployedAddress(type(DisputeModule).name),
+                address(ipGraphACL)
             )
         );
         licenseRegistry = LicenseRegistry(
@@ -180,6 +203,7 @@ contract BaseTest is Test {
             "Deploy: IP Account Impl Address Mismatch"
         );
 
+        impl = address(0); // Make sure we don't deploy wrong impl
         impl = address(
             new DisputeModule(address(accessController), address(ipAssetRegistry), address(licenseRegistry))
         );
@@ -197,11 +221,13 @@ contract BaseTest is Test {
         );
         require(_loadProxyImpl(address(disputeModule)) == impl, "DisputeModule Proxy Implementation Mismatch");
 
+        impl = address(0); // Make sure we don't deploy wrong impl
         impl = address(
             new RoyaltyModule(
                 _getDeployedAddress(type(LicensingModule).name),
                 address(disputeModule),
-                address(licenseRegistry)
+                address(licenseRegistry),
+                address(ipAssetRegistry)
             )
         );
         royaltyModule = RoyaltyModule(
@@ -209,7 +235,7 @@ contract BaseTest is Test {
                 create3Deployer,
                 _getSalt(type(RoyaltyModule).name),
                 impl,
-                abi.encodeCall(RoyaltyModule.initialize, address(protocolAccessManager))
+                abi.encodeCall(RoyaltyModule.initialize, (address(protocolAccessManager), 1024, 1024, 10))
             )
         );
         require(
@@ -218,6 +244,7 @@ contract BaseTest is Test {
         );
         require(_loadProxyImpl(address(royaltyModule)) == impl, "RoyaltyModule Proxy Implementation Mismatch");
 
+        impl = address(0); // Make sure we don't deploy wrong impl
         impl = address(
             new LicensingModule(
                 address(accessController),
@@ -243,7 +270,8 @@ contract BaseTest is Test {
         );
         require(_loadProxyImpl(address(licensingModule)) == impl, "LicensingModule Proxy Implementation Mismatch");
 
-        impl = address(new RoyaltyPolicyLAP(address(royaltyModule), address(licensingModule)));
+        impl = address(0); // Make sure we don't deploy wrong impl
+        impl = address(new RoyaltyPolicyLAP(address(royaltyModule), address(licensingModule), address(ipGraphACL)));
         royaltyPolicyLAP = RoyaltyPolicyLAP(
             TestProxyHelper.deployUUPSProxy(
                 create3Deployer,
@@ -263,7 +291,7 @@ contract BaseTest is Test {
                 _getSalt(type(IpRoyaltyVault).name),
                 abi.encodePacked(
                     type(IpRoyaltyVault).creationCode,
-                    abi.encode(address(royaltyPolicyLAP), address(disputeModule))
+                    abi.encode(address(disputeModule), address(royaltyModule))
                 )
             )
         );
@@ -278,6 +306,7 @@ contract BaseTest is Test {
             )
         );
 
+        impl = address(0); // Make sure we don't deploy wrong impl
         impl = address(new LicenseToken(address(licensingModule), address(disputeModule)));
         licenseToken = LicenseToken(
             TestProxyHelper.deployUUPSProxy(
@@ -299,6 +328,7 @@ contract BaseTest is Test {
         );
         require(_loadProxyImpl(address(licenseToken)) == impl, "LicenseToken Proxy Implementation Mismatch");
 
+        impl = address(0); // Make sure we don't deploy wrong impl
         impl = address(
             new PILicenseTemplate(
                 address(accessController),
@@ -348,17 +378,61 @@ contract BaseTest is Test {
             )
         );
 
+        impl = address(0); // Make sure we don't deploy wrong impl
+        impl = address(new GroupNFT(_getDeployedAddress(type(GroupingModule).name)));
+        groupNFT = GroupNFT(
+            TestProxyHelper.deployUUPSProxy(
+                create3Deployer,
+                _getSalt(type(GroupNFT).name),
+                impl,
+                abi.encodeCall(
+                    GroupNFT.initialize,
+                    (
+                        address(protocolAccessManager),
+                        "https://github.com/storyprotocol/protocol-core/blob/main/assets/license-image.gif"
+                    )
+                )
+            )
+        );
+        require(_getDeployedAddress(type(GroupNFT).name) == address(groupNFT), "Deploy: Group NFT Address Mismatch");
+        require(_loadProxyImpl(address(groupNFT)) == impl, "GroupNFT Proxy Implementation Mismatch");
+
+        impl = address(0); // Make sure we don't deploy wrong impl
+        impl = address(
+            new GroupingModule(
+                address(accessController),
+                address(ipAssetRegistry),
+                address(licenseRegistry),
+                address(licenseToken),
+                address(groupNFT)
+            )
+        );
+        groupingModule = GroupingModule(
+            TestProxyHelper.deployUUPSProxy(
+                create3Deployer,
+                _getSalt(type(GroupingModule).name),
+                impl,
+                abi.encodeCall(GroupingModule.initialize, address(protocolAccessManager))
+            )
+        );
+        require(
+            _getDeployedAddress(type(GroupingModule).name) == address(groupingModule),
+            "Deploy: Grouping Module Address Mismatch"
+        );
+        require(_loadProxyImpl(address(groupingModule)) == impl, "GroupingModule Proxy Implementation Mismatch");
+
         moduleRegistry.registerModule("DISPUTE_MODULE", address(disputeModule));
         moduleRegistry.registerModule("LICENSING_MODULE", address(licensingModule));
         moduleRegistry.registerModule("ROYALTY_MODULE", address(royaltyModule));
         moduleRegistry.registerModule("CORE_METADATA_MODULE", address(coreMetadataModule));
         moduleRegistry.registerModule("CORE_METADATA_VIEW_MODULE", address(coreMetadataViewModule));
+        moduleRegistry.registerModule("GROUPING_MODULE", address(groupingModule));
 
         coreMetadataViewModule.updateCoreMetadataModule();
         licenseRegistry.registerLicenseTemplate(address(pilTemplate));
 
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLAP), true);
-        royaltyPolicyLAP.setIpRoyaltyVaultBeacon(address(ipRoyaltyVaultBeacon));
+        royaltyModule.setIpRoyaltyVaultBeacon(address(ipRoyaltyVaultBeacon));
         ipRoyaltyVaultBeacon.transferOwnership(address(royaltyPolicyLAP));
     }
 
@@ -372,7 +446,9 @@ contract BaseTest is Test {
                 address(royaltyModule),
                 address(coreMetadataModule),
                 address(pilTemplate),
-                address(licenseToken)
+                address(licenseToken),
+                address(groupingModule),
+                address(groupNFT)
             )
         );
         spg = StoryProtocolGateway(
@@ -409,6 +485,11 @@ contract BaseTest is Test {
     function setUp_test_Misc() public {
         mockToken = new MockERC20();
         royaltyModule.whitelistRoyaltyToken(address(mockToken), true);
+        rewardPool = new MockEvenSplitGroupPool();
+
+        licenseRegistry.setDefaultLicenseTerms(address(pilTemplate), 0);
+
+        groupingModule.whitelistGroupRewardPool(address(rewardPool));
 
         vm.label(alice, "Alice");
         vm.label(bob, "Bob");

@@ -60,7 +60,9 @@ contract UpgradeSPG is
                 royaltyModuleAddr,
                 coreMetadataModuleAddr,
                 pilTemplateAddr,
-                licenseTokenAddr
+                licenseTokenAddr,
+                groupingModuleAddr,
+                groupNFTAddr
             )
         );
         console2.log("New SPG Implementation", newSpgImpl);

@@ -7,6 +7,8 @@ import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 import { MetaTx } from "@storyprotocol/core/lib/MetaTx.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
 import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
+import { IGroupingModule } from "@storyprotocol/core/interfaces/modules/grouping/IGroupingModule.sol";
+import { IAccessController } from "@storyprotocol/core/interfaces/access/IAccessController.sol";
 
 import { IStoryProtocolGateway as ISPG } from "../contracts/interfaces/IStoryProtocolGateway.sol";
 import { ISPGNFT } from "../contracts/interfaces/ISPGNFT.sol";
@@ -25,6 +27,7 @@ contract StoryProtocolGatewayTest is BaseTest {
 
     ISPGNFT internal nftContract;
     ISPGNFT[] internal nftContracts;
+    address internal groupId;
     address internal minter;
     address internal caller;
     mapping(uint256 index => IPAsset) internal ipAsset;
@@ -87,7 +90,7 @@ contract StoryProtocolGatewayTest is BaseTest {
     {
         vm.expectRevert(Errors.SPG__CallerNotMinterRole.selector);
         vm.prank(caller);
-        spg.mintAndRegisterIp({ nftContract: address(nftContract), recipient: bob, ipMetadata: ipMetadataEmpty });
+        spg.mintAndRegisterIp({ spgNftContract: address(nftContract), recipient: bob, ipMetadata: ipMetadataEmpty });
     }
 
     modifier whenCallerHasMinterRole() {
@@ -101,7 +104,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         mockToken.approve(address(nftContract), 1000 * 10 ** mockToken.decimals());
 
         (address ipId1, uint256 tokenId1) = spg.mintAndRegisterIp({
-            nftContract: address(nftContract),
+            spgNftContract: address(nftContract),
             recipient: bob,
             ipMetadata: ipMetadataEmpty
         });
@@ -111,7 +114,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         assertMetadata(ipId1, ipMetadataEmpty);
 
         (address ipId2, uint256 tokenId2) = spg.mintAndRegisterIp({
-            nftContract: address(nftContract),
+            spgNftContract: address(nftContract),
             recipient: bob,
             ipMetadata: ipMetadataDefault
         });
@@ -155,7 +158,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         mockToken.mint(address(owner), 100 * 10 ** mockToken.decimals());
         mockToken.approve(address(nftContract), 100 * 10 ** mockToken.decimals());
         (address ipId, uint256 tokenId) = spg.mintAndRegisterIp({
-            nftContract: address(nftContract),
+            spgNftContract: address(nftContract),
             recipient: owner,
             ipMetadata: ipMetadataDefault
         });
@@ -212,7 +215,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         withEnoughTokens
     {
         (address ipId1, uint256 tokenId1, uint256 licenseTermsId1) = spg.mintAndRegisterIpAndAttachPILTerms({
-            nftContract: address(nftContract),
+            spgNftContract: address(nftContract),
             recipient: caller,
             ipMetadata: ipMetadataEmpty,
             terms: PILFlavors.nonCommercialSocialRemixing()
@@ -227,7 +230,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         assertEq(licenseTermsId, licenseTermsId1);
 
         (address ipId2, uint256 tokenId2, uint256 licenseTermsId2) = spg.mintAndRegisterIpAndAttachPILTerms({
-            nftContract: address(nftContract),
+            spgNftContract: address(nftContract),
             recipient: caller,
             ipMetadata: ipMetadataDefault,
             terms: PILFlavors.nonCommercialSocialRemixing()
@@ -275,7 +278,7 @@ contract StoryProtocolGatewayTest is BaseTest {
 
     modifier withNonCommercialParentIp() {
         (ipIdParent, , ) = spg.mintAndRegisterIpAndAttachPILTerms({
-            nftContract: address(nftContract),
+            spgNftContract: address(nftContract),
             recipient: caller,
             ipMetadata: ipMetadataDefault,
             terms: PILFlavors.nonCommercialSocialRemixing()
@@ -305,7 +308,7 @@ contract StoryProtocolGatewayTest is BaseTest {
 
     modifier withCommercialParentIp() {
         (ipIdParent, , ) = spg.mintAndRegisterIpAndAttachPILTerms({
-            nftContract: address(nftContract),
+            spgNftContract: address(nftContract),
             recipient: caller,
             ipMetadata: ipMetadataDefault,
             terms: PILFlavors.commercialUse({
@@ -365,7 +368,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         licenseTokenIds[0] = startLicenseTokenId;
 
         (address ipIdChild, uint256 tokenIdChild) = spg.mintAndRegisterIpAndMakeDerivativeWithLicenseTokens({
-            nftContract: address(nftContract),
+            spgNftContract: address(nftContract),
             licenseTokenIds: licenseTokenIds,
             royaltyContext: "",
             ipMetadata: ipMetadataDefault,
@@ -579,6 +582,170 @@ contract StoryProtocolGatewayTest is BaseTest {
         }
     }
 
+    modifier withGroup() {
+        groupId = groupingModule.registerGroup(address(rewardPool));
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory signature, , bytes memory data) = _getSetPermissionSignatureForSPG({
+            ipId: groupId,
+            module: address(licensingModule),
+            selector: ILicensingModule.attachLicenseTerms.selector,
+            deadline: deadline,
+            state: IIPAccount(payable(groupId)).state(),
+            signerPk: alicePk
+        });
+
+        IIPAccount(payable(groupId)).executeWithSig({
+            to: address(accessController),
+            value: 0,
+            data: data,
+            signer: alice,
+            deadline: deadline,
+            signature: signature
+        });
+
+        uint256 licenseTermsId = spg.registerPILTermsAndAttach({
+            ipId: groupId,
+            terms: PILFlavors.nonCommercialSocialRemixing()
+        });
+        _;
+    }
+
+    function test_SPG_mintAndRegisterIpAndAddToGroup()
+        public
+        withCollection
+        whenCallerHasMinterRole
+        withEnoughTokens
+        withGroup
+    {
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory sigAddToGroup, bytes32 expectedState, ) = _getSetPermissionSignatureForSPG({
+            ipId: groupId,
+            module: address(groupingModule),
+            selector: IGroupingModule.addIp.selector,
+            deadline: deadline,
+            state: IIPAccount(payable(groupId)).state(),
+            signerPk: alicePk
+        });
+
+        (address ipId, uint256 tokenId) = spg.mintAndRegisterIpAndAttachPILTermsAndAddToGroup({
+            spgNftContract: address(nftContract),
+            groupId: groupId,
+            recipient: caller,
+            ipMetadata: ipMetadataEmpty,
+            licenseTermsId: 1,
+            sigAddToGroup: ISPG.SignatureData({ signer: alice, deadline: deadline, signature: sigAddToGroup })
+        });
+
+        assertEq(expectedState, IIPAccount(payable(groupId)).state());
+        assertTrue(ipAssetRegistry.isRegistered(ipId));
+        assertTrue(ipAssetRegistry.isRegisteredGroup(groupId));
+        assertTrue(ipAssetRegistry.containsIp(groupId, ipId));
+        assertEq(ipAssetRegistry.totalMembers(groupId), 1);
+        assertEq(tokenId, 1);
+        assertSPGNFTMetadata(tokenId, ipMetadataEmpty.nftMetadataURI);
+        assertMetadata(ipId, ipMetadataEmpty);
+        (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId, 0);
+        assertEq(licenseTemplate, address(pilTemplate));
+        assertEq(licenseTermsId, 1);
+    }
+
+    function test_SPG_registerIpAndAddToGroup()
+        public
+        withCollection
+        whenCallerHasMinterRole
+        withEnoughTokens
+        withGroup
+    {
+        uint256 tokenId = nftContract.mint(address(caller), ipMetadataEmpty.nftMetadataURI);
+        address expectedIpId = ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenId);
+
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory sigMetadataAndAttach, , ) = _getSetBatchPermissionSignatureForSPG({
+            ipId: expectedIpId,
+            permissionList: _getMetadataAndAttachTermsPermissionList(expectedIpId),
+            deadline: deadline,
+            state: bytes32(0),
+            signerPk: alicePk
+        });
+
+        (bytes memory sigAddToGroup, , ) = _getSetPermissionSignatureForSPG({
+            ipId: groupId,
+            module: address(groupingModule),
+            selector: IGroupingModule.addIp.selector,
+            deadline: deadline,
+            state: IIPAccount(payable(groupId)).state(),
+            signerPk: alicePk
+        });
+
+        address ipId = spg.registerIpAndAttachPILTermsAndAddToGroup({
+            nftContract: address(nftContract),
+            tokenId: tokenId,
+            groupId: groupId,
+            ipMetadata: ipMetadataEmpty,
+            licenseTermsId: 1,
+            sigMetadataAndAttach: ISPG.SignatureData({
+                signer: alice,
+                deadline: deadline,
+                signature: sigMetadataAndAttach
+            }),
+            sigAddToGroup: ISPG.SignatureData({ signer: alice, deadline: deadline, signature: sigAddToGroup })
+        });
+
+        assertEq(expectedIpId, ipId);
+        assertTrue(ipAssetRegistry.isRegistered(expectedIpId));
+        assertTrue(ipAssetRegistry.isRegisteredGroup(groupId));
+        assertTrue(ipAssetRegistry.containsIp(groupId, expectedIpId));
+        assertEq(ipAssetRegistry.totalMembers(groupId), 1);
+        assertSPGNFTMetadata(tokenId, ipMetadataEmpty.nftMetadataURI);
+        assertMetadata(expectedIpId, ipMetadataEmpty);
+        (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(expectedIpId, 0);
+        assertEq(licenseTemplate, address(pilTemplate));
+        assertEq(licenseTermsId, 1);
+    }
+
+    function test_SPG_registerGroupAndAddIps() public withCollection whenCallerHasMinterRole {
+        mockToken.mint(address(caller), 1000 * 10 * 10 ** mockToken.decimals());
+        mockToken.approve(address(nftContract), 1000 * 10 * 10 ** mockToken.decimals());
+
+        bytes[] memory data = new bytes[](10);
+        for (uint256 i = 0; i < 10; i++) {
+            data[i] = abi.encodeWithSelector(
+                spg.mintAndRegisterIpAndAttachPILTerms.selector,
+                address(nftContract),
+                bob,
+                ipMetadataDefault,
+                PILFlavors.nonCommercialSocialRemixing()
+            );
+        }
+        bytes[] memory results = spg.multicall(data);
+        address[] memory ipIds = new address[](10);
+
+        for (uint256 i = 0; i < 10; i++) {
+            (ipIds[i], ) = abi.decode(results[i], (address, uint256));
+        }
+
+        uint256 groupLicenseTermsId;
+        (groupId, groupLicenseTermsId) = spg.registerGroupAndAttachPILTermsAndAddIps(
+            address(rewardPool),
+            ipIds,
+            PILFlavors.nonCommercialSocialRemixing()
+        );
+
+        assertTrue(ipAssetRegistry.isRegisteredGroup(groupId));
+        assertEq(groupLicenseTermsId, 1);
+        (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(groupId, 0);
+        assertEq(licenseTemplate, address(pilTemplate));
+        assertEq(licenseTermsId, groupLicenseTermsId);
+
+        assertEq(ipAssetRegistry.totalMembers(groupId), 10);
+        for (uint256 i = 0; i < 10; i++) {
+            assertTrue(ipAssetRegistry.containsIp(groupId, ipIds[i]));
+        }
+    }
+
     /// @dev Assert metadata for the SPGNFT.
     function assertSPGNFTMetadata(uint256 tokenId, string memory expectedMetadata) internal {
         assertEq(nftContract.tokenURI(tokenId), expectedMetadata);
@@ -613,6 +780,8 @@ contract StoryProtocolGatewayTest is BaseTest {
     /// @param state IPAccount's internal nonce
     /// @param signerPk The private key of the signer.
     /// @return signature The signature for setting the permission.
+    /// @return expectedState The expected IPAccount's state after setting the permission.
+    /// @return data The call data for executing the setPermission function.
     function _getSetPermissionSignatureForSPG(
         address ipId,
         address module,
@@ -624,12 +793,12 @@ contract StoryProtocolGatewayTest is BaseTest {
         expectedState = keccak256(
             abi.encode(
                 state, // ipAccount.state()
-                abi.encodeWithSignature(
-                    "execute(address,uint256,bytes)",
+                abi.encodeWithSelector(
+                    IIPAccount.execute.selector,
                     address(accessController),
                     0, // amount of ether to send
-                    abi.encodeWithSignature(
-                        "setPermission(address,address,address,bytes4,uint8)",
+                    abi.encodeWithSelector(
+                        IAccessController.setPermission.selector,
                         ipId,
                         address(spg),
                         address(module),
@@ -640,14 +809,88 @@ contract StoryProtocolGatewayTest is BaseTest {
             )
         );
 
-        data = abi.encodeWithSignature(
-            "setPermission(address,address,address,bytes4,uint8)",
+        data = abi.encodeWithSelector(
+            IAccessController.setPermission.selector,
             ipId,
             address(spg),
             address(module),
             selector,
             AccessPermission.ALLOW
         );
+
+        bytes32 digest = MessageHashUtils.toTypedDataHash(
+            MetaTx.calculateDomainSeparator(ipId),
+            MetaTx.getExecuteStructHash(
+                MetaTx.Execute({
+                    to: address(accessController),
+                    value: 0,
+                    data: data,
+                    nonce: expectedState,
+                    deadline: deadline
+                })
+            )
+        );
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerPk, digest);
+        signature = abi.encodePacked(r, s, v);
+    }
+
+    /// @dev Get the permission list for setting metadata and attaching license terms for the IP.
+    /// @param ipId The ID of the IP that the permissions are for.
+    /// @return permissionList The list of permissions for setting metadata and attaching license terms.
+    function _getMetadataAndAttachTermsPermissionList(
+        address ipId
+    ) internal view returns (AccessPermission.Permission[] memory permissionList) {
+        address[] memory modules = new address[](2);
+        bytes4[] memory selectors = new bytes4[](2);
+        permissionList = new AccessPermission.Permission[](modules.length);
+
+        modules[0] = address(coreMetadataModule);
+        modules[1] = address(licensingModule);
+        selectors[0] = ICoreMetadataModule.setAll.selector;
+        selectors[1] = ILicensingModule.attachLicenseTerms.selector;
+
+        for (uint256 i = 0; i < 2; i++) {
+            permissionList[i] = AccessPermission.Permission({
+                ipAccount: ipId,
+                signer: address(spg),
+                to: modules[i],
+                func: selectors[i],
+                permission: AccessPermission.ALLOW
+            });
+        }
+    }
+
+    /// @dev Get the signature for setting batch permission for the IP by the SPG.
+    /// @param ipId The ID of the IP to set the permissions for.
+    /// @param permissionList A list of permissions to set.
+    /// @param deadline The deadline for the signature.
+    /// @param state IPAccount's internal state
+    /// @param signerPk The private key of the signer.
+    /// @return signature The signature for setting the batch permission.
+    /// @return expectedState The expected IPAccount's state after setting batch permission.
+    /// @return data The call data for executing the setBatchPermissions function.
+    function _getSetBatchPermissionSignatureForSPG(
+        address ipId,
+        AccessPermission.Permission[] memory permissionList,
+        uint256 deadline,
+        bytes32 state,
+        uint256 signerPk
+    ) internal returns (bytes memory signature, bytes32 expectedState, bytes memory data) {
+        assertEq(state, bytes32(0));
+        expectedState = keccak256(
+            abi.encode(
+                state, // ipAccount.state()
+                abi.encodeWithSelector(
+                    IIPAccount.execute.selector,
+                    address(accessController),
+                    0, // amount of ether to send
+                    abi.encodeWithSelector(IAccessController.setBatchPermissions.selector, permissionList)
+                )
+            )
+        );
+
+        data = abi.encodeWithSelector(IAccessController.setBatchPermissions.selector, permissionList);
 
         bytes32 digest = MessageHashUtils.toTypedDataHash(
             MetaTx.calculateDomainSeparator(ipId),
@@ -679,7 +922,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         licenseTermsIds[0] = licenseTermsIdParent;
 
         (address ipIdChild, uint256 tokenIdChild) = spg.mintAndRegisterIpAndMakeDerivative({
-            nftContract: address(nftContract),
+            spgNftContract: address(nftContract),
             derivData: ISPG.MakeDerivative({
                 parentIpIds: parentIpIds,
                 licenseTemplate: address(pilTemplate),
