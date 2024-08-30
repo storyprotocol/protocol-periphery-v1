@@ -14,7 +14,6 @@ import { Errors } from "../contracts/lib/Errors.sol";
 import { BaseTest } from "./utils/BaseTest.t.sol";
 
 contract SPGNFTTest is BaseTest {
-    ISPGNFT internal nftContract;
     string internal nftMetadataEmpty;
     string internal nftMetadataDefault;
 
@@ -37,7 +36,7 @@ contract SPGNFTTest is BaseTest {
     }
 
     function test_SPGNFT_initialize() public {
-        address spgNftImpl = address(new SPGNFT(address(spg)));
+        address spgNftImpl = address(new SPGNFT(address(spg), address(groupingWorkflow)));
         address NFT_CONTRACT_BEACON = address(new UpgradeableBeacon(spgNftImpl, deployer));
         ISPGNFT anotherNftContract = ISPGNFT(address(new BeaconProxy(NFT_CONTRACT_BEACON, "")));
 
@@ -58,7 +57,7 @@ contract SPGNFTTest is BaseTest {
     }
 
     function test_SPGNFT_initialize_revert_zeroParams() public {
-        address spgNftImpl = address(new SPGNFT(address(spg)));
+        address spgNftImpl = address(new SPGNFT(address(spg), address(groupingWorkflow)));
         address NFT_CONTRACT_BEACON = address(new UpgradeableBeacon(spgNftImpl, deployer));
         nftContract = ISPGNFT(address(new BeaconProxy(NFT_CONTRACT_BEACON, "")));
 
@@ -230,10 +229,5 @@ contract SPGNFTTest is BaseTest {
         nftContract.withdrawToken(address(mockToken), bob);
 
         vm.stopPrank();
-    }
-
-    /// @dev Assert metadata for the SPGNFT.
-    function assertSPGNFTMetadata(uint256 tokenId, string memory expectedMetadata) internal {
-        assertEq(nftContract.tokenURI(tokenId), expectedMetadata);
     }
 }
