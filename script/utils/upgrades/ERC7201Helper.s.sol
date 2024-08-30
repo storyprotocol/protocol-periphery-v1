@@ -14,7 +14,7 @@ contract ERC7201HelperScript is Script {
     string constant NAMESPACE = "story-protocol-periphery";
     string constant CONTRACT_NAME = "SPG";
 
-    function run() external {
+    function run() external pure {
         bytes memory erc7201Key = abi.encodePacked(NAMESPACE, ".", CONTRACT_NAME);
         bytes32 hash = keccak256(abi.encode(uint256(keccak256(erc7201Key)) - 1)) & ~bytes32(uint256(0xff));
 
