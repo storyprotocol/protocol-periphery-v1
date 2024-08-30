@@ -4,11 +4,9 @@ pragma solidity ^0.8.23;
 
 import { console2 } from "forge-std/console2.sol";
 import { Script } from "forge-std/Script.sol";
-import { stdJson } from "forge-std/StdJson.sol";
 import { ICreate3Deployer } from "@create3-deployer/contracts/Create3Deployer.sol";
 
 import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
-import { IPAssetRegistry } from "@storyprotocol/core/registries/IPAssetRegistry.sol";
 
 import { StoryProtocolGateway } from "../contracts/StoryProtocolGateway.sol";
 import { SPGNFT } from "../contracts/SPGNFT.sol";
@@ -103,7 +101,7 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
         console2.log(string.concat(contractKey, " deployed to:"), newAddress);
     }
 
-    function _getSalt(string memory name) private view returns (bytes32 salt) {
+    function _getSalt(string memory name) private pure returns (bytes32 salt) {
         salt = keccak256(abi.encode(name, create3SaltSeed));
     }
 }

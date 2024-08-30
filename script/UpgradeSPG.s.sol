@@ -15,8 +15,6 @@ import { StringUtil } from "./utils/StringUtil.sol";
 import { BroadcastManager } from "./utils/BroadcastManager.s.sol";
 import { JsonDeploymentHandler } from "./utils/JsonDeploymentHandler.s.sol";
 
-import { TestProxyHelper } from "../test/utils/TestProxyHelper.t.sol";
-
 contract UpgradeSPG is
     Script,
     StoryProtocolCoreAddressManager,
