@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 /// @title Errors Library
 /// @notice Library for all Story Protocol periphery contract errors.
 library Errors {
-    /// @notice Zero address provided as a param.
+    /// @notice Zero address provided as a param to SPG.
     error SPG__ZeroAddressParam();
 
     /// @notice Caller does not have the minter role.
@@ -25,6 +25,9 @@ library Errors {
     /// @notice Max mint supply reached.
     error SPGNFT__MaxSupplyReached();
 
-    /// @notice Caller is not the StoryProtocolGateway.
-    error SPGNFT__CallerNotSPG();
+    /// @notice Caller is not one of the periphery contracts.
+    error SPGNFT__CallerNotPeripheryContract();
+
+    /// @notice Zero address provided as a param to the GroupingWorkflow.
+    error GroupingWorkflow__ZeroAddressParam();
 }
