@@ -42,7 +42,7 @@ library LicensingHelper {
         ILicensingModule(licensingModule).attachLicenseTerms(ipId, pilTemplate, licenseTermsId);
     }
 
-    /// @dev Collects license tokens from the caller. Assumes SPG has permission to transfer the license tokens.
+    /// @dev Collects license tokens from the caller. Assumes the periphery contract has permission to transfer the license tokens.
     /// @param licenseTokenIds The IDs of the license tokens to be collected.
     /// @param licenseToken The address of the license token contract.
     function collectLicenseTokens(uint256[] calldata licenseTokenIds, address licenseToken) internal {

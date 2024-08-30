@@ -28,6 +28,6 @@ library Errors {
     /// @notice Caller is not one of the periphery contracts.
     error SPGNFT__CallerNotPeripheryContract();
 
-    /// @notice Zero address provided as a param to the GroupingWorkflow.
-    error GroupingWorkflow__ZeroAddressParam();
+    /// @notice Zero address provided as a param to the GroupingWorkflows.
+    error GroupingWorkflows__ZeroAddressParam();
 }

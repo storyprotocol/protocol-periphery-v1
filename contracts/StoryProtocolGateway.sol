@@ -163,7 +163,7 @@ contract StoryProtocolGateway is
     /// @param tokenId The ID of the NFT.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
-    /// @return ipId The ID of the newly registered IP
+    /// @return ipId The ID of the newly registered IP.
     function registerIp(
         address nftContract,
         uint256 tokenId,

@@ -20,14 +20,14 @@ import { ISPGNFT } from "./interfaces/ISPGNFT.sol";
 import { MetadataHelper } from "./lib/MetadataHelper.sol";
 import { LicensingHelper } from "./lib/LicensingHelper.sol";
 import { PermissionHelper } from "./lib/PermissionHelper.sol";
-import { IGroupingWorkflow } from "./interfaces/IGroupingWorkflow.sol";
+import { IGroupingWorkflows } from "./interfaces/IGroupingWorkflows.sol";
 import { IStoryProtocolGateway as ISPG } from "./interfaces/IStoryProtocolGateway.sol";
 
-/// @title Grouping Workflow
+/// @title Grouping Workflows
 /// @notice This contract provides key workflows for engaging with Group IPA features in
 /// Story’s Proof of Creativity protocol.
-contract GroupingWorkflow is
-    IGroupingWorkflow,
+contract GroupingWorkflows is
+    IGroupingWorkflows,
     BaseWorkflow,
     MulticallUpgradeable,
     AccessManagedUpgradeable,
@@ -37,16 +37,15 @@ contract GroupingWorkflow is
 
     /// @dev Storage structure for the Grouping Workflow.
     /// @param nftContractBeacon The address of the NFT contract beacon.
-    /// @custom:storage-location erc7201:story-protocol-periphery.GroupingWorkflow
-    struct GroupingWorkflowStorage {
+    /// @custom:storage-location erc7201:story-protocol-periphery.GroupingWorkflows
+    struct GroupingWorkflowsStorage {
         address nftContractBeacon;
     }
 
-    /* solhint-disable */
-    // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.GroupingWorkflow")) - 1)) & ~bytes32(uint256(0xff));
-    bytes32 private constant GroupingWorkflowStorageLocation =
-        0x4857a9bcc504d5c12cd2c114418794d56adfd4110e9bf90f57ba93c59e7f6200;
-    /* solhint-enable */
+    // solhint-disable-next-line max-line-length
+    // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.GroupingWorkflows")) - 1)) & ~bytes32(uint256(0xff));
+    bytes32 private constant GroupingWorkflowsStorageLocation =
+        0xa8ddbb5f662015e2b3d6b4c61921979ad3d3d1d19e338b1c4ba6a196b10c6400;
 
     /// @notice The address of the Grouping Module.
     IGroupingModule public immutable GROUPING_MODULE;
@@ -82,7 +81,7 @@ contract GroupingWorkflow is
             licensingModule == address(0) ||
             licenseRegistry == address(0) ||
             pilTemplate == address(0)
-        ) revert Errors.GroupingWorkflow__ZeroAddressParam();
+        ) revert Errors.GroupingWorkflows__ZeroAddressParam();
 
         GROUPING_MODULE = IGroupingModule(groupingModule);
         GROUP_NFT = GroupNFT(groupNft);
@@ -93,7 +92,7 @@ contract GroupingWorkflow is
     /// @dev Initializes the contract.
     /// @param accessManager The address of the protocol access manager.
     function initialize(address accessManager) external initializer {
-        if (accessManager == address(0)) revert Errors.GroupingWorkflow__ZeroAddressParam();
+        if (accessManager == address(0)) revert Errors.GroupingWorkflows__ZeroAddressParam();
         __AccessManaged_init(accessManager);
         __UUPSUpgradeable_init();
     }
@@ -101,8 +100,8 @@ contract GroupingWorkflow is
     /// @dev Sets the NFT contract beacon address.
     /// @param newNftContractBeacon The address of the new NFT contract beacon.
     function setNftContractBeacon(address newNftContractBeacon) external restricted {
-        if (newNftContractBeacon == address(0)) revert Errors.GroupingWorkflow__ZeroAddressParam();
-        GroupingWorkflowStorage storage $ = _getGroupingWorkflowStorage();
+        if (newNftContractBeacon == address(0)) revert Errors.GroupingWorkflows__ZeroAddressParam();
+        GroupingWorkflowsStorage storage $ = _getGroupingWorkflowsStorage();
         $.nftContractBeacon = newNftContractBeacon;
     }
 
@@ -206,7 +205,7 @@ contract GroupingWorkflow is
 
     /// @notice Register a group IP with a group reward pool, register Programmable IP License Terms,
     /// attach it to the group IP, and add individual IPs to the group IP.
-    /// @dev ipIds must be have the same PIL terms as the group IP.
+    /// @dev ipIds must have the same PIL terms as the group IP.
     /// @param groupPool The address of the group reward pool.
     /// @param ipIds The IDs of the IPs to add to the newly registered group IP.
     /// @param groupIpTerms The PIL terms to be registered and attached to the newly registered group IP.
@@ -236,10 +235,10 @@ contract GroupingWorkflow is
     // Upgrade
     //
 
-    /// @dev Returns the storage struct of GroupingWorkflow.
-    function _getGroupingWorkflowStorage() private pure returns (GroupingWorkflowStorage storage $) {
+    /// @dev Returns the storage struct of GroupingWorkflows.
+    function _getGroupingWorkflowsStorage() private pure returns (GroupingWorkflowsStorage storage $) {
         assembly {
-            $.slot := GroupingWorkflowStorageLocation
+            $.slot := GroupingWorkflowsStorageLocation
         }
     }
 

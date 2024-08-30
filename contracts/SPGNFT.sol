@@ -31,7 +31,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @dev The address of the SPG contract.
     address public immutable SPG_ADDRESS;
 
-    ///@dev The address of the GroupingWorkflow contract.
+    ///@dev The address of the GroupingWorkflows contract.
     address public immutable GROUPING_ADDRESS;
 
     /// @notice Modifier to restrict access to the SPG contract.
@@ -42,11 +42,11 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address spg, address groupingWorkflow) {
-        if (spg == address(0) || groupingWorkflow == address(0)) revert Errors.SPGNFT__ZeroAddressParam();
+    constructor(address spg, address groupingWorkflows) {
+        if (spg == address(0) || groupingWorkflows == address(0)) revert Errors.SPGNFT__ZeroAddressParam();
 
         SPG_ADDRESS = spg;
-        GROUPING_ADDRESS = groupingWorkflow;
+        GROUPING_ADDRESS = groupingWorkflows;
 
         _disableInitializers();
     }

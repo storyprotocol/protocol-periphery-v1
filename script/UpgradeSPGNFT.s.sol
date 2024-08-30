@@ -8,7 +8,7 @@ import { Script } from "forge-std/Script.sol";
 import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 
 import { StoryProtocolGateway } from "../contracts/StoryProtocolGateway.sol";
-import { GroupingWorkflow } from "../contracts/GroupingWorkflow.sol";
+import { GroupingWorkflows } from "../contracts/GroupingWorkflows.sol";
 import { SPGNFT } from "../contracts/SPGNFT.sol";
 
 import { StoryProtocolPeripheryAddressManager } from "./utils/StoryProtocolPeripheryAddressManager.sol";
@@ -20,7 +20,7 @@ contract UpgradeSPGNFT is Script, StoryProtocolPeripheryAddressManager, Broadcas
     using StringUtil for uint256;
 
     StoryProtocolGateway private spg;
-    GroupingWorkflow private groupingWorkflow;
+    GroupingWorkflows private groupingWorkflows;
     SPGNFT private spgNftImpl;
     UpgradeableBeacon private spgNftBeacon;
 
@@ -50,7 +50,7 @@ contract UpgradeSPGNFT is Script, StoryProtocolPeripheryAddressManager, Broadcas
         _writeAddress("SPGNFTBeacon", address(spgNftBeacon));
 
         _predeploy("SPGNFTImpl");
-        spgNftImpl = new SPGNFT(address(spg), address(groupingWorkflow));
+        spgNftImpl = new SPGNFT(address(spg), address(groupingWorkflows));
         _postdeploy("SPGNFTImpl", address(spgNftImpl));
     }
 

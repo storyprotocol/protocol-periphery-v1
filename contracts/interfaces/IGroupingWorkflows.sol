@@ -5,8 +5,8 @@ import { PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILi
 
 import { IStoryProtocolGateway as ISPG } from "../interfaces/IStoryProtocolGateway.sol";
 
-/// @title Grouping Workflow Interface
-interface IGroupingWorkflow {
+/// @title Grouping Workflows Interface
+interface IGroupingWorkflows {
     /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP,
     /// attach Programmable IP License Terms to the registered IP, and add it to a group IP.
     /// @dev Caller must have the minter role for the provided SPG NFT.

@@ -35,7 +35,7 @@ import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/meta
 
 import { StoryProtocolGateway } from "../../contracts/StoryProtocolGateway.sol";
 import { IStoryProtocolGateway as ISPG } from "../../contracts/interfaces/IStoryProtocolGateway.sol";
-import { GroupingWorkflow } from "../../contracts/GroupingWorkflow.sol";
+import { GroupingWorkflows } from "../../contracts/GroupingWorkflows.sol";
 import { SPGNFT } from "../../contracts/SPGNFT.sol";
 import { ISPGNFT } from "../../contracts/interfaces/ISPGNFT.sol";
 import { TestProxyHelper } from "./TestProxyHelper.t.sol";
@@ -74,7 +74,7 @@ contract BaseTest is Test {
     StoryProtocolGateway internal spg;
     SPGNFT internal spgNftImpl;
     UpgradeableBeacon internal spgNftBeacon;
-    GroupingWorkflow internal groupingWorkflow;
+    GroupingWorkflows internal groupingWorkflows;
 
     MockERC20 internal mockToken;
     MockIPGraph internal ipGraph = MockIPGraph(address(0x1A));
@@ -509,7 +509,7 @@ contract BaseTest is Test {
 
         impl = address(0); // Make sure we don't deploy wrong impl
         impl = address(
-            new GroupingWorkflow(
+            new GroupingWorkflows(
                 address(accessController),
                 address(coreMetadataModule),
                 address(groupingModule),
@@ -521,19 +521,19 @@ contract BaseTest is Test {
             )
         );
 
-        groupingWorkflow = GroupingWorkflow(
+        groupingWorkflows = GroupingWorkflows(
             TestProxyHelper.deployUUPSProxy(
                 create3Deployer,
-                _getSalt(type(GroupingWorkflow).name),
+                _getSalt(type(GroupingWorkflows).name),
                 impl,
-                abi.encodeCall(GroupingWorkflow.initialize, address(protocolAccessManager))
+                abi.encodeCall(GroupingWorkflows.initialize, address(protocolAccessManager))
             )
         );
 
         spgNftImpl = SPGNFT(
             create3Deployer.deploy(
                 _getSalt(type(SPGNFT).name),
-                abi.encodePacked(type(SPGNFT).creationCode, abi.encode(address(spg), address(groupingWorkflow)))
+                abi.encodePacked(type(SPGNFT).creationCode, abi.encode(address(spg), address(groupingWorkflows)))
             )
         );
 
@@ -545,7 +545,7 @@ contract BaseTest is Test {
         );
 
         spg.setNftContractBeacon(address(spgNftBeacon));
-        groupingWorkflow.setNftContractBeacon(address(spgNftBeacon));
+        groupingWorkflows.setNftContractBeacon(address(spgNftBeacon));
 
         // bytes4[] memory selectors = new bytes4[](1);
         // selectors[0] = UUPSUpgradeable.upgradeToAndCall.selector;

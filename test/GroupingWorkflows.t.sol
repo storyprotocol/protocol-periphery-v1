@@ -10,7 +10,7 @@ import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensi
 
 import { IStoryProtocolGateway as ISPG } from "../contracts/interfaces/IStoryProtocolGateway.sol";
 
-contract GroupingWorkflowTest is BaseTest {
+contract GroupingWorkflowsTest is BaseTest {
     address internal groupId;
 
     function setUp() public override {
@@ -48,7 +48,7 @@ contract GroupingWorkflowTest is BaseTest {
         _;
     }
 
-    function test_SPG_mintAndRegisterIpAndAddToGroup()
+    function test_GroupingWorkflows_mintAndRegisterIpAndAttachPILTermsAndAddToGroup()
         public
         withCollection
         whenCallerHasMinterRole
@@ -59,7 +59,7 @@ contract GroupingWorkflowTest is BaseTest {
 
         (bytes memory sigAddToGroup, bytes32 expectedState, ) = _getSetPermissionSigForPeriphery({
             ipId: groupId,
-            to: address(groupingWorkflow),
+            to: address(groupingWorkflows),
             module: address(groupingModule),
             selector: IGroupingModule.addIp.selector,
             deadline: deadline,
@@ -67,7 +67,7 @@ contract GroupingWorkflowTest is BaseTest {
             signerPk: alicePk
         });
 
-        (address ipId, uint256 tokenId) = groupingWorkflow.mintAndRegisterIpAndAttachPILTermsAndAddToGroup({
+        (address ipId, uint256 tokenId) = groupingWorkflows.mintAndRegisterIpAndAttachPILTermsAndAddToGroup({
             spgNftContract: address(nftContract),
             groupId: groupId,
             recipient: caller,
@@ -89,7 +89,7 @@ contract GroupingWorkflowTest is BaseTest {
         assertEq(licenseTermsId, 1);
     }
 
-    function test_SPG_registerIpAndAddToGroup()
+    function test_GroupingWorkflows_registerIpAndAttachPILTermsAndAddToGroup()
         public
         withCollection
         whenCallerHasMinterRole
@@ -103,7 +103,7 @@ contract GroupingWorkflowTest is BaseTest {
 
         (bytes memory sigMetadataAndAttach, , ) = _getSetBatchPermissionSigForPeriphery({
             ipId: expectedIpId,
-            permissionList: _getMetadataAndAttachTermsPermissionList(expectedIpId, address(groupingWorkflow)),
+            permissionList: _getMetadataAndAttachTermsPermissionList(expectedIpId, address(groupingWorkflows)),
             deadline: deadline,
             state: bytes32(0),
             signerPk: alicePk
@@ -111,7 +111,7 @@ contract GroupingWorkflowTest is BaseTest {
 
         (bytes memory sigAddToGroup, , ) = _getSetPermissionSigForPeriphery({
             ipId: groupId,
-            to: address(groupingWorkflow),
+            to: address(groupingWorkflows),
             module: address(groupingModule),
             selector: IGroupingModule.addIp.selector,
             deadline: deadline,
@@ -119,7 +119,7 @@ contract GroupingWorkflowTest is BaseTest {
             signerPk: alicePk
         });
 
-        address ipId = groupingWorkflow.registerIpAndAttachPILTermsAndAddToGroup({
+        address ipId = groupingWorkflows.registerIpAndAttachPILTermsAndAddToGroup({
             nftContract: address(nftContract),
             tokenId: tokenId,
             groupId: groupId,
@@ -145,7 +145,11 @@ contract GroupingWorkflowTest is BaseTest {
         assertEq(licenseTermsId, 1);
     }
 
-    function test_SPG_registerGroupAndAddIps() public withCollection whenCallerHasMinterRole {
+    function test_GroupingWorkflows_registerGroupAndAttachPILTermsAndAddIps()
+        public
+        withCollection
+        whenCallerHasMinterRole
+    {
         mockToken.mint(address(caller), 1000 * 10 * 10 ** mockToken.decimals());
         mockToken.approve(address(nftContract), 1000 * 10 * 10 ** mockToken.decimals());
 
@@ -167,7 +171,7 @@ contract GroupingWorkflowTest is BaseTest {
         }
 
         uint256 groupLicenseTermsId;
-        (groupId, groupLicenseTermsId) = groupingWorkflow.registerGroupAndAttachPILTermsAndAddIps(
+        (groupId, groupLicenseTermsId) = groupingWorkflows.registerGroupAndAttachPILTermsAndAddIps(
             address(rewardPool),
             ipIds,
             PILFlavors.nonCommercialSocialRemixing()
