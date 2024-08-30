@@ -31,15 +31,22 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @dev The address of the SPG contract.
     address public immutable SPG_ADDRESS;
 
+    ///@dev The address of the GroupingWorkflow contract.
+    address public immutable GROUPING_ADDRESS;
+
     /// @notice Modifier to restrict access to the SPG contract.
-    modifier onlySPG() {
-        if (msg.sender != SPG_ADDRESS) revert Errors.SPGNFT__CallerNotSPG();
+    modifier onlyPeriphery() {
+        if (msg.sender != SPG_ADDRESS && msg.sender != GROUPING_ADDRESS)
+            revert Errors.SPGNFT__CallerNotPeripheryContract();
         _;
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address spg) {
+    constructor(address spg, address groupingWorkflow) {
+        if (spg == address(0) || groupingWorkflow == address(0)) revert Errors.SPGNFT__ZeroAddressParam();
+
         SPG_ADDRESS = spg;
+        GROUPING_ADDRESS = groupingWorkflow;
 
         _disableInitializers();
     }
@@ -121,16 +128,16 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         tokenId = _mintToken({ to: to, payer: msg.sender, nftMetadataURI: nftMetadataURI });
     }
 
-    /// @notice Mints an NFT from the collection. Only callable by the SPG.
+    /// @notice Mints an NFT from the collection. Only callable by the Periphery contracts.
     /// @param to The address of the recipient of the minted NFT.
     /// @param payer The address of the payer for the mint fee.
     /// @param nftMetadataURI OPTIONAL. The URI of the desired metadata for the newly minted NFT.
     /// @return tokenId The ID of the minted NFT.
-    function mintBySPG(
+    function mintByPeriphery(
         address to,
         address payer,
         string calldata nftMetadataURI
-    ) public virtual onlySPG returns (uint256 tokenId) {
+    ) public virtual onlyPeriphery returns (uint256 tokenId) {
         tokenId = _mintToken({ to: to, payer: payer, nftMetadataURI: nftMetadataURI });
     }
 

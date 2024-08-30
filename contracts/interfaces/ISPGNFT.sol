@@ -48,12 +48,16 @@ interface ISPGNFT is IAccessControl, IERC721, IERC721Metadata {
     /// @return tokenId The ID of the minted NFT.
     function mint(address to, string calldata nftMetadataURI) external returns (uint256 tokenId);
 
-    /// @notice Mints an NFT from the collection. Only callable by the SPG.
+    /// @notice Mints an NFT from the collection. Only callable by Periphery contracts.
     /// @param to The address of the recipient of the minted NFT.
     /// @param payer The address of the payer for the mint fee.
     /// @param nftMetadataURI OPTIONAL. The desired metadata for the newly minted NFT.
     /// @return tokenId The ID of the minted NFT.
-    function mintBySPG(address to, address payer, string calldata nftMetadataURI) external returns (uint256 tokenId);
+    function mintByPeriphery(
+        address to,
+        address payer,
+        string calldata nftMetadataURI
+    ) external returns (uint256 tokenId);
 
     /// @dev Withdraws the contract's token balance to the recipient.
     /// @param recipient The token to withdraw.
