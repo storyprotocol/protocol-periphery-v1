@@ -14,7 +14,7 @@ import { Errors } from "./lib/Errors.sol";
 
 /// @title Base Workflow
 /// @notice The base contract for all Story Protocol Periphery workflows.
-contract BaseWorkflow {
+abstract contract BaseWorkflow {
     /// @notice The address of the Access Controller.
     IAccessController public immutable ACCESS_CONTROLLER;
 
