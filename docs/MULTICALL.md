@@ -1,14 +1,14 @@
-# Batch SPG Function Calls Guide
+# Batch Periphery Function Calls
 ## Background
 Prior to this point, registering multiple IPs or performing other operations such as minting, attaching licensing terms, and registering derivatives requires separate transactions for each operation. This can be inefficient and costly. To streamline the process, you can batch multiple transactions into a single one. Two solutions are now available for this:
 
-1. **Batch SPG function calls:** Use [SPG's built-in `multicall` function](#batch-spg-function-calls-via-built-in-multicall-function).
-2. **Batch function calls beyond SPG:** Use the [Multicall3 Contract](#batch-function-calls-via-multicall3-contract).
----
+1. **Batch workflow function calls:** Use [workflow contract's built-in `multicall` function](#1-batch-workflow-function-calls-via-built-in-multicall-function).
+2. **Batch function calls beyond SPG:** Use the [Multicall3 Contract](#2-batch-function-calls-via-multicall3-contract).
 
-## 1. Batch SPG Function Calls via Built-in `multicall` Function
 
-Story Protocol Gateway (SPG) includes a `multicall` function that allows you to combine multiple read or write operations into a single transaction.
+## 1. Batch Workflow Function Calls via Built-in `multicall` Function
+
+Workflow contracts include a `multicall` function that allows you to combine multiple read or write operations into a single transaction.
 
 ### Function Definition
 
@@ -23,12 +23,12 @@ function multicall(bytes[] calldata data) external virtual returns (bytes[] memo
 
 Suppose you want to mint multiple NFTs, register them as IPs, and link them as derivatives to some parent IPs.
 
-To accomplish this, you can use SPG’s `multicall` function to batch the calls to the `mintAndRegisterIpAndMakeDerivative` function.
+To accomplish this, you can use workflow contracts' `multicall` function to batch the calls to the `mintAndRegisterIpAndMakeDerivative` function.
 
 Here’s how you might do it:
 
 ```solidity
-// SPG contract
+// StoryProtocolGateway contract
 contract SPG {
     ...
     function mintAndRegisterIpAndMakeDerivative(
@@ -73,11 +73,9 @@ await SPG.multicall([
 ]);
 ```
 
----
-
 ## 2. Batch Function Calls via Multicall3 Contract
 
-> ⚠️ **Note:** The Multicall3 contract is not fully compatible with SPG functions that involve SPGNFT minting due to access control and context changes during Multicall execution. For such operations, use [SPG's built-in `multicall` function](#batch-spg-function-calls-via-built-in-multicall-function).
+> ⚠️ **Note:** The Multicall3 contract is not fully compatible with workflow functions that involve SPGNFT minting due to access control and context changes during Multicall execution. For such operations, use [workflow contracts' built-in `multicall` function](#1-batch-workflow-function-calls-via-built-in-multicall-function).
 
 The Multicall3 contract allows you to execute multiple calls within a single transaction and aggregate the results.
 The `viem` library provides native support for Multicall3.
