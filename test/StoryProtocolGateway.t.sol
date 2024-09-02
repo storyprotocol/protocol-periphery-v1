@@ -21,8 +21,6 @@ contract StoryProtocolGatewayTest is BaseTest {
         address owner;
     }
 
-    address internal feeRecipient;
-    
     mapping(uint256 index => IPAsset) internal ipAsset;
     address internal ipIdParent;
 
@@ -433,14 +431,17 @@ contract StoryProtocolGatewayTest is BaseTest {
         nftContracts = new ISPGNFT[](10);
         bytes[] memory data = new bytes[](10);
         for (uint256 i = 0; i < 10; i++) {
-            data[i] = abi.encodeWithSignature(
-                "createCollection(string,string,uint32,uint256,address,address)",
+            data[i] = abi.encodeWithSelector(
+                spg.createCollection.selector,
                 "Test Collection",
                 "TEST",
                 100,
                 100 * 10 ** mockToken.decimals(),
                 address(mockToken),
-                minter
+                feeRecipient,
+                minter,
+                true,
+                false
             );
         }
 
@@ -455,6 +456,10 @@ contract StoryProtocolGatewayTest is BaseTest {
             assertEq(nftContracts[i].totalSupply(), 0);
             assertTrue(nftContracts[i].hasRole(SPGNFTLib.MINTER_ROLE, alice));
             assertEq(nftContracts[i].mintFee(), 100 * 10 ** mockToken.decimals());
+            assertEq(nftContracts[i].mintFeeToken(), address(mockToken));
+            assertEq(nftContracts[i].mintFeeRecipient(), bob);
+            assertTrue(nftContracts[i].mintOpen());
+            assertFalse(nftContracts[i].publicMinting());
         }
     }
 

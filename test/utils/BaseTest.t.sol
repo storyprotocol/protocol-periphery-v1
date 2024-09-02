@@ -198,7 +198,7 @@ contract BaseTest is Test {
         impl = address(0); // Make sure we don't deploy wrong impl
         address ipAccountRegistry = address(ipAssetRegistry);
 
-        impl = address(new AccessController());
+        impl = address(new AccessController(address(ipAssetRegistry), address(moduleRegistry)));
         accessController = AccessController(
             TestProxyHelper.deployUUPSProxy(
                 create3Deployer,
@@ -278,6 +278,7 @@ contract BaseTest is Test {
         impl = address(0); // Make sure we don't deploy wrong impl
         impl = address(
             new RoyaltyModule(
+                _getDeployedAddress(type(LicensingModule).name),
                 address(disputeModule),
                 address(licenseRegistry),
                 address(ipAssetRegistry)
@@ -302,6 +303,7 @@ contract BaseTest is Test {
             new LicensingModule(
                 address(accessController),
                 address(ipAccountRegistry),
+                address(moduleRegistry),
                 address(royaltyModule),
                 address(licenseRegistry),
                 address(disputeModule),
@@ -479,13 +481,6 @@ contract BaseTest is Test {
         moduleRegistry.registerModule("CORE_METADATA_MODULE", address(coreMetadataModule));
         moduleRegistry.registerModule("CORE_METADATA_VIEW_MODULE", address(coreMetadataViewModule));
         moduleRegistry.registerModule("GROUPING_MODULE", address(groupingModule));
-
-        accessController.setAddresses(address(ipAssetRegistry), address(moduleRegistry));
-        licenseRegistry.setDisputeModule(address(disputeModule));
-        licenseRegistry.setLicensingModule(address(licensingModule));
-        licenseToken.setLicensingModule(address(licensingModule));
-        licenseToken.setDisputeModule(address(disputeModule));
-        royaltyModule.setLicensingModule(address(licensingModule));
 
         coreMetadataViewModule.updateCoreMetadataModule();
         licenseRegistry.registerLicenseTemplate(address(pilTemplate));

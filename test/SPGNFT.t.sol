@@ -14,7 +14,6 @@ import { Errors } from "../contracts/lib/Errors.sol";
 import { BaseTest } from "./utils/BaseTest.t.sol";
 
 contract SPGNFTTest is BaseTest {
-    address internal feeRecipient;
     string internal nftMetadataEmpty;
     string internal nftMetadataDefault;
 

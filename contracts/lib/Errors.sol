@@ -33,7 +33,7 @@ library Errors {
 
     /// @notice Minting is closed.
     error SPGNFT__MintingClosed();
-    
+
     /// @notice Caller is not one of the periphery contracts.
     error SPGNFT__CallerNotPeripheryContract();
 

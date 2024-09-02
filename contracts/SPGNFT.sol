@@ -174,10 +174,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @param to The address of the recipient of the minted NFT.
     /// @param nftMetadataURI OPTIONAL. The URI of the desired metadata for the newly minted NFT.
     /// @return tokenId The ID of the minted NFT.
-    function mint(
-        address to,
-        string calldata nftMetadataURI
-    ) public virtual returns (uint256 tokenId) {
+    function mint(address to, string calldata nftMetadataURI) public virtual returns (uint256 tokenId) {
         if (!_getSPGNFTStorage().publicMinting && !hasRole(SPGNFTLib.MINTER_ROLE, msg.sender)) {
             revert Errors.SPGNFT__MintingDenied();
         }
