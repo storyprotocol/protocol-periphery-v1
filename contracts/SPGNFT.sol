@@ -2,7 +2,8 @@
 pragma solidity ^0.8.23;
 
 import { AccessControlUpgradeable } from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+// solhint-disable-next-line max-line-length
+import { ERC721URIStorageUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
@@ -10,7 +11,7 @@ import { ISPGNFT } from "./interfaces/ISPGNFT.sol";
 import { Errors } from "./lib/Errors.sol";
 import { SPGNFTLib } from "./lib/SPGNFTLib.sol";
 
-contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
+contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeable {
     /// @dev Storage structure for the SPGNFTSotrage.
     /// @param maxSupply The maximum supply of the collection.
     /// @param totalSupply The total minted supply of the collection.
@@ -35,15 +36,22 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
     /// @dev The address of the SPG contract.
     address public immutable SPG_ADDRESS;
 
+    ///@dev The address of the GroupingWorkflows contract.
+    address public immutable GROUPING_ADDRESS;
+
     /// @notice Modifier to restrict access to the SPG contract.
-    modifier onlySPG() {
-        if (msg.sender != SPG_ADDRESS) revert Errors.SPGNFT__CallerNotSPG();
+    modifier onlyPeriphery() {
+        if (msg.sender != SPG_ADDRESS && msg.sender != GROUPING_ADDRESS)
+            revert Errors.SPGNFT__CallerNotPeripheryContract();
         _;
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address spg) {
+    constructor(address spg, address groupingWorkflows) {
+        if (spg == address(0) || groupingWorkflows == address(0)) revert Errors.SPGNFT__ZeroAddressParam();
+
         SPG_ADDRESS = spg;
+        GROUPING_ADDRESS = groupingWorkflows;
 
         _disableInitializers();
     }
@@ -164,20 +172,29 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
 
     /// @notice Mints an NFT from the collection. Only callable by the minter role.
     /// @param to The address of the recipient of the minted NFT.
+    /// @param nftMetadataURI OPTIONAL. The URI of the desired metadata for the newly minted NFT.
     /// @return tokenId The ID of the minted NFT.
-    function mint(address to) public returns (uint256 tokenId) {
+    function mint(
+        address to,
+        string calldata nftMetadataURI
+    ) public virtual returns (uint256 tokenId) {
         if (!_getSPGNFTStorage().publicMinting && !hasRole(SPGNFTLib.MINTER_ROLE, msg.sender)) {
             revert Errors.SPGNFT__MintingDenied();
         }
-        tokenId = _mintToken({ to: to, payer: msg.sender });
+        tokenId = _mintToken({ to: to, payer: msg.sender, nftMetadataURI: nftMetadataURI });
     }
 
-    /// @notice Mints an NFT from the collection. Only callable by the SPG.
+    /// @notice Mints an NFT from the collection. Only callable by the Periphery contracts.
     /// @param to The address of the recipient of the minted NFT.
     /// @param payer The address of the payer for the mint fee.
+    /// @param nftMetadataURI OPTIONAL. The URI of the desired metadata for the newly minted NFT.
     /// @return tokenId The ID of the minted NFT.
-    function mintBySPG(address to, address payer) public onlySPG returns (uint256 tokenId) {
-        tokenId = _mintToken({ to: to, payer: payer });
+    function mintByPeriphery(
+        address to,
+        address payer,
+        string calldata nftMetadataURI
+    ) public virtual onlyPeriphery returns (uint256 tokenId) {
+        tokenId = _mintToken({ to: to, payer: payer, nftMetadataURI: nftMetadataURI });
     }
 
     /// @dev Withdraws the contract's token balance to the fee recipient.
@@ -190,15 +207,16 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
     /// @param interfaceId The interface identifier.
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(AccessControlUpgradeable, ERC721Upgradeable, IERC165) returns (bool) {
+    ) public view virtual override(AccessControlUpgradeable, ERC721URIStorageUpgradeable, IERC165) returns (bool) {
         return interfaceId == type(ISPGNFT).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /// @dev Mints an NFT from the collection.
     /// @param to The address of the recipient of the minted NFT.
     /// @param payer The address of the payer for the mint fee.
+    /// @param nftMetadataURI OPTIONAL. The URI of the desired metadata for the newly minted NFT.
     /// @return tokenId The ID of the minted NFT.
-    function _mintToken(address to, address payer) internal returns (uint256 tokenId) {
+    function _mintToken(address to, address payer, string calldata nftMetadataURI) internal returns (uint256 tokenId) {
         SPGNFTStorage storage $ = _getSPGNFTStorage();
         if (!$.mintOpen) revert Errors.SPGNFT__MintingClosed();
         if ($.totalSupply + 1 > $.maxSupply) revert Errors.SPGNFT__MaxSupplyReached();
@@ -209,6 +227,8 @@ contract SPGNFT is ISPGNFT, ERC721Upgradeable, AccessControlUpgradeable {
 
         tokenId = ++$.totalSupply;
         _mint(to, tokenId);
+
+        if (bytes(nftMetadataURI).length > 0) _setTokenURI(tokenId, nftMetadataURI);
     }
 
     //

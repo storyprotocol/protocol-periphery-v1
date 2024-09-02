@@ -3,8 +3,6 @@ pragma solidity ^0.8.23;
 
 import { Script } from "forge-std/Script.sol";
 
-import { StringUtil } from "./StringUtil.sol";
-
 contract BroadcastManager is Script {
     address public multisig;
     address public deployer;
@@ -17,9 +15,9 @@ contract BroadcastManager is Script {
             multisig = vm.envAddress("MAINNET_MULTISIG_ADDRESS");
             vm.startBroadcast(deployerPrivateKey);
         } else if (block.chainid == 1513 || block.chainid == 11155111) {
-            deployerPrivateKey = vm.envUint("SEPOLIA_PRIVATEKEY");
-            deployer = vm.envAddress("SEPOLIA_DEPLOYER_ADDRESS");
-            multisig = vm.envAddress("SEPOLIA_MULTISIG_ADDRESS");
+            deployerPrivateKey = vm.envUint("TESTNET_PRIVATEKEY");
+            deployer = vm.envAddress("TESTNET_DEPLOYER_ADDRESS");
+            multisig = vm.envAddress("TESTNET_MULTISIG_ADDRESS");
             vm.startBroadcast(deployerPrivateKey);
         } else if (block.chainid == 31337) {
             multisig = address(0x456);

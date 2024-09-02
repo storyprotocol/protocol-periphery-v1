@@ -1,5 +1,6 @@
 @openzeppelin/=node_modules/@openzeppelin/
 @storyprotocol/core/=node_modules/@story-protocol/protocol-core/contracts/
 @create3-deployer/=node_modules/@story-protocol/create3-deployer/
+@solady/=node_modules/solady/
 ds-test/=lib/forge-std/lib/ds-test/src/
 forge-std/=lib/forge-std/src/
