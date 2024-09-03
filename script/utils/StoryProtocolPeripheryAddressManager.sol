@@ -8,6 +8,7 @@ contract StoryProtocolPeripheryAddressManager is Script {
     using stdJson for string;
 
     address internal spgAddr;
+    address internal groupingWorkflowsAddr;
     address internal spgNftBeaconAddr;
     address internal spgNftImplAddr;
 
@@ -19,6 +20,7 @@ contract StoryProtocolPeripheryAddressManager is Script {
         );
         string memory json = vm.readFile(path);
         spgAddr = json.readAddress(".main.SPG");
+        groupingWorkflowsAddr = json.readAddress(".main.GroupingWorkflows");
         spgNftBeaconAddr = json.readAddress(".main.SPGNFTBeacon");
         spgNftImplAddr = json.readAddress(".main.SPGNFTImpl");
     }

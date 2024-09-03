@@ -8,15 +8,16 @@ import { ICreate3Deployer } from "@create3-deployer/contracts/Create3Deployer.so
 
 import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 
-import { StoryProtocolGateway } from "../contracts/StoryProtocolGateway.sol";
-import { SPGNFT } from "../contracts/SPGNFT.sol";
+import { StoryProtocolGateway } from "../../contracts/StoryProtocolGateway.sol";
+import { GroupingWorkflows } from "../../contracts/GroupingWorkflows.sol";
+import { SPGNFT } from "../../contracts/SPGNFT.sol";
 
-import { StoryProtocolCoreAddressManager } from "./utils/StoryProtocolCoreAddressManager.sol";
-import { StringUtil } from "./utils/StringUtil.sol";
-import { BroadcastManager } from "./utils/BroadcastManager.s.sol";
-import { JsonDeploymentHandler } from "./utils/JsonDeploymentHandler.s.sol";
+import { StoryProtocolCoreAddressManager } from "../utils/StoryProtocolCoreAddressManager.sol";
+import { StringUtil } from "../utils/StringUtil.sol";
+import { BroadcastManager } from "../utils/BroadcastManager.s.sol";
+import { JsonDeploymentHandler } from "../utils/JsonDeploymentHandler.s.sol";
 
-import { TestProxyHelper } from "../test/utils/TestProxyHelper.t.sol";
+import { TestProxyHelper } from "../../test/utils/TestProxyHelper.t.sol";
 
 contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, JsonDeploymentHandler {
     using StringUtil for uint256;
@@ -25,17 +26,18 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
     uint256 private constant create3SaltSeed = 12;
 
     StoryProtocolGateway private spg;
+    GroupingWorkflows private groupingWorkflows;
     SPGNFT private spgNftImpl;
     UpgradeableBeacon private spgNftBeacon;
 
     constructor() JsonDeploymentHandler("main") {}
 
     /// @dev To use, run the following command (e.g. for Sepolia):
-    /// forge script script/Main.s.sol:Main --rpc-url $RPC_URL --broadcast --verify -vvvv
+    /// forge script script/deployment/Main.s.sol:Main --rpc-url $RPC_URL --broadcast --verify -vvvv
     function run() public {
         _readStoryProtocolCoreAddresses();
         _beginBroadcast();
-        _deployProtocolContracts(deployer);
+        _deployPeripheryContracts();
         _writeDeployment();
 
         // Transfer ownership of beacon proxy to SPG
@@ -44,9 +46,10 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
 
         // Set beacon contract via multisig.
         // spg.setNftContractBeacon(address(spgNftBeacon));
+        // groupingWorkflows.setNftContractBeacon(address(spgNftBeacon));
     }
 
-    function _deployProtocolContracts(address accessControlDeployer) private {
+    function _deployPeripheryContracts() private {
         address impl;
 
         _predeploy("SPG");
@@ -73,11 +76,35 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
         impl = address(0);
         _postdeploy("SPG", address(spg));
 
+        _predeploy("GroupingWorkflows");
+        impl = address(
+            new GroupingWorkflows(
+                accessControllerAddr,
+                coreMetadataModuleAddr,
+                groupingModuleAddr,
+                groupNFTAddr,
+                ipAssetRegistryAddr,
+                licensingModuleAddr,
+                licenseRegistryAddr,
+                pilTemplateAddr
+            )
+        );
+        groupingWorkflows = GroupingWorkflows(
+            TestProxyHelper.deployUUPSProxy(
+                create3Deployer,
+                _getSalt(type(GroupingWorkflows).name),
+                impl,
+                abi.encodeCall(GroupingWorkflows.initialize, address(protocolAccessManagerAddr))
+            )
+        );
+        impl = address(0);
+        _postdeploy("GroupingWorkflows", address(groupingWorkflows));
+
         _predeploy("SPGNFTImpl");
         spgNftImpl = SPGNFT(
             create3Deployer.deploy(
                 _getSalt(type(SPGNFT).name),
-                abi.encodePacked(type(SPGNFT).creationCode, abi.encode(address(spg)))
+                abi.encodePacked(type(SPGNFT).creationCode, abi.encode(address(spg), address(groupingWorkflows)))
             )
         );
         _postdeploy("SPGNFTImpl", address(spgNftImpl));
