@@ -32,8 +32,12 @@ contract Main is Script, StoryProtocolCoreAddressManager, BroadcastManager, Json
 
     constructor() JsonDeploymentHandler("main") {}
 
-    /// @dev To use, run the following command (e.g. for Sepolia):
-    /// forge script script/deployment/Main.s.sol:Main --rpc-url $RPC_URL --broadcast --verify -vvvv
+    /// @dev To use, run the following command (e.g., for Story Iliad testnet):
+    /// forge script script/deployment/Main.s.sol:Main --rpc-url=$TESTNET_URL \
+    /// -vvvv --broadcast --priority-gas-price=1 --legacy \
+    /// --verify --verifier=$VERIFIER_NAME --verifier-url=$VERIFIER_URL
+    ///
+    /// For detailed examples, see the documentation in `../../docs/DEPLOY_UPGRADE.md`.
     function run() public {
         _readStoryProtocolCoreAddresses();
         _beginBroadcast();

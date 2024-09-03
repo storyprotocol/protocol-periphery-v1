@@ -17,9 +17,12 @@ contract MockRewardPool is Script, BroadcastManager, JsonDeploymentHandler {
 
     constructor() JsonDeploymentHandler("main") {}
 
-    /// @dev To use, run the following command (e.g. for Sepolia):
-    /// forge script script/deployment/MockRewardPool.s.sol:MockRewardPool --rpc-url $RPC_URL --broadcast --verify -vvvv
-
+    /// @dev To use, run the following command (e.g., for Story Iliad testnet):
+    /// forge script script/deployment/MockRewardPool.s.sol:MockRewardPool --rpc-url=$TESTNET_URL \
+    /// -vvvv --broadcast --priority-gas-price=1 --legacy \
+    /// --verify --verifier=$VERIFIER_NAME --verifier-url=$VERIFIER_URL
+    ///
+    /// For detailed examples, see the documentation in `../../docs/DEPLOY_UPGRADE.md`.
     function run() public {
         _beginBroadcast(); // BroadcastManager.s.sol
         _deployMockRewardPool();
