@@ -6,16 +6,17 @@ import { console2 } from "forge-std/console2.sol";
 import { Script } from "forge-std/Script.sol";
 import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 
-import { StoryProtocolGateway } from "../contracts/StoryProtocolGateway.sol";
-import { SPGNFT } from "../contracts/SPGNFT.sol";
+import { StoryProtocolGateway } from "../../contracts/StoryProtocolGateway.sol";
+import { GroupingWorkflows } from "../../contracts/GroupingWorkflows.sol";
+import { SPGNFT } from "../../contracts/SPGNFT.sol";
 
-import { StoryProtocolCoreAddressManager } from "./utils/StoryProtocolCoreAddressManager.sol";
-import { StoryProtocolPeripheryAddressManager } from "./utils/StoryProtocolPeripheryAddressManager.sol";
-import { StringUtil } from "./utils/StringUtil.sol";
-import { BroadcastManager } from "./utils/BroadcastManager.s.sol";
-import { JsonDeploymentHandler } from "./utils/JsonDeploymentHandler.s.sol";
+import { StoryProtocolCoreAddressManager } from "../utils/StoryProtocolCoreAddressManager.sol";
+import { StoryProtocolPeripheryAddressManager } from "../utils/StoryProtocolPeripheryAddressManager.sol";
+import { StringUtil } from "../utils/StringUtil.sol";
+import { BroadcastManager } from "../utils/BroadcastManager.s.sol";
+import { JsonDeploymentHandler } from "../utils/JsonDeploymentHandler.s.sol";
 
-contract UpgradeSPG is
+contract UpgradeGroupingWorkflows is
     Script,
     StoryProtocolCoreAddressManager,
     StoryProtocolPeripheryAddressManager,
@@ -25,48 +26,52 @@ contract UpgradeSPG is
     using StringUtil for uint256;
 
     StoryProtocolGateway private spg;
+    GroupingWorkflows private groupingWorkflows;
     SPGNFT private spgNftImpl;
     UpgradeableBeacon private spgNftBeacon;
 
     constructor() JsonDeploymentHandler("main") {}
 
     /// @dev To use, run the following command (e.g. for Sepolia):
-    /// forge script script/UpgradeSPG.s.sol:UpgradeSPG --rpc-url $RPC_URL --broadcast --verify -vvvv
+    /// forge script script/upgrade/UpgradeGroupingWorkflows.s.sol:UpgradeGroupingWorkflows
+    /// --rpc-url $RPC_URL --broadcast --verify -vvvv
     function run() public {
         _readStoryProtocolCoreAddresses();
         _readStoryProtocolPeripheryAddresses();
 
         spg = StoryProtocolGateway(spgAddr);
+        groupingWorkflows = GroupingWorkflows(groupingWorkflowsAddr);
         spgNftImpl = SPGNFT(spgNftImplAddr);
         spgNftBeacon = UpgradeableBeacon(spgNftBeaconAddr);
 
         _beginBroadcast();
-        _deploySPG();
+        _deployGroupingWorkflows();
 
         _writeDeployment();
         _endBroadcast();
     }
 
-    function _deploySPG() private {
-        _predeploy("SPG");
-        address newSpgImpl = address(
-            new StoryProtocolGateway(
+    function _deployGroupingWorkflows() private {
+        _predeploy("GroupingWorkflows");
+        address newGroupingWorkflowsImpl = address(
+            new GroupingWorkflows(
                 accessControllerAddr,
+                coreMetadataModuleAddr,
+                groupingModuleAddr,
+                groupNFTAddr,
                 ipAssetRegistryAddr,
                 licensingModuleAddr,
                 licenseRegistryAddr,
-                royaltyModuleAddr,
-                coreMetadataModuleAddr,
-                pilTemplateAddr,
-                licenseTokenAddr
+                pilTemplateAddr
             )
         );
-        console2.log("New SPG Implementation", newSpgImpl);
+        console2.log("New GroupingWorkflows Implementation", newGroupingWorkflowsImpl);
 
         // Upgrade via multisig (can't do here).
-        // spg.upgradeToAndCall(address(newSpgImpl), "");
+        // groupingWorkflows.upgradeToAndCall(address(newGroupingWorkflowsImpl), "");
 
-        _postdeploy("SPG", address(spg));
+        _postdeploy("GroupingWorkflows", address(groupingWorkflows));
+        _writeAddress("SPG", address(spg));
         _writeAddress("SPGNFTBeacon", address(spgNftBeacon));
         _writeAddress("SPGNFTImpl", address(spgNftImpl));
     }

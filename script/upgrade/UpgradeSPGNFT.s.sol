@@ -7,14 +7,14 @@ import { Script } from "forge-std/Script.sol";
 
 import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 
-import { StoryProtocolGateway } from "../contracts/StoryProtocolGateway.sol";
-import { GroupingWorkflows } from "../contracts/GroupingWorkflows.sol";
-import { SPGNFT } from "../contracts/SPGNFT.sol";
+import { StoryProtocolGateway } from "../../contracts/StoryProtocolGateway.sol";
+import { GroupingWorkflows } from "../../contracts/GroupingWorkflows.sol";
+import { SPGNFT } from "../../contracts/SPGNFT.sol";
 
-import { StoryProtocolPeripheryAddressManager } from "./utils/StoryProtocolPeripheryAddressManager.sol";
-import { StringUtil } from "./utils/StringUtil.sol";
-import { BroadcastManager } from "./utils/BroadcastManager.s.sol";
-import { JsonDeploymentHandler } from "./utils/JsonDeploymentHandler.s.sol";
+import { StoryProtocolPeripheryAddressManager } from "../utils/StoryProtocolPeripheryAddressManager.sol";
+import { StringUtil } from "../utils/StringUtil.sol";
+import { BroadcastManager } from "../utils/BroadcastManager.s.sol";
+import { JsonDeploymentHandler } from "../utils/JsonDeploymentHandler.s.sol";
 
 contract UpgradeSPGNFT is Script, StoryProtocolPeripheryAddressManager, BroadcastManager, JsonDeploymentHandler {
     using StringUtil for uint256;
@@ -27,11 +27,12 @@ contract UpgradeSPGNFT is Script, StoryProtocolPeripheryAddressManager, Broadcas
     constructor() JsonDeploymentHandler("main") {}
 
     /// @dev To use, run the following command (e.g. for Sepolia):
-    /// forge script script/UpgradeSPGNFT.s.sol:UpgradeSPGNFT --rpc-url $RPC_URL --broadcast --verify -vvvv
+    /// forge script script/upgrade/UpgradeSPGNFT.s.sol:UpgradeSPGNFT --rpc-url $RPC_URL --broadcast --verify -vvvv
     function run() public {
         _readStoryProtocolPeripheryAddresses();
 
         spg = StoryProtocolGateway(spgAddr);
+        groupingWorkflows = GroupingWorkflows(groupingWorkflowsAddr);
         spgNftImpl = SPGNFT(spgNftImplAddr);
         spgNftBeacon = UpgradeableBeacon(spgNftBeaconAddr);
 
@@ -47,6 +48,7 @@ contract UpgradeSPGNFT is Script, StoryProtocolPeripheryAddressManager, Broadcas
 
     function _deploySPGNFT() private {
         _writeAddress("SPG", address(spg));
+        _writeAddress("GroupingWorkflows", address(groupingWorkflows));
         _writeAddress("SPGNFTBeacon", address(spgNftBeacon));
 
         _predeploy("SPGNFTImpl");
