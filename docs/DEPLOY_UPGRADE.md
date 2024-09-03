@@ -22,12 +22,12 @@ NEW_SPG_IMPL_ADDR= #<the new SPG implementation contract address you got from ru
 NEW_SPGNFT_IMPL_ADDR= #<the new SPGNFT implementation contract address you got from running the upgrade script>
 ```
 
-## Deployment
+## Deployment Example
 
-1. Run the [deployment script](script/Main.s.sol) with the following command:
+1. Run the [deployment script](../script/deployment/Main.s.sol) with the following command:
 
     ```bash
-    forge script script/Main.s.sol:Main --rpc-url=$TESTNET_URL -vvvv --broadcast --priority-gas-price=1 --legacy --verify  --verifier=$VERIFIER_NAME --verifier-url=$VERIFIER_URL
+    forge script script/deployment/Main.s.sol:Main --rpc-url=$TESTNET_URL -vvvv --broadcast --priority-gas-price=1 --legacy --verify  --verifier=$VERIFIER_NAME --verifier-url=$VERIFIER_URL
     ```
 
 2. Set NFT beacon contract for workflow contracts using the admin account by calling `setNFTContractBeacon` with the following command:
@@ -37,12 +37,12 @@ NEW_SPGNFT_IMPL_ADDR= #<the new SPGNFT implementation contract address you got f
     ```
 
 
-## Workflow Contract Upgrade
+## Workflow Contract Upgrade Example
 
-1. Run the [upgrade script](https://github.com/storyprotocol/protocol-periphery-v1/blob/main/script/UpgradeSPG.s.sol) with the following command:
+1. Run the [upgrade script](../script/upgrade/UpgradeSPG.s.sol) with the following command:
 
     ```bash
-    forge script script/UpgradeSPG.s.sol:UpgradeSPG --rpc-url=$TESTNET_URL -vvvv --broadcast --priority-gas-price=1 --legacy --verify  --verifier=$VERIFIER_NAME --verifier-url=$VERIFIER_URL
+    forge script script/upgrade/UpgradeSPG.s.sol:UpgradeSPG --rpc-url=$TESTNET_URL -vvvv --broadcast --priority-gas-price=1 --legacy --verify  --verifier=$VERIFIER_NAME --verifier-url=$VERIFIER_URL
     ```
 
 2. Update the proxy contract to point to the newest implementation by calling `upgradeToAndCall` with the following command:
@@ -51,12 +51,12 @@ NEW_SPGNFT_IMPL_ADDR= #<the new SPGNFT implementation contract address you got f
     cast send $SPG_PROXY_ADDR "upgradeToAndCall(address,bytes)" $NEW_SPG_IMPL_ADDR "0x" --rpc-url=$TESTNET_URL --private-key=$ADMIN_PRIVATEKEY --legacy --gas-limit=1000000
     ```
 
-## SPGNFT Upgrade
+## SPGNFT Upgrade Example
 
-1. Run the [SPGNFT upgrade script](https://github.com/storyprotocol/protocol-periphery-v1/blob/main/script/UpgradeSPGNFT.s.sol) with the following command:
+1. Run the [SPGNFT upgrade script](../script/upgrade/UpgradeSPGNFT.s.sol) with the following command:
 
     ```bash
-    forge script script/UpgradeSPGNFT.s.sol:UpgradeSPGNFT --rpc-url=$TESTNET_URL -vvvv --broadcast --priority-gas-price=1 --legacy --verify  --verifier=$VERIFIER_NAME --verifier-url=$VERIFIER_URL
+    forge script script/upgrade/UpgradeSPGNFT.s.sol:UpgradeSPGNFT --rpc-url=$TESTNET_URL -vvvv --broadcast --priority-gas-price=1 --legacy --verify  --verifier=$VERIFIER_NAME --verifier-url=$VERIFIER_URL
     ```
 
 2. Update the SPG proxy contract to point to the newest SPGNFT implementation by calling `upgradeCollections` function with the following command:
