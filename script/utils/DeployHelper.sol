@@ -3,10 +3,10 @@
 pragma solidity ^0.8.23;
 
 // external
-import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import { console2 } from "forge-std/console2.sol";
 import { Script } from "forge-std/Script.sol";
 import { stdJson } from "forge-std/StdJson.sol";
+import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 
 // contracts
 import { SPGNFT } from "contracts/SPGNFT.sol";
@@ -17,8 +17,8 @@ import { StoryProtocolGateway } from "contracts/StoryProtocolGateway.sol";
 import { StringUtil } from "./StringUtil.sol";
 import { BroadcastManager } from "./BroadcastManager.s.sol";
 import { JsonDeploymentHandler } from "./JsonDeploymentHandler.s.sol";
-import { StorageLayoutChecker } from "./upgrades/StorageLayoutCheck.s.sol";
 import { StoryProtocolCoreAddressManager } from "./StoryProtocolCoreAddressManager.sol";
+import { StorageLayoutChecker } from "@storyprotocol/script/utils/upgrades/StorageLayoutCheck.s.sol";
 
 // test
 import { TestProxyHelper } from "test/utils/TestProxyHelper.t.sol";
