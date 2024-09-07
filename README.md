@@ -1,6 +1,6 @@
 # Story Proof-of-Creativity Periphery
 
-[![Version](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fstoryprotocol%2Fprotocol-periphery-v1%2Fmain%2Fpackage.json&query=%24.version&label=stable)](https://github.com/storyprotocol/protocol-periphery-v1/releases)
+[![Version](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fstoryprotocol%2Fprotocol-periphery-v1%2Fmain%2Fpackage.json&query=%24.version&label=latest%20version)](https://github.com/storyprotocol/protocol-periphery-v1/releases)
 [![Documentation](https://img.shields.io/badge/docs-v1-006B54)](https://docs.story.foundation/docs/what-is-story)
 [![Website](https://img.shields.io/badge/website-story-00A170)](https://story.foundation)
 [![Discord](https://img.shields.io/badge/discord-join%20chat-5B5EA6)](https://discord.gg/storyprotocol)
@@ -40,9 +40,10 @@ Batch calling functions is supported both natively and through the `Multicall3` 
 
 ```json
 {
-    "SPG": "0x69415CE984A79a3Cfbe3F51024C63b6C107331e3",
-    "SPGNFTBeacon": "0x027D258659FBdda9033f9c008AF166239EBa67c1",
-    "SPGNFTImpl": "0xDb6480C00B570324A122A6B35F9CAC0F87BDb3e6",
+    "GroupingWorkflows": "0xd60DFf6185f9Ff79d47Dcf2083B42EB8E283C436",
+    "SPG": "0xE4751058d2Dc8E47Ccc798be91ba86cf31805911",
+    "SPGNFTBeacon": "0x8a40CeA6E2716E97f50c4CFd3839f8e84035892a",
+    "SPGNFTImpl": "0x51F9143503dbEBEf8F8c5B5f357382c003E0BAC8",
     "Multicall3": "0xcA11bde05977b3631167028862bE2a173976CA11"
 }
 ```
