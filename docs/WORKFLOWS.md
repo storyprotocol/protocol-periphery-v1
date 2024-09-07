@@ -23,9 +23,9 @@
 
 ### Final Step: Add IP(s) to a group IP Asset
 
-- `mintAndRegisterIpAndAttachPILTermsAndAddToGroup`: Mints a NFT → Registers it as an IP → Attaches the given PIL terms to the IP → Adds the IP to a group IP
-- `registerIpAndAttachPILTermsAndAddToGroup`: Registers an IP → Attaches the given PIL terms to the IP → Adds the IP to a group IP
-- `registerGroupAndAttachPILTermsAndAddIps`: Registers a group IP → Registers PIL terms → Attaches the PIL terms to group IP → Adds existing IPs to the group IP
+- `mintAndRegisterIpAndAttachLicenseAndAddToGroup`: Mints a NFT → Registers it as an IP → Attaches the given license terms to the IP → Adds the IP to a group IP
+- `registerIpAndAttachLicenseAndAddToGroup`: Registers an IP → Attaches the given license terms to the IP → Adds the IP to a group IP
+- `registerGroupAndAttachLicenseAndAddIps`: Registers a group IP → Attaches the given license terms to the group IP → Adds existing IPs to the group IP
 
 
 > 📚 For full contract interfaces, check out `contracts/interfaces`.
