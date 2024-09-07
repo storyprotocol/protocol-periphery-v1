@@ -12,13 +12,11 @@ import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensi
 import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
 
 import { GroupNFT } from "@storyprotocol/core/GroupNFT.sol";
-import { PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 
 import { Errors } from "./lib/Errors.sol";
 import { BaseWorkflow } from "./BaseWorkflow.sol";
 import { ISPGNFT } from "./interfaces/ISPGNFT.sol";
 import { MetadataHelper } from "./lib/MetadataHelper.sol";
-import { LicensingHelper } from "./lib/LicensingHelper.sol";
 import { PermissionHelper } from "./lib/PermissionHelper.sol";
 import { IGroupingWorkflows } from "./interfaces/IGroupingWorkflows.sol";
 import { IStoryProtocolGateway as ISPG } from "./interfaces/IStoryProtocolGateway.sol";
@@ -106,21 +104,23 @@ contract GroupingWorkflows is
     }
 
     /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP, attach
-    /// Programmable IP License Terms to the registered IP, and add it to a group IP.
+    /// license terms to the registered IP, and add it to a group IP.
     /// @dev Caller must have the minter role for the provided SPG NFT.
     /// @param spgNftContract The address of the SPGNFT collection.
     /// @param groupId The ID of the group IP to add the newly registered IP.
     /// @param recipient The address of the recipient of the minted NFT.
-    /// @param licenseTermsId The ID of the registered PIL terms that will be attached to the newly registered IP.
+    /// @param licenseTermsId The ID of the registered PIL terms that will be attached to the new IP.
+    /// @param licenseTemplate The address of the license template used for `licenseTermsId`.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
     /// @param sigAddToGroup Signature data for addIp to the group IP via the Grouping Module.
     /// @return ipId The ID of the newly registered IP.
     /// @return tokenId The ID of the newly minted NFT.
-    function mintAndRegisterIpAndAttachPILTermsAndAddToGroup(
+    function mintAndRegisterIpAndAttachLicenseAndAddToGroup(
         address spgNftContract,
         address groupId,
         address recipient,
         uint256 licenseTermsId,
+        address licenseTemplate,
         ISPG.IPMetadata calldata ipMetadata,
         ISPG.SignatureData calldata sigAddToGroup
     ) external onlyCallerWithMinterRole(spgNftContract) returns (address ipId, uint256 tokenId) {
@@ -132,7 +132,7 @@ contract GroupingWorkflows is
         ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 
-        LICENSING_MODULE.attachLicenseTerms(ipId, address(PIL_TEMPLATE), licenseTermsId);
+        LICENSING_MODULE.attachLicenseTerms(ipId, licenseTemplate, licenseTermsId);
 
         PermissionHelper.setPermissionForModule(
             groupId,
@@ -149,22 +149,24 @@ contract GroupingWorkflows is
         ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
     }
 
-    /// @notice Register an NFT as IP with metadata, attach Programmable IP License Terms to the registered IP,
+    /// @notice Register an NFT as IP with metadata, attach license terms to the registered IP,
     /// and add it to a group IP.
     /// @param nftContract The address of the NFT collection.
     /// @param tokenId The ID of the NFT.
     /// @param groupId The ID of the group IP to add the newly registered IP.
-    /// @param licenseTermsId The ID of the registered PIL terms that will be attached to the newly registered IP.
+    /// @param licenseTermsId The ID of the registered PIL terms that will be attached to the new IP.
+    /// @param licenseTemplate The address of the license template used for `licenseTermsId`.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param sigMetadataAndAttach Signature data for setAll (metadata) and attachLicenseTerms to the IP
     /// via the Core Metadata Module and Licensing Module.
     /// @param sigAddToGroup Signature data for addIp to the group IP via the Grouping Module.
     /// @return ipId The ID of the newly registered IP.
-    function registerIpAndAttachPILTermsAndAddToGroup(
+    function registerIpAndAttachLicenseAndAddToGroup(
         address nftContract,
         uint256 tokenId,
         address groupId,
         uint256 licenseTermsId,
+        address licenseTemplate,
         ISPG.IPMetadata calldata ipMetadata,
         ISPG.SignatureData calldata sigMetadataAndAttach,
         ISPG.SignatureData calldata sigAddToGroup
@@ -188,7 +190,7 @@ contract GroupingWorkflows is
 
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 
-        LICENSING_MODULE.attachLicenseTerms(ipId, address(PIL_TEMPLATE), licenseTermsId);
+        LICENSING_MODULE.attachLicenseTerms(ipId, licenseTemplate, licenseTermsId);
 
         PermissionHelper.setPermissionForModule(
             groupId,
@@ -203,28 +205,23 @@ contract GroupingWorkflows is
         GROUPING_MODULE.addIp(groupId, ipIds);
     }
 
-    /// @notice Register a group IP with a group reward pool, register Programmable IP License Terms,
-    /// attach it to the group IP, and add individual IPs to the group IP.
+    /// @notice Register a group IP with a group reward pool, attach license terms to the group IP,
+    /// and add individual IPs to the group IP.
     /// @dev ipIds must have the same PIL terms as the group IP.
     /// @param groupPool The address of the group reward pool.
     /// @param ipIds The IDs of the IPs to add to the newly registered group IP.
-    /// @param groupIpTerms The PIL terms to be registered and attached to the newly registered group IP.
+    /// @param licenseTermsId The ID of the registered PIL terms that will be attached to the new group IP.
+    /// @param licenseTemplate The address of the license template used for `licenseTermsId`.
     /// @return groupId The ID of the newly registered group IP.
-    /// @return groupLicenseTermsId The ID of the newly registered PIL terms.
-    function registerGroupAndAttachPILTermsAndAddIps(
+    function registerGroupAndAttachLicenseAndAddIps(
         address groupPool,
         address[] calldata ipIds,
-        PILTerms calldata groupIpTerms
-    ) external returns (address groupId, uint256 groupLicenseTermsId) {
+        uint256 licenseTermsId,
+        address licenseTemplate
+    ) external returns (address groupId) {
         groupId = GROUPING_MODULE.registerGroup(groupPool);
 
-        groupLicenseTermsId = LicensingHelper.registerPILTermsAndAttach(
-            groupId,
-            address(PIL_TEMPLATE),
-            address(LICENSING_MODULE),
-            address(LICENSE_REGISTRY),
-            groupIpTerms
-        );
+        LICENSING_MODULE.attachLicenseTerms(groupId, licenseTemplate, licenseTermsId);
 
         GROUPING_MODULE.addIp(groupId, ipIds);
 
