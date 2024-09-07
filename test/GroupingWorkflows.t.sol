@@ -67,12 +67,13 @@ contract GroupingWorkflowsTest is BaseTest {
             signerPk: alicePk
         });
 
-        (address ipId, uint256 tokenId) = groupingWorkflows.mintAndRegisterIpAndAttachPILTermsAndAddToGroup({
+        (address ipId, uint256 tokenId) = groupingWorkflows.mintAndRegisterIpAndAttachLicenseAndAddToGroup({
             spgNftContract: address(nftContract),
             groupId: groupId,
             recipient: caller,
             ipMetadata: ipMetadataEmpty,
             licenseTermsId: 1,
+            licenseTemplate: address(pilTemplate),
             sigAddToGroup: ISPG.SignatureData({ signer: alice, deadline: deadline, signature: sigAddToGroup })
         });
 
@@ -119,12 +120,13 @@ contract GroupingWorkflowsTest is BaseTest {
             signerPk: alicePk
         });
 
-        address ipId = groupingWorkflows.registerIpAndAttachPILTermsAndAddToGroup({
+        address ipId = groupingWorkflows.registerIpAndAttachLicenseAndAddToGroup({
             nftContract: address(nftContract),
             tokenId: tokenId,
             groupId: groupId,
             ipMetadata: ipMetadataEmpty,
             licenseTermsId: 1,
+            licenseTemplate: address(pilTemplate),
             sigMetadataAndAttach: ISPG.SignatureData({
                 signer: alice,
                 deadline: deadline,
@@ -170,18 +172,17 @@ contract GroupingWorkflowsTest is BaseTest {
             (ipIds[i], ) = abi.decode(results[i], (address, uint256));
         }
 
-        uint256 groupLicenseTermsId;
-        (groupId, groupLicenseTermsId) = groupingWorkflows.registerGroupAndAttachPILTermsAndAddIps(
+        (groupId) = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps(
             address(rewardPool),
             ipIds,
-            PILFlavors.nonCommercialSocialRemixing()
+            1,
+            address(pilTemplate)
         );
 
         assertTrue(ipAssetRegistry.isRegisteredGroup(groupId));
-        assertEq(groupLicenseTermsId, 1);
         (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(groupId, 0);
         assertEq(licenseTemplate, address(pilTemplate));
-        assertEq(licenseTermsId, groupLicenseTermsId);
+        assertEq(licenseTermsId, 1);
 
         assertEq(ipAssetRegistry.totalMembers(groupId), 10);
         for (uint256 i = 0; i < 10; i++) {
