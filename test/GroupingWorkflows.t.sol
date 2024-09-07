@@ -72,8 +72,8 @@ contract GroupingWorkflowsTest is BaseTest {
             groupId: groupId,
             recipient: caller,
             ipMetadata: ipMetadataEmpty,
-            licenseTermsId: 1,
             licenseTemplate: address(pilTemplate),
+            licenseTermsId: 1,
             sigAddToGroup: ISPG.SignatureData({ signer: alice, deadline: deadline, signature: sigAddToGroup })
         });
 
@@ -172,12 +172,12 @@ contract GroupingWorkflowsTest is BaseTest {
             (ipIds[i], ) = abi.decode(results[i], (address, uint256));
         }
 
-        (groupId) = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps(
-            address(rewardPool),
-            ipIds,
-            1,
-            address(pilTemplate)
-        );
+        (groupId) = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
+            groupPool: address(rewardPool),
+            ipIds: ipIds,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: 1
+        });
 
         assertTrue(ipAssetRegistry.isRegisteredGroup(groupId));
         (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(groupId, 0);

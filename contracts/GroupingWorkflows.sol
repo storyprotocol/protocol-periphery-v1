@@ -109,8 +109,8 @@ contract GroupingWorkflows is
     /// @param spgNftContract The address of the SPGNFT collection.
     /// @param groupId The ID of the group IP to add the newly registered IP.
     /// @param recipient The address of the recipient of the minted NFT.
-    /// @param licenseTermsId The ID of the registered PIL terms that will be attached to the new IP.
-    /// @param licenseTemplate The address of the license template used for `licenseTermsId`.
+    /// @param licenseTemplate The address of the license template to be attached to the new IP.
+    /// @param licenseTermsId The ID of the registered license terms that will be attached to the new IP.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
     /// @param sigAddToGroup Signature data for addIp to the group IP via the Grouping Module.
     /// @return ipId The ID of the newly registered IP.
@@ -119,8 +119,8 @@ contract GroupingWorkflows is
         address spgNftContract,
         address groupId,
         address recipient,
-        uint256 licenseTermsId,
         address licenseTemplate,
+        uint256 licenseTermsId,
         ISPG.IPMetadata calldata ipMetadata,
         ISPG.SignatureData calldata sigAddToGroup
     ) external onlyCallerWithMinterRole(spgNftContract) returns (address ipId, uint256 tokenId) {
@@ -154,8 +154,8 @@ contract GroupingWorkflows is
     /// @param nftContract The address of the NFT collection.
     /// @param tokenId The ID of the NFT.
     /// @param groupId The ID of the group IP to add the newly registered IP.
-    /// @param licenseTermsId The ID of the registered PIL terms that will be attached to the new IP.
-    /// @param licenseTemplate The address of the license template used for `licenseTermsId`.
+    /// @param licenseTemplate The address of the license template to be attached to the new IP.
+    /// @param licenseTermsId The ID of the registered license terms that will be attached to the new IP.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param sigMetadataAndAttach Signature data for setAll (metadata) and attachLicenseTerms to the IP
     /// via the Core Metadata Module and Licensing Module.
@@ -165,8 +165,8 @@ contract GroupingWorkflows is
         address nftContract,
         uint256 tokenId,
         address groupId,
-        uint256 licenseTermsId,
         address licenseTemplate,
+        uint256 licenseTermsId,
         ISPG.IPMetadata calldata ipMetadata,
         ISPG.SignatureData calldata sigMetadataAndAttach,
         ISPG.SignatureData calldata sigAddToGroup
@@ -210,14 +210,14 @@ contract GroupingWorkflows is
     /// @dev ipIds must have the same PIL terms as the group IP.
     /// @param groupPool The address of the group reward pool.
     /// @param ipIds The IDs of the IPs to add to the newly registered group IP.
-    /// @param licenseTermsId The ID of the registered PIL terms that will be attached to the new group IP.
-    /// @param licenseTemplate The address of the license template used for `licenseTermsId`.
+    /// @param licenseTemplate The address of the license template to be attached to the new group IP.
+    /// @param licenseTermsId The ID of the registered license terms that will be attached to the new group IP.
     /// @return groupId The ID of the newly registered group IP.
     function registerGroupAndAttachLicenseAndAddIps(
         address groupPool,
         address[] calldata ipIds,
-        uint256 licenseTermsId,
-        address licenseTemplate
+        address licenseTemplate,
+        uint256 licenseTermsId
     ) external returns (address groupId) {
         groupId = GROUPING_MODULE.registerGroup(groupPool);
 
