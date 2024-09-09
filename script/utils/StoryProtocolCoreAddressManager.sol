@@ -13,15 +13,26 @@ contract StoryProtocolCoreAddressManager is Script {
     address internal licenseRegistryAddr;
     address internal royaltyModuleAddr;
     address internal coreMetadataModuleAddr;
+    address internal coreMetadataViewModuleAddr;
     address internal accessControllerAddr;
     address internal pilTemplateAddr;
     address internal licenseTokenAddr;
     address internal groupingModuleAddr;
     address internal groupNFTAddr;
+    address internal royaltyPolicyLAPAddr;
 
-    function _readStoryProtocolCoreAddresses() internal {
+    function _readStoryProtocolCoreAddresses(bool isTest) internal {
         string memory root = vm.projectRoot();
-        string memory path = string.concat(
+        string memory path = isTest? string.concat(
+            root,
+            string(
+                abi.encodePacked(
+                    "/test/data/protocol-core-deployment-",
+                    Strings.toString(block.chainid),
+                    ".json"
+                )
+            )
+        ) : string.concat(
             root,
             string(
                 abi.encodePacked(
@@ -38,10 +49,12 @@ contract StoryProtocolCoreAddressManager is Script {
         licenseRegistryAddr = json.readAddress(".main.LicenseRegistry");
         royaltyModuleAddr = json.readAddress(".main.RoyaltyModule");
         coreMetadataModuleAddr = json.readAddress(".main.CoreMetadataModule");
+        coreMetadataViewModuleAddr = json.readAddress(".main.CoreMetadataViewModule");
         accessControllerAddr = json.readAddress(".main.AccessController");
         pilTemplateAddr = json.readAddress(".main.PILicenseTemplate");
         licenseTokenAddr = json.readAddress(".main.LicenseToken");
         groupingModuleAddr = json.readAddress(".main.GroupingModule");
         groupNFTAddr = json.readAddress(".main.GroupNFT");
+        royaltyPolicyLAPAddr = json.readAddress(".main.RoyaltyPolicyLAP");
     }
 }

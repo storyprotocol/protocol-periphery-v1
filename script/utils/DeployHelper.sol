@@ -66,14 +66,14 @@ contract DeployHelper is
     /// --verify --verifier=$VERIFIER_NAME --verifier-url=$VERIFIER_URL
     ///
     /// For detailed examples, see the documentation in `../../docs/DEPLOY_UPGRADE.md`.
-    function run(uint256 create3SaltSeed_, bool runStorageLayoutCheck, bool writeDeploys_) public virtual {
+    function run(uint256 create3SaltSeed_, bool runStorageLayoutCheck, bool writeDeploys_, bool isTest) public virtual {
         create3SaltSeed = create3SaltSeed_;
         writeDeploys = writeDeploys_;
 
         // This will run OZ storage layout check for all contracts. Requires --ffi flag.
         if (runStorageLayoutCheck) super.run();
 
-        _readStoryProtocolCoreAddresses(); // StoryProtocolCoreAddressManager.s.sol
+        _readStoryProtocolCoreAddresses(isTest); // StoryProtocolCoreAddressManager.s.sol
         _beginBroadcast(); // BroadcastManager.s.sol
 
         _deployPeripheryContracts();

@@ -39,7 +39,7 @@ contract UpgradeSPG is
     ///
     /// For detailed examples, see the documentation in `../../docs/DEPLOY_UPGRADE.md`.
     function run() public {
-        _readStoryProtocolCoreAddresses();
+        _readStoryProtocolCoreAddresses(false); // isTest = false
         _readStoryProtocolPeripheryAddresses();
 
         spg = StoryProtocolGateway(spgAddr);
