@@ -6,23 +6,23 @@ pragma solidity ^0.8.23;
 import { console2 } from "forge-std/console2.sol";
 import { Script } from "forge-std/Script.sol";
 import { stdJson } from "forge-std/StdJson.sol";
+import { ICreate3Deployer } from "@create3-deployer/contracts/ICreate3Deployer.sol";
 import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
+import { StorageLayoutChecker } from "@storyprotocol/script/utils/upgrades/StorageLayoutCheck.s.sol";
 
 // contracts
-import { SPGNFT } from "contracts/SPGNFT.sol";
-import { GroupingWorkflows } from "contracts/GroupingWorkflows.sol";
-import { StoryProtocolGateway } from "contracts/StoryProtocolGateway.sol";
+import { SPGNFT } from "../../contracts/SPGNFT.sol";
+import { GroupingWorkflows } from "../../contracts/GroupingWorkflows.sol";
+import { StoryProtocolGateway } from "../../contracts/StoryProtocolGateway.sol";
 
 // script
 import { StringUtil } from "./StringUtil.sol";
 import { BroadcastManager } from "./BroadcastManager.s.sol";
 import { JsonDeploymentHandler } from "./JsonDeploymentHandler.s.sol";
 import { StoryProtocolCoreAddressManager } from "./StoryProtocolCoreAddressManager.sol";
-import { StorageLayoutChecker } from "@storyprotocol/script/utils/upgrades/StorageLayoutCheck.s.sol";
 
 // test
-import { TestProxyHelper } from "test/utils/TestProxyHelper.t.sol";
-import { ICreate3Deployer } from "@create3-deployer/contracts/ICreate3Deployer.sol";
+import { TestProxyHelper } from "../../test/utils/TestProxyHelper.t.sol";
 
 contract DeployHelper is
     Script,
@@ -44,17 +44,12 @@ contract DeployHelper is
     uint256 internal create3SaltSeed;
 
     // SPGNFT
-    SPGNFT private spgNftImpl;
-    UpgradeableBeacon private spgNftBeacon;
+    SPGNFT internal spgNftImpl;
+    UpgradeableBeacon internal spgNftBeacon;
 
     // Periphery Workflows
-    StoryProtocolGateway private spg;
-    GroupingWorkflows private groupingWorkflows;
-
-    // keep private to avoid conflict with inheriting contracts
-    uint256 private immutable ARBITRATION_PRICE;
-    uint256 private immutable MAX_ROYALTY_APPROVAL;
-    address private immutable TREASURY_ADDRESS;
+    StoryProtocolGateway internal spg;
+    GroupingWorkflows internal groupingWorkflows;
 
     // DeployHelper variable
     bool private writeDeploys;
