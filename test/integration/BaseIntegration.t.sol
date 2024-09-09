@@ -90,6 +90,10 @@ contract BaseIntegration is Test, DeployHelper {
     }
 
     function _setupPeripheryContracts() internal {
+        // set deployer to multisig
+        deployer = multiSig;
+        vm.startPrank(deployer);
+
         // deploy periphery contracts via DeployHelper
         super.run(
             CREATE3_DEFAULT_SEED,
@@ -99,7 +103,6 @@ contract BaseIntegration is Test, DeployHelper {
         );
 
         // set the NFT contract beacon for workflow contracts
-        vm.startPrank(multiSig);
         spg.setNftContractBeacon(address(spgNftBeacon));
         groupingWorkflows.setNftContractBeacon(address(spgNftBeacon));
         vm.stopPrank();

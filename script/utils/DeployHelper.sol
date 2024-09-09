@@ -74,7 +74,7 @@ contract DeployHelper is
         if (runStorageLayoutCheck) super.run();
 
         _readStoryProtocolCoreAddresses(isTest); // StoryProtocolCoreAddressManager.s.sol
-        _beginBroadcast(); // BroadcastManager.s.sol
+        if (!isTest) _beginBroadcast(); // BroadcastManager.s.sol
 
         _deployPeripheryContracts();
         _configureDeployment();
@@ -85,7 +85,7 @@ contract DeployHelper is
         }
 
         if (writeDeploys) _writeDeployment();
-        _endBroadcast(); // BroadcastManager.s.sol
+        if (!isTest) _endBroadcast(); // BroadcastManager.s.sol
 
         // Set SPGNFTBeacon for periphery workflow contracts, access controlled
         // can't be done in deployment script:
