@@ -2,13 +2,17 @@
 src = 'contracts'
 out = 'out'
 libs = ['node_modules', 'lib']
-cache_path  = 'forge-cache'
+cache_path = 'forge-cache'
 gas_reports = ["*"]
 optimizer = true
 optimizer_runs = 20000
 test = 'test'
 solc = '0.8.23'
-fs_permissions = [{ access = 'read', path = './' }, { access = 'read-write', path = './deploy-out' }]
+fs_permissions = [
+    { access = 'read', path = './' },
+    { access = 'read-write', path = './deploy-out' },
+]
+evm_version = 'cancun'
 
 [rpc_endpoints]
 # Comment out for local development (testing requires 0xSplit forks — will add Mock soon)
