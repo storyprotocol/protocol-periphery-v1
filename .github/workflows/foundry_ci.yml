@@ -1,7 +1,7 @@
 name: Foundry CI
 
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - main
 
@@ -17,12 +17,14 @@ jobs:
     name: Foundry Unit Test
     runs-on: ubuntu-latest
     needs: [Timestamp]
+    env:
+      MULTISIG_ADDRESS: ${{ secrets.MULTISIG_ADDRESS }}
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           submodules: recursive
           fetch-depth: 0
-          
+
       - name: Run install
         uses: borales/actions-yarn@v4
         with:
@@ -38,7 +40,7 @@ jobs:
         run: |
           forge --version
           forge build --force --sizes --skip test --skip script
-      
+
       # This step requires full build to be run first
       - name: Upgrade Safety test
         run: |
