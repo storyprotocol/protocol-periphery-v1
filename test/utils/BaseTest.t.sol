@@ -69,7 +69,7 @@ contract BaseTest is Test {
     GroupingModule internal groupingModule;
     GroupNFT internal groupNFT;
     IPGraphACL internal ipGraphACL;
-    MockEvenSplitGroupPool public rewardPool;
+    MockEvenSplitGroupPool internal rewardPool;
 
     StoryProtocolGateway internal spg;
     SPGNFT internal spgNftImpl;
