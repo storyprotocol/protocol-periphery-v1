@@ -17,6 +17,7 @@ import { Errors } from "./lib/Errors.sol";
 import { BaseWorkflow } from "./BaseWorkflow.sol";
 import { ISPGNFT } from "./interfaces/ISPGNFT.sol";
 import { MetadataHelper } from "./lib/MetadataHelper.sol";
+import { LicensingHelper } from "./lib/LicensingHelper.sol";
 import { PermissionHelper } from "./lib/PermissionHelper.sol";
 import { IGroupingWorkflows } from "./interfaces/IGroupingWorkflows.sol";
 import { IStoryProtocolGateway as ISPG } from "./interfaces/IStoryProtocolGateway.sol";
@@ -132,7 +133,14 @@ contract GroupingWorkflows is
         ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 
-        LICENSING_MODULE.attachLicenseTerms(ipId, licenseTemplate, licenseTermsId);
+        // attach license terms to the IP, do nothing if already attached
+        LicensingHelper.attachLicenseTerms(
+            ipId,
+            address(LICENSING_MODULE),
+            address(LICENSE_REGISTRY),
+            licenseTemplate,
+            licenseTermsId
+        );
 
         PermissionHelper.setPermissionForModule(
             groupId,
@@ -190,7 +198,14 @@ contract GroupingWorkflows is
 
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 
-        LICENSING_MODULE.attachLicenseTerms(ipId, licenseTemplate, licenseTermsId);
+        // attach license terms to the IP, do nothing if already attached
+        LicensingHelper.attachLicenseTerms(
+            ipId,
+            address(LICENSING_MODULE),
+            address(LICENSE_REGISTRY),
+            licenseTemplate,
+            licenseTermsId
+        );
 
         PermissionHelper.setPermissionForModule(
             groupId,
@@ -221,7 +236,14 @@ contract GroupingWorkflows is
     ) external returns (address groupId) {
         groupId = GROUPING_MODULE.registerGroup(groupPool);
 
-        LICENSING_MODULE.attachLicenseTerms(groupId, licenseTemplate, licenseTermsId);
+        // attach license terms to the group IP, do nothing if already attached
+        LicensingHelper.attachLicenseTerms(
+            groupId,
+            address(LICENSING_MODULE),
+            address(LICENSE_REGISTRY),
+            licenseTemplate,
+            licenseTermsId
+        );
 
         GROUPING_MODULE.addIp(groupId, ipIds);
 

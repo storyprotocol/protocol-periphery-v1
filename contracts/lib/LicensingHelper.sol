@@ -35,11 +35,27 @@ library LicensingHelper {
     ) internal returns (uint256 licenseTermsId) {
         licenseTermsId = IPILicenseTemplate(pilTemplate).registerLicenseTerms(terms);
 
-        // Returns the license terms ID if already attached.
-        if (ILicenseRegistry(licenseRegistry).hasIpAttachedLicenseTerms(ipId, pilTemplate, licenseTermsId))
-            return licenseTermsId;
+        attachLicenseTerms(ipId, licensingModule, licenseRegistry, pilTemplate, licenseTermsId);
+    }
 
-        ILicensingModule(licensingModule).attachLicenseTerms(ipId, pilTemplate, licenseTermsId);
+    /// @dev Attaches license terms to the given IP.
+    /// @param ipId The ID of the IP.
+    /// @param licensingModule The address of the Licensing Module.
+    /// @param licenseRegistry The address of the License Registry.
+    /// @param licenseTemplate The address of the license template.
+    /// @param licenseTermsId The ID of the license terms to be attached.
+    function attachLicenseTerms(
+        address ipId,
+        address licensingModule,
+        address licenseRegistry,
+        address licenseTemplate,
+        uint256 licenseTermsId
+    ) internal {
+        // Returns if license terms are already attached.
+        if (ILicenseRegistry(licenseRegistry).hasIpAttachedLicenseTerms(ipId, licenseTemplate, licenseTermsId))
+            return;
+
+        ILicensingModule(licensingModule).attachLicenseTerms(ipId, licenseTemplate, licenseTermsId);
     }
 
     /// @dev Collects license tokens from the caller. Assumes the periphery contract has permission to transfer the license tokens.
