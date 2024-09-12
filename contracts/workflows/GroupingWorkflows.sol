@@ -1,30 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
-import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { MulticallUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 // solhint-disable-next-line max-line-length
 import { AccessManagedUpgradeable } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import { MulticallUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
+import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
 import { IGroupingModule } from "@storyprotocol/core/interfaces/modules/grouping/IGroupingModule.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
-import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
-
 import { GroupNFT } from "@storyprotocol/core/GroupNFT.sol";
 
-import { Errors } from "./lib/Errors.sol";
-import { BaseWorkflow } from "./BaseWorkflow.sol";
-import { ISPGNFT } from "./interfaces/ISPGNFT.sol";
-import { MetadataHelper } from "./lib/MetadataHelper.sol";
-import { LicensingHelper } from "./lib/LicensingHelper.sol";
-import { PermissionHelper } from "./lib/PermissionHelper.sol";
-import { IGroupingWorkflows } from "./interfaces/IGroupingWorkflows.sol";
-import { IStoryProtocolGateway as ISPG } from "./interfaces/IStoryProtocolGateway.sol";
+import { BaseWorkflow } from "../BaseWorkflow.sol";
+import { Errors } from "../lib/Errors.sol";
+import { IGroupingWorkflows } from "../interfaces/IGroupingWorkflows.sol";
+import { ISPGNFT } from "../interfaces/ISPGNFT.sol";
+import { LicensingHelper } from "../lib/LicensingHelper.sol";
+import { MetadataHelper } from "../lib/MetadataHelper.sol";
+import { PermissionHelper } from "../lib/PermissionHelper.sol";
+import { WorkflowStructs } from "../lib/WorkflowStructs.sol";
 
 /// @title Grouping Workflows
-/// @notice This contract provides key workflows for engaging with Group IPA features in
-/// Story’s Proof of Creativity protocol.
+/// @notice Each workflow bundles multiple core protocol operations into a single function to simplify interaction
+/// with Group IP features in the Story Proof-of-Creativity Protocol.
 contract GroupingWorkflows is
     IGroupingWorkflows,
     BaseWorkflow,
@@ -34,7 +33,7 @@ contract GroupingWorkflows is
 {
     using ERC165Checker for address;
 
-    /// @dev Storage structure for the Grouping Workflow.
+    /// @dev Storage structure for the GroupingWorkflows
     /// @param nftContractBeacon The address of the NFT contract beacon.
     /// @custom:storage-location erc7201:story-protocol-periphery.GroupingWorkflows
     struct GroupingWorkflowsStorage {
@@ -43,8 +42,7 @@ contract GroupingWorkflows is
 
     // solhint-disable-next-line max-line-length
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.GroupingWorkflows")) - 1)) & ~bytes32(uint256(0xff));
-    bytes32 private constant GroupingWorkflowsStorageLocation =
-        0xa8ddbb5f662015e2b3d6b4c61921979ad3d3d1d19e338b1c4ba6a196b10c6400;
+    bytes32 private constant GroupingWorkflowsStorageLocation = 0xa8ddbb5f662015e2b3d6b4c61921979ad3d3d1d19e338b1c4ba6a196b10c6400;
 
     /// @notice The address of the Grouping Module.
     IGroupingModule public immutable GROUPING_MODULE;
@@ -52,22 +50,23 @@ contract GroupingWorkflows is
     /// @notice The address of the Group NFT contract.
     GroupNFT public immutable GROUP_NFT;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
         address accessController,
         address coreMetadataModule,
         address groupingModule,
         address groupNft,
         address ipAssetRegistry,
-        address licensingModule,
         address licenseRegistry,
+        address licensingModule,
         address pilTemplate
     )
         BaseWorkflow(
             accessController,
             coreMetadataModule,
             ipAssetRegistry,
-            licensingModule,
             licenseRegistry,
+            licensingModule,
             pilTemplate
         )
     {
@@ -77,8 +76,8 @@ contract GroupingWorkflows is
             groupingModule == address(0) ||
             groupNft == address(0) ||
             ipAssetRegistry == address(0) ||
-            licensingModule == address(0) ||
             licenseRegistry == address(0) ||
+            licensingModule == address(0) ||
             pilTemplate == address(0)
         ) revert Errors.GroupingWorkflows__ZeroAddressParam();
 
@@ -122,8 +121,8 @@ contract GroupingWorkflows is
         address recipient,
         address licenseTemplate,
         uint256 licenseTermsId,
-        ISPG.IPMetadata calldata ipMetadata,
-        ISPG.SignatureData calldata sigAddToGroup
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        WorkflowStructs.SignatureData calldata sigAddToGroup
     ) external onlyCallerWithMinterRole(spgNftContract) returns (address ipId, uint256 tokenId) {
         tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
             to: address(this),
@@ -175,9 +174,9 @@ contract GroupingWorkflows is
         address groupId,
         address licenseTemplate,
         uint256 licenseTermsId,
-        ISPG.IPMetadata calldata ipMetadata,
-        ISPG.SignatureData calldata sigMetadataAndAttach,
-        ISPG.SignatureData calldata sigAddToGroup
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        WorkflowStructs.SignatureData calldata sigMetadataAndAttach,
+        WorkflowStructs.SignatureData calldata sigAddToGroup
     ) external returns (address ipId) {
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
