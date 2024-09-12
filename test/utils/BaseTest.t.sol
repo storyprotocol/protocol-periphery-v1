@@ -79,7 +79,6 @@ contract BaseTest is Test, DeployHelper {
         _setupIPMetadata();
     }
 
-
     function _setupUsers() internal {
         (u, sk) = UsersLib.createMockUsers(vm);
 
@@ -90,7 +89,7 @@ contract BaseTest is Test, DeployHelper {
     }
 
     function _setupProtocolContracts() internal {
-        mockDeployer = u.admin;  // admin is the deployer
+        mockDeployer = u.admin; // admin is the deployer
         vm.startPrank(u.admin);
 
         // deploy core and periphery contracts via DeployHelper
@@ -119,30 +118,33 @@ contract BaseTest is Test, DeployHelper {
         mockToken = new MockERC20();
         mockNft = new MockERC721("TestNFT");
 
-        spgNftPublic = ISPGNFT(registrationWorkflows.createCollection({
-            name: "Test SPG NFT Public",
-            symbol: "TSPGNFTPUB",
-            maxSupply: 100_000_000,
-            mintFee: 1 * 10 ** mockToken.decimals(), // 1 token
-            mintFeeToken: address(mockToken),
-            mintFeeRecipient: feeRecipient,
-            owner: minter,
-            mintOpen: true,
-            isPublicMinting: true
-        }));
+        spgNftPublic = ISPGNFT(
+            registrationWorkflows.createCollection({
+                name: "Test SPG NFT Public",
+                symbol: "TSPGNFTPUB",
+                maxSupply: 100_000_000,
+                mintFee: 1 * 10 ** mockToken.decimals(), // 1 token
+                mintFeeToken: address(mockToken),
+                mintFeeRecipient: feeRecipient,
+                owner: minter,
+                mintOpen: true,
+                isPublicMinting: true
+            })
+        );
 
-
-        spgNftPrivate = ISPGNFT(registrationWorkflows.createCollection({
-            name: "Test SPG NFT Private",
-            symbol: "TSPGNFTPRI",
-            maxSupply: 100_000_000,
-            mintFee: 1 * 10 ** mockToken.decimals(), // 1 token
-            mintFeeToken: address(mockToken),
-            mintFeeRecipient: feeRecipient,
-            owner: minter,
-            mintOpen: true,
-            isPublicMinting: false
-        }));
+        spgNftPrivate = ISPGNFT(
+            registrationWorkflows.createCollection({
+                name: "Test SPG NFT Private",
+                symbol: "TSPGNFTPRI",
+                maxSupply: 100_000_000,
+                mintFee: 1 * 10 ** mockToken.decimals(), // 1 token
+                mintFeeToken: address(mockToken),
+                mintFeeRecipient: feeRecipient,
+                owner: minter,
+                mintOpen: true,
+                isPublicMinting: false
+            })
+        );
         vm.stopPrank();
 
         // whitelist mockToken as a royalty token

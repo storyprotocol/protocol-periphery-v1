@@ -47,7 +47,8 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
 
     /// @notice Modifier to restrict access to workflow contracts.
     modifier onlyPeriphery() {
-        if (msg.sender != DERIVATIVE_WORKFLOWS_ADDRESS &&
+        if (
+            msg.sender != DERIVATIVE_WORKFLOWS_ADDRESS &&
             msg.sender != GROUPING_WORKFLOWS_ADDRESS &&
             msg.sender != LICENSE_ATTACHMENT_WORKFLOWS_ADDRESS &&
             msg.sender != REGISTRATION_WORKFLOWS_ADDRESS
@@ -62,7 +63,8 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         address licenseAttachmentWorkflows,
         address registrationWorkflows
     ) {
-        if (derivativeWorkflows == address(0) ||
+        if (
+            derivativeWorkflows == address(0) ||
             groupingWorkflows == address(0) ||
             licenseAttachmentWorkflows == address(0) ||
             registrationWorkflows == address(0)

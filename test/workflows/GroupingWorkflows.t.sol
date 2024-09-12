@@ -162,8 +162,10 @@ contract GroupingWorkflowsTest is BaseTest {
         assertMetadata(ipId, ipMetadataDefault);
 
         // check the license terms is correctly attached
-        (address licenseTemplate, uint256 licenseTermsId) = ILicenseRegistry(licenseRegistry)
-            .getAttachedLicenseTerms(ipId, 0);
+        (address licenseTemplate, uint256 licenseTermsId) = ILicenseRegistry(licenseRegistry).getAttachedLicenseTerms(
+            ipId,
+            0
+        );
         assertEq(licenseTemplate, address(pilTemplate));
         assertEq(licenseTermsId, testLicenseTermsId);
     }
@@ -189,8 +191,10 @@ contract GroupingWorkflowsTest is BaseTest {
         }
 
         // check the license terms is correctly attached to the group IPA
-        (address licenseTemplate, uint256 licenseTermsId) = ILicenseRegistry(licenseRegistry)
-            .getAttachedLicenseTerms(newGroupId, 0);
+        (address licenseTemplate, uint256 licenseTermsId) = ILicenseRegistry(licenseRegistry).getAttachedLicenseTerms(
+            newGroupId,
+            0
+        );
         assertEq(licenseTemplate, address(pilTemplate));
         assertEq(licenseTermsId, testLicenseTermsId);
     }
@@ -314,11 +318,7 @@ contract GroupingWorkflowsTest is BaseTest {
                     deadline: deadline,
                     signature: sigsMetadataAndAttach[i]
                 }),
-                WorkflowStructs.SignatureData({
-                    signer: groupOwner,
-                    deadline: deadline,
-                    signature: sigsAddToGroup[i]
-                })
+                WorkflowStructs.SignatureData({ signer: groupOwner, deadline: deadline, signature: sigsAddToGroup[i] })
             );
         }
 

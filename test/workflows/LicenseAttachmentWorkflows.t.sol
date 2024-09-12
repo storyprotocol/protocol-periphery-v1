@@ -27,7 +27,6 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         super.setUp();
     }
 
-
     modifier withIp(address owner) {
         vm.startPrank(owner);
         mockToken.mint(address(owner), 100 * 10 ** mockToken.decimals());
@@ -86,8 +85,8 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         whenCallerHasMinterRole
         withEnoughTokens(address(licenseAttachmentWorkflows))
     {
-        (address ipId1, uint256 tokenId1, uint256 licenseTermsId1) =
-            licenseAttachmentWorkflows.mintAndRegisterIpAndAttachPILTerms({
+        (address ipId1, uint256 tokenId1, uint256 licenseTermsId1) = licenseAttachmentWorkflows
+            .mintAndRegisterIpAndAttachPILTerms({
                 spgNftContract: address(nftContract),
                 recipient: caller,
                 ipMetadata: ipMetadataEmpty,
@@ -102,8 +101,8 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         assertEq(licenseTemplate, address(pilTemplate));
         assertEq(licenseTermsId, licenseTermsId1);
 
-        (address ipId2, uint256 tokenId2, uint256 licenseTermsId2) =
-            licenseAttachmentWorkflows.mintAndRegisterIpAndAttachPILTerms({
+        (address ipId2, uint256 tokenId2, uint256 licenseTermsId2) = licenseAttachmentWorkflows
+            .mintAndRegisterIpAndAttachPILTerms({
                 spgNftContract: address(nftContract),
                 recipient: caller,
                 ipMetadata: ipMetadataDefault,

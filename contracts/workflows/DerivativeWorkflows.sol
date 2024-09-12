@@ -49,7 +49,8 @@ contract DerivativeWorkflows is
 
     // solhint-disable-next-line max-line-length
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.DerivativeWorkflows")) - 1)) & ~bytes32(uint256(0xff));
-    bytes32 private constant DerivativeWorkflowsStorageLocation = 0xd52de5238bdb22c2473ee7a9de2482cc2f392e6aae2d3cca6798fa8abd456f00;
+    bytes32 private constant DerivativeWorkflowsStorageLocation =
+        0xd52de5238bdb22c2473ee7a9de2482cc2f392e6aae2d3cca6798fa8abd456f00;
 
     /// @notice The address of the Royalty Module.
     IRoyaltyModule public immutable ROYALTY_MODULE;

@@ -37,7 +37,8 @@ contract RegistrationWorkflows is
 
     // solhint-disable-next-line max-line-length
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.RegistrationWorkflows")) - 1)) & ~bytes32(uint256(0xff));
-    bytes32 private constant RegistrationWorkflowsStorageLocation = 0xc7b66cfa1bcdb9c30d9d3196622195473767c295d0a4fc11c6f9f5882f528900;
+    bytes32 private constant RegistrationWorkflowsStorageLocation =
+        0xc7b66cfa1bcdb9c30d9d3196622195473767c295d0a4fc11c6f9f5882f528900;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(

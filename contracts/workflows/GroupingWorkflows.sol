@@ -42,7 +42,8 @@ contract GroupingWorkflows is
 
     // solhint-disable-next-line max-line-length
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.GroupingWorkflows")) - 1)) & ~bytes32(uint256(0xff));
-    bytes32 private constant GroupingWorkflowsStorageLocation = 0xa8ddbb5f662015e2b3d6b4c61921979ad3d3d1d19e338b1c4ba6a196b10c6400;
+    bytes32 private constant GroupingWorkflowsStorageLocation =
+        0xa8ddbb5f662015e2b3d6b4c61921979ad3d3d1d19e338b1c4ba6a196b10c6400;
 
     /// @notice The address of the Grouping Module.
     IGroupingModule public immutable GROUPING_MODULE;

@@ -40,7 +40,8 @@ contract LicenseAttachmentWorkflows is
 
     // solhint-disable-next-line max-line-length
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.LicenseAttachmentWorkflows")) - 1)) & ~bytes32(uint256(0xff));
-    bytes32 private constant LicenseAttachmentWorkflowsStorageLocation = 0x5dffa4259249ac7a3ead22d30b4086dd3916391710734d6dd1182f2c1fe1b200;
+    bytes32 private constant LicenseAttachmentWorkflowsStorageLocation =
+        0x5dffa4259249ac7a3ead22d30b4086dd3916391710734d6dd1182f2c1fe1b200;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(

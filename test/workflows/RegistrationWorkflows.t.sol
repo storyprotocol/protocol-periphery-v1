@@ -15,7 +15,7 @@ import { WorkflowStructs } from "../../contracts/lib/WorkflowStructs.sol";
 // test
 import { BaseTest } from "../utils/BaseTest.t.sol";
 
-contract RegistrationWorkflowsTest is BaseTest{
+contract RegistrationWorkflowsTest is BaseTest {
     function setUp() public override {
         super.setUp();
     }

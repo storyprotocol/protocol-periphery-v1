@@ -21,7 +21,7 @@ contract DerivativeWorkflowsTest is BaseTest {
         super.setUp();
     }
 
-   modifier withNonCommercialParentIp() {
+    modifier withNonCommercialParentIp() {
         (ipIdParent, , ) = licenseAttachmentWorkflows.mintAndRegisterIpAndAttachPILTerms({
             spgNftContract: address(nftContract),
             recipient: caller,
@@ -112,8 +112,8 @@ contract DerivativeWorkflowsTest is BaseTest {
         uint256[] memory licenseTokenIds = new uint256[](1);
         licenseTokenIds[0] = startLicenseTokenId;
 
-        (address ipIdChild, uint256 tokenIdChild) =
-            derivativeWorkflows.mintAndRegisterIpAndMakeDerivativeWithLicenseTokens({
+        (address ipIdChild, uint256 tokenIdChild) = derivativeWorkflows
+            .mintAndRegisterIpAndMakeDerivativeWithLicenseTokens({
                 spgNftContract: address(nftContract),
                 licenseTokenIds: licenseTokenIds,
                 royaltyContext: "",

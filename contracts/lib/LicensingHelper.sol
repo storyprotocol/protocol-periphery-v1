@@ -41,8 +41,7 @@ library LicensingHelper {
         uint256 licenseTermsId
     ) internal {
         // Returns if license terms are already attached.
-        if (ILicenseRegistry(licenseRegistry).hasIpAttachedLicenseTerms(ipId, licenseTemplate, licenseTermsId))
-            return;
+        if (ILicenseRegistry(licenseRegistry).hasIpAttachedLicenseTerms(ipId, licenseTemplate, licenseTermsId)) return;
 
         ILicensingModule(licensingModule).attachLicenseTerms(ipId, licenseTemplate, licenseTermsId);
     }
