@@ -14,7 +14,7 @@ import { GroupNFT } from "@storyprotocol/core/GroupNFT.sol";
 
 import { BaseWorkflow } from "../BaseWorkflow.sol";
 import { Errors } from "../lib/Errors.sol";
-import { IGroupingWorkflows } from "../interfaces/IGroupingWorkflows.sol";
+import { IGroupingWorkflows } from "../interfaces/workflows/IGroupingWorkflows.sol";
 import { ISPGNFT } from "../interfaces/ISPGNFT.sol";
 import { LicensingHelper } from "../lib/LicensingHelper.sol";
 import { MetadataHelper } from "../lib/MetadataHelper.sol";

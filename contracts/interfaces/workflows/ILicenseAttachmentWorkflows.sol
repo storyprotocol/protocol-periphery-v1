@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 import { PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 
-import { WorkflowStructs } from "../lib/WorkflowStructs.sol";
+import { WorkflowStructs } from "../../lib/WorkflowStructs.sol";
 
 /// @title License Attachment Workflows Interface
 /// @notice Interface for IP license attachment workflows.

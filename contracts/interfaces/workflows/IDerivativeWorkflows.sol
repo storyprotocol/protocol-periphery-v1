@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { WorkflowStructs } from "../lib/WorkflowStructs.sol";
+import { WorkflowStructs } from "../../lib/WorkflowStructs.sol";
 
 /// @title Derivative Workflows Interface
 /// @notice Interface for IP derivative workflows.

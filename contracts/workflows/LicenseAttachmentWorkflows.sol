@@ -12,7 +12,7 @@ import { PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILi
 
 import { BaseWorkflow } from "../BaseWorkflow.sol";
 import { Errors } from "../lib/Errors.sol";
-import { ILicenseAttachmentWorkflows } from "../interfaces/ILicenseAttachmentWorkflows.sol";
+import { ILicenseAttachmentWorkflows } from "../interfaces/workflows/ILicenseAttachmentWorkflows.sol";
 import { ISPGNFT } from "../interfaces/ISPGNFT.sol";
 import { LicensingHelper } from "../lib/LicensingHelper.sol";
 import { MetadataHelper } from "../lib/MetadataHelper.sol";

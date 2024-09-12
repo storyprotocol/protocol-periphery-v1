@@ -20,7 +20,7 @@ import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
 
 import { BaseWorkflow } from "../BaseWorkflow.sol";
 import { Errors } from "../lib/Errors.sol";
-import { IDerivativeWorkflows } from "../interfaces/IDerivativeWorkflows.sol";
+import { IDerivativeWorkflows } from "../interfaces/workflows/IDerivativeWorkflows.sol";
 import { ISPGNFT } from "../interfaces/ISPGNFT.sol";
 import { MetadataHelper } from "../lib/MetadataHelper.sol";
 import { PermissionHelper } from "../lib/PermissionHelper.sol";

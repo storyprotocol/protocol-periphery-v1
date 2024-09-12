@@ -11,7 +11,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 
 import { BaseWorkflow } from "../BaseWorkflow.sol";
 import { Errors } from "../lib/Errors.sol";
-import { IRegistrationWorkflows } from "../interfaces/IRegistrationWorkflows.sol";
+import { IRegistrationWorkflows } from "../interfaces/workflows/IRegistrationWorkflows.sol";
 import { ISPGNFT } from "../interfaces/ISPGNFT.sol";
 import { MetadataHelper } from "../lib/MetadataHelper.sol";
 import { WorkflowStructs } from "../lib/WorkflowStructs.sol";
