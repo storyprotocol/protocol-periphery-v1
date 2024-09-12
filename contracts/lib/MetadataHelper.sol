@@ -3,8 +3,7 @@ pragma solidity ^0.8.23;
 
 import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
 
-import { IStoryProtocolGateway as ISPG } from "../interfaces/IStoryProtocolGateway.sol";
-
+import { WorkflowStructs } from "./WorkflowStructs.sol";
 import { PermissionHelper } from "./PermissionHelper.sol";
 
 /// @title Periphery Metadata Helper Library
@@ -21,8 +20,8 @@ library MetadataHelper {
         address ipId,
         address coreMetadataModule,
         address accessController,
-        ISPG.IPMetadata calldata ipMetadata,
-        ISPG.SignatureData calldata sigData
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        WorkflowStructs.SignatureData calldata sigData
     ) internal {
         if (sigData.signer != address(0) && sigData.deadline != 0 && sigData.signature.length != 0) {
             PermissionHelper.setPermissionForModule({
@@ -41,7 +40,11 @@ library MetadataHelper {
     /// @param ipId The ID of the IP.
     /// @param coreMetadataModule The address of the Core Metadata Module.
     /// @param ipMetadata The metadata to set.
-    function setMetadata(address ipId, address coreMetadataModule, ISPG.IPMetadata calldata ipMetadata) internal {
+    function setMetadata(
+        address ipId,
+        address coreMetadataModule,
+        WorkflowStructs.IPMetadata calldata ipMetadata
+    ) internal {
         if (
             keccak256(abi.encodePacked(ipMetadata.ipMetadataURI)) != keccak256("") ||
             ipMetadata.ipMetadataHash != bytes32(0) ||

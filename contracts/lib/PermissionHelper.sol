@@ -5,7 +5,7 @@ import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { AccessPermission } from "@storyprotocol/core/lib/AccessPermission.sol";
 import { IAccessController } from "@storyprotocol/core/interfaces/access/IAccessController.sol";
 
-import { IStoryProtocolGateway as ISPG } from "../interfaces/IStoryProtocolGateway.sol";
+import { WorkflowStructs } from "./WorkflowStructs.sol";
 
 /// @title Periphery Permission Helper Library
 /// @notice Library for all permissions related helper functions for Periphery contracts.
@@ -22,7 +22,7 @@ library PermissionHelper {
         address module,
         address accessController,
         bytes4 selector,
-        ISPG.SignatureData calldata sigData
+        WorkflowStructs.SignatureData calldata sigData
     ) internal {
         IIPAccount(payable(ipId)).executeWithSig(
             accessController,
@@ -53,7 +53,7 @@ library PermissionHelper {
         address accessController,
         address[] memory modules,
         bytes4[] memory selectors,
-        ISPG.SignatureData calldata sigData
+        WorkflowStructs.SignatureData calldata sigData
     ) internal {
         // assumes modules and selectors must have a 1:1 mapping
         AccessPermission.Permission[] memory permissionList = new AccessPermission.Permission[](modules.length);
