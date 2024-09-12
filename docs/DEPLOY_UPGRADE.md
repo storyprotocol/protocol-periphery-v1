@@ -15,10 +15,14 @@ ETHERSCAN_API_KEY=0x123456789abcdef
 VERIFIER_NAME=blockscout
 VERIFIER_URL=https://testnet.storyscan.xyz/api
 
-SPG_PROXY_ADDR=0x123456789abcdef
-SPGNFT_BEACON_ADDR=0x123456789abcdef
+# RegistrationWorkflows proxy contract address
+REGWORKFLOWS_PROXY_ADDR=0x123456789abcdef
+#... other workflow contract proxy addresses
 
-NEW_SPG_IMPL_ADDR= #<the new SPG implementation contract address you got from running the upgrade script>
+NEW_REGWORKFLOWS_IMPL_ADDR= #<the new RegistrationWorkflows implementation contract address you got from running the upgrade script>
+#... other new workflow contract implementation addresses
+
+SPGNFT_BEACON_ADDR=0x123456789abcdef
 NEW_SPGNFT_IMPL_ADDR= #<the new SPGNFT implementation contract address you got from running the upgrade script>
 ```
 
@@ -33,22 +37,23 @@ NEW_SPGNFT_IMPL_ADDR= #<the new SPGNFT implementation contract address you got f
 2. Set NFT beacon contract for workflow contracts using the admin account by calling `setNFTContractBeacon` with the following command:
 
     ```bash
-    cast send $SPG_PROXY_ADDR "setNftContractBeacon(address)" $SPGNFT_BEACON_ADDR --rpc-url=$TESTNET_URL --private-key=$ADMIN_PRIVATEKEY --legacy --gas-limit=1000000
+    cast send $REGWORKFLOWS_PROXY_ADDR "setNftContractBeacon(address)" $SPGNFT_BEACON_ADDR --rpc-url=$TESTNET_URL --private-key=$ADMIN_PRIVATEKEY --legacy --gas-limit=1000000
+    # ... repeat for each workflow contract
     ```
 
 
-## Workflow Contract Upgrade Example
+## Workflow Contracts Upgrade Example
 
-1. Run the [upgrade script](../script/upgrade/UpgradeSPG.s.sol) with the following command:
+1. Run the [upgrade script](../script/upgrade/UpgradeRegistrationWorkflows.s.sol) with the following command:
 
     ```bash
-    forge script script/upgrade/UpgradeSPG.s.sol:UpgradeSPG --rpc-url=$TESTNET_URL -vvvv --broadcast --priority-gas-price=1 --legacy --verify  --verifier=$VERIFIER_NAME --verifier-url=$VERIFIER_URL
+    forge script script/upgrade/UpgradeRegistrationWorkflows.s.sol:UpgradeRegistrationWorkflows --rpc-url=$TESTNET_URL -vvvv --broadcast --priority-gas-price=1 --legacy --verify  --verifier=$VERIFIER_NAME --verifier-url=$VERIFIER_URL
     ```
 
 2. Update the proxy contract to point to the newest implementation by calling `upgradeToAndCall` with the following command:
 
     ```bash
-    cast send $SPG_PROXY_ADDR "upgradeToAndCall(address,bytes)" $NEW_SPG_IMPL_ADDR "0x" --rpc-url=$TESTNET_URL --private-key=$ADMIN_PRIVATEKEY --legacy --gas-limit=1000000
+    cast send $REGWORKFLOWS_PROXY_ADDR "upgradeToAndCall(address,bytes)" $NEW_REGWORKFLOWS_IMPL_ADDR "0x" --rpc-url=$TESTNET_URL --private-key=$ADMIN_PRIVATEKEY --legacy --gas-limit=1000000
     ```
 
 ## SPGNFT Upgrade Example
@@ -59,8 +64,8 @@ NEW_SPGNFT_IMPL_ADDR= #<the new SPGNFT implementation contract address you got f
     forge script script/upgrade/UpgradeSPGNFT.s.sol:UpgradeSPGNFT --rpc-url=$TESTNET_URL -vvvv --broadcast --priority-gas-price=1 --legacy --verify  --verifier=$VERIFIER_NAME --verifier-url=$VERIFIER_URL
     ```
 
-2. Update the SPG proxy contract to point to the newest SPGNFT implementation by calling `upgradeCollections` function with the following command:
+2. Update workflow contracts to use the newest SPGNFT implementation by calling `upgradeCollections` function inside `RegistrationWorkflows` contract with the following command:
 
     ```bash
-    cast send $SPG_PROXY_ADDR "upgradeCollections(address)" $NEW_SPGNFT_IMPL_ADDR --rpc-url=$TESTNET_URL --private-key=$ADMIN_PRIVATEKEY --legacy --gas-limit=1000000
+    cast send $REGWORKFLOWS_PROXY_ADDR "upgradeCollections(address)" $NEW_SPGNFT_IMPL_ADDR --rpc-url=$TESTNET_URL --private-key=$ADMIN_PRIVATEKEY --legacy --gas-limit=1000000
     ```
