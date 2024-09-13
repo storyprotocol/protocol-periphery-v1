@@ -324,9 +324,8 @@ contract StoryProtocolGateway is
 
         LicensingHelper.collectMintFeesAndSetApproval(
             msg.sender,
-            ipId,
             address(ROYALTY_MODULE),
-            address(LICENSE_REGISTRY),
+            address(LICENSING_MODULE),
             derivData.licenseTemplate,
             derivData.parentIpIds,
             derivData.licenseTermsIds
@@ -378,9 +377,8 @@ contract StoryProtocolGateway is
 
         LicensingHelper.collectMintFeesAndSetApproval(
             msg.sender,
-            ipId,
             address(ROYALTY_MODULE),
-            address(LICENSE_REGISTRY),
+            address(LICENSING_MODULE),
             derivData.licenseTemplate,
             derivData.parentIpIds,
             derivData.licenseTermsIds

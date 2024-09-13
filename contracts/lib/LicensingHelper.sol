@@ -4,10 +4,8 @@ pragma solidity ^0.8.23;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
 import { ILicenseToken } from "@storyprotocol/core/interfaces/ILicenseToken.sol";
 import { ILicenseRegistry } from "@storyprotocol/core/interfaces/registries/ILicenseRegistry.sol";
-import { ILicensingHook } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingHook.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
 import { ILicenseTemplate } from "@storyprotocol/core/interfaces/modules/licensing/ILicenseTemplate.sol";
 import { IPILicenseTemplate, PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
@@ -52,8 +50,7 @@ library LicensingHelper {
         uint256 licenseTermsId
     ) internal {
         // Returns if license terms are already attached.
-        if (ILicenseRegistry(licenseRegistry).hasIpAttachedLicenseTerms(ipId, licenseTemplate, licenseTermsId))
-            return;
+        if (ILicenseRegistry(licenseRegistry).hasIpAttachedLicenseTerms(ipId, licenseTemplate, licenseTermsId)) return;
 
         ILicensingModule(licensingModule).attachLicenseTerms(ipId, licenseTemplate, licenseTermsId);
     }
@@ -76,31 +73,28 @@ library LicensingHelper {
 
     /// @dev Collect mint fees for all parent IPs from the payer and set approval for Royalty Module to spend mint fees.
     /// @param payerAddress The address of the payer for the license mint fees.
-    /// @param childIpId The ID of the derivative IP.
     /// @param royaltyModule The address of the Royalty Module.
-    /// @param licenseRegistry The address of the License Registry.
+    /// @param licensingModule The address of the Licensing Module.
     /// @param licenseTemplate The address of the license template.
     /// @param parentIpIds The IDs of all the parent IPs.
     /// @param licenseTermsIds The IDs of the license terms for each corresponding parent IP.
     function collectMintFeesAndSetApproval(
         address payerAddress,
-        address childIpId,
         address royaltyModule,
-        address licenseRegistry,
+        address licensingModule,
         address licenseTemplate,
         address[] calldata parentIpIds,
         uint256[] calldata licenseTermsIds
     ) internal {
-        // Get currency token and royalty policy, assumes all parent IPs have the same currency token.
         ILicenseTemplate lct = ILicenseTemplate(licenseTemplate);
         (address royaltyPolicy, , , address mintFeeCurrencyToken) = lct.getRoyaltyPolicy(licenseTermsIds[0]);
 
         if (royaltyPolicy != address(0)) {
             // Get total mint fee for all parent IPs
             uint256 totalMintFee = aggregateMintFees({
-                childIpId: childIpId,
+                payerAddress: payerAddress,
+                licensingModule: licensingModule,
                 licenseTemplate: licenseTemplate,
-                licenseRegistry: licenseRegistry,
                 parentIpIds: parentIpIds,
                 licenseTermsIds: licenseTermsIds
             });
@@ -116,80 +110,31 @@ library LicensingHelper {
     }
 
     /// @dev Aggregate license mint fees for all parent IPs.
-    /// @param childIpId The ID of the derivative IP.
+    /// @param payerAddress The address of the payer for the license mint fees.
+    /// @param licensingModule The address of the Licensing Module.
     /// @param licenseTemplate The address of the license template.
-    /// @param licenseRegistry The address of the License Registry.
     /// @param parentIpIds The IDs of all the parent IPs.
     /// @param licenseTermsIds The IDs of the license terms for each corresponding parent IP.
     /// @return totalMintFee The sum of license mint fees across all parent IPs.
     function aggregateMintFees(
-        address childIpId,
+        address payerAddress,
+        address licensingModule,
         address licenseTemplate,
-        address licenseRegistry,
         address[] calldata parentIpIds,
         uint256[] calldata licenseTermsIds
-    ) internal returns (uint256 totalMintFee) {
-        totalMintFee = 0;
+    ) internal view returns (uint256 totalMintFee) {
+        uint256 mintFee;
 
         for (uint256 i = 0; i < parentIpIds.length; i++) {
-            totalMintFee += getMintFeeForSingleParent({
-                childIpId: childIpId,
-                parentIpId: parentIpIds[i],
+            (, mintFee) = ILicensingModule(licensingModule).predictMintingLicenseFee({
+                licensorIpId: parentIpIds[i],
                 licenseTemplate: licenseTemplate,
-                licenseRegistry: licenseRegistry,
+                licenseTermsId: licenseTermsIds[i],
                 amount: 1,
-                licenseTermsId: licenseTermsIds[i]
+                receiver: payerAddress,
+                royaltyContext: ""
             });
+            totalMintFee += mintFee;
         }
-    }
-
-    /// @dev Fetch the license token mint fee from the licensing hook or license terms for the given parent IP.
-    /// @param childIpId The ID of the derivative IP.
-    /// @param parentIpId The ID of the parent IP.
-    /// @param licenseTemplate The address of the license template.
-    /// @param licenseRegistry The address of the License Registry.
-    /// @param amount The amount of licenses to mint.
-    /// @param licenseTermsId The ID of the license terms for the parent IP.
-    /// @return The mint fee for the given parent IP.
-    function getMintFeeForSingleParent(
-        address childIpId,
-        address parentIpId,
-        address licenseTemplate,
-        address licenseRegistry,
-        uint256 amount,
-        uint256 licenseTermsId
-    ) internal returns (uint256) {
-        ILicenseTemplate lct = ILicenseTemplate(licenseTemplate);
-
-        // Get mint fee set by license terms
-        (address royaltyPolicy, , uint256 mintFeeSetByLicenseTerms, ) = lct.getRoyaltyPolicy(licenseTermsId);
-
-        // If no royalty policy, return 0
-        if (royaltyPolicy == address(0)) return 0;
-
-        uint256 mintFeeSetByHook = 0;
-
-        Licensing.LicensingConfig memory licensingConfig = ILicenseRegistry(licenseRegistry).getLicensingConfig({
-            ipId: parentIpId,
-            licenseTemplate: licenseTemplate,
-            licenseTermsId: licenseTermsId
-        });
-
-        // Get mint fee from licensing hook
-        if (licensingConfig.licensingHook != address(0)) {
-            mintFeeSetByHook = ILicensingHook(licensingConfig.licensingHook).beforeRegisterDerivative({
-                caller: address(this),
-                childIpId: childIpId,
-                parentIpId: parentIpId,
-                licenseTemplate: licenseTemplate,
-                licenseTermsId: licenseTermsId,
-                hookData: licensingConfig.hookData
-            });
-        }
-
-        if (!licensingConfig.isSet) return mintFeeSetByLicenseTerms * amount;
-        if (licensingConfig.licensingHook == address(0)) return licensingConfig.mintingFee * amount;
-
-        return mintFeeSetByHook;
     }
 }
