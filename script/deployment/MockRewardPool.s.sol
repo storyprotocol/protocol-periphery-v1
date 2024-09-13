@@ -6,13 +6,16 @@ pragma solidity ^0.8.23;
 import { console2 } from "forge-std/console2.sol";
 import { Script } from "forge-std/Script.sol";
 import { stdJson } from "forge-std/StdJson.sol";
+
 // script
 import { BroadcastManager } from "../utils/BroadcastManager.s.sol";
 import { JsonDeploymentHandler } from "../utils/JsonDeploymentHandler.s.sol";
-// test
-import { MockEvenSplitGroupPool } from "test/mocks/MockEvenSplitGroupPool.sol";
+import { StoryProtocolCoreAddressManager } from "../utils/StoryProtocolCoreAddressManager.sol";
 
-contract MockRewardPool is Script, BroadcastManager, JsonDeploymentHandler {
+// test
+import { MockEvenSplitGroupPool } from "@storyprotocol/test/mocks/grouping/MockEvenSplitGroupPool.sol";
+
+contract MockRewardPool is Script, BroadcastManager, JsonDeploymentHandler, StoryProtocolCoreAddressManager{
     using stdJson for string;
 
     constructor() JsonDeploymentHandler("main") {}
@@ -31,7 +34,7 @@ contract MockRewardPool is Script, BroadcastManager, JsonDeploymentHandler {
 
     function _deployMockRewardPool() private {
         _predeploy("MockEvenSplitGroupPool");
-        MockEvenSplitGroupPool mockEvenSplitGroupPool = new MockEvenSplitGroupPool();
+        MockEvenSplitGroupPool mockEvenSplitGroupPool = new MockEvenSplitGroupPool(royaltyModuleAddr);
         _postdeploy("MockEvenSplitGroupPool", address(mockEvenSplitGroupPool));
     }
 

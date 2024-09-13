@@ -2,6 +2,7 @@
 @openzeppelin-foundry-upgrades/=lib/openzeppelin-foundry-upgrades/
 @storyprotocol/core/=node_modules/@story-protocol/protocol-core/contracts/
 @storyprotocol/script/=node_modules/@story-protocol/protocol-core/script/foundry/
+@storyprotocol/test/=node_modules/@story-protocol/protocol-core/test/foundry/
 @create3-deployer/=node_modules/@story-protocol/create3-deployer/
 @solady/=node_modules/solady/
 ds-test/=lib/forge-std/lib/ds-test/src/

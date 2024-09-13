@@ -32,6 +32,8 @@ import { IAccessController } from "@storyprotocol/core/interfaces/access/IAccess
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
 import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
+import { MockIPGraph } from "@storyprotocol/test/mocks/MockIPGraph.sol";
+import { MockEvenSplitGroupPool } from "@storyprotocol/test/mocks/grouping/MockEvenSplitGroupPool.sol";
 
 import { StoryProtocolGateway } from "../../contracts/StoryProtocolGateway.sol";
 import { IStoryProtocolGateway as ISPG } from "../../contracts/interfaces/IStoryProtocolGateway.sol";
@@ -40,8 +42,6 @@ import { SPGNFT } from "../../contracts/SPGNFT.sol";
 import { ISPGNFT } from "../../contracts/interfaces/ISPGNFT.sol";
 import { TestProxyHelper } from "./TestProxyHelper.t.sol";
 import { MockERC20 } from "../mocks/MockERC20.sol";
-import { MockIPGraph } from "../mocks/MockIPGraph.sol";
-import { MockEvenSplitGroupPool } from "../mocks/MockEvenSplitGroupPool.sol";
 
 /// @title Base Test Contract
 contract BaseTest is Test {
@@ -325,7 +325,7 @@ contract BaseTest is Test {
         require(_loadProxyImpl(address(licensingModule)) == impl, "LicensingModule Proxy Implementation Mismatch");
 
         impl = address(0); // Make sure we don't deploy wrong impl
-        impl = address(new RoyaltyPolicyLAP(address(royaltyModule), address(licensingModule), address(ipGraphACL)));
+        impl = address(new RoyaltyPolicyLAP(address(royaltyModule), address(ipGraphACL)));
         royaltyPolicyLAP = RoyaltyPolicyLAP(
             TestProxyHelper.deployUUPSProxy(
                 create3Deployer,
@@ -560,7 +560,7 @@ contract BaseTest is Test {
 
     function setUp_test_Misc() public {
         mockToken = new MockERC20();
-        rewardPool = new MockEvenSplitGroupPool();
+        rewardPool = new MockEvenSplitGroupPool(address(royaltyModule));
 
         royaltyModule.whitelistRoyaltyToken(address(mockToken), true);
         licenseRegistry.setDefaultLicenseTerms(address(pilTemplate), 0);
