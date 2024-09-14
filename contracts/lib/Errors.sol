@@ -7,8 +7,8 @@ library Errors {
     /// @notice Zero address provided as a param to SPG.
     error SPG__ZeroAddressParam();
 
-    /// @notice Caller does not have the minter role.
-    error SPG__CallerNotMinterRole();
+    /// @notice Caller is not authorized to mint.
+    error SPG__CallerNotAuthorizedToMint();
 
     /// @notice License token list is empty.
     error SPG__EmptyLicenseTokens();

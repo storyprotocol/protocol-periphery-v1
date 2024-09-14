@@ -124,7 +124,7 @@ contract GroupingWorkflows is
         uint256 licenseTermsId,
         ISPG.IPMetadata calldata ipMetadata,
         ISPG.SignatureData calldata sigAddToGroup
-    ) external onlyCallerWithMinterRole(spgNftContract) returns (address ipId, uint256 tokenId) {
+    ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId) {
         tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
             to: address(this),
             payer: msg.sender,

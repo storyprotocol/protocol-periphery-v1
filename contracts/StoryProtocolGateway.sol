@@ -164,7 +164,7 @@ contract StoryProtocolGateway is
         address spgNftContract,
         address recipient,
         IPMetadata calldata ipMetadata
-    ) external onlyCallerWithMinterRole(spgNftContract) returns (address ipId, uint256 tokenId) {
+    ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId) {
         tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
             to: address(this),
             payer: msg.sender,
@@ -230,11 +230,7 @@ contract StoryProtocolGateway is
         address recipient,
         IPMetadata calldata ipMetadata,
         PILTerms calldata terms
-    )
-        external
-        onlyCallerWithMinterRole(spgNftContract)
-        returns (address ipId, uint256 tokenId, uint256 licenseTermsId)
-    {
+    ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId, uint256 licenseTermsId) {
         tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
             to: address(this),
             payer: msg.sender,
@@ -312,7 +308,7 @@ contract StoryProtocolGateway is
         MakeDerivative calldata derivData,
         IPMetadata calldata ipMetadata,
         address recipient
-    ) external onlyCallerWithMinterRole(spgNftContract) returns (address ipId, uint256 tokenId) {
+    ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId) {
         tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
             to: address(this),
             payer: msg.sender,
@@ -409,7 +405,7 @@ contract StoryProtocolGateway is
         bytes calldata royaltyContext,
         IPMetadata calldata ipMetadata,
         address recipient
-    ) external onlyCallerWithMinterRole(spgNftContract) returns (address ipId, uint256 tokenId) {
+    ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId) {
         LicensingHelper.collectLicenseTokens(licenseTokenIds, address(LICENSE_TOKEN));
 
         tokenId = ISPGNFT(spgNftContract).mintByPeriphery({

@@ -19,6 +19,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @param mintFeeToken The token to pay for minting.
     /// @param mintFeeRecipient The address to receive mint fees.
     /// @param mintOpen The status of minting, whether it is open or not.
+    /// @param publicMinting True if the collection is open for everyone to mint.
     /// @custom:storage-location erc7201:story-protocol-periphery.SPGNFT
     struct SPGNFTStorage {
         uint32 maxSupply;

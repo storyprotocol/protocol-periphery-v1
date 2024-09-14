@@ -42,19 +42,59 @@ contract StoryProtocolGatewayTest is BaseTest {
         assertFalse(nftContract.publicMinting());
     }
 
-    modifier whenCallerDoesNotHaveMinterRole() {
-        caller = bob;
-        _;
+    function test_SPG_revert_mintAndRegisterIp_callerNotAuthorizedToMint() public {
+        vm.prank(alice); // minter and admin of nftContract
+        nftContract = ISPGNFT(
+            spg.createCollection({
+                name: "Test Private Collection",
+                symbol: "TESTPRIV",
+                maxSupply: 100,
+                mintFee: 100 * 10 ** mockToken.decimals(),
+                mintFeeToken: address(mockToken),
+                mintFeeRecipient: feeRecipient,
+                owner: minter,
+                mintOpen: true,
+                isPublicMinting: false // not public minting
+            })
+        );
+
+        vm.expectRevert(Errors.SPG__CallerNotAuthorizedToMint.selector);
+        vm.prank(bob); // caller does not have minter role
+        spg.mintAndRegisterIp({ spgNftContract: address(nftContract), recipient: bob, ipMetadata: ipMetadataEmpty });
     }
 
-    function test_SPG_revert_mintAndRegisterIp_callerNotMinterRole()
-        public
-        withCollection
-        whenCallerDoesNotHaveMinterRole
-    {
-        vm.expectRevert(Errors.SPG__CallerNotMinterRole.selector);
-        vm.prank(caller);
-        spg.mintAndRegisterIp({ spgNftContract: address(nftContract), recipient: bob, ipMetadata: ipMetadataEmpty });
+    function test_SPG_mintAndRegisterIp_publicMint() public {
+        vm.prank(alice); // minter and admin of nftContract
+        nftContract = ISPGNFT(
+            spg.createCollection({
+                name: "Test Public Collection",
+                symbol: "TESTPUB",
+                maxSupply: 100,
+                mintFee: 1 * 10 ** mockToken.decimals(),
+                mintFeeToken: address(mockToken),
+                mintFeeRecipient: feeRecipient,
+                owner: minter,
+                mintOpen: true,
+                isPublicMinting: true // public minting is enabled
+            })
+        );
+
+        vm.startPrank(bob); // caller does not have minter role
+        mockToken.mint(address(bob), 1000 * 10 ** mockToken.decimals());
+        mockToken.approve(address(nftContract), 1000 * 10 ** mockToken.decimals());
+
+        // caller has minter role and public minting is enabled
+        (address ipId, uint256 tokenId) = spg.mintAndRegisterIp({
+            spgNftContract: address(nftContract),
+            recipient: bob,
+            ipMetadata: ipMetadataEmpty
+        });
+        vm.stopPrank();
+
+        assertTrue(ipAssetRegistry.isRegistered(ipId));
+        assertEq(tokenId, 1);
+        assertSPGNFTMetadata(tokenId, ipMetadataEmpty.nftMetadataURI);
+        assertMetadata(ipId, ipMetadataEmpty);
     }
 
     function test_SPG_mintAndRegisterIp() public withCollection whenCallerHasMinterRole {

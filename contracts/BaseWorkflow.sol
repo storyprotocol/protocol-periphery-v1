@@ -50,11 +50,14 @@ abstract contract BaseWorkflow {
         PIL_TEMPLATE = IPILicenseTemplate(pilTemplate);
     }
 
-    /// @notice Check that the caller has the minter role for the provided SPG NFT.
+    /// @notice Check that the caller is authorized to mint for the provided SPG NFT.
+    /// @notice The caller must have the MINTER_ROLE for the SPG NFT or the SPG NFT must has public minting enabled.
     /// @param spgNftContract The address of the SPG NFT.
-    modifier onlyCallerWithMinterRole(address spgNftContract) {
-        if (!ISPGNFT(spgNftContract).hasRole(SPGNFTLib.MINTER_ROLE, msg.sender))
-            revert Errors.SPG__CallerNotMinterRole();
+    modifier onlyMintAuthorized(address spgNftContract) {
+        if (
+            !ISPGNFT(spgNftContract).hasRole(SPGNFTLib.MINTER_ROLE, msg.sender) &&
+            !ISPGNFT(spgNftContract).publicMinting()
+        ) revert Errors.SPG__CallerNotAuthorizedToMint();
         _;
     }
 }
