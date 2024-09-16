@@ -6,10 +6,12 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC721Metadata } from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 
 interface ISPGNFT is IAccessControl, IERC721, IERC721Metadata {
-    /// @dev Initializes the NFT collection.
+    /// @notice Struct for initializing the NFT collection.
     /// @dev If mint fee is non-zero, mint token must be set.
     /// @param name The name of the collection.
     /// @param symbol The symbol of the collection.
+    /// @param baseURI The base URI for the collection. If baseURI is not empty, tokenURI will be
+    /// either baseURI + token ID (if nftMetadataURI is empty) or baseURI + nftMetadataURI.
     /// @param maxSupply The maximum supply of the collection.
     /// @param mintFee The fee to mint an NFT from the collection.
     /// @param mintFeeToken The token to pay for minting.
@@ -18,16 +20,24 @@ interface ISPGNFT is IAccessControl, IERC721, IERC721Metadata {
     /// @param mintOpen Whether the collection is open for minting on creation. Configurable by the owner.
     /// @param isPublicMinting If true, anyone can mint from the collection. If false, only the addresses with the
     /// minter role can mint. Configurable by the owner.
+    struct InitParams {
+        string name;
+        string symbol;
+        string baseURI;
+        uint32 maxSupply;
+        uint256 mintFee;
+        address mintFeeToken;
+        address mintFeeRecipient;
+        address owner;
+        bool mintOpen;
+        bool isPublicMinting;
+    }
+
+    /// @dev Initializes the NFT collection.
+    /// @dev If mint fee is non-zero, mint token must be set.
+    /// @param params The initialization parameters. See `InitParams`.
     function initialize(
-        string memory name,
-        string memory symbol,
-        uint32 maxSupply,
-        uint256 mintFee,
-        address mintFeeToken,
-        address mintFeeRecipient,
-        address owner,
-        bool mintOpen,
-        bool isPublicMinting
+        InitParams calldata params
     ) external;
 
     /// @notice Returns the total minted supply of the collection.
@@ -47,6 +57,11 @@ interface ISPGNFT is IAccessControl, IERC721, IERC721Metadata {
 
     /// @notice Returns true if the collection is open for public minting.
     function publicMinting() external view returns (bool);
+
+    /// @notice Returns the base URI for the collection.
+    /// @dev If baseURI is not empty, tokenURI will be either or baseURI + nftMetadataURI
+    /// or baseURI + token ID (if nftMetadataURI is empty).
+    function baseURI() external view returns (string memory);
 
     /// @notice Sets the fee to mint an NFT from the collection. Payment is in the designated currency.
     /// @dev Only callable by the admin role.
@@ -72,6 +87,12 @@ interface ISPGNFT is IAccessControl, IERC721, IERC721Metadata {
     /// @dev Only callable by the admin role.
     /// @param isPublicMinting Whether the collection is open for public minting or not.
     function setPublicMinting(bool isPublicMinting) external;
+
+    /// @notice Sets the base URI for the collection. If baseURI is not empty, tokenURI will be
+    /// either baseURI + token ID (if nftMetadataURI is empty) or baseURI + nftMetadataURI.
+    /// @dev Only callable by the admin role.
+    /// @param baseURI The new base URI for the collection.
+    function setBaseURI(string memory baseURI) external;
 
     /// @notice Mints an NFT from the collection. Only callable by the minter role.
     /// @param to The address of the recipient of the minted NFT.

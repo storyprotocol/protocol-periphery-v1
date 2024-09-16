@@ -2,6 +2,7 @@
 pragma solidity ^0.8.23;
 
 import { PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
+import { ISPGNFT } from "./ISPGNFT.sol";
 
 /// @title Story Protocol Gateway Interface
 interface IStoryProtocolGateway {
@@ -45,28 +46,11 @@ interface IStoryProtocolGateway {
     }
 
     /// @notice Creates a new NFT collection to be used by SPG.
-    /// @param name The name of the collection.
-    /// @param symbol The symbol of the collection.
-    /// @param maxSupply The maximum supply of the collection.
-    /// @param mintFee The cost to mint an NFT from the collection.
-    /// @param mintFeeToken The token to be used for mint payment.
-    /// @param mintFeeRecipient The address to receive mint fees.
-    /// @param owner The owner of the collection. Zero address indicates no owner.
-    /// @param mintOpen Whether the collection is open for minting on creation. Configurable by the owner.
-    /// @param isPublicMinting If true, anyone can mint from the collection. If false, only the addresses with the
-    /// minter role can mint. Configurable by the owner.
-    /// @return nftContract The address of the newly created NFT collection.
+    /// @param spgNftInitParams The init params for the SPGNFT collection. See {ISPGNFT-InitParams}.
+    /// @return spgNftContract The address of the newly created SPGNFT collection.
     function createCollection(
-        string calldata name,
-        string calldata symbol,
-        uint32 maxSupply,
-        uint256 mintFee,
-        address mintFeeToken,
-        address mintFeeRecipient,
-        address owner,
-        bool mintOpen,
-        bool isPublicMinting
-    ) external returns (address nftContract);
+        ISPGNFT.InitParams calldata spgNftInitParams
+    ) external returns (address spgNftContract);
 
     /// @notice Mint an NFT from a SPGNFT collection and register it with metadata as an IP.
     /// @dev Caller must have the minter role for the provided SPG NFT.
