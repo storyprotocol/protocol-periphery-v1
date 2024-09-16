@@ -1,7 +1,7 @@
 {
   "name": "@story-protocol/protocol-periphery",
-  "version": "v1.2.0",
-  "description": "Story Protocol periphery smart contracts",
+  "version": "v1.2.1",
+  "description": "Story Proof-of-Creativity protocol periphery smart contracts",
   "main": "",
   "directories": {
     "lib": "lib",

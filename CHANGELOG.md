@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## v1.2.1
+
+* Added support for public minting in SPG and SPGNFT
+* Added support for setting and retrieving base URI for SPGNFT
+* Made license attachment idempotent in SPG
+* Integrated `predictMintingLicenseFee` from the licensing module for minting fee calculations
+* Bumped protocol-core dependencies to v1.2.1 and other minor updates
+
+**Full Changelog**: [v1.2.0...v1.2.1](https://github.com/storyprotocol/protocol-periphery-v1/compare/v1.2.0...v1.2.1)
+
 ## v1.2.0
 
 - Introduced workflow contracts and Group IPA features, including deployment scripts for `GroupingWorkflows`,`DeployHelper`, and custom license templates support
