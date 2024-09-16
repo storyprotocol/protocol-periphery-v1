@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { BeaconProxy } from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
@@ -14,6 +15,8 @@ import { Errors } from "../contracts/lib/Errors.sol";
 import { BaseTest } from "./utils/BaseTest.t.sol";
 
 contract SPGNFTTest is BaseTest {
+    using Strings for uint256;
+
     string internal nftMetadataEmpty;
     string internal nftMetadataDefault;
 
@@ -23,9 +26,10 @@ contract SPGNFTTest is BaseTest {
         feeRecipient = address(0xbeef);
 
         nftContract = ISPGNFT(
-            spg.createCollection({
+            spg.createCollection(ISPGNFT.InitParams({
                 name: "Test Collection",
                 symbol: "TEST",
+                baseURI: testBaseURI,
                 maxSupply: 100,
                 mintFee: 100 * 10 ** mockToken.decimals(),
                 mintFeeToken: address(mockToken),
@@ -33,7 +37,7 @@ contract SPGNFTTest is BaseTest {
                 owner: alice,
                 mintOpen: true,
                 isPublicMinting: false
-            })
+            }))
         );
 
         nftMetadataEmpty = "";
@@ -45,9 +49,10 @@ contract SPGNFTTest is BaseTest {
         address NFT_CONTRACT_BEACON = address(new UpgradeableBeacon(spgNftImpl, deployer));
         ISPGNFT anotherNftContract = ISPGNFT(address(new BeaconProxy(NFT_CONTRACT_BEACON, "")));
 
-        anotherNftContract.initialize({
+        anotherNftContract.initialize(ISPGNFT.InitParams({
             name: "Test Collection",
             symbol: "TEST",
+            baseURI: testBaseURI,
             maxSupply: 100,
             mintFee: 100 * 10 ** mockToken.decimals(),
             mintFeeToken: address(mockToken),
@@ -55,7 +60,7 @@ contract SPGNFTTest is BaseTest {
             owner: alice,
             mintOpen: true,
             isPublicMinting: false
-        });
+        }));
 
         assertEq(nftContract.name(), anotherNftContract.name());
         assertEq(nftContract.symbol(), anotherNftContract.symbol());
@@ -74,9 +79,10 @@ contract SPGNFTTest is BaseTest {
         nftContract = ISPGNFT(address(new BeaconProxy(NFT_CONTRACT_BEACON, "")));
 
         vm.expectRevert(Errors.SPGNFT__ZeroAddressParam.selector);
-        nftContract.initialize({
+        nftContract.initialize(ISPGNFT.InitParams({
             name: "Test Collection",
             symbol: "TEST",
+            baseURI: testBaseURI,
             maxSupply: 100,
             mintFee: 1,
             mintFeeToken: address(0),
@@ -84,12 +90,13 @@ contract SPGNFTTest is BaseTest {
             owner: alice,
             mintOpen: true,
             isPublicMinting: false
-        });
+        }));
 
         vm.expectRevert(Errors.SPGNFT__ZeroMaxSupply.selector);
-        nftContract.initialize({
+        nftContract.initialize(ISPGNFT.InitParams({
             name: "Test Collection",
             symbol: "TEST",
+            baseURI: testBaseURI,
             maxSupply: 0,
             mintFee: 0,
             mintFeeToken: address(mockToken),
@@ -97,7 +104,7 @@ contract SPGNFTTest is BaseTest {
             owner: alice,
             mintOpen: true,
             isPublicMinting: false
-        });
+        }));
     }
 
     function test_SPGNFT_mint() public {
@@ -116,7 +123,7 @@ contract SPGNFTTest is BaseTest {
         assertEq(nftContract.ownerOf(tokenId), bob);
         assertEq(mockToken.balanceOf(alice), balanceBeforeAlice - mintFee);
         assertEq(mockToken.balanceOf(address(nftContract)), balanceBeforeContract + mintFee);
-        assertSPGNFTMetadata(tokenId, nftMetadataEmpty);
+        assertSPGNFTMetadata(tokenId, string.concat(testBaseURI, tokenId.toString()));
         balanceBeforeAlice = mockToken.balanceOf(alice);
         balanceBeforeContract = mockToken.balanceOf(address(nftContract));
 
@@ -126,7 +133,7 @@ contract SPGNFTTest is BaseTest {
         assertEq(nftContract.ownerOf(tokenId), bob);
         assertEq(mockToken.balanceOf(alice), balanceBeforeAlice - mintFee);
         assertEq(mockToken.balanceOf(address(nftContract)), balanceBeforeContract + mintFee);
-        assertSPGNFTMetadata(tokenId, nftMetadataDefault);
+        assertSPGNFTMetadata(tokenId, string.concat(testBaseURI, nftMetadataDefault));
         balanceBeforeAlice = mockToken.balanceOf(alice);
         balanceBeforeContract = mockToken.balanceOf(address(nftContract));
 
@@ -141,7 +148,7 @@ contract SPGNFTTest is BaseTest {
         assertEq(nftContract.ownerOf(tokenId), cal);
         assertEq(mockToken.balanceOf(alice), balanceBeforeAlice - mintFee);
         assertEq(mockToken.balanceOf(address(nftContract)), balanceBeforeContract + mintFee);
-        assertSPGNFTMetadata(tokenId, nftMetadataDefault);
+        assertSPGNFTMetadata(tokenId, string.concat(testBaseURI, nftMetadataDefault));
 
         vm.stopPrank();
     }
@@ -193,6 +200,33 @@ contract SPGNFTTest is BaseTest {
 
         nftContract.setMintFeeToken(address(mockToken));
         assertEq(nftContract.mintFeeToken(), address(mockToken));
+
+        vm.stopPrank();
+    }
+
+    function test_SPGNFT_setBaseURI() public {
+        vm.startPrank(alice);
+        mockToken.mint(address(alice), 1000 * 10 ** mockToken.decimals());
+        mockToken.approve(address(nftContract), 1000 * 10 ** mockToken.decimals());
+
+        // non empty baseURI
+        assertEq(nftContract.baseURI(), testBaseURI);
+        uint256 tokenId1 = nftContract.mint(alice, nftMetadataDefault);
+        assertEq(nftContract.tokenURI(tokenId1), string.concat(testBaseURI, nftMetadataDefault));
+
+        nftContract.setBaseURI("test");
+        assertEq(nftContract.baseURI(), "test");
+        uint256 tokenId2 = nftContract.mint(alice, nftMetadataEmpty);
+        assertEq(nftContract.tokenURI(tokenId1), string.concat("test", nftMetadataDefault));
+        assertEq(nftContract.tokenURI(tokenId2), string.concat("test", tokenId2.toString()));
+
+        // empty baseURI
+        nftContract.setBaseURI("");
+        assertEq(nftContract.baseURI(), "");
+        uint256 tokenId3 = nftContract.mint(alice, nftMetadataDefault);
+        assertEq(nftContract.tokenURI(tokenId1), nftMetadataDefault);
+        assertEq(nftContract.tokenURI(tokenId2), nftMetadataEmpty);
+        assertEq(nftContract.tokenURI(tokenId3), nftMetadataDefault);
 
         vm.stopPrank();
     }

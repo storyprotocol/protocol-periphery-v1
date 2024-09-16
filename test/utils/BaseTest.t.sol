@@ -99,11 +99,14 @@ contract BaseTest is Test {
     ISPG.IPMetadata internal ipMetadataEmpty;
     ISPG.IPMetadata internal ipMetadataDefault;
 
+    string internal testBaseURI = "https://test.com/";
+
     modifier withCollection() {
         nftContract = SPGNFT(
-            spg.createCollection({
+            spg.createCollection(ISPGNFT.InitParams({
                 name: "Test Collection",
                 symbol: "TEST",
+                baseURI: testBaseURI,
                 maxSupply: 100,
                 mintFee: 100 * 10 ** mockToken.decimals(),
                 mintFeeToken: address(mockToken),
@@ -111,7 +114,7 @@ contract BaseTest is Test {
                 owner: minter,
                 mintOpen: true,
                 isPublicMinting: false
-            })
+            }))
         );
         _;
     }
@@ -730,12 +733,12 @@ contract BaseTest is Test {
     }
 
     /// @dev Assert metadata for the SPGNFT.
-    function assertSPGNFTMetadata(uint256 tokenId, string memory expectedMetadata) internal {
+    function assertSPGNFTMetadata(uint256 tokenId, string memory expectedMetadata) internal view {
         assertEq(nftContract.tokenURI(tokenId), expectedMetadata);
     }
 
     /// @dev Assert metadata for the IP.
-    function assertMetadata(address ipId, ISPG.IPMetadata memory expectedMetadata) internal {
+    function assertMetadata(address ipId, ISPG.IPMetadata memory expectedMetadata) internal view {
         assertEq(coreMetadataViewModule.getMetadataURI(ipId), expectedMetadata.ipMetadataURI);
         assertEq(coreMetadataViewModule.getMetadataHash(ipId), expectedMetadata.ipMetadataHash);
         assertEq(coreMetadataViewModule.getNftMetadataHash(ipId), expectedMetadata.nftMetadataHash);

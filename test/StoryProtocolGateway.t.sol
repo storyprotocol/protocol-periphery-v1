@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
@@ -15,6 +16,8 @@ import { BaseTest } from "./utils/BaseTest.t.sol";
 import { MockERC721 } from "./mocks/MockERC721.sol";
 
 contract StoryProtocolGatewayTest is BaseTest {
+    using Strings for uint256;
+
     struct IPAsset {
         address payable ipId;
         uint256 tokenId;
@@ -45,9 +48,10 @@ contract StoryProtocolGatewayTest is BaseTest {
     function test_SPG_revert_mintAndRegisterIp_callerNotAuthorizedToMint() public {
         vm.prank(alice); // minter and admin of nftContract
         nftContract = ISPGNFT(
-            spg.createCollection({
+            spg.createCollection(ISPGNFT.InitParams({
                 name: "Test Private Collection",
                 symbol: "TESTPRIV",
+                baseURI: testBaseURI,
                 maxSupply: 100,
                 mintFee: 100 * 10 ** mockToken.decimals(),
                 mintFeeToken: address(mockToken),
@@ -55,7 +59,7 @@ contract StoryProtocolGatewayTest is BaseTest {
                 owner: minter,
                 mintOpen: true,
                 isPublicMinting: false // not public minting
-            })
+            }))
         );
 
         vm.expectRevert(Errors.SPG__CallerNotAuthorizedToMint.selector);
@@ -66,9 +70,10 @@ contract StoryProtocolGatewayTest is BaseTest {
     function test_SPG_mintAndRegisterIp_publicMint() public {
         vm.prank(alice); // minter and admin of nftContract
         nftContract = ISPGNFT(
-            spg.createCollection({
+            spg.createCollection(ISPGNFT.InitParams({
                 name: "Test Public Collection",
                 symbol: "TESTPUB",
+                baseURI: testBaseURI,
                 maxSupply: 100,
                 mintFee: 1 * 10 ** mockToken.decimals(),
                 mintFeeToken: address(mockToken),
@@ -76,7 +81,7 @@ contract StoryProtocolGatewayTest is BaseTest {
                 owner: minter,
                 mintOpen: true,
                 isPublicMinting: true // public minting is enabled
-            })
+            }))
         );
 
         vm.startPrank(bob); // caller does not have minter role
@@ -93,7 +98,7 @@ contract StoryProtocolGatewayTest is BaseTest {
 
         assertTrue(ipAssetRegistry.isRegistered(ipId));
         assertEq(tokenId, 1);
-        assertSPGNFTMetadata(tokenId, ipMetadataEmpty.nftMetadataURI);
+        assertSPGNFTMetadata(tokenId, string.concat(testBaseURI, tokenId.toString()));
         assertMetadata(ipId, ipMetadataEmpty);
     }
 
@@ -108,7 +113,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         });
         assertEq(tokenId1, 1);
         assertTrue(ipAssetRegistry.isRegistered(ipId1));
-        assertSPGNFTMetadata(tokenId1, ipMetadataEmpty.nftMetadataURI);
+        assertSPGNFTMetadata(tokenId1, string.concat(testBaseURI, tokenId1.toString()));
         assertMetadata(ipId1, ipMetadataEmpty);
 
         (address ipId2, uint256 tokenId2) = spg.mintAndRegisterIp({
@@ -118,7 +123,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         });
         assertEq(tokenId2, 2);
         assertTrue(ipAssetRegistry.isRegistered(ipId2));
-        assertSPGNFTMetadata(tokenId2, ipMetadataDefault.nftMetadataURI);
+        assertSPGNFTMetadata(tokenId2, string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
         assertMetadata(ipId2, ipMetadataDefault);
     }
 
@@ -215,7 +220,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         assertTrue(ipAssetRegistry.isRegistered(ipId1));
         assertEq(tokenId1, 1);
         assertEq(licenseTermsId1, 1);
-        assertSPGNFTMetadata(tokenId1, ipMetadataEmpty.nftMetadataURI);
+        assertSPGNFTMetadata(tokenId1, string.concat(testBaseURI, tokenId1.toString()));
         assertMetadata(ipId1, ipMetadataEmpty);
         (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId1, 0);
         assertEq(licenseTemplate, address(pilTemplate));
@@ -230,7 +235,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         assertTrue(ipAssetRegistry.isRegistered(ipId2));
         assertEq(tokenId2, 2);
         assertEq(licenseTermsId1, licenseTermsId2);
-        assertSPGNFTMetadata(tokenId2, ipMetadataDefault.nftMetadataURI);
+        assertSPGNFTMetadata(tokenId2, string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
         assertMetadata(ipId2, ipMetadataDefault);
     }
 
@@ -370,7 +375,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         });
         assertTrue(ipAssetRegistry.isRegistered(ipIdChild));
         assertEq(tokenIdChild, 2);
-        assertSPGNFTMetadata(tokenIdChild, ipMetadataDefault.nftMetadataURI);
+        assertSPGNFTMetadata(tokenIdChild, string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
         assertMetadata(ipIdChild, ipMetadataDefault);
         (address licenseTemplateChild, uint256 licenseTermsIdChild) = licenseRegistry.getAttachedLicenseTerms(
             ipIdChild,
@@ -473,16 +478,18 @@ contract StoryProtocolGatewayTest is BaseTest {
         for (uint256 i = 0; i < 10; i++) {
             data[i] = abi.encodeWithSelector(
                 spg.createCollection.selector,
-                "Test Collection",
-                "TEST",
-                100,
-                100 * 10 ** mockToken.decimals(),
-                address(mockToken),
-                feeRecipient,
-                minter,
-                true,
-                false
-            );
+                ISPGNFT.InitParams({
+                name: "Test Collection",
+                symbol: "TEST",
+                baseURI: testBaseURI,
+                maxSupply: 100,
+                mintFee: 100 * 10 ** mockToken.decimals(),
+                mintFeeToken: address(mockToken),
+                mintFeeRecipient: feeRecipient,
+                owner: minter,
+                mintOpen: true,
+                isPublicMinting: false
+            }));
         }
 
         bytes[] memory results = spg.multicall(data);
@@ -523,7 +530,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         for (uint256 i = 0; i < 10; i++) {
             (ipIds[i], tokenIds[i]) = abi.decode(results[i], (address, uint256));
             assertTrue(ipAssetRegistry.isRegistered(ipIds[i]));
-            assertSPGNFTMetadata(tokenIds[i], ipMetadataDefault.nftMetadataURI);
+            assertSPGNFTMetadata(tokenIds[i], string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
             assertMetadata(ipIds[i], ipMetadataDefault);
         }
     }
@@ -567,7 +574,7 @@ contract StoryProtocolGatewayTest is BaseTest {
             (address ipIdChild, uint256 tokenIdChild) = abi.decode(results[i], (address, uint256));
             assertTrue(ipAssetRegistry.isRegistered(ipIdChild));
             assertEq(tokenIdChild, i + 2);
-            assertSPGNFTMetadata(tokenIdChild, ipMetadataDefault.nftMetadataURI);
+            assertSPGNFTMetadata(tokenIdChild, string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
             assertMetadata(ipIdChild, ipMetadataDefault);
             (address licenseTemplateChild, uint256 licenseTermsIdChild) = licenseRegistry.getAttachedLicenseTerms(
                 ipIdChild,
@@ -624,7 +631,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         });
         assertTrue(ipAssetRegistry.isRegistered(ipIdChild));
         assertEq(tokenIdChild, 2);
-        assertSPGNFTMetadata(tokenIdChild, ipMetadataDefault.nftMetadataURI);
+        assertSPGNFTMetadata(tokenIdChild, string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
         assertMetadata(ipIdChild, ipMetadataDefault);
         (address licenseTemplateChild, uint256 licenseTermsIdChild) = licenseRegistry.getAttachedLicenseTerms(
             ipIdChild,
@@ -693,7 +700,7 @@ contract StoryProtocolGatewayTest is BaseTest {
         });
         assertEq(ipIdChildActual, ipIdChild);
         assertTrue(ipAssetRegistry.isRegistered(ipIdChild));
-        assertSPGNFTMetadata(tokenIdChild, ipMetadataEmpty.nftMetadataURI);
+        assertSPGNFTMetadata(tokenIdChild, string.concat(testBaseURI, tokenIdChild.toString()));
         assertMetadata(ipIdChild, ipMetadataDefault);
         (address licenseTemplateChild, uint256 licenseTermsIdChild) = licenseRegistry.getAttachedLicenseTerms(
             ipIdChild,

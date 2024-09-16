@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { BaseTest } from "./utils/BaseTest.t.sol";
-
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { IGroupingModule } from "@storyprotocol/core/interfaces/modules/grouping/IGroupingModule.sol";
@@ -10,7 +9,11 @@ import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensi
 
 import { IStoryProtocolGateway as ISPG } from "../contracts/interfaces/IStoryProtocolGateway.sol";
 
+import { BaseTest } from "./utils/BaseTest.t.sol";
+
 contract GroupingWorkflowsTest is BaseTest {
+    using Strings for uint256;
+
     address internal groupId;
 
     function setUp() public override {
@@ -83,7 +86,7 @@ contract GroupingWorkflowsTest is BaseTest {
         assertTrue(ipAssetRegistry.containsIp(groupId, ipId));
         assertEq(ipAssetRegistry.totalMembers(groupId), 1);
         assertEq(tokenId, 1);
-        assertSPGNFTMetadata(tokenId, ipMetadataEmpty.nftMetadataURI);
+        assertSPGNFTMetadata(tokenId, string.concat(testBaseURI, tokenId.toString()));
         assertMetadata(ipId, ipMetadataEmpty);
         (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId, 0);
         assertEq(licenseTemplate, address(pilTemplate));
@@ -140,7 +143,7 @@ contract GroupingWorkflowsTest is BaseTest {
         assertTrue(ipAssetRegistry.isRegisteredGroup(groupId));
         assertTrue(ipAssetRegistry.containsIp(groupId, expectedIpId));
         assertEq(ipAssetRegistry.totalMembers(groupId), 1);
-        assertSPGNFTMetadata(tokenId, ipMetadataEmpty.nftMetadataURI);
+        assertSPGNFTMetadata(tokenId, string.concat(testBaseURI, tokenId.toString()));
         assertMetadata(expectedIpId, ipMetadataEmpty);
         (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(expectedIpId, 0);
         assertEq(licenseTemplate, address(pilTemplate));
