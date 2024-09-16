@@ -48,18 +48,20 @@ contract StoryProtocolGatewayTest is BaseTest {
     function test_SPG_revert_mintAndRegisterIp_callerNotAuthorizedToMint() public {
         vm.prank(alice); // minter and admin of nftContract
         nftContract = ISPGNFT(
-            spg.createCollection(ISPGNFT.InitParams({
-                name: "Test Private Collection",
-                symbol: "TESTPRIV",
-                baseURI: testBaseURI,
-                maxSupply: 100,
-                mintFee: 100 * 10 ** mockToken.decimals(),
-                mintFeeToken: address(mockToken),
-                mintFeeRecipient: feeRecipient,
-                owner: minter,
-                mintOpen: true,
-                isPublicMinting: false // not public minting
-            }))
+            spg.createCollection(
+                ISPGNFT.InitParams({
+                    name: "Test Private Collection",
+                    symbol: "TESTPRIV",
+                    baseURI: testBaseURI,
+                    maxSupply: 100,
+                    mintFee: 100 * 10 ** mockToken.decimals(),
+                    mintFeeToken: address(mockToken),
+                    mintFeeRecipient: feeRecipient,
+                    owner: minter,
+                    mintOpen: true,
+                    isPublicMinting: false // not public minting
+                })
+            )
         );
 
         vm.expectRevert(Errors.SPG__CallerNotAuthorizedToMint.selector);
@@ -70,18 +72,20 @@ contract StoryProtocolGatewayTest is BaseTest {
     function test_SPG_mintAndRegisterIp_publicMint() public {
         vm.prank(alice); // minter and admin of nftContract
         nftContract = ISPGNFT(
-            spg.createCollection(ISPGNFT.InitParams({
-                name: "Test Public Collection",
-                symbol: "TESTPUB",
-                baseURI: testBaseURI,
-                maxSupply: 100,
-                mintFee: 1 * 10 ** mockToken.decimals(),
-                mintFeeToken: address(mockToken),
-                mintFeeRecipient: feeRecipient,
-                owner: minter,
-                mintOpen: true,
-                isPublicMinting: true // public minting is enabled
-            }))
+            spg.createCollection(
+                ISPGNFT.InitParams({
+                    name: "Test Public Collection",
+                    symbol: "TESTPUB",
+                    baseURI: testBaseURI,
+                    maxSupply: 100,
+                    mintFee: 1 * 10 ** mockToken.decimals(),
+                    mintFeeToken: address(mockToken),
+                    mintFeeRecipient: feeRecipient,
+                    owner: minter,
+                    mintOpen: true,
+                    isPublicMinting: true // public minting is enabled
+                })
+            )
         );
 
         vm.startPrank(bob); // caller does not have minter role
@@ -479,17 +483,18 @@ contract StoryProtocolGatewayTest is BaseTest {
             data[i] = abi.encodeWithSelector(
                 spg.createCollection.selector,
                 ISPGNFT.InitParams({
-                name: "Test Collection",
-                symbol: "TEST",
-                baseURI: testBaseURI,
-                maxSupply: 100,
-                mintFee: 100 * 10 ** mockToken.decimals(),
-                mintFeeToken: address(mockToken),
-                mintFeeRecipient: feeRecipient,
-                owner: minter,
-                mintOpen: true,
-                isPublicMinting: false
-            }));
+                    name: "Test Collection",
+                    symbol: "TEST",
+                    baseURI: testBaseURI,
+                    maxSupply: 100,
+                    mintFee: 100 * 10 ** mockToken.decimals(),
+                    mintFeeToken: address(mockToken),
+                    mintFeeRecipient: feeRecipient,
+                    owner: minter,
+                    mintOpen: true,
+                    isPublicMinting: false
+                })
+            );
         }
 
         bytes[] memory results = spg.multicall(data);

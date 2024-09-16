@@ -63,9 +63,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @dev Initializes the SPGNFT collection.
     /// @dev If mint fee is non-zero, mint token must be set.
     /// @param initParams The initialization parameters for the collection. See {ISPGNFT-InitParams}
-    function initialize(
-        ISPGNFT.InitParams calldata initParams
-    ) public initializer {
+    function initialize(ISPGNFT.InitParams calldata initParams) public initializer {
         if (initParams.mintFee > 0 && initParams.mintFeeToken == address(0)) revert Errors.SPGNFT__ZeroAddressParam();
         if (initParams.maxSupply == 0) revert Errors.SPGNFT__ZeroMaxSupply();
 

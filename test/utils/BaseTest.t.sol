@@ -103,18 +103,20 @@ contract BaseTest is Test {
 
     modifier withCollection() {
         nftContract = SPGNFT(
-            spg.createCollection(ISPGNFT.InitParams({
-                name: "Test Collection",
-                symbol: "TEST",
-                baseURI: testBaseURI,
-                maxSupply: 100,
-                mintFee: 100 * 10 ** mockToken.decimals(),
-                mintFeeToken: address(mockToken),
-                mintFeeRecipient: feeRecipient,
-                owner: minter,
-                mintOpen: true,
-                isPublicMinting: false
-            }))
+            spg.createCollection(
+                ISPGNFT.InitParams({
+                    name: "Test Collection",
+                    symbol: "TEST",
+                    baseURI: testBaseURI,
+                    maxSupply: 100,
+                    mintFee: 100 * 10 ** mockToken.decimals(),
+                    mintFeeToken: address(mockToken),
+                    mintFeeRecipient: feeRecipient,
+                    owner: minter,
+                    mintOpen: true,
+                    isPublicMinting: false
+                })
+            )
         );
         _;
     }

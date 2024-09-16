@@ -118,9 +118,7 @@ contract StoryProtocolGateway is
     /// @notice Creates a new SPGNFT collection to be used by SPG.
     /// @param spgNftInitParams The initialization parameters for the SPGNFT collection. See {ISPGNFT-InitParams}.
     /// @return spgNftContract The address of the newly created SPGNFT collection.
-    function createCollection(
-        ISPGNFT.InitParams calldata spgNftInitParams
-    ) external returns (address spgNftContract) {
+    function createCollection(ISPGNFT.InitParams calldata spgNftInitParams) external returns (address spgNftContract) {
         spgNftContract = address(new BeaconProxy(_getSPGStorage().nftContractBeacon, ""));
         ISPGNFT(spgNftContract).initialize(spgNftInitParams);
         emit CollectionCreated(spgNftContract);

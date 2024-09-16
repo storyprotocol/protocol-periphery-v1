@@ -48,9 +48,7 @@ interface IStoryProtocolGateway {
     /// @notice Creates a new NFT collection to be used by SPG.
     /// @param spgNftInitParams The init params for the SPGNFT collection. See {ISPGNFT-InitParams}.
     /// @return spgNftContract The address of the newly created SPGNFT collection.
-    function createCollection(
-        ISPGNFT.InitParams calldata spgNftInitParams
-    ) external returns (address spgNftContract);
+    function createCollection(ISPGNFT.InitParams calldata spgNftInitParams) external returns (address spgNftContract);
 
     /// @notice Mint an NFT from a SPGNFT collection and register it with metadata as an IP.
     /// @dev Caller must have the minter role for the provided SPG NFT.

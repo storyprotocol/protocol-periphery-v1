@@ -26,18 +26,20 @@ contract SPGNFTTest is BaseTest {
         feeRecipient = address(0xbeef);
 
         nftContract = ISPGNFT(
-            spg.createCollection(ISPGNFT.InitParams({
-                name: "Test Collection",
-                symbol: "TEST",
-                baseURI: testBaseURI,
-                maxSupply: 100,
-                mintFee: 100 * 10 ** mockToken.decimals(),
-                mintFeeToken: address(mockToken),
-                mintFeeRecipient: alice,
-                owner: alice,
-                mintOpen: true,
-                isPublicMinting: false
-            }))
+            spg.createCollection(
+                ISPGNFT.InitParams({
+                    name: "Test Collection",
+                    symbol: "TEST",
+                    baseURI: testBaseURI,
+                    maxSupply: 100,
+                    mintFee: 100 * 10 ** mockToken.decimals(),
+                    mintFeeToken: address(mockToken),
+                    mintFeeRecipient: alice,
+                    owner: alice,
+                    mintOpen: true,
+                    isPublicMinting: false
+                })
+            )
         );
 
         nftMetadataEmpty = "";
@@ -49,18 +51,20 @@ contract SPGNFTTest is BaseTest {
         address NFT_CONTRACT_BEACON = address(new UpgradeableBeacon(spgNftImpl, deployer));
         ISPGNFT anotherNftContract = ISPGNFT(address(new BeaconProxy(NFT_CONTRACT_BEACON, "")));
 
-        anotherNftContract.initialize(ISPGNFT.InitParams({
-            name: "Test Collection",
-            symbol: "TEST",
-            baseURI: testBaseURI,
-            maxSupply: 100,
-            mintFee: 100 * 10 ** mockToken.decimals(),
-            mintFeeToken: address(mockToken),
-            mintFeeRecipient: feeRecipient,
-            owner: alice,
-            mintOpen: true,
-            isPublicMinting: false
-        }));
+        anotherNftContract.initialize(
+            ISPGNFT.InitParams({
+                name: "Test Collection",
+                symbol: "TEST",
+                baseURI: testBaseURI,
+                maxSupply: 100,
+                mintFee: 100 * 10 ** mockToken.decimals(),
+                mintFeeToken: address(mockToken),
+                mintFeeRecipient: feeRecipient,
+                owner: alice,
+                mintOpen: true,
+                isPublicMinting: false
+            })
+        );
 
         assertEq(nftContract.name(), anotherNftContract.name());
         assertEq(nftContract.symbol(), anotherNftContract.symbol());
@@ -79,32 +83,36 @@ contract SPGNFTTest is BaseTest {
         nftContract = ISPGNFT(address(new BeaconProxy(NFT_CONTRACT_BEACON, "")));
 
         vm.expectRevert(Errors.SPGNFT__ZeroAddressParam.selector);
-        nftContract.initialize(ISPGNFT.InitParams({
-            name: "Test Collection",
-            symbol: "TEST",
-            baseURI: testBaseURI,
-            maxSupply: 100,
-            mintFee: 1,
-            mintFeeToken: address(0),
-            mintFeeRecipient: feeRecipient,
-            owner: alice,
-            mintOpen: true,
-            isPublicMinting: false
-        }));
+        nftContract.initialize(
+            ISPGNFT.InitParams({
+                name: "Test Collection",
+                symbol: "TEST",
+                baseURI: testBaseURI,
+                maxSupply: 100,
+                mintFee: 1,
+                mintFeeToken: address(0),
+                mintFeeRecipient: feeRecipient,
+                owner: alice,
+                mintOpen: true,
+                isPublicMinting: false
+            })
+        );
 
         vm.expectRevert(Errors.SPGNFT__ZeroMaxSupply.selector);
-        nftContract.initialize(ISPGNFT.InitParams({
-            name: "Test Collection",
-            symbol: "TEST",
-            baseURI: testBaseURI,
-            maxSupply: 0,
-            mintFee: 0,
-            mintFeeToken: address(mockToken),
-            mintFeeRecipient: feeRecipient,
-            owner: alice,
-            mintOpen: true,
-            isPublicMinting: false
-        }));
+        nftContract.initialize(
+            ISPGNFT.InitParams({
+                name: "Test Collection",
+                symbol: "TEST",
+                baseURI: testBaseURI,
+                maxSupply: 0,
+                mintFee: 0,
+                mintFeeToken: address(mockToken),
+                mintFeeRecipient: feeRecipient,
+                owner: alice,
+                mintOpen: true,
+                isPublicMinting: false
+            })
+        );
     }
 
     function test_SPGNFT_mint() public {

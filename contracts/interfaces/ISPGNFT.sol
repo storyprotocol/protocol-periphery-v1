@@ -36,9 +36,7 @@ interface ISPGNFT is IAccessControl, IERC721, IERC721Metadata {
     /// @dev Initializes the NFT collection.
     /// @dev If mint fee is non-zero, mint token must be set.
     /// @param params The initialization parameters. See `InitParams`.
-    function initialize(
-        InitParams calldata params
-    ) external;
+    function initialize(InitParams calldata params) external;
 
     /// @notice Returns the total minted supply of the collection.
     function totalSupply() external view returns (uint256);
