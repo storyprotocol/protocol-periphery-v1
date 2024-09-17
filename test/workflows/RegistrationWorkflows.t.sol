@@ -35,7 +35,7 @@ contract RegistrationWorkflowsTest is BaseTest {
         assertFalse(nftContract.publicMinting());
     }
 
-     function test_RegistrationWorkflows_revert_mintAndRegisterIp_callerNotAuthorizedToMint() public {
+    function test_RegistrationWorkflows_revert_mintAndRegisterIp_callerNotAuthorizedToMint() public {
         vm.prank(u.alice); // minter and admin of nftContract
         nftContract = ISPGNFT(
             registrationWorkflows.createCollection(

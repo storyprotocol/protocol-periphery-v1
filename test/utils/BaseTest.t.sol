@@ -122,33 +122,37 @@ contract BaseTest is Test, DeployHelper {
         mockNft = new MockERC721("TestNFT");
 
         spgNftPublic = ISPGNFT(
-            registrationWorkflows.createCollection(ISPGNFT.InitParams({
-                name: "Test SPG NFT Public",
-                symbol: "TSPGNFTPUB",
-                baseURI: testBaseURI,
-                maxSupply: 100_000_000,
-                mintFee: 1 * 10 ** mockToken.decimals(), // 1 token
-                mintFeeToken: address(mockToken),
-                mintFeeRecipient: feeRecipient,
-                owner: minter,
-                mintOpen: true,
-                isPublicMinting: true
-            }))
+            registrationWorkflows.createCollection(
+                ISPGNFT.InitParams({
+                    name: "Test SPG NFT Public",
+                    symbol: "TSPGNFTPUB",
+                    baseURI: testBaseURI,
+                    maxSupply: 100_000_000,
+                    mintFee: 1 * 10 ** mockToken.decimals(), // 1 token
+                    mintFeeToken: address(mockToken),
+                    mintFeeRecipient: feeRecipient,
+                    owner: minter,
+                    mintOpen: true,
+                    isPublicMinting: true
+                })
+            )
         );
 
         spgNftPrivate = ISPGNFT(
-            registrationWorkflows.createCollection(ISPGNFT.InitParams({
-                name: "Test SPG NFT Private",
-                symbol: "TSPGNFTPRI",
-                baseURI: testBaseURI,
-                maxSupply: 100_000_000,
-                mintFee: 1 * 10 ** mockToken.decimals(), // 1 token
-                mintFeeToken: address(mockToken),
-                mintFeeRecipient: feeRecipient,
-                owner: minter,
-                mintOpen: true,
-                isPublicMinting: false
-            }))
+            registrationWorkflows.createCollection(
+                ISPGNFT.InitParams({
+                    name: "Test SPG NFT Private",
+                    symbol: "TSPGNFTPRI",
+                    baseURI: testBaseURI,
+                    maxSupply: 100_000_000,
+                    mintFee: 1 * 10 ** mockToken.decimals(), // 1 token
+                    mintFeeToken: address(mockToken),
+                    mintFeeRecipient: feeRecipient,
+                    owner: minter,
+                    mintOpen: true,
+                    isPublicMinting: false
+                })
+            )
         );
         vm.stopPrank();
 
@@ -178,18 +182,20 @@ contract BaseTest is Test, DeployHelper {
     //////////////////////////////////////////////////////////////////////////*/
     modifier withCollection() {
         nftContract = ISPGNFT(
-            registrationWorkflows.createCollection(ISPGNFT.InitParams({
-                name: "Test Collection",
-                symbol: "TEST",
-                baseURI: testBaseURI,
-                maxSupply: 100,
-                mintFee: 100 * 10 ** mockToken.decimals(),
-                mintFeeToken: address(mockToken),
-                mintFeeRecipient: feeRecipient,
-                owner: minter,
-                mintOpen: true,
-                isPublicMinting: false
-            }))
+            registrationWorkflows.createCollection(
+                ISPGNFT.InitParams({
+                    name: "Test Collection",
+                    symbol: "TEST",
+                    baseURI: testBaseURI,
+                    maxSupply: 100,
+                    mintFee: 100 * 10 ** mockToken.decimals(),
+                    mintFeeToken: address(mockToken),
+                    mintFeeRecipient: feeRecipient,
+                    owner: minter,
+                    mintOpen: true,
+                    isPublicMinting: false
+                })
+            )
         );
         _;
     }
