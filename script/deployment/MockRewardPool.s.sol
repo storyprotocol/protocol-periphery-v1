@@ -38,11 +38,11 @@ contract MockRewardPool is Script, BroadcastManager, JsonDeploymentHandler, Stor
         _postdeploy("MockEvenSplitGroupPool", address(mockEvenSplitGroupPool));
     }
 
-    function _predeploy(string memory contractKey) private view {
+    function _predeploy(string memory contractKey) private pure {
         console2.log(string.concat("Deploying ", contractKey, "..."));
     }
 
-    function _postdeploy(string memory contractKey, address newAddress) private {
+    function _postdeploy(string memory contractKey, address newAddress) private pure{
         console2.log(string.concat(contractKey, " deployed to:"), newAddress);
     }
 }

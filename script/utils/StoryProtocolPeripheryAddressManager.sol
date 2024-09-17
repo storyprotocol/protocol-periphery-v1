@@ -7,8 +7,10 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 contract StoryProtocolPeripheryAddressManager is Script {
     using stdJson for string;
 
-    address internal spgAddr;
+    address internal derivativeWorkflowsAddr;
     address internal groupingWorkflowsAddr;
+    address internal licenseAttachmentWorkflowsAddr;
+    address internal registrationWorkflowsAddr;
     address internal spgNftBeaconAddr;
     address internal spgNftImplAddr;
 
@@ -19,8 +21,10 @@ contract StoryProtocolPeripheryAddressManager is Script {
             string(abi.encodePacked("/deploy-out/deployment-", Strings.toString(block.chainid), ".json"))
         );
         string memory json = vm.readFile(path);
-        spgAddr = json.readAddress(".main.SPG");
+        derivativeWorkflowsAddr = json.readAddress(".main.DerivativeWorkflows");
         groupingWorkflowsAddr = json.readAddress(".main.GroupingWorkflows");
+        licenseAttachmentWorkflowsAddr = json.readAddress(".main.LicenseAttachmentWorkflows");
+        registrationWorkflowsAddr = json.readAddress(".main.RegistrationWorkflows");
         spgNftBeaconAddr = json.readAddress(".main.SPGNFTBeacon");
         spgNftImplAddr = json.readAddress(".main.SPGNFTImpl");
     }
