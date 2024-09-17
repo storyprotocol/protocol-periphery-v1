@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { IStoryProtocolGateway as ISPG } from "../interfaces/IStoryProtocolGateway.sol";
+import { WorkflowStructs } from "../../lib/WorkflowStructs.sol";
 
 /// @title Grouping Workflows Interface
+/// @notice Interface for IP grouping workflows.
 interface IGroupingWorkflows {
     /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP,
     /// attach license terms to the registered IP, and add it to a group IP.
-    /// @dev Caller must have the minter role for the provided SPG NFT.
+    /// @dev Requires caller to have the minter role or the SPG NFT to allow public minting.
     /// @param spgNftContract The address of the SPGNFT collection.
     /// @param groupId The ID of the group IP to add the newly registered IP.
     /// @param recipient The address of the recipient of the minted NFT.
@@ -23,8 +24,8 @@ interface IGroupingWorkflows {
         address recipient,
         address licenseTemplate,
         uint256 licenseTermsId,
-        ISPG.IPMetadata calldata ipMetadata,
-        ISPG.SignatureData calldata sigAddToGroup
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        WorkflowStructs.SignatureData calldata sigAddToGroup
     ) external returns (address ipId, uint256 tokenId);
 
     /// @notice Register an NFT as IP with metadata, attach license terms to the registered IP,
@@ -45,9 +46,9 @@ interface IGroupingWorkflows {
         address groupId,
         address licenseTemplate,
         uint256 licenseTermsId,
-        ISPG.IPMetadata calldata ipMetadata,
-        ISPG.SignatureData calldata sigMetadataAndAttach,
-        ISPG.SignatureData calldata sigAddToGroup
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        WorkflowStructs.SignatureData calldata sigMetadataAndAttach,
+        WorkflowStructs.SignatureData calldata sigAddToGroup
     ) external returns (address ipId);
 
     /// @notice Register a group IP with a group reward pool, attach license terms to the group IP,
