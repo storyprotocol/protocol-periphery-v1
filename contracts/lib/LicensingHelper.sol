@@ -1,22 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
-import { ILicenseToken } from "@storyprotocol/core/interfaces/ILicenseToken.sol";
 import { ILicenseRegistry } from "@storyprotocol/core/interfaces/registries/ILicenseRegistry.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
-import { ILicenseTemplate } from "@storyprotocol/core/interfaces/modules/licensing/ILicenseTemplate.sol";
 import { IPILicenseTemplate, PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
-
-import { Errors } from "./Errors.sol";
 
 /// @title Periphery Licensing Helper Library
 /// @notice Library for all licensing related helper functions for Periphery contracts.
 library LicensingHelper {
-    using SafeERC20 for IERC20;
-
     /// @dev Registers PIL License Terms and attaches them to the given IP.
     /// @param ipId The ID of the IP.
     /// @param pilTemplate The address of the PIL License Template.
@@ -53,88 +44,5 @@ library LicensingHelper {
         if (ILicenseRegistry(licenseRegistry).hasIpAttachedLicenseTerms(ipId, licenseTemplate, licenseTermsId)) return;
 
         ILicensingModule(licensingModule).attachLicenseTerms(ipId, licenseTemplate, licenseTermsId);
-    }
-
-    /// @dev Collects license tokens from the caller. Assumes the periphery contract has permission to transfer the license tokens.
-    /// @param licenseTokenIds The IDs of the license tokens to be collected.
-    /// @param licenseToken The address of the license token contract.
-    function collectLicenseTokens(uint256[] calldata licenseTokenIds, address licenseToken) internal {
-        if (licenseTokenIds.length == 0) revert Errors.SPG__EmptyLicenseTokens();
-        for (uint256 i = 0; i < licenseTokenIds.length; i++) {
-            address tokenOwner = ILicenseToken(licenseToken).ownerOf(licenseTokenIds[i]);
-
-            if (tokenOwner == address(this)) continue;
-            if (tokenOwner != address(msg.sender))
-                revert Errors.SPG__CallerAndNotTokenOwner(licenseTokenIds[i], msg.sender, tokenOwner);
-
-            ILicenseToken(licenseToken).safeTransferFrom(msg.sender, address(this), licenseTokenIds[i]);
-        }
-    }
-
-    /// @dev Collect mint fees for all parent IPs from the payer and set approval for Royalty Module to spend mint fees.
-    /// @param payerAddress The address of the payer for the license mint fees.
-    /// @param royaltyModule The address of the Royalty Module.
-    /// @param licensingModule The address of the Licensing Module.
-    /// @param licenseTemplate The address of the license template.
-    /// @param parentIpIds The IDs of all the parent IPs.
-    /// @param licenseTermsIds The IDs of the license terms for each corresponding parent IP.
-    function collectMintFeesAndSetApproval(
-        address payerAddress,
-        address royaltyModule,
-        address licensingModule,
-        address licenseTemplate,
-        address[] calldata parentIpIds,
-        uint256[] calldata licenseTermsIds
-    ) internal {
-        ILicenseTemplate lct = ILicenseTemplate(licenseTemplate);
-        (address royaltyPolicy, , , address mintFeeCurrencyToken) = lct.getRoyaltyPolicy(licenseTermsIds[0]);
-
-        if (royaltyPolicy != address(0)) {
-            // Get total mint fee for all parent IPs
-            uint256 totalMintFee = aggregateMintFees({
-                payerAddress: payerAddress,
-                licensingModule: licensingModule,
-                licenseTemplate: licenseTemplate,
-                parentIpIds: parentIpIds,
-                licenseTermsIds: licenseTermsIds
-            });
-
-            if (totalMintFee != 0) {
-                // Transfer mint fee from payer to this contract
-                IERC20(mintFeeCurrencyToken).safeTransferFrom(payerAddress, address(this), totalMintFee);
-
-                // Approve Royalty Policy to spend mint fee
-                IERC20(mintFeeCurrencyToken).forceApprove(royaltyModule, totalMintFee);
-            }
-        }
-    }
-
-    /// @dev Aggregate license mint fees for all parent IPs.
-    /// @param payerAddress The address of the payer for the license mint fees.
-    /// @param licensingModule The address of the Licensing Module.
-    /// @param licenseTemplate The address of the license template.
-    /// @param parentIpIds The IDs of all the parent IPs.
-    /// @param licenseTermsIds The IDs of the license terms for each corresponding parent IP.
-    /// @return totalMintFee The sum of license mint fees across all parent IPs.
-    function aggregateMintFees(
-        address payerAddress,
-        address licensingModule,
-        address licenseTemplate,
-        address[] calldata parentIpIds,
-        uint256[] calldata licenseTermsIds
-    ) internal view returns (uint256 totalMintFee) {
-        uint256 mintFee;
-
-        for (uint256 i = 0; i < parentIpIds.length; i++) {
-            (, mintFee) = ILicensingModule(licensingModule).predictMintingLicenseFee({
-                licensorIpId: parentIpIds[i],
-                licenseTemplate: licenseTemplate,
-                licenseTermsId: licenseTermsIds[i],
-                amount: 1,
-                receiver: payerAddress,
-                royaltyContext: ""
-            });
-            totalMintFee += mintFee;
-        }
     }
 }

@@ -4,17 +4,46 @@ pragma solidity ^0.8.23;
 /// @title Errors Library
 /// @notice Library for all Story Protocol periphery contract errors.
 library Errors {
-    /// @notice Zero address provided as a param to SPG.
-    error SPG__ZeroAddressParam();
-
     /// @notice Caller is not authorized to mint.
-    error SPG__CallerNotAuthorizedToMint();
+    error Workflow__CallerNotAuthorizedToMint();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                           RegistrationWorkflows                        //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Zero address provided as a param to the RegistrationWorkflows.
+    error RegistrationWorkflows__ZeroAddressParam();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                         LicenseAttachmentWorkflows                     //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Zero address provided as a param to the LicenseAttachmentWorkflows.
+    error LicenseAttachmentWorkflows__ZeroAddressParam();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                         DerivativeWorkflows                            //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Zero address provided as a param to the DerivativeWorkflows.
+    error DerivativeWorkflows__ZeroAddressParam();
 
     /// @notice License token list is empty.
-    error SPG__EmptyLicenseTokens();
+    error DerivativeWorkflows__EmptyLicenseTokens();
 
-    /// @notice License token is not owned by the either caller.
-    error SPG__CallerAndNotTokenOwner(uint256 tokenId, address caller, address actualTokenOwner);
+    /// @notice Caller is not the owner of the license token.
+    error DerivativeWorkflows__CallerAndNotTokenOwner(uint256 tokenId, address caller, address actualTokenOwner);
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                             Grouping Workflows                         //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Zero address provided as a param to the GroupingWorkflows.
+    error GroupingWorkflows__ZeroAddressParam();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                               SPGNFT                                   //
+    ////////////////////////////////////////////////////////////////////////////
 
     /// @notice Zero address provided as a param.
     error SPGNFT__ZeroAddressParam();
@@ -36,7 +65,4 @@ library Errors {
 
     /// @notice Caller is not one of the periphery contracts.
     error SPGNFT__CallerNotPeripheryContract();
-
-    /// @notice Zero address provided as a param to the GroupingWorkflows.
-    error GroupingWorkflows__ZeroAddressParam();
 }
