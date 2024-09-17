@@ -37,16 +37,16 @@ abstract contract BaseWorkflow {
         address accessController,
         address coreMetadataModule,
         address ipAssetRegistry,
-        address licensingModule,
         address licenseRegistry,
+        address licensingModule,
         address pilTemplate
     ) {
         // assumes 0 addresses are checked in the child contract
         ACCESS_CONTROLLER = IAccessController(accessController);
         CORE_METADATA_MODULE = ICoreMetadataModule(coreMetadataModule);
         IP_ASSET_REGISTRY = IIPAssetRegistry(ipAssetRegistry);
-        LICENSING_MODULE = ILicensingModule(licensingModule);
         LICENSE_REGISTRY = ILicenseRegistry(licenseRegistry);
+        LICENSING_MODULE = ILicensingModule(licensingModule);
         PIL_TEMPLATE = IPILicenseTemplate(pilTemplate);
     }
 
@@ -57,7 +57,7 @@ abstract contract BaseWorkflow {
         if (
             !ISPGNFT(spgNftContract).hasRole(SPGNFTLib.MINTER_ROLE, msg.sender) &&
             !ISPGNFT(spgNftContract).publicMinting()
-        ) revert Errors.SPG__CallerNotAuthorizedToMint();
+        ) revert Errors.Workflow__CallerNotAuthorizedToMint();
         _;
     }
 }

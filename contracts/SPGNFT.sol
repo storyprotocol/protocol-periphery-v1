@@ -37,25 +37,47 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.SPGNFT")) - 1)) & ~bytes32(uint256(0xff));
     bytes32 private constant SPGNFTStorageLocation = 0x66c08f80d8d0ae818983b725b864514cf274647be6eb06de58ff94d1defb6d00;
 
-    /// @dev The address of the SPG contract.
-    address public immutable SPG_ADDRESS;
+    /// @dev The address of the DerivativeWorkflows contract.
+    address public immutable DERIVATIVE_WORKFLOWS_ADDRESS;
 
-    ///@dev The address of the GroupingWorkflows contract.
-    address public immutable GROUPING_ADDRESS;
+    /// @dev The address of the GroupingWorkflows contract.
+    address public immutable GROUPING_WORKFLOWS_ADDRESS;
 
-    /// @notice Modifier to restrict access to the SPG contract.
+    /// @dev The address of the LicenseAttachmentWorkflows contract.
+    address public immutable LICENSE_ATTACHMENT_WORKFLOWS_ADDRESS;
+
+    /// @dev The address of the RegistrationWorkflows contract.
+    address public immutable REGISTRATION_WORKFLOWS_ADDRESS;
+
+    /// @notice Modifier to restrict access to workflow contracts.
     modifier onlyPeriphery() {
-        if (msg.sender != SPG_ADDRESS && msg.sender != GROUPING_ADDRESS)
-            revert Errors.SPGNFT__CallerNotPeripheryContract();
+        if (
+            msg.sender != DERIVATIVE_WORKFLOWS_ADDRESS &&
+            msg.sender != GROUPING_WORKFLOWS_ADDRESS &&
+            msg.sender != LICENSE_ATTACHMENT_WORKFLOWS_ADDRESS &&
+            msg.sender != REGISTRATION_WORKFLOWS_ADDRESS
+        ) revert Errors.SPGNFT__CallerNotPeripheryContract();
         _;
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address spg, address groupingWorkflows) {
-        if (spg == address(0) || groupingWorkflows == address(0)) revert Errors.SPGNFT__ZeroAddressParam();
+    constructor(
+        address derivativeWorkflows,
+        address groupingWorkflows,
+        address licenseAttachmentWorkflows,
+        address registrationWorkflows
+    ) {
+        if (
+            derivativeWorkflows == address(0) ||
+            groupingWorkflows == address(0) ||
+            licenseAttachmentWorkflows == address(0) ||
+            registrationWorkflows == address(0)
+        ) revert Errors.SPGNFT__ZeroAddressParam();
 
-        SPG_ADDRESS = spg;
-        GROUPING_ADDRESS = groupingWorkflows;
+        DERIVATIVE_WORKFLOWS_ADDRESS = derivativeWorkflows;
+        GROUPING_WORKFLOWS_ADDRESS = groupingWorkflows;
+        LICENSE_ATTACHMENT_WORKFLOWS_ADDRESS = licenseAttachmentWorkflows;
+        REGISTRATION_WORKFLOWS_ADDRESS = registrationWorkflows;
 
         _disableInitializers();
     }
@@ -67,14 +89,8 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         if (initParams.mintFee > 0 && initParams.mintFeeToken == address(0)) revert Errors.SPGNFT__ZeroAddressParam();
         if (initParams.maxSupply == 0) revert Errors.SPGNFT__ZeroMaxSupply();
 
-        _grantRole(SPGNFTLib.ADMIN_ROLE, initParams.owner);
-        _grantRole(SPGNFTLib.MINTER_ROLE, initParams.owner);
-
-        // grant roles to SPG
-        if (initParams.owner != SPG_ADDRESS) {
-            _grantRole(SPGNFTLib.ADMIN_ROLE, SPG_ADDRESS);
-            _grantRole(SPGNFTLib.MINTER_ROLE, SPG_ADDRESS);
-        }
+        // grant roles to owner and periphery workflow contracts
+        _grantRoles(initParams.owner);
 
         SPGNFTStorage storage $ = _getSPGNFTStorage();
         $._maxSupply = initParams.maxSupply;
@@ -235,6 +251,24 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @return baseURI The base URI for the collection.
     function _baseURI() internal view override returns (string memory) {
         return _getSPGNFTStorage()._baseURI;
+    }
+
+    /// @dev Grants minter and admin roles to the owner and periphery workflow contracts.
+    /// @param owner The address of the collection owner.
+    function _grantRoles(address owner) internal {
+        // grant roles to owner
+        _grantRole(SPGNFTLib.ADMIN_ROLE, owner);
+        _grantRole(SPGNFTLib.MINTER_ROLE, owner);
+
+        // grant roles to periphery workflow contracts
+        _grantRole(SPGNFTLib.ADMIN_ROLE, DERIVATIVE_WORKFLOWS_ADDRESS);
+        _grantRole(SPGNFTLib.MINTER_ROLE, DERIVATIVE_WORKFLOWS_ADDRESS);
+        _grantRole(SPGNFTLib.ADMIN_ROLE, GROUPING_WORKFLOWS_ADDRESS);
+        _grantRole(SPGNFTLib.MINTER_ROLE, GROUPING_WORKFLOWS_ADDRESS);
+        _grantRole(SPGNFTLib.ADMIN_ROLE, LICENSE_ATTACHMENT_WORKFLOWS_ADDRESS);
+        _grantRole(SPGNFTLib.MINTER_ROLE, LICENSE_ATTACHMENT_WORKFLOWS_ADDRESS);
+        _grantRole(SPGNFTLib.ADMIN_ROLE, REGISTRATION_WORKFLOWS_ADDRESS);
+        _grantRole(SPGNFTLib.MINTER_ROLE, REGISTRATION_WORKFLOWS_ADDRESS);
     }
 
     //
