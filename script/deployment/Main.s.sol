@@ -30,7 +30,8 @@ contract Main is DeployHelper {
         super.run(
             seed, // create3 seed
             false, // runStorageLayoutCheck
-            true // writeDeployments
+            true, // writeDeployments
+            false // isTest
         );
         _writeDeployment(); // write deployment json to deployments/deployment-{chainId}.json
     }
