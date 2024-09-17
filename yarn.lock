@@ -439,9 +439,9 @@
   version "0.0.0"
   resolved "https://codeload.github.com/storyprotocol/create3-deployer/tar.gz/094147bda866490dd1c3e8261bb3dfee65e7af54"
 
-"@story-protocol/protocol-core@github:storyprotocol/protocol-core-v1#v1.2.1":
+"@story-protocol/protocol-core@github:storyprotocol/protocol-core-v1#main":
   version "1.1.0"
-  resolved "https://codeload.github.com/storyprotocol/protocol-core-v1/tar.gz/73f655e191195e27bc55c97520f8a97d768f19b6"
+  resolved "https://codeload.github.com/storyprotocol/protocol-core-v1/tar.gz/78bcd0975e37346d33faffee4ebfff7e9076ba63"
   dependencies:
     "@openzeppelin/contracts" "5.0.2"
     "@openzeppelin/contracts-upgradeable" "5.0.2"
