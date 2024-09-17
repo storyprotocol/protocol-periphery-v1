@@ -1,19 +1,20 @@
-# Supported Workflows
+# PoC Periphery Supported Workflows
 
-- `createCollection`: Creates a NFT Collection
+> 📚 For full contract interfaces, check out [`contracts/interfaces/workflows`](../contracts/interfaces/workflows/).
 
-### Final Step: Register an IP Asset
+### [Registration Workflows](../contracts/interfaces/workflows/IRegistrationWorkflows.sol)
 
+- `createCollection`: Creates a SPGNFT Collection
 - `registerIp`: Registers an IP
 - `mintAndRegisterIp`: Mints a NFT → Registers it as an IP
 
-### Final Step: Attach Programmable IP License (PIL) terms to an IP Asset
+### [License Attachment Workflows](../contracts/interfaces/workflows/ILicenseAttachmentWorkflows.sol)
 
 - `registerPILTermsAndAttach`: Registers PIL terms → Attaches them to an IP
 - `registerIpAndAttachPILTerms`: Registers an IP → Registers PIL terms → Attaches them to the IP
 - `mintAndRegisterIpAndAttachPILTerms`: Mints a NFT → Registers it as an IP → Registers PIL terms → Attaches them to the IP.
 
-### Final Step: Register Derivative IP Asset
+### [Derivative Workflows](../contracts/interfaces/workflows/IDerivativeWorkflows.sol)
 
 - `registerIpAndMakeDerivative`: Registers an IP → Registers it as a derivative of another IP
 - `mintAndRegisterIpAndMakeDerivative`: Mints a NFT → Registers it as an IP → Registers the IP as a derivative of another IP
@@ -21,11 +22,8 @@
 - `registerIpAndMakeDerivativeWithLicenseTokens`: Registers an IP → Registers it as a derivative of another IP using the license tokens
 - `mintAndRegisterIpAndMakeDerivativeWithLicenseTokens`: Mints a NFT → Registers it as an IP → Registers the IP as a derivative of another IP using the license tokens
 
-### Final Step: Add IP(s) to a group IP Asset
+### [Grouping Workflows](../contracts/interfaces/workflows/IGroupingWorkflows.sol)
 
 - `mintAndRegisterIpAndAttachLicenseAndAddToGroup`: Mints a NFT → Registers it as an IP → Attaches the given license terms to the IP → Adds the IP to a group IP
 - `registerIpAndAttachLicenseAndAddToGroup`: Registers an IP → Attaches the given license terms to the IP → Adds the IP to a group IP
 - `registerGroupAndAttachLicenseAndAddIps`: Registers a group IP → Attaches the given license terms to the group IP → Adds existing IPs to the group IP
-
-
-> 📚 For full contract interfaces, check out `contracts/interfaces`.

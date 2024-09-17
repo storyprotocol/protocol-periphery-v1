@@ -3,7 +3,7 @@
 Prior to this point, registering multiple IPs or performing other operations such as minting, attaching licensing terms, and registering derivatives requires separate transactions for each operation. This can be inefficient and costly. To streamline the process, you can batch multiple transactions into a single one. Two solutions are now available for this:
 
 1. **Batch workflow function calls:** Use [workflow contract's built-in `multicall` function](#1-batch-workflow-function-calls-via-built-in-multicall-function).
-2. **Batch function calls beyond SPG:** Use the [Multicall3 Contract](#2-batch-function-calls-via-multicall3-contract).
+2. **Batch function calls beyond Story PoC Periphery:** Use the [Multicall3 Contract](#2-batch-function-calls-via-multicall3-contract).
 
 
 ## 1. Batch Workflow Function Calls via Built-in `multicall` Function
@@ -23,13 +23,13 @@ function multicall(bytes[] calldata data) external virtual returns (bytes[] memo
 
 Suppose you want to mint multiple NFTs, register them as IPs, and link them as derivatives to some parent IPs.
 
-To accomplish this, you can use workflow contracts' `multicall` function to batch the calls to the `mintAndRegisterIpAndMakeDerivative` function.
+To accomplish this, you can use `DerivativeWorkflows` contract's `multicall` function to batch the calls to the `mintAndRegisterIpAndMakeDerivative` function.
 
 Here’s how you might do it:
 
 ```solidity
-// StoryProtocolGateway contract
-contract SPG {
+// DerivativeWorkflows contract
+contract DerivativeWorkflows {
     ...
     function mintAndRegisterIpAndMakeDerivative(
         address nftContract,
@@ -47,22 +47,22 @@ To batch call `mintAndRegisterIpAndMakeDerivative` using the `multicall` functio
 
 ```typescript
 // batch mint, register, and make derivatives for multiple IPs
-await SPG.multicall([
-    SPG.contract.methods.mintAndRegisterIpAndMakeDerivative(
+await DerivativeWorkflows.multicall([
+    DerivativeWorkflows.contract.methods.mintAndRegisterIpAndMakeDerivative(
       nftContract1,
       derivData1,
       recipient1,
       ipMetadata1,
     ).encodeABI(),
 
-    SPG.contract.methods.mintAndRegisterIpAndMakeDerivative(
+    DerivativeWorkflows.contract.methods.mintAndRegisterIpAndMakeDerivative(
       nftContract2,
       derivData2,
       recipient2,
       ipMetadata2,
     ).encodeABI(),
 
-    SPG.contract.methods.mintAndRegisterIpAndMakeDerivative(
+    DerivativeWorkflows.contract.methods.mintAndRegisterIpAndMakeDerivative(
       nftContract3,
       derivData3,
       recipient3,
@@ -87,7 +87,7 @@ The `viem` library provides native support for Multicall3.
     "contractName": "Multicall3",
     "chainId": 1513,
     "contractAddress": "0xcA11bde05977b3631167028862bE2a173976CA11",
-    "url": "https://explorer.testnet.storyprotocol.net/address/0xcA11bde05977b3631167028862bE2a173976CA11?tab=contract"
+    "url": "https://testnet.storyscan.xyz/address/0xcA11bde05977b3631167028862bE2a173976CA11?tab=contract"
 }
 ```
 
