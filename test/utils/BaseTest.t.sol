@@ -118,8 +118,11 @@ contract BaseTest is Test, DeployHelper {
 
     function _setupMockAssets() internal {
         vm.startPrank(minter);
-        mockToken = new MockERC20();
+        mockToken = new MockERC20("MockERC20", "MKT");
         mockNft = new MockERC721("TestNFT");
+
+        vm.label(address(mockToken), "MockERC20");
+        vm.label(address(mockNft), "MockERC721");
 
         spgNftPublic = ISPGNFT(
             registrationWorkflows.createCollection(

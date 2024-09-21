@@ -10,6 +10,7 @@ struct Users {
     address payable alice;
     address payable bob;
     address payable carl;
+    address payable dan;
 }
 
 struct UserSecretKeys {
@@ -19,6 +20,7 @@ struct UserSecretKeys {
     uint256 alice;
     uint256 bob;
     uint256 carl;
+    uint256 dan;
 }
 
 library UsersLib {
@@ -35,10 +37,11 @@ library UsersLib {
         (address payable alice, uint256 aliceSk) = createUser("Alice", vm);
         (address payable bob, uint256 bobSk) = createUser("Bob", vm);
         (address payable carl, uint256 carlSk) = createUser("Carl", vm);
+        (address payable dan, uint256 danSk) = createUser("Dan", vm);
 
         return (
-            Users({ admin: admin, alice: alice, bob: bob, carl: carl }),
-            UserSecretKeys({ admin: adminSk, alice: aliceSk, bob: bobSk, carl: carlSk })
+            Users({ admin: admin, alice: alice, bob: bob, carl: carl, dan: dan }),
+            UserSecretKeys({ admin: adminSk, alice: aliceSk, bob: bobSk, carl: carlSk, dan: danSk })
         );
     }
 }
