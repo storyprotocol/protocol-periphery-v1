@@ -11,6 +11,7 @@ contract StoryProtocolPeripheryAddressManager is Script {
     address internal groupingWorkflowsAddr;
     address internal licenseAttachmentWorkflowsAddr;
     address internal registrationWorkflowsAddr;
+    address internal royaltyWorkflowsAddr;
     address internal spgNftBeaconAddr;
     address internal spgNftImplAddr;
 
@@ -25,6 +26,7 @@ contract StoryProtocolPeripheryAddressManager is Script {
         groupingWorkflowsAddr = json.readAddress(".main.GroupingWorkflows");
         licenseAttachmentWorkflowsAddr = json.readAddress(".main.LicenseAttachmentWorkflows");
         registrationWorkflowsAddr = json.readAddress(".main.RegistrationWorkflows");
+        royaltyWorkflowsAddr = json.readAddress(".main.RoyaltyWorkflows");
         spgNftBeaconAddr = json.readAddress(".main.SPGNFTBeacon");
         spgNftImplAddr = json.readAddress(".main.SPGNFTImpl");
     }

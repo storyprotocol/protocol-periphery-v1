@@ -47,6 +47,7 @@ contract UpgradeDerivativeWorkflows is UpgradeHelper {
         _postdeploy("DerivativeWorkflows", address(derivativeWorkflows));
         _writeAddress("LicenseAttachmentWorkflows", address(licenseAttachmentWorkflows));
         _writeAddress("RegistrationWorkflows", address(registrationWorkflows));
+        _writeAddress("RoyaltyWorkflows", address(royaltyWorkflows));
         _writeAddress("SPGNFTBeacon", address(spgNftBeacon));
         _writeAddress("SPGNFTImpl", address(spgNftImpl));
     }

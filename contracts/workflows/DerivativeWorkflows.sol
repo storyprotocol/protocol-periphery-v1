@@ -11,7 +11,6 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 import { ILicenseTemplate } from "@storyprotocol/core/interfaces/modules/licensing/ILicenseTemplate.sol";
-import { ILicenseRegistry } from "@storyprotocol/core/interfaces/registries/ILicenseRegistry.sol";
 import { ILicenseToken } from "@storyprotocol/core/interfaces/ILicenseToken.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
 import { IRoyaltyModule } from "@storyprotocol/core/interfaces/modules/royalty/IRoyaltyModule.sol";
@@ -279,7 +278,7 @@ contract DerivativeWorkflows is
     /// to transfer the license tokens.
     /// @param licenseTokenIds The IDs of the license tokens to be collected.
     /// @param licenseToken The address of the license token contract.
-    function _collectLicenseTokens(uint256[] calldata licenseTokenIds, address licenseToken) internal {
+    function _collectLicenseTokens(uint256[] calldata licenseTokenIds, address licenseToken) private {
         if (licenseTokenIds.length == 0) revert Errors.DerivativeWorkflows__EmptyLicenseTokens();
         for (uint256 i = 0; i < licenseTokenIds.length; i++) {
             address tokenOwner = ILicenseToken(licenseToken).ownerOf(licenseTokenIds[i]);
@@ -306,7 +305,7 @@ contract DerivativeWorkflows is
         address licenseTemplate,
         address[] calldata parentIpIds,
         uint256[] calldata licenseTermsIds
-    ) internal {
+    ) private {
         ILicenseTemplate lct = ILicenseTemplate(licenseTemplate);
         (address royaltyPolicy, , , address mintFeeCurrencyToken) = lct.getRoyaltyPolicy(licenseTermsIds[0]);
 
@@ -343,7 +342,7 @@ contract DerivativeWorkflows is
         address licenseTemplate,
         address[] calldata parentIpIds,
         uint256[] calldata licenseTermsIds
-    ) internal view returns (uint256 totalMintFee) {
+    ) private view returns (uint256 totalMintFee) {
         uint256 mintFee;
 
         for (uint256 i = 0; i < parentIpIds.length; i++) {

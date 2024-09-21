@@ -12,6 +12,7 @@ import { DerivativeWorkflows } from "../../../contracts/workflows/DerivativeWork
 import { GroupingWorkflows } from "../../../contracts/workflows/GroupingWorkflows.sol";
 import { LicenseAttachmentWorkflows } from "../../../contracts/workflows/LicenseAttachmentWorkflows.sol";
 import { RegistrationWorkflows } from "../../../contracts/workflows/RegistrationWorkflows.sol";
+import { RoyaltyWorkflows } from "../../../contracts/workflows/RoyaltyWorkflows.sol";
 import { SPGNFT } from "../../../contracts/SPGNFT.sol";
 
 // script
@@ -35,6 +36,7 @@ contract UpgradeHelper is
     GroupingWorkflows internal groupingWorkflows;
     LicenseAttachmentWorkflows internal licenseAttachmentWorkflows;
     RegistrationWorkflows internal registrationWorkflows;
+    RoyaltyWorkflows internal royaltyWorkflows;
 
     /// @dev SPGNFT contracts
     SPGNFT internal spgNftImpl;
@@ -50,6 +52,7 @@ contract UpgradeHelper is
         groupingWorkflows = GroupingWorkflows(groupingWorkflowsAddr);
         licenseAttachmentWorkflows = LicenseAttachmentWorkflows(licenseAttachmentWorkflowsAddr);
         registrationWorkflows = RegistrationWorkflows(registrationWorkflowsAddr);
+        royaltyWorkflows = RoyaltyWorkflows(royaltyWorkflowsAddr);
 
         spgNftImpl = SPGNFT(spgNftImplAddr);
         spgNftBeacon = UpgradeableBeacon(spgNftBeaconAddr);

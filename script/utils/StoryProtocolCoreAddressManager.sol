@@ -18,6 +18,8 @@ contract StoryProtocolCoreAddressManager is Script {
     address internal licenseTokenAddr;
     address internal groupingModuleAddr;
     address internal groupNFTAddr;
+    address internal royaltyPolicyLAPAddr;
+    address internal royaltyPolicyLRPAddr;
 
     function _readStoryProtocolCoreAddresses() internal {
         string memory root = vm.projectRoot();
@@ -43,5 +45,7 @@ contract StoryProtocolCoreAddressManager is Script {
         licenseTokenAddr = json.readAddress(".main.LicenseToken");
         groupingModuleAddr = json.readAddress(".main.GroupingModule");
         groupNFTAddr = json.readAddress(".main.GroupNFT");
+        royaltyPolicyLAPAddr = json.readAddress(".main.RoyaltyPolicyLAP");
+        royaltyPolicyLRPAddr = json.readAddress(".main.RoyaltyPolicyLRP");
     }
 }

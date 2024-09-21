@@ -28,6 +28,7 @@ import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 import { PILicenseTemplate } from "@storyprotocol/core/modules/licensing/PILicenseTemplate.sol";
 import { RoyaltyModule } from "@storyprotocol/core/modules/royalty/RoyaltyModule.sol";
 import { RoyaltyPolicyLAP } from "@storyprotocol/core/modules/royalty/policies/LAP/RoyaltyPolicyLAP.sol";
+import { RoyaltyPolicyLRP } from "@storyprotocol/core/modules/royalty/policies/LRP/RoyaltyPolicyLRP.sol";
 import { StorageLayoutChecker } from "@storyprotocol/script/utils/upgrades/StorageLayoutCheck.s.sol";
 
 // contracts
@@ -36,6 +37,7 @@ import { DerivativeWorkflows } from "../../contracts/workflows/DerivativeWorkflo
 import { GroupingWorkflows } from "../../contracts/workflows/GroupingWorkflows.sol";
 import { LicenseAttachmentWorkflows } from "../../contracts/workflows/LicenseAttachmentWorkflows.sol";
 import { RegistrationWorkflows } from "../../contracts/workflows/RegistrationWorkflows.sol";
+import { RoyaltyWorkflows } from "../../contracts/workflows/RoyaltyWorkflows.sol";
 
 // script
 import { BroadcastManager } from "./BroadcastManager.s.sol";
@@ -75,6 +77,7 @@ contract DeployHelper is
     GroupingWorkflows internal groupingWorkflows;
     LicenseAttachmentWorkflows internal licenseAttachmentWorkflows;
     RegistrationWorkflows internal registrationWorkflows;
+    RoyaltyWorkflows internal royaltyWorkflows;
 
     // DeployHelper variable
     bool private writeDeploys;
@@ -97,6 +100,7 @@ contract DeployHelper is
     PILicenseTemplate internal pilTemplate;
     RoyaltyModule internal royaltyModule;
     RoyaltyPolicyLAP internal royaltyPolicyLAP;
+    RoyaltyPolicyLRP internal royaltyPolicyLRP;
     UpgradeableBeacon internal ipRoyaltyVaultBeacon;
 
     // mock core contract deployer
@@ -251,6 +255,19 @@ contract DeployHelper is
         );
         impl = address(0);
         _postdeploy("RegistrationWorkflows", address(registrationWorkflows));
+
+        _predeploy("RoyaltyWorkflows");
+        impl = address(new RoyaltyWorkflows(royaltyModuleAddr));
+        royaltyWorkflows = RoyaltyWorkflows(
+            TestProxyHelper.deployUUPSProxy(
+                create3Deployer,
+                _getSalt(type(RoyaltyWorkflows).name),
+                impl,
+                abi.encodeCall(RoyaltyWorkflows.initialize, address(protocolAccessManagerAddr))
+            )
+        );
+        impl = address(0);
+        _postdeploy("RoyaltyWorkflows", address(royaltyWorkflows));
 
         // SPGNFT contracts
         _predeploy("SPGNFTImpl");
@@ -497,6 +514,23 @@ contract DeployHelper is
         );
         require(_loadProxyImpl(address(royaltyPolicyLAP)) == impl, "RoyaltyPolicyLAP Proxy Implementation Mismatch");
 
+        // royaltyPolicyLRP
+        impl = address(0); // Make sure we don't deploy wrong impl
+        impl = address(new RoyaltyPolicyLRP(address(royaltyModule), address(ipGraphACL)));
+        royaltyPolicyLRP = RoyaltyPolicyLRP(
+            TestProxyHelper.deployUUPSProxy(
+                create3Deployer,
+                _getSalt(type(RoyaltyPolicyLRP).name),
+                impl,
+                abi.encodeCall(RoyaltyPolicyLRP.initialize, address(protocolAccessManager))
+            )
+        );
+        require(
+            _getDeployedAddress(type(RoyaltyPolicyLRP).name) == address(royaltyPolicyLRP),
+            "Deploy: Royalty Policy LRP Address Mismatch"
+        );
+        require(_loadProxyImpl(address(royaltyPolicyLRP)) == impl, "RoyaltyPolicyLRP Proxy Implementation Mismatch");
+
         // ipRoyaltyVaultImpl
         ipRoyaltyVaultImpl = IpRoyaltyVault(
             create3Deployer.deploy(
@@ -655,6 +689,7 @@ contract DeployHelper is
         moduleRegistry.registerModule("GROUPING_MODULE", address(groupingModule));
 
         ipGraphACL.whitelistAddress(_getDeployedAddress(type(RoyaltyPolicyLAP).name));
+        ipGraphACL.whitelistAddress(_getDeployedAddress(type(RoyaltyPolicyLRP).name));
         ipGraphACL.whitelistAddress(_getDeployedAddress(type(LicenseRegistry).name));
 
         coreMetadataViewModule.updateCoreMetadataModule();
@@ -665,6 +700,7 @@ contract DeployHelper is
         licenseRegistry.setDefaultLicenseTerms(address(pilTemplate), 0);
 
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLAP), true);
+        royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLRP), true);
         royaltyModule.setIpRoyaltyVaultBeacon(address(ipRoyaltyVaultBeacon));
         ipRoyaltyVaultBeacon.transferOwnership(address(royaltyPolicyLAP));
     }

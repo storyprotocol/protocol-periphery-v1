@@ -46,6 +46,7 @@ contract UpgradeLicenseAttachmentWorkflows is UpgradeHelper {
         console2.log("New LicenseAttachmentWorkflows Implementation: ", newLicenseAttachmentWorkflowsImpl);
         _postdeploy("LicenseAttachmentWorkflows", address(licenseAttachmentWorkflows));
         _writeAddress("RegistrationWorkflows", address(registrationWorkflows));
+        _writeAddress("RoyaltyWorkflows", address(royaltyWorkflows));
         _writeAddress("SPGNFTBeacon", address(spgNftBeacon));
         _writeAddress("SPGNFTImpl", address(spgNftImpl));
     }
