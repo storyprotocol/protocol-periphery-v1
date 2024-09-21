@@ -441,7 +441,7 @@
 
 "@story-protocol/protocol-core@github:storyprotocol/protocol-core-v1#main":
   version "1.1.0"
-  resolved "https://codeload.github.com/storyprotocol/protocol-core-v1/tar.gz/78bcd0975e37346d33faffee4ebfff7e9076ba63"
+  resolved "https://codeload.github.com/storyprotocol/protocol-core-v1/tar.gz/602740e71d10beab9279c9bf53e9f1ec21fb8a4b"
   dependencies:
     "@openzeppelin/contracts" "5.0.2"
     "@openzeppelin/contracts-upgradeable" "5.0.2"
