@@ -19,6 +19,7 @@ import { LicensingModule } from "@storyprotocol/core/modules/licensing/Licensing
 import { DisputeModule } from "@storyprotocol/core/modules/dispute/DisputeModule.sol";
 import { RoyaltyModule } from "@storyprotocol/core/modules/royalty/RoyaltyModule.sol";
 import { RoyaltyPolicyLAP } from "@storyprotocol/core/modules/royalty/policies/LAP/RoyaltyPolicyLAP.sol";
+import { RoyaltyPolicyLRP } from "@storyprotocol/core/modules/royalty/policies/LRP/RoyaltyPolicyLRP.sol";
 import { IpRoyaltyVault } from "@storyprotocol/core/modules/royalty/policies/IpRoyaltyVault.sol";
 import { CoreMetadataModule } from "@storyprotocol/core/modules/metadata/CoreMetadataModule.sol";
 import { CoreMetadataViewModule } from "@storyprotocol/core/modules/metadata/CoreMetadataViewModule.sol";
@@ -38,6 +39,7 @@ import { MockEvenSplitGroupPool } from "@storyprotocol/test/mocks/grouping/MockE
 import { StoryProtocolGateway } from "../../contracts/StoryProtocolGateway.sol";
 import { IStoryProtocolGateway as ISPG } from "../../contracts/interfaces/IStoryProtocolGateway.sol";
 import { GroupingWorkflows } from "../../contracts/GroupingWorkflows.sol";
+import { RoyaltyWorkflows } from "../../contracts/RoyaltyWorkflows.sol";
 import { SPGNFT } from "../../contracts/SPGNFT.sol";
 import { ISPGNFT } from "../../contracts/interfaces/ISPGNFT.sol";
 import { TestProxyHelper } from "./TestProxyHelper.t.sol";
@@ -60,6 +62,7 @@ contract BaseTest is Test {
     LicensingModule internal licensingModule;
     RoyaltyModule internal royaltyModule;
     RoyaltyPolicyLAP internal royaltyPolicyLAP;
+    RoyaltyPolicyLRP internal royaltyPolicyLRP;
     UpgradeableBeacon internal ipRoyaltyVaultBeacon;
     IpRoyaltyVault internal ipRoyaltyVaultImpl;
     CoreMetadataModule internal coreMetadataModule;
@@ -75,6 +78,7 @@ contract BaseTest is Test {
     SPGNFT internal spgNftImpl;
     UpgradeableBeacon internal spgNftBeacon;
     GroupingWorkflows internal groupingWorkflows;
+    RoyaltyWorkflows internal royaltyWorkflows;
 
     MockERC20 internal mockToken;
     MockIPGraph internal ipGraph = MockIPGraph(address(0x1A));
@@ -139,7 +143,7 @@ contract BaseTest is Test {
         create3Deployer = new Create3Deployer();
         create3SaltSeed = 1;
 
-        vm.etch(address(0x1A), address(new MockIPGraph()).code);
+        vm.etch(address(0x1B), address(new MockIPGraph()).code);
         vm.startPrank(deployer);
         setUp_test_Core();
         setUp_test_Periphery();
@@ -220,6 +224,7 @@ contract BaseTest is Test {
 
         ipGraphACL = new IPGraphACL(address(protocolAccessManager));
         ipGraphACL.whitelistAddress(_getDeployedAddress(type(RoyaltyPolicyLAP).name));
+        ipGraphACL.whitelistAddress(_getDeployedAddress(type(RoyaltyPolicyLRP).name));
         ipGraphACL.whitelistAddress(_getDeployedAddress(type(LicenseRegistry).name));
 
         impl = address(0); // Make sure we don't deploy wrong impl
@@ -344,6 +349,22 @@ contract BaseTest is Test {
             "Deploy: Royalty Policy LAP Address Mismatch"
         );
         require(_loadProxyImpl(address(royaltyPolicyLAP)) == impl, "RoyaltyPolicyLAP Proxy Implementation Mismatch");
+
+        impl = address(0); // Make sure we don't deploy wrong impl
+        impl = address(new RoyaltyPolicyLRP(address(royaltyModule), address(ipGraphACL)));
+        royaltyPolicyLRP = RoyaltyPolicyLRP(
+            TestProxyHelper.deployUUPSProxy(
+                create3Deployer,
+                _getSalt(type(RoyaltyPolicyLRP).name),
+                impl,
+                abi.encodeCall(RoyaltyPolicyLRP.initialize, address(protocolAccessManager))
+            )
+        );
+        require(
+            _getDeployedAddress(type(RoyaltyPolicyLRP).name) == address(royaltyPolicyLRP),
+            "Deploy: Royalty Policy LRP Address Mismatch"
+        );
+        require(_loadProxyImpl(address(royaltyPolicyLRP)) == impl, "RoyaltyPolicyLRP Proxy Implementation Mismatch");
 
         ipRoyaltyVaultImpl = IpRoyaltyVault(
             create3Deployer.deploy(
@@ -491,6 +512,7 @@ contract BaseTest is Test {
         licenseRegistry.registerLicenseTemplate(address(pilTemplate));
 
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLAP), true);
+        royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLRP), true);
         royaltyModule.setIpRoyaltyVaultBeacon(address(ipRoyaltyVaultBeacon));
         ipRoyaltyVaultBeacon.transferOwnership(address(royaltyPolicyLAP));
     }
@@ -540,6 +562,18 @@ contract BaseTest is Test {
             )
         );
 
+        impl = address(0); // Make sure we don't deploy wrong impl
+        impl = address(new RoyaltyWorkflows(address(royaltyModule)));
+
+        royaltyWorkflows = RoyaltyWorkflows(
+            TestProxyHelper.deployUUPSProxy(
+                create3Deployer,
+                _getSalt(type(RoyaltyWorkflows).name),
+                impl,
+                abi.encodeCall(RoyaltyWorkflows.initialize, address(protocolAccessManager))
+            )
+        );
+
         spgNftImpl = SPGNFT(
             create3Deployer.deploy(
                 _getSalt(type(SPGNFT).name),
@@ -564,7 +598,7 @@ contract BaseTest is Test {
     }
 
     function setUp_test_Misc() public {
-        mockToken = new MockERC20();
+        mockToken = new MockERC20("MockToken", "MT");
         rewardPool = new MockEvenSplitGroupPool(address(royaltyModule));
 
         royaltyModule.whitelistRoyaltyToken(address(mockToken), true);
