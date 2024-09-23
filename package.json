@@ -1,6 +1,6 @@
 {
   "name": "@story-protocol/protocol-periphery",
-  "version": "v1.2.1",
+  "version": "v1.2.2",
   "description": "Story Proof-of-Creativity protocol periphery smart contracts",
   "main": "",
   "directories": {
@@ -40,7 +40,7 @@
     "@openzeppelin/contracts": "5.0.1",
     "@openzeppelin/contracts-upgradeable": "5.0.1",
     "@story-protocol/create3-deployer": "github:storyprotocol/create3-deployer#main",
-    "@story-protocol/protocol-core": "github:storyprotocol/protocol-core-v1#v1.2.1",
+    "@story-protocol/protocol-core": "github:storyprotocol/protocol-core-v1#v1.2.2",
     "erc6551": "^0.3.1",
     "solady": "^0.0.192"
   }
