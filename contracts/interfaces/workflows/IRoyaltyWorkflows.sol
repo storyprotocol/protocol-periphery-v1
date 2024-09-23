@@ -20,7 +20,6 @@ interface IRoyaltyWorkflows {
     /// and claims revenue on that snapshot for each specified currency token.
     /// @param ancestorIpId The address of the ancestor IP.
     /// @param claimer The address of the claimer of the revenue tokens (must be a royalty token holder).
-    /// @param currencyTokens The addresses of the currency (revenue) tokens to claim (each address must be unique).
     /// @param royaltyClaimDetails The details of the royalty claim from child IPs,
     /// see {IRoyaltyWorkflows-RoyaltyClaimDetails}.
     /// @return snapshotId The ID of the snapshot taken.
@@ -28,7 +27,6 @@ interface IRoyaltyWorkflows {
     function transferToVaultAndSnapshotAndClaimByTokenBatch(
         address ancestorIpId,
         address claimer,
-        address[] calldata currencyTokens,
         RoyaltyClaimDetails[] calldata royaltyClaimDetails
     ) external returns (uint256 snapshotId, uint256[] memory amountsClaimed);
 
@@ -36,7 +34,6 @@ interface IRoyaltyWorkflows {
     /// specified currency token both on the new snapshot and on each specified unclaimed snapshots.
     /// @param ancestorIpId The address of the ancestor IP.
     /// @param claimer The address of the claimer of the revenue tokens (must be a royalty token holder).
-    /// @param currencyTokens The addresses of the currency (revenue) tokens to claim (each address must be unique).
     /// @param unclaimedSnapshotIds The IDs of unclaimed snapshots to include in the claim.
     /// @param royaltyClaimDetails The details of the royalty claim from child IPs,
     /// see {IRoyaltyWorkflows-RoyaltyClaimDetails}.
@@ -45,7 +42,6 @@ interface IRoyaltyWorkflows {
     function transferToVaultAndSnapshotAndClaimBySnapshotBatch(
         address ancestorIpId,
         address claimer,
-        address[] calldata currencyTokens,
         uint256[] calldata unclaimedSnapshotIds,
         RoyaltyClaimDetails[] calldata royaltyClaimDetails
     ) external returns (uint256 snapshotId, uint256[] memory amountsClaimed);
