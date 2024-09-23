@@ -39,4 +39,7 @@ library Errors {
 
     /// @notice Zero address provided as a param to the GroupingWorkflows.
     error GroupingWorkflows__ZeroAddressParam();
+
+    /// @notice Zero address provided as a param to the RoyaltyWorkflows.
+    error RoyaltyWorkflows__ZeroAddressParam();
 }
