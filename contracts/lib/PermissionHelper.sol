@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity 0.8.26;
 
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { AccessPermission } from "@storyprotocol/core/lib/AccessPermission.sol";

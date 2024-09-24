@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity 0.8.26;
 
 /// @title SPG NFT Library
 /// @notice Library for SPG NFT related functions.

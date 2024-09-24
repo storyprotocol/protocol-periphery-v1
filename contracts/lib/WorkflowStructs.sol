@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity 0.8.26;
 
 /// @title Workflow Structs Library
 /// @notice Library for all the structs used in periphery workflows.
