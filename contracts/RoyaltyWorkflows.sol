@@ -7,6 +7,7 @@ import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC16
 import { MulticallUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
+import { Errors as CoreErrors } from "@storyprotocol/core/lib/Errors.sol";
 // solhint-disable-next-line max-line-length
 import { IGraphAwareRoyaltyPolicy } from "@storyprotocol/core/interfaces/modules/royalty/policies/IGraphAwareRoyaltyPolicy.sol";
 import { IIpRoyaltyVault } from "@storyprotocol/core/interfaces/modules/royalty/policies/IIpRoyaltyVault.sol";
@@ -45,7 +46,6 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
     /// and claims revenue on that snapshot for each specified currency token.
     /// @param ancestorIpId The address of the ancestor IP.
     /// @param claimer The address of the claimer of the revenue tokens (must be a royalty token holder).
-    /// @param currencyTokens The addresses of the currency (revenue) tokens to claim (each address must be unique).
     /// @param royaltyClaimDetails The details of the royalty claim from child IPs,
     /// see {IRoyaltyWorkflows-RoyaltyClaimDetails}.
     /// @return snapshotId The ID of the snapshot taken.
@@ -53,7 +53,6 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
     function transferToVaultAndSnapshotAndClaimByTokenBatch(
         address ancestorIpId,
         address claimer,
-        address[] calldata currencyTokens,
         RoyaltyClaimDetails[] calldata royaltyClaimDetails
     ) external returns (uint256 snapshotId, uint256[] memory amountsClaimed) {
         // Transfers to ancestor's vault an amount of revenue tokens claimable via the given royalty policy
@@ -75,7 +74,7 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
         // Claims revenue for each specified currency token from the latest snapshot
         amountsClaimed = ancestorIpRoyaltyVault.claimRevenueOnBehalfByTokenBatch({
             snapshotId: snapshotId,
-            tokenList: currencyTokens,
+            tokenList: _getCurrencyTokenList(royaltyClaimDetails),
             claimer: claimer
         });
     }
@@ -84,7 +83,6 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
     /// specified currency token both on the new snapshot and on each specified unclaimed snapshots.
     /// @param ancestorIpId The address of the ancestor IP.
     /// @param claimer The address of the claimer of the revenue tokens (must be a royalty token holder).
-    /// @param currencyTokens The addresses of the currency (revenue) tokens to claim (each address must be unique).
     /// @param unclaimedSnapshotIds The IDs of unclaimed snapshots to include in the claim.
     /// @param royaltyClaimDetails The details of the royalty claim from child IPs,
     /// see {IRoyaltyWorkflows-RoyaltyClaimDetails}.
@@ -93,7 +91,6 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
     function transferToVaultAndSnapshotAndClaimBySnapshotBatch(
         address ancestorIpId,
         address claimer,
-        address[] calldata currencyTokens,
         uint256[] calldata unclaimedSnapshotIds,
         RoyaltyClaimDetails[] calldata royaltyClaimDetails
     ) external returns (uint256 snapshotId, uint256[] memory amountsClaimed) {
@@ -113,6 +110,8 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
         // Takes a snapshot of the ancestor IP's royalty vault
         snapshotId = ancestorIpRoyaltyVault.snapshot();
 
+        address[] memory currencyTokens = _getCurrencyTokenList(royaltyClaimDetails);
+
         // Claims revenue for each specified currency token from the latest snapshot
         amountsClaimed = ancestorIpRoyaltyVault.claimRevenueOnBehalfByTokenBatch({
             snapshotId: snapshotId,
@@ -130,8 +129,13 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
                 })
             returns (uint256 claimedAmount) {
                 amountsClaimed[i] += claimedAmount;
-            } catch {
-                amountsClaimed[i] += 0;
+            } catch (bytes memory reason) {
+                // If the error is not IpRoyaltyVault__NoClaimableTokens, revert with the original error
+                if (CoreErrors.IpRoyaltyVault__NoClaimableTokens.selector != bytes4(reason)) {
+                    assembly {
+                        revert(add(reason, 32), mload(reason))
+                    }
+                }
             }
         }
     }
@@ -195,10 +199,51 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
                 })
             returns (uint256 claimedAmount) {
                 amountsClaimed[i] += claimedAmount;
-            } catch {
-                // Continue to the next currency token
-                amountsClaimed[i] += 0;
+            } catch (bytes memory reason) {
+                // If the error is not IpRoyaltyVault__NoClaimableTokens, revert with the original error
+                if (CoreErrors.IpRoyaltyVault__NoClaimableTokens.selector != bytes4(reason)) {
+                    assembly {
+                        revert(add(reason, 32), mload(reason))
+                    }
+                }
             }
+        }
+    }
+
+    /// @dev Extracts all unique currency token addresses from an array of RoyaltyClaimDetails.
+    /// @param royaltyClaimDetails The details of the royalty claim from child IPs,
+    /// see {IRoyaltyWorkflows-RoyaltyClaimDetails}.
+    /// @return currencyTokenList An array of unique currency token addresses extracted from `royaltyClaimDetails`.
+    function _getCurrencyTokenList(
+        RoyaltyClaimDetails[] calldata royaltyClaimDetails
+    ) private pure returns (address[] memory currencyTokenList) {
+        uint256 length = royaltyClaimDetails.length;
+        address[] memory tempUniqueTokenList = new address[](length);
+        uint256 uniqueCount = 0;
+
+        for (uint256 i = 0; i < length; i++) {
+            address currencyToken = royaltyClaimDetails[i].currencyToken;
+            bool isDuplicate = false;
+
+            // Check if `currencyToken` already in `tempUniqueTokenList`
+            for (uint256 j = 0; j < uniqueCount; j++) {
+                if (tempUniqueTokenList[j] == currencyToken) {
+                    // set the `isDuplicate` flag if `currencyToken` already in `tempUniqueTokenList`
+                    isDuplicate = true;
+                    break;
+                }
+            }
+
+            // Add `currencyToken` to `tempUniqueTokenList` if it's not already in `tempUniqueTokenList`
+            if (!isDuplicate) {
+                tempUniqueTokenList[uniqueCount] = currencyToken;
+                uniqueCount++;
+            }
+        }
+
+        currencyTokenList = new address[](uniqueCount);
+        for (uint256 i = 0; i < uniqueCount; i++) {
+            currencyTokenList[i] = tempUniqueTokenList[i];
         }
     }
 
