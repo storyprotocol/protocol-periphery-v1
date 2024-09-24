@@ -7,6 +7,7 @@ import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC16
 import { MulticallUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
+import { Errors as CoreErrors } from "@storyprotocol/core/lib/Errors.sol";
 // solhint-disable-next-line max-line-length
 import { IGraphAwareRoyaltyPolicy } from "@storyprotocol/core/interfaces/modules/royalty/policies/IGraphAwareRoyaltyPolicy.sol";
 import { IIpRoyaltyVault } from "@storyprotocol/core/interfaces/modules/royalty/policies/IIpRoyaltyVault.sol";
@@ -128,8 +129,13 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
                 })
             returns (uint256 claimedAmount) {
                 amountsClaimed[i] += claimedAmount;
-            } catch {
-                // Continue to the next currency token
+            } catch (bytes memory reason) {
+                // If the error is not IpRoyaltyVault__NoClaimableTokens, revert with the original error
+                if (CoreErrors.IpRoyaltyVault__NoClaimableTokens.selector != bytes4(reason)) {
+                    assembly {
+                        revert(add(reason, 32), mload(reason))
+                    }
+                }
             }
         }
     }
@@ -193,8 +199,13 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
                 })
             returns (uint256 claimedAmount) {
                 amountsClaimed[i] += claimedAmount;
-            } catch {
-                // Continue to the next currency token
+            } catch (bytes memory reason) {
+                // If the error is not IpRoyaltyVault__NoClaimableTokens, revert with the original error
+                if (CoreErrors.IpRoyaltyVault__NoClaimableTokens.selector != bytes4(reason)) {
+                    assembly {
+                        revert(add(reason, 32), mload(reason))
+                    }
+                }
             }
         }
     }

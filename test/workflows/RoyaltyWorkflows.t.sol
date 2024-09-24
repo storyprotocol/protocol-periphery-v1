@@ -3,6 +3,7 @@ pragma solidity 0.8.26;
 
 // external
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import { Errors as CoreErrors } from "@storyprotocol/core/lib/Errors.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { IpRoyaltyVault } from "@storyprotocol/core/modules/royalty/policies/IpRoyaltyVault.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
@@ -185,6 +186,52 @@ contract RoyaltyWorkflowsTest is BaseTest {
         );
     }
 
+    function test_RoyaltyWorkflows_revert_transferToVaultAndSnapshotAndClaimBySnapshotBatch() public {
+        // setup IP graph and takes 3 snapshots of ancestor IP's royalty vault
+        uint256 numSnapshots = 3;
+        _setupIpGraph(numSnapshots);
+
+        IRoyaltyWorkflows.RoyaltyClaimDetails[] memory claimDetails = new IRoyaltyWorkflows.RoyaltyClaimDetails[](4);
+        claimDetails[0] = IRoyaltyWorkflows.RoyaltyClaimDetails({
+            childIpId: childIpIdA,
+            royaltyPolicy: address(royaltyPolicyLRP),
+            currencyToken: address(mockTokenA),
+            amount: (defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent() // 1000 * 10% = 100
+        });
+
+        claimDetails[1] = IRoyaltyWorkflows.RoyaltyClaimDetails({
+            childIpId: childIpIdB,
+            royaltyPolicy: address(royaltyPolicyLRP),
+            currencyToken: address(mockTokenA),
+            amount: (defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent() // 1000 * 10% = 100
+        });
+
+        claimDetails[2] = IRoyaltyWorkflows.RoyaltyClaimDetails({
+            childIpId: grandChildIpId,
+            royaltyPolicy: address(royaltyPolicyLRP),
+            currencyToken: address(mockTokenA),
+            amount: (((defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent()) *
+                defaultCommRevShareA) / royaltyModule.maxPercent() // 1000 * 10% * 10% = 10
+        });
+
+        claimDetails[3] = IRoyaltyWorkflows.RoyaltyClaimDetails({
+            childIpId: childIpIdC,
+            royaltyPolicy: address(royaltyPolicyLAP),
+            currencyToken: address(mockTokenC),
+            amount: (defaultMintingFeeC * defaultCommRevShareC) / royaltyModule.maxPercent() // 500 * 20% = 100
+        });
+
+        address ancestorVault = royaltyModule.ipRoyaltyVaults(ancestorIpId);
+
+        vm.expectRevert(CoreErrors.IpRoyaltyVault__VaultsMustClaimAsSelf.selector);
+        royaltyWorkflows.transferToVaultAndSnapshotAndClaimBySnapshotBatch({
+            ancestorIpId: ancestorIpId,
+            claimer: ancestorVault,
+            unclaimedSnapshotIds: unclaimedSnapshotIds,
+            royaltyClaimDetails: claimDetails
+        });
+    }
+
     function test_RoyaltyWorkflows_snapshotAndClaimByTokenBatch() public {
         // setup IP graph with no snapshot
         uint256 numSnapshots = 0;
@@ -254,6 +301,26 @@ contract RoyaltyWorkflowsTest is BaseTest {
             claimerBalanceCAfter - claimerBalanceCBefore,
             defaultMintingFeeC // 500 from from minting fee of childIpC
         );
+    }
+
+    function test_RoyaltyWorkflows_revert_snapshotAndClaimBySnapshotBatch() public {
+        // setup IP graph and takes 1 snapshot of ancestor IP's royalty vault
+        uint256 numSnapshots = 1;
+        _setupIpGraph(numSnapshots);
+
+        address[] memory currencyTokens = new address[](2);
+        currencyTokens[0] = address(mockTokenA);
+        currencyTokens[1] = address(mockTokenC);
+
+        address ancestorVault = royaltyModule.ipRoyaltyVaults(ancestorIpId);
+
+        vm.expectRevert(CoreErrors.IpRoyaltyVault__VaultsMustClaimAsSelf.selector);
+        royaltyWorkflows.snapshotAndClaimBySnapshotBatch({
+            ipId: ancestorIpId,
+            claimer: ancestorVault,
+            unclaimedSnapshotIds: unclaimedSnapshotIds,
+            currencyTokens: currencyTokens
+        });
     }
 
     function _setupCurrencyTokens() private {
