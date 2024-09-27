@@ -13,6 +13,7 @@ contract StoryProtocolCoreAddressManager is Script {
     address internal licenseRegistryAddr;
     address internal royaltyModuleAddr;
     address internal coreMetadataModuleAddr;
+    address internal coreMetadataViewModuleAddr;
     address internal accessControllerAddr;
     address internal pilTemplateAddr;
     address internal licenseTokenAddr;
@@ -40,6 +41,7 @@ contract StoryProtocolCoreAddressManager is Script {
         licenseRegistryAddr = json.readAddress(".main.LicenseRegistry");
         royaltyModuleAddr = json.readAddress(".main.RoyaltyModule");
         coreMetadataModuleAddr = json.readAddress(".main.CoreMetadataModule");
+        coreMetadataViewModuleAddr = json.readAddress(".main.CoreMetadataViewModule");
         accessControllerAddr = json.readAddress(".main.AccessController");
         pilTemplateAddr = json.readAddress(".main.PILicenseTemplate");
         licenseTokenAddr = json.readAddress(".main.LicenseToken");
