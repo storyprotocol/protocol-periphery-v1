@@ -34,8 +34,10 @@ contract RegistrationIntegration is BaseIntegration {
         _endBroadcast();
     }
 
-    function _test_RegistrationIntegration_createCollection() private {
-        _logTestStart("_test_RegistrationIntegration_createCollection");
+    function _test_RegistrationIntegration_createCollection()
+        private
+        logTest("test_RegistrationIntegration_createCollection")
+    {
         spgNftContract = ISPGNFT(
             registrationWorkflows.createCollection(
                 ISPGNFT.InitParams({
@@ -64,11 +66,11 @@ contract RegistrationIntegration is BaseIntegration {
         assertTrue(spgNftContract.hasRole(SPGNFTLib.ADMIN_ROLE, testSender));
         assertTrue(spgNftContract.mintOpen());
         assertTrue(spgNftContract.publicMinting());
-        _logTestEnd("_test_RegistrationIntegration_createCollection");
     }
 
-    function _test_RegistrationIntegration_mintAndRegisterIp() private {
-        _logTestStart("_test_RegistrationIntegration_mintAndRegisterIp");
+    function _test_RegistrationIntegration_mintAndRegisterIp() private
+        logTest("test_RegistrationIntegration_mintAndRegisterIp")
+    {
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee);
         (address ipId, uint256 tokenId) = registrationWorkflows.mintAndRegisterIp({
@@ -81,11 +83,9 @@ contract RegistrationIntegration is BaseIntegration {
         assertTrue(ipAssetRegistry.isRegistered(ipId));
         assertEq(spgNftContract.tokenURI(tokenId), string.concat(testBaseURI, testIpMetadata.nftMetadataURI));
         assertMetadata(ipId, testIpMetadata);
-        _logTestEnd("_test_RegistrationIntegration_mintAndRegisterIp");
     }
 
-    function _test_RegistrationIntegration_registerIp() private {
-        _logTestStart("_test_RegistrationIntegration_registerIp");
+    function _test_RegistrationIntegration_registerIp() private logTest("test_RegistrationIntegration_registerIp") {
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee);
         uint256 tokenId = spgNftContract.mint(testSender, "");
@@ -119,11 +119,11 @@ contract RegistrationIntegration is BaseIntegration {
         assertTrue(ipAssetRegistry.isRegistered(actualIpId));
         assertEq(spgNftContract.tokenURI(tokenId), string.concat(testBaseURI, tokenId.toString()));
         assertMetadata(actualIpId, testIpMetadata);
-        _logTestEnd("_test_RegistrationIntegration_registerIp");
     }
 
-    function _test_RegistrationIntegration_multicall_createCollection() private {
-        _logTestStart("_test_RegistrationIntegration_multicall_createCollection");
+    function _test_RegistrationIntegration_multicall_createCollection() private
+        logTest("test_RegistrationIntegration_multicall_createCollection")
+    {
         uint256 totalCollections = 10;
 
         ISPGNFT[] memory nftContracts = new ISPGNFT[](totalCollections);
@@ -162,11 +162,11 @@ contract RegistrationIntegration is BaseIntegration {
             assertTrue(nftContracts[i].mintOpen());
             assertFalse(nftContracts[i].publicMinting());
         }
-        _logTestEnd("_test_RegistrationIntegration_multicall_createCollection");
     }
 
-    function _test_RegistrationIntegration_multicall_mintAndRegisterIp() private {
-        _logTestStart("_test_RegistrationIntegration_multicall_mintAndRegisterIp");
+    function _test_RegistrationIntegration_multicall_mintAndRegisterIp() private
+        logTest("test_RegistrationIntegration_multicall_mintAndRegisterIp")
+    {
         uint256 totalIps = 10;
         StoryUSD.mint(testSender, testMintFee * totalIps);
         StoryUSD.approve(address(spgNftContract), testMintFee * totalIps);
@@ -190,6 +190,5 @@ contract RegistrationIntegration is BaseIntegration {
             assertEq(spgNftContract.tokenURI(tokenIds[i]), string.concat(testBaseURI, testIpMetadata.nftMetadataURI));
             assertMetadata(ipIds[i], testIpMetadata);
         }
-        _logTestEnd("_test_RegistrationIntegration_multicall_mintAndRegisterIp");
     }
 }

@@ -59,8 +59,9 @@ contract RoyaltyIntegration is BaseIntegration {
         _endBroadcast();
     }
 
-    function _test_RoyaltyIntegration_transferToVaultAndSnapshotAndClaimByTokenBatch() private {
-        _logTestStart("_test_RoyaltyIntegration_transferToVaultAndSnapshotAndClaimByTokenBatch");
+    function _test_RoyaltyIntegration_transferToVaultAndSnapshotAndClaimByTokenBatch() private
+        logTest("test_RoyaltyIntegration_transferToVaultAndSnapshotAndClaimByTokenBatch")
+    {
         // setup IP graph with no snapshot
         uint256 numSnapshots = 0;
         _setupIpGraph(numSnapshots);
@@ -122,11 +123,11 @@ contract RoyaltyIntegration is BaseIntegration {
                 (defaultMintingFeeC * defaultCommRevShareC) /
                 royaltyModule.maxPercent() // 500 * 20% = 100 royalty from childIpC
         );
-        _logTestEnd("_test_RoyaltyIntegration_transferToVaultAndSnapshotAndClaimByTokenBatch");
     }
 
-    function _test_RoyaltyIntegration_transferToVaultAndSnapshotAndClaimBySnapshotBatch() private {
-        _logTestStart("_test_RoyaltyIntegration_transferToVaultAndSnapshotAndClaimBySnapshotBatch");
+    function _test_RoyaltyIntegration_transferToVaultAndSnapshotAndClaimBySnapshotBatch() private
+        logTest("test_RoyaltyIntegration_transferToVaultAndSnapshotAndClaimBySnapshotBatch")
+    {
         // setup IP graph and takes 3 snapshots of ancestor IP's royalty vault
         uint256 numSnapshots = 3;
         _setupIpGraph(numSnapshots);
@@ -189,11 +190,11 @@ contract RoyaltyIntegration is BaseIntegration {
                 (defaultMintingFeeC * defaultCommRevShareC) /
                 royaltyModule.maxPercent() // 500 * 20% = 100 royalty from childIpC
         );
-        _logTestEnd("_test_RoyaltyIntegration_transferToVaultAndSnapshotAndClaimBySnapshotBatch");
     }
 
-    function _test_RoyaltyIntegration_snapshotAndClaimByTokenBatch() private {
-        _logTestStart("_test_RoyaltyIntegration_snapshotAndClaimByTokenBatch");
+    function _test_RoyaltyIntegration_snapshotAndClaimByTokenBatch() private
+        logTest("test_RoyaltyIntegration_snapshotAndClaimByTokenBatch")
+    {
         // setup IP graph with no snapshot
         uint256 numSnapshots = 0;
         _setupIpGraph(numSnapshots);
@@ -219,11 +220,11 @@ contract RoyaltyIntegration is BaseIntegration {
             // 1000 + 1000 + 500 from minting fee of childIpA, childIpB, and childIpC
             defaultMintingFeeA + defaultMintingFeeA + defaultMintingFeeC
         );
-        _logTestEnd("_test_RoyaltyIntegration_snapshotAndClaimByTokenBatch");
     }
 
-    function _test_RoyaltyIntegration_snapshotAndClaimBySnapshotBatch() private {
-        _logTestStart("_test_RoyaltyIntegration_snapshotAndClaimBySnapshotBatch");
+    function _test_RoyaltyIntegration_snapshotAndClaimBySnapshotBatch() private
+        logTest("test_RoyaltyIntegration_snapshotAndClaimBySnapshotBatch")
+    {
         // setup IP graph and takes 1 snapshot of ancestor IP's royalty vault
         uint256 numSnapshots = 1;
         _setupIpGraph(numSnapshots);
@@ -250,7 +251,6 @@ contract RoyaltyIntegration is BaseIntegration {
             // 1000 + 1000 + 500 from minting fee of childIpA, childIpB, and childIpC
             defaultMintingFeeA + defaultMintingFeeA + defaultMintingFeeC
         );
-        _logTestEnd("_test_RoyaltyIntegration_snapshotAndClaimBySnapshotBatch");
     }
 
     /// @dev Builds an IP graph as follows (TermsA is LRP, TermsC is LAP):
