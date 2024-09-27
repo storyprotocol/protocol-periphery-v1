@@ -29,18 +29,17 @@ contract DerivativeIntegration is BaseIntegration {
     function run() public override {
         super.run();
         _beginBroadcast();
-        _logTestStart("DerivativeIntegration");
         _setUpTest();
         _test_mintAndRegisterIpAndMakeDerivative();
         _test_registerIpAndMakeDerivative();
         _test_mintAndRegisterIpAndMakeDerivativeWithLicenseTokens();
         _test_registerIpAndMakeDerivativeWithLicenseTokens();
         _test_multicall_mintAndRegisterIpAndMakeDerivative();
-        _logTestEnd("DerivativeIntegration");
         _endBroadcast();
     }
 
     function _test_mintAndRegisterIpAndMakeDerivative() private {
+        _logTestStart("_test_mintAndRegisterIpAndMakeDerivative");
         StoryUSD.mint(testSender, testMintFee * 2);
         StoryUSD.approve(address(spgNftContract), testMintFee); // for nft minting fee
         StoryUSD.approve(derivativeWorkflowsAddr, testMintFee); // for derivative minting fee
@@ -73,9 +72,11 @@ contract DerivativeIntegration is BaseIntegration {
             expectedParentCount: parentIpIds.length,
             expectedParentIndex: 0
         });
+        _logTestEnd("_test_mintAndRegisterIpAndMakeDerivative");
     }
 
     function _test_registerIpAndMakeDerivative() private {
+        _logTestStart("_test_registerIpAndMakeDerivative");
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee); // for nft minting fee
 
@@ -145,9 +146,11 @@ contract DerivativeIntegration is BaseIntegration {
             expectedParentCount: parentIpIds.length,
             expectedParentIndex: 0
         });
+        _logTestEnd("_test_registerIpAndMakeDerivative");
     }
 
     function _test_mintAndRegisterIpAndMakeDerivativeWithLicenseTokens() private {
+        _logTestStart("_test_mintAndRegisterIpAndMakeDerivativeWithLicenseTokens");
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(royaltyModuleAddr, testMintFee); // for license token minting fee
         uint256 startLicenseTokenId = licensingModule.mintLicenseTokens({
@@ -194,9 +197,11 @@ contract DerivativeIntegration is BaseIntegration {
             expectedParentCount: parentIpIds.length,
             expectedParentIndex: 0
         });
+        _logTestEnd("_test_mintAndRegisterIpAndMakeDerivativeWithLicenseTokens");
     }
 
     function _test_registerIpAndMakeDerivativeWithLicenseTokens() private {
+        _logTestStart("_test_registerIpAndMakeDerivativeWithLicenseTokens");
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee); // for nft minting fee
         uint256 childTokenId = spgNftContract.mint(testSender, testIpMetadata.nftMetadataURI);
@@ -273,9 +278,11 @@ contract DerivativeIntegration is BaseIntegration {
             expectedParentCount: parentIpIds.length,
             expectedParentIndex: 0
         });
+        _logTestEnd("_test_registerIpAndMakeDerivativeWithLicenseTokens");
     }
 
     function _test_multicall_mintAndRegisterIpAndMakeDerivative() private {
+        _logTestStart("_test_multicall_mintAndRegisterIpAndMakeDerivative");
         uint256 numCalls = 10;
         bytes[] memory data = new bytes[](numCalls);
         for (uint256 i = 0; i < numCalls; i++) {
@@ -319,6 +326,7 @@ contract DerivativeIntegration is BaseIntegration {
                 expectedParentIndex: 0
             });
         }
+        _logTestEnd("_test_multicall_mintAndRegisterIpAndMakeDerivative");
     }
 
     function _setUpTest() private {

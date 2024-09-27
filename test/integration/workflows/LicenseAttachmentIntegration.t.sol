@@ -28,16 +28,15 @@ contract LicenseAttachmentIntegration is BaseIntegration {
     function run() public override {
         super.run();
         _beginBroadcast();
-        _logTestStart("LicenseAttachmentIntegration");
         _setUpTest();
         _test_LicenseAttachmentIntegration_registerPILTermsAndAttach();
         _test_LicenseAttachmentIntegration_mintAndRegisterIpAndAttachPILTerms();
         _test_LicenseAttachmentIntegration_registerIpAndAttachPILTerms();
-        _logTestEnd("LicenseAttachmentIntegration");
         _endBroadcast();
     }
 
     function _test_LicenseAttachmentIntegration_registerPILTermsAndAttach() private {
+        _logTestStart("_test_LicenseAttachmentIntegration_registerPILTermsAndAttach");
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee);
 
@@ -73,9 +72,11 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         });
 
         assertEq(licenseTermsId, pilTemplate.getLicenseTermsId(commUseTerms));
+        _logTestEnd("_test_LicenseAttachmentIntegration_registerPILTermsAndAttach");
     }
 
     function _test_LicenseAttachmentIntegration_mintAndRegisterIpAndAttachPILTerms() private {
+        _logTestStart("_test_LicenseAttachmentIntegration_mintAndRegisterIpAndAttachPILTerms");
         // IP 1
         {
             StoryUSD.mint(testSender, testMintFee);
@@ -119,9 +120,11 @@ contract LicenseAttachmentIntegration is BaseIntegration {
             assertEq(licenseTemplate, pilTemplateAddr);
             assertEq(licenseTermsId, licenseTermsId2);
         }
+        _logTestEnd("_test_LicenseAttachmentIntegration_mintAndRegisterIpAndAttachPILTerms");
     }
 
     function _test_LicenseAttachmentIntegration_registerIpAndAttachPILTerms() private {
+        _logTestStart("_test_LicenseAttachmentIntegration_registerIpAndAttachPILTerms");
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee);
 
@@ -172,6 +175,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         );
         assertEq(expectedLicenseTemplate, pilTemplateAddr);
         assertEq(expectedLicenseTermsId, licenseTermsId);
+        _logTestEnd("_test_LicenseAttachmentIntegration_registerIpAndAttachPILTerms");
     }
 
     function _setUpTest() private {

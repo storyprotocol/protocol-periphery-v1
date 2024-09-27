@@ -124,13 +124,11 @@ contract BaseIntegration is Test, Script, StoryProtocolCoreAddressManager, Story
     }
 
     function _logTestStart(string memory testName) internal pure {
-        console2.log("==================================");
-        console2.log("Running test", testName, "...");
+        console2.log(unicode"🏃 Running", testName, "...");
     }
 
     function _logTestEnd(string memory testName) internal pure {
-        console2.log("Test", testName, " passed!");
-        console2.log("==================================");
+        console2.log(unicode"✅", testName, "passed!");
     }
 
     /*//////////////////////////////////////////////////////////////////////////
