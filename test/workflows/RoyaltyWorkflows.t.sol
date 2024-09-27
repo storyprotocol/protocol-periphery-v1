@@ -360,7 +360,7 @@ contract RoyaltyWorkflowsTest is BaseTest {
     ///
     /// - `ancestorIp`: It has 3 different commercial remix license terms attached. It has 3 child and 1 grandchild IPs.
     /// - `childIpA`: It has licenseTermsA attached, has 1 parent `ancestorIp`, and has 1 grandchild `grandChildIp`.
-    /// - `childIpB`: It has licenseTermsB attached, has 1 parent `ancestorIp`, and has 1 grandchild `grandChildIp`.
+    /// - `childIpB`: It has licenseTermsA attached, has 1 parent `ancestorIp`, and has 1 grandchild `grandChildIp`.
     /// - `childIpC`: It has licenseTermsC attached, has 1 parent `ancestorIp`, and has 1 grandchild `grandChildIp`.
     /// - `grandChildIp`: It has all 3 license terms attached. It has 3 parents and 1 grandparent IPs.
     /// @param numSnapshots The number of snapshots to take of the ancestor IP's royalty vault.

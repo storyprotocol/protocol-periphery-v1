@@ -109,7 +109,7 @@ contract DerivativeWorkflowsTest is BaseTest {
             royaltyContext: ""
         });
 
-        // Need so that SPG can transfer the license tokens
+        // Need so that derivative workflows can transfer the license tokens
         licenseToken.setApprovalForAll(address(derivativeWorkflows), true);
 
         uint256[] memory licenseTokenIds = new uint256[](1);
