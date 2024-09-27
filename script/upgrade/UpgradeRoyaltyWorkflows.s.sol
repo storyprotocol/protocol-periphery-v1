@@ -19,6 +19,7 @@ contract UpgradeRoyaltyWorkflows is UpgradeHelper {
     ///
     /// For detailed examples, see the documentation in `../../docs/DEPLOY_UPGRADE.md`.
     function run() public override {
+        super.run();
         _beginBroadcast();
         _deployRoyaltyWorkflows();
 
