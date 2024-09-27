@@ -40,17 +40,18 @@ contract RegistrationIntegration is BaseIntegration {
         spgNftContract = ISPGNFT(
             registrationWorkflows.createCollection(
                 ISPGNFT.InitParams({
-                name: testCollectionName,
-                symbol: testCollectionSymbol,
-                baseURI: testBaseURI,
-                maxSupply: testMaxSupply,
-                mintFee: testMintFee,
-                mintFeeToken: testMintFeeToken,
-                mintFeeRecipient: testSender,
-                owner: testSender,
-                mintOpen: true,
-                isPublicMinting: true
-            }))
+                    name: testCollectionName,
+                    symbol: testCollectionSymbol,
+                    baseURI: testBaseURI,
+                    maxSupply: testMaxSupply,
+                    mintFee: testMintFee,
+                    mintFeeToken: testMintFeeToken,
+                    mintFeeRecipient: testSender,
+                    owner: testSender,
+                    mintOpen: true,
+                    isPublicMinting: true
+                })
+            )
         );
 
         assertEq(spgNftContract.name(), testCollectionName);
@@ -77,13 +78,9 @@ contract RegistrationIntegration is BaseIntegration {
 
         assertEq(tokenId, 1);
         assertTrue(ipAssetRegistry.isRegistered(ipId));
-        assertEq(
-            spgNftContract.tokenURI(tokenId),
-            string.concat(testBaseURI, testIpMetadata.nftMetadataURI)
-        );
+        assertEq(spgNftContract.tokenURI(tokenId), string.concat(testBaseURI, testIpMetadata.nftMetadataURI));
         assertMetadata(ipId, testIpMetadata);
     }
-
 
     function _test_RegistrationIntegration_registerIp() private {
         StoryUSD.mint(testSender, testMintFee);
@@ -117,10 +114,7 @@ contract RegistrationIntegration is BaseIntegration {
         assertEq(actualIpId, expectedIpId);
         assertEq(IIPAccount(payable(actualIpId)).state(), expectedState);
         assertTrue(ipAssetRegistry.isRegistered(actualIpId));
-        assertEq(
-            spgNftContract.tokenURI(tokenId),
-            string.concat(testBaseURI, tokenId.toString())
-        );
+        assertEq(spgNftContract.tokenURI(tokenId), string.concat(testBaseURI, tokenId.toString()));
         assertMetadata(actualIpId, testIpMetadata);
     }
 
@@ -186,10 +180,7 @@ contract RegistrationIntegration is BaseIntegration {
         for (uint256 i = 0; i < totalIps; i++) {
             (ipIds[i], tokenIds[i]) = abi.decode(results[i], (address, uint256));
             assertTrue(ipAssetRegistry.isRegistered(ipIds[i]));
-            assertEq(
-                spgNftContract.tokenURI(tokenIds[i]),
-                string.concat(testBaseURI, testIpMetadata.nftMetadataURI)
-            );
+            assertEq(spgNftContract.tokenURI(tokenIds[i]), string.concat(testBaseURI, testIpMetadata.nftMetadataURI));
             assertMetadata(ipIds[i], testIpMetadata);
         }
     }

@@ -161,10 +161,7 @@ contract GroupingIntegration is BaseIntegration {
         }
 
         // check the license terms is correctly attached to the group IPA
-        (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(
-            newGroupId,
-            0
-        );
+        (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(newGroupId, 0);
         assertEq(licenseTemplate, testLicenseTemplate);
         assertEq(licenseTermsId, testLicenseTermsId);
     }

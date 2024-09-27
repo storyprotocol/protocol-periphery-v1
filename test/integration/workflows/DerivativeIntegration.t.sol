@@ -349,7 +349,7 @@ contract DerivativeIntegration is BaseIntegration {
                 terms: PILFlavors.commercialUse({
                     mintingFee: testMintFee,
                     currencyToken: testMintFeeToken,
-                royaltyPolicy: royaltyPolicyLRPAddr
+                    royaltyPolicy: royaltyPolicyLRPAddr
                 })
             });
 

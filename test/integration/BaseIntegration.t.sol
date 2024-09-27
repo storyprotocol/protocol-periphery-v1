@@ -34,12 +34,7 @@ import { WorkflowStructs } from "../../contracts/lib/WorkflowStructs.sol";
 import { StoryProtocolCoreAddressManager } from "../../script/utils/StoryProtocolCoreAddressManager.sol";
 import { StoryProtocolPeripheryAddressManager } from "../../script/utils/StoryProtocolPeripheryAddressManager.sol";
 
-contract BaseIntegration is
-    Test,
-    Script,
-    StoryProtocolCoreAddressManager,
-    StoryProtocolPeripheryAddressManager
-{
+contract BaseIntegration is Test, Script, StoryProtocolCoreAddressManager, StoryProtocolPeripheryAddressManager {
     /// @dev Test user
     address internal testSender;
     uint256 internal testSenderSk;
@@ -118,7 +113,6 @@ contract BaseIntegration is
             nftMetadataURI: "test-nft-uri",
             nftMetadataHash: "test-nft-hash"
         });
-
     }
 
     function _beginBroadcast() internal {

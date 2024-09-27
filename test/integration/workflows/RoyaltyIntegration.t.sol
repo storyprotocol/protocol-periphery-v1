@@ -126,7 +126,7 @@ contract RoyaltyIntegration is BaseIntegration {
     }
 
     function _test_RoyaltyIntegration_transferToVaultAndSnapshotAndClaimBySnapshotBatch() private {
-          // setup IP graph and takes 3 snapshots of ancestor IP's royalty vault
+        // setup IP graph and takes 3 snapshots of ancestor IP's royalty vault
         uint256 numSnapshots = 3;
         _setupIpGraph(numSnapshots);
 
@@ -191,7 +191,7 @@ contract RoyaltyIntegration is BaseIntegration {
     }
 
     function _test_RoyaltyIntegration_snapshotAndClaimByTokenBatch() private {
-         // setup IP graph with no snapshot
+        // setup IP graph with no snapshot
         uint256 numSnapshots = 0;
         _setupIpGraph(numSnapshots);
 
@@ -219,7 +219,7 @@ contract RoyaltyIntegration is BaseIntegration {
     }
 
     function _test_RoyaltyIntegration_snapshotAndClaimBySnapshotBatch() private {
-         // setup IP graph and takes 1 snapshot of ancestor IP's royalty vault
+        // setup IP graph and takes 1 snapshot of ancestor IP's royalty vault
         uint256 numSnapshots = 1;
         _setupIpGraph(numSnapshots);
 
@@ -391,11 +391,7 @@ contract RoyaltyIntegration is BaseIntegration {
                 ancestorIpRoyaltyVault.totalSupply()
             );
 
-            IIPAccount(payable(ancestorIpId)).execute({
-                to: address(ancestorIpRoyaltyVault),
-                value: 0,
-                data: data
-            });
+            IIPAccount(payable(ancestorIpId)).execute({ to: address(ancestorIpRoyaltyVault), value: 0, data: data });
         }
 
         // takes a snapshot of the ancestor IP's royalty vault and populates unclaimedSnapshotIds

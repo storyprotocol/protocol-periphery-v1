@@ -82,12 +82,12 @@ contract LicenseAttachmentIntegration is BaseIntegration {
             StoryUSD.approve(address(spgNftContract), testMintFee);
 
             (address ipId1, uint256 tokenId1, uint256 licenseTermsId1) = licenseAttachmentWorkflows
-            .mintAndRegisterIpAndAttachPILTerms({
-                spgNftContract: address(spgNftContract),
-                recipient: testSender,
-                ipMetadata: testIpMetadata,
-                terms: commUseTerms
-            });
+                .mintAndRegisterIpAndAttachPILTerms({
+                    spgNftContract: address(spgNftContract),
+                    recipient: testSender,
+                    ipMetadata: testIpMetadata,
+                    terms: commUseTerms
+                });
             assertTrue(ipAssetRegistry.isRegistered(ipId1));
             assertEq(tokenId1, spgNftContract.totalSupply());
             assertEq(licenseTermsId1, pilTemplate.getLicenseTermsId(commUseTerms));
@@ -160,18 +160,16 @@ contract LicenseAttachmentIntegration is BaseIntegration {
                 deadline: deadline,
                 signature: sigMetadata
             }),
-            sigAttach: WorkflowStructs.SignatureData({
-                signer: testSender,
-                deadline: deadline,
-                signature: sigAttach
-            })
+            sigAttach: WorkflowStructs.SignatureData({ signer: testSender, deadline: deadline, signature: sigAttach })
         });
 
         assertEq(ipId, expectedIpId);
         assertTrue(ipAssetRegistry.isRegistered(ipId));
         assertEq(IIPAccount(payable(ipId)).state(), expectedState);
-        (address expectedLicenseTemplate, uint256 expectedLicenseTermsId) = licenseRegistry
-            .getAttachedLicenseTerms(expectedIpId, 0);
+        (address expectedLicenseTemplate, uint256 expectedLicenseTermsId) = licenseRegistry.getAttachedLicenseTerms(
+            expectedIpId,
+            0
+        );
         assertEq(expectedLicenseTemplate, pilTemplateAddr);
         assertEq(expectedLicenseTermsId, licenseTermsId);
     }
