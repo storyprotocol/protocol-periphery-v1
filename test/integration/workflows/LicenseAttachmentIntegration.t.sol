@@ -35,7 +35,8 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         _endBroadcast();
     }
 
-    function _test_LicenseAttachmentIntegration_registerPILTermsAndAttach() private
+    function _test_LicenseAttachmentIntegration_registerPILTermsAndAttach()
+        private
         logTest("test_LicenseAttachmentIntegration_registerPILTermsAndAttach")
     {
         StoryUSD.mint(testSender, testMintFee);
@@ -75,7 +76,8 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         assertEq(licenseTermsId, pilTemplate.getLicenseTermsId(commUseTerms));
     }
 
-    function _test_LicenseAttachmentIntegration_mintAndRegisterIpAndAttachPILTerms() private
+    function _test_LicenseAttachmentIntegration_mintAndRegisterIpAndAttachPILTerms()
+        private
         logTest("test_LicenseAttachmentIntegration_mintAndRegisterIpAndAttachPILTerms")
     {
         // IP 1
@@ -123,7 +125,8 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         }
     }
 
-    function _test_LicenseAttachmentIntegration_registerIpAndAttachPILTerms() private
+    function _test_LicenseAttachmentIntegration_registerIpAndAttachPILTerms()
+        private
         logTest("test_LicenseAttachmentIntegration_registerIpAndAttachPILTerms")
     {
         StoryUSD.mint(testSender, testMintFee);

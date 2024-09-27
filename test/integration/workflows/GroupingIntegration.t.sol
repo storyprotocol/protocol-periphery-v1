@@ -40,7 +40,8 @@ contract GroupingIntegration is BaseIntegration {
         _endBroadcast();
     }
 
-    function _test_GroupingIntegration_mintAndRegisterIpAndAttachLicenseAndAddToGroup() private
+    function _test_GroupingIntegration_mintAndRegisterIpAndAttachLicenseAndAddToGroup()
+        private
         logTest("test_GroupingIntegration_mintAndRegisterIpAndAttachLicenseAndAddToGroup")
     {
         uint256 deadline = block.timestamp + 1000;
@@ -83,7 +84,8 @@ contract GroupingIntegration is BaseIntegration {
         assertEq(licenseTermsId, testLicenseTermsId);
     }
 
-    function _test_GroupingIntegration_registerIpAndAttachLicenseAndAddToGroup() private
+    function _test_GroupingIntegration_registerIpAndAttachLicenseAndAddToGroup()
+        private
         logTest("test_GroupingIntegration_registerIpAndAttachLicenseAndAddToGroup")
     {
         StoryUSD.mint(testSender, testMintFee);
@@ -145,7 +147,8 @@ contract GroupingIntegration is BaseIntegration {
         assertEq(licenseTermsId, testLicenseTermsId);
     }
 
-    function _test_GroupingIntegration_registerGroupAndAttachLicenseAndAddIps() private
+    function _test_GroupingIntegration_registerGroupAndAttachLicenseAndAddIps()
+        private
         logTest("test_GroupingIntegration_registerGroupAndAttachLicenseAndAddIps")
     {
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
@@ -170,7 +173,8 @@ contract GroupingIntegration is BaseIntegration {
         assertEq(licenseTermsId, testLicenseTermsId);
     }
 
-    function _test_GroupingIntegration_multicall_mintAndRegisterIpAndAttachLicenseAndAddToGroup() private
+    function _test_GroupingIntegration_multicall_mintAndRegisterIpAndAttachLicenseAndAddToGroup()
+        private
         logTest("test_GroupingIntegration_multicall_mintAndRegisterIpAndAttachLicenseAndAddToGroup")
     {
         uint256 deadline = block.timestamp + 1000;
@@ -227,7 +231,8 @@ contract GroupingIntegration is BaseIntegration {
         }
     }
 
-    function _test_GroupingIntegration_multicall_registerIpAndAttachLicenseAndAddToGroup() private
+    function _test_GroupingIntegration_multicall_registerIpAndAttachLicenseAndAddToGroup()
+        private
         logTest("test_GroupingIntegration_multicall_registerIpAndAttachLicenseAndAddToGroup")
     {
         uint256 numCalls = 10;

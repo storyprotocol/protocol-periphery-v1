@@ -68,7 +68,8 @@ contract RegistrationIntegration is BaseIntegration {
         assertTrue(spgNftContract.publicMinting());
     }
 
-    function _test_RegistrationIntegration_mintAndRegisterIp() private
+    function _test_RegistrationIntegration_mintAndRegisterIp()
+        private
         logTest("test_RegistrationIntegration_mintAndRegisterIp")
     {
         StoryUSD.mint(testSender, testMintFee);
@@ -121,7 +122,8 @@ contract RegistrationIntegration is BaseIntegration {
         assertMetadata(actualIpId, testIpMetadata);
     }
 
-    function _test_RegistrationIntegration_multicall_createCollection() private
+    function _test_RegistrationIntegration_multicall_createCollection()
+        private
         logTest("test_RegistrationIntegration_multicall_createCollection")
     {
         uint256 totalCollections = 10;
@@ -164,7 +166,8 @@ contract RegistrationIntegration is BaseIntegration {
         }
     }
 
-    function _test_RegistrationIntegration_multicall_mintAndRegisterIp() private
+    function _test_RegistrationIntegration_multicall_mintAndRegisterIp()
+        private
         logTest("test_RegistrationIntegration_multicall_mintAndRegisterIp")
     {
         uint256 totalIps = 10;

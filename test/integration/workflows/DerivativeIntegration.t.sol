@@ -38,7 +38,8 @@ contract DerivativeIntegration is BaseIntegration {
         _endBroadcast();
     }
 
-    function _test_mintAndRegisterIpAndMakeDerivative() private
+    function _test_mintAndRegisterIpAndMakeDerivative()
+        private
         logTest("test_DerivativeIntegration_mintAndRegisterIpAndMakeDerivative")
     {
         StoryUSD.mint(testSender, testMintFee * 2);
@@ -75,7 +76,8 @@ contract DerivativeIntegration is BaseIntegration {
         });
     }
 
-    function _test_registerIpAndMakeDerivative() private
+    function _test_registerIpAndMakeDerivative()
+        private
         logTest("test_DerivativeIntegration_registerIpAndMakeDerivative")
     {
         StoryUSD.mint(testSender, testMintFee);
@@ -149,7 +151,8 @@ contract DerivativeIntegration is BaseIntegration {
         });
     }
 
-    function _test_mintAndRegisterIpAndMakeDerivativeWithLicenseTokens() private
+    function _test_mintAndRegisterIpAndMakeDerivativeWithLicenseTokens()
+        private
         logTest("test_DerivativeIntegration_mintAndRegisterIpAndMakeDerivativeWithLicenseTokens")
     {
         StoryUSD.mint(testSender, testMintFee);
@@ -200,7 +203,8 @@ contract DerivativeIntegration is BaseIntegration {
         });
     }
 
-    function _test_registerIpAndMakeDerivativeWithLicenseTokens() private
+    function _test_registerIpAndMakeDerivativeWithLicenseTokens()
+        private
         logTest("test_DerivativeIntegration_registerIpAndMakeDerivativeWithLicenseTokens")
     {
         StoryUSD.mint(testSender, testMintFee);
@@ -281,7 +285,8 @@ contract DerivativeIntegration is BaseIntegration {
         });
     }
 
-    function _test_multicall_mintAndRegisterIpAndMakeDerivative() private
+    function _test_multicall_mintAndRegisterIpAndMakeDerivative()
+        private
         logTest("test_DerivativeIntegration_multicall_mintAndRegisterIpAndMakeDerivative")
     {
         uint256 numCalls = 10;
