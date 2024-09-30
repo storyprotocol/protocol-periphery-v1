@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import { ILicenseRegistry } from "@storyprotocol/core/interfaces/registries/ILicenseRegistry.sol";
+import { Errors as CoreErrors } from "@storyprotocol/core/lib/Errors.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
 import { IPILicenseTemplate, PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 
@@ -40,9 +40,15 @@ library LicensingHelper {
         address licenseTemplate,
         uint256 licenseTermsId
     ) internal {
-        // Returns if license terms are already attached.
-        if (ILicenseRegistry(licenseRegistry).hasIpAttachedLicenseTerms(ipId, licenseTemplate, licenseTermsId)) return;
-
-        ILicensingModule(licensingModule).attachLicenseTerms(ipId, licenseTemplate, licenseTermsId);
+        try ILicensingModule(licensingModule).attachLicenseTerms(ipId, licenseTemplate, licenseTermsId) {
+            return; // license terms are attached successfully
+        } catch (bytes memory reason) {
+            // if the error is not that the license terms are already attached, revert with the original error
+            if (CoreErrors.LicenseRegistry__LicenseTermsAlreadyAttached.selector != bytes4(reason)) {
+                assembly {
+                    revert(add(reason, 32), mload(reason))
+                }
+            }
+        }
     }
 }

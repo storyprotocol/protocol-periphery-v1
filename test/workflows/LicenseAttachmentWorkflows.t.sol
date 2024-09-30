@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 
 // external
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import { Errors as CoreErrors } from "@storyprotocol/core/lib/Errors.sol";
 import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
@@ -156,6 +157,120 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             terms: PILFlavors.nonCommercialSocialRemixing(),
             sigMetadata: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: sigMetadata }),
             sigAttach: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: sigAttach })
+        });
+    }
+
+    function test_LicenseAttachmentWorkflows_registerPILTermsAndAttach_idempotency()
+        public
+        withCollection
+        withIp(u.alice)
+    {
+        address payable ipId = ipAsset[1].ipId;
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory signature, , bytes memory data) = _getSetPermissionSigForPeriphery({
+            ipId: ipId,
+            to: address(licenseAttachmentWorkflows),
+            module: address(licensingModule),
+            selector: ILicensingModule.attachLicenseTerms.selector,
+            deadline: deadline,
+            state: IIPAccount(ipId).state(),
+            signerSk: sk.alice
+        });
+
+        IIPAccount(ipId).executeWithSig({
+            to: address(accessController),
+            value: 0,
+            data: data,
+            signer: u.alice,
+            deadline: deadline,
+            signature: signature
+        });
+
+        uint256 licenseTermsId1 = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+            ipId: ipId,
+            terms: PILFlavors.commercialUse({
+                mintingFee: 100,
+                currencyToken: address(mockToken),
+                royaltyPolicy: address(royaltyPolicyLAP)
+            })
+        });
+
+        // attach the same license terms to the IP again, but it shouldn't revert
+        uint256 licenseTermsId2 = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+            ipId: ipId,
+            terms: PILFlavors.commercialUse({
+                mintingFee: 100,
+                currencyToken: address(mockToken),
+                royaltyPolicy: address(royaltyPolicyLAP)
+            })
+        });
+
+        assertEq(licenseTermsId1, licenseTermsId2);
+    }
+
+    function test_revert_registerPILTermsAndAttach_DerivativesCannotAddLicenseTerms()
+        public
+        withCollection
+        whenCallerHasMinterRole
+        withEnoughTokens(address(licenseAttachmentWorkflows))
+    {
+        (address ipIdParent, , uint256 licenseTermsIdParent) = licenseAttachmentWorkflows
+            .mintAndRegisterIpAndAttachPILTerms({
+                spgNftContract: address(nftContract),
+                recipient: caller,
+                ipMetadata: ipMetadataDefault,
+                terms: PILFlavors.nonCommercialSocialRemixing()
+            });
+
+        address[] memory parentIpIds = new address[](1);
+        parentIpIds[0] = ipIdParent;
+
+        uint256[] memory licenseTermsIds = new uint256[](1);
+        licenseTermsIds[0] = licenseTermsIdParent;
+
+        (address ipIdChild, uint256 tokenIdChild) = derivativeWorkflows.mintAndRegisterIpAndMakeDerivative({
+            spgNftContract: address(nftContract),
+            derivData: WorkflowStructs.MakeDerivative({
+                parentIpIds: parentIpIds,
+                licenseTemplate: address(pilTemplate),
+                licenseTermsIds: licenseTermsIds,
+                royaltyContext: ""
+            }),
+            ipMetadata: ipMetadataDefault,
+            recipient: caller
+        });
+
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory signature, , bytes memory data) = _getSetPermissionSigForPeriphery({
+            ipId: ipIdChild,
+            to: address(licenseAttachmentWorkflows),
+            module: address(licensingModule),
+            selector: ILicensingModule.attachLicenseTerms.selector,
+            deadline: deadline,
+            state: IIPAccount(payable(ipIdChild)).state(),
+            signerSk: sk.alice
+        });
+
+        IIPAccount(payable(ipIdChild)).executeWithSig({
+            to: address(accessController),
+            value: 0,
+            data: data,
+            signer: u.alice,
+            deadline: deadline,
+            signature: signature
+        });
+
+        // attach a different license terms to the child ip, should revert with the correct error
+        vm.expectRevert(CoreErrors.LicensingModule__DerivativesCannotAddLicenseTerms.selector);
+        licenseAttachmentWorkflows.registerPILTermsAndAttach({
+            ipId: ipIdChild,
+            terms: PILFlavors.commercialUse({
+                mintingFee: 100,
+                currencyToken: address(mockToken),
+                royaltyPolicy: address(royaltyPolicyLAP)
+            })
         });
     }
 }
