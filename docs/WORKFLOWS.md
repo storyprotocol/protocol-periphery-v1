@@ -37,6 +37,8 @@
   - Mints a NFT → Registers it as an IP → Attaches the given license terms to the IP → Adds the IP to a group IP
 - `registerIpAndAttachLicenseAndAddToGroup`:
   - Registers an IP → Attaches the given license terms to the IP → Adds the IP to a group IP
+- `registerGroupAndAttachLicense`:
+  - Registers a group IP → Attaches the given license terms to the group IP
 - `registerGroupAndAttachLicenseAndAddIps`:
   - Registers a group IP → Attaches the given license terms to the group IP → Adds existing IPs to the group IP
 
