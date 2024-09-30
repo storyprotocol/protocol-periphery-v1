@@ -220,6 +220,30 @@ contract GroupingWorkflows is
         GROUPING_MODULE.addIp(groupId, ipIds);
     }
 
+    /// @notice Register a group IP with a group reward pool and attach license terms to the group IP
+    /// @param groupPool The address of the group reward pool.
+    /// @param licenseTemplate The address of the license template to be attached to the new group IP.
+    /// @param licenseTermsId The ID of the registered license terms that will be attached to the new group IP.
+    /// @return groupId The ID of the newly registered group IP.
+    function registerGroupAndAttachLicense(
+        address groupPool,
+        address licenseTemplate,
+        uint256 licenseTermsId
+    ) external returns (address groupId) {
+        groupId = GROUPING_MODULE.registerGroup(groupPool);
+
+        // attach license terms to the group IP, do nothing if already attached
+        LicensingHelper.attachLicenseTerms(
+            groupId,
+            address(LICENSING_MODULE),
+            address(LICENSE_REGISTRY),
+            licenseTemplate,
+            licenseTermsId
+        );
+
+        GROUP_NFT.safeTransferFrom(address(this), msg.sender, GROUP_NFT.totalSupply() - 1);
+    }
+
     /// @notice Register a group IP with a group reward pool, attach license terms to the group IP,
     /// and add individual IPs to the group IP.
     /// @dev ipIds must have the same PIL terms as the group IP.

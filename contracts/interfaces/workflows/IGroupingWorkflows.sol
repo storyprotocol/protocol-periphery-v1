@@ -51,6 +51,17 @@ interface IGroupingWorkflows {
         WorkflowStructs.SignatureData calldata sigAddToGroup
     ) external returns (address ipId);
 
+    /// @notice Register a group IP with a group reward pool and attach license terms to the group IP
+    /// @param groupPool The address of the group reward pool.
+    /// @param licenseTemplate The address of the license template to be attached to the new group IP.
+    /// @param licenseTermsId The ID of the registered license terms that will be attached to the new group IP.
+    /// @return groupId The ID of the newly registered group IP.
+    function registerGroupAndAttachLicense(
+        address groupPool,
+        address licenseTemplate,
+        uint256 licenseTermsId
+    ) external returns (address groupId);
+
     /// @notice Register a group IP with a group reward pool, attach license terms to the group IP,
     /// and add individual IPs to the group IP.
     /// @dev ipIds must be have the same license terms as the group IP.
