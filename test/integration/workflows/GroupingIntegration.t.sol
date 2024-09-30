@@ -34,6 +34,7 @@ contract GroupingIntegration is BaseIntegration {
         _setUpTest();
         _test_GroupingIntegration_mintAndRegisterIpAndAttachLicenseAndAddToGroup();
         _test_GroupingIntegration_registerIpAndAttachLicenseAndAddToGroup();
+        _test_GroupingIntegration_registerGroupAndAttachLicense();
         _test_GroupingIntegration_registerGroupAndAttachLicenseAndAddIps();
         _test_GroupingIntegration_multicall_mintAndRegisterIpAndAttachLicenseAndAddToGroup();
         _test_GroupingIntegration_multicall_registerIpAndAttachLicenseAndAddToGroup();
@@ -143,6 +144,25 @@ contract GroupingIntegration is BaseIntegration {
         assertTrue(IGroupIPAssetRegistry(ipAssetRegistryAddr).containsIp(groupId, ipId));
         assertMetadata(ipId, testIpMetadata);
         (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId, 0);
+        assertEq(licenseTemplate, testLicenseTemplate);
+        assertEq(licenseTermsId, testLicenseTermsId);
+    }
+
+    function _test_GroupingIntegration_registerGroupAndAttachLicense()
+        private
+        logTest("test_GroupingIntegration_registerGroupAndAttachLicense")
+    {
+        address newGroupId = groupingWorkflows.registerGroupAndAttachLicense({
+            groupPool: groupRewardPool,
+            licenseTemplate: testLicenseTemplate,
+            licenseTermsId: testLicenseTermsId
+        });
+
+        // check the group IPA is registered
+        assertTrue(IGroupIPAssetRegistry(ipAssetRegistryAddr).isRegisteredGroup(newGroupId));
+
+        // check the license terms is correctly attached to the group IPA
+        (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(newGroupId, 0);
         assertEq(licenseTemplate, testLicenseTemplate);
         assertEq(licenseTermsId, testLicenseTermsId);
     }

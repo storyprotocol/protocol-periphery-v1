@@ -173,6 +173,28 @@ contract GroupingWorkflowsTest is BaseTest {
         assertEq(licenseTermsId, testLicenseTermsId);
     }
 
+    // Register group IP → Attach license terms to group IPA
+    function test_GroupingWorkflows_registerGroupAndAttachLicense() public {
+        vm.startPrank(groupOwner);
+        address newGroupId = groupingWorkflows.registerGroupAndAttachLicense({
+            groupPool: address(mockRewardPool),
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: testLicenseTermsId
+        });
+        vm.stopPrank();
+
+        // check the group IPA is registered
+        assertTrue(IGroupIPAssetRegistry(ipAssetRegistry).isRegisteredGroup(newGroupId));
+
+        // check the license terms is correctly attached to the group IPA
+        (address licenseTemplate, uint256 licenseTermsId) = ILicenseRegistry(licenseRegistry).getAttachedLicenseTerms(
+            newGroupId,
+            0
+        );
+        assertEq(licenseTemplate, address(pilTemplate));
+        assertEq(licenseTermsId, testLicenseTermsId);
+    }
+
     // Register group IP → Attach license terms to group IPA → Add existing IPs to the new group IPA
     function test_GroupingWorkflows_registerGroupAndAttachLicenseAndAddIps() public {
         vm.startPrank(groupOwner);
