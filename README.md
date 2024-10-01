@@ -40,15 +40,13 @@ Batch calling functions is supported both natively and through the `Multicall3` 
 
 ```json
 {
-  "main": {
-    "DerivativeWorkflows": "0xdAe4A3134c33C4aD24cF2907C8f73Acdb58649be",
-    "GroupingWorkflows": "0x81d717d320Af60805c85B5aD60b506D6e9920584",
-    "LicenseAttachmentWorkflows": "0x96D26F998a56D6Ee34Fb581d26aAEb94e71e3929",
-    "RegistrationWorkflows": "0x601C24bFA5Ae435162A5dC3cd166280C471d16c8",
-    "RoyaltyWorkflows": "0x24f571e4982163bC166E594De289D6b754cB82A5",
-    "SPGNFTBeacon": "0xEFd61b92F619e374e37E2475A8d7e46FD8Be7939",
-    "SPGNFTImpl": "0x92C7c6805DF9B936888e5daC865111dF028846E5"
-  }
+  "DerivativeWorkflows": "0xdAe4A3134c33C4aD24cF2907C8f73Acdb58649be",
+  "GroupingWorkflows": "0x81d717d320Af60805c85B5aD60b506D6e9920584",
+  "LicenseAttachmentWorkflows": "0x96D26F998a56D6Ee34Fb581d26aAEb94e71e3929",
+  "RegistrationWorkflows": "0x601C24bFA5Ae435162A5dC3cd166280C471d16c8",
+  "RoyaltyWorkflows": "0x24f571e4982163bC166E594De289D6b754cB82A5",
+  "SPGNFTBeacon": "0xEFd61b92F619e374e37E2475A8d7e46FD8Be7939",
+  "SPGNFTImpl": "0x92C7c6805DF9B936888e5daC865111dF028846E5"
 }
 ```
 
