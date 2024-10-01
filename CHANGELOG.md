@@ -1,5 +1,17 @@
 # CHANGELOG
+
+## v1.2.3
+
+* Refactored SPG into "workflow" contracts and introduced `RoyaltyWorkflows` for IP Revenue Claiming
+* Fixed and enhanced tests and upgrade scripts: changed mock IPGraph precompile address, added integration tests, improved test logs, and added missing `run` function calls.
+* Optimized royalty and licensing: removed `currencyTokens` parameter, extracted batch claim functions, and removed `hasIpAttachedLicenseTerms` check
+* Added `registerGroupAndAttachLicense` function for grouping
+* repo enhancement and bumped solidity version to 0.8.26
+
+**Full Changelog**: [v1.2.2...v1.2.3](https://github.com/storyprotocol/protocol-periphery-v1/compare/v1.2.2...v1.2.3)
+
 ## v1.2.2
+
 * Introduced `RoyaltyWorkflows` for IP Revenue Claiming
 
 **Full Changelog**: [v1.2.1...v1.2.2](https://github.com/storyprotocol/protocol-periphery-v1/compare/v1.2.1...v1.2.2)
