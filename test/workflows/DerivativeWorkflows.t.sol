@@ -387,18 +387,4 @@ contract DerivativeWorkflowsTest is BaseTest {
             expectedParentIndex: 0
         });
     }
-
-    /// @dev Assert parent and derivative relationship.
-    function assertParentChild(
-        address parentIpId,
-        address childIpId,
-        uint256 expectedParentCount,
-        uint256 expectedParentIndex
-    ) internal view {
-        assertTrue(licenseRegistry.hasDerivativeIps(parentIpId));
-        assertTrue(licenseRegistry.isDerivativeIp(childIpId));
-        assertTrue(licenseRegistry.isParentIp({ parentIpId: parentIpId, childIpId: childIpId }));
-        assertEq(licenseRegistry.getParentIpCount(childIpId), expectedParentCount);
-        assertEq(licenseRegistry.getParentIp(childIpId, expectedParentIndex), parentIpId);
-    }
 }

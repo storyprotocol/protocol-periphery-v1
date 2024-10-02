@@ -17,6 +17,8 @@ import { MockIPGraph } from "@storyprotocol/test/mocks/MockIPGraph.sol";
 // contracts
 import { ISPGNFT } from "../../contracts/interfaces/ISPGNFT.sol";
 import { WorkflowStructs } from "../../contracts/lib/WorkflowStructs.sol";
+import { IStoryBadgeNFT } from "../../contracts/interfaces/story-nft/IStoryBadgeNFT.sol";
+import { IStoryNFT } from "../../contracts/interfaces/story-nft/IStoryNFT.sol";
 
 // script
 import { DeployHelper } from "../../script/utils/DeployHelper.sol";
@@ -28,19 +30,26 @@ import { Users, UserSecretKeys, UsersLib } from "../utils/Users.t.sol";
 
 /// @title Base Test Contract
 contract BaseTest is Test, DeployHelper {
+    using MessageHashUtils for bytes32;
+
     /// @dev Users struct to abstract away user management when testing
     Users internal u;
 
     /// @dev UserSecretKeys struct to abstract away user secret keys when testing
     UserSecretKeys internal sk;
 
-    /// @dev User roles
+    /// @dev User roles for workflow tests
     address internal caller; // function caller
     address internal minter; // minter of the mock collections
     address internal feeRecipient; // fee recipient of the mock collections
-
-    /// @dev Minter's secret key
     uint256 internal minterSk;
+
+    /// @dev User roles for story NFT tests
+    address internal storyNftFactorySigner;
+    address internal rootStoryNftSigner;
+    address internal rootStoryNftOwner;
+    uint256 internal storyNftFactorySignerSk;
+    uint256 internal rootStoryNftSignerSk;
 
     /// @dev Create3 deployer address
     address internal CREATE3_DEPLOYER = address(new Create3Deployer());
@@ -80,6 +89,9 @@ contract BaseTest is Test, DeployHelper {
 
         // setup test IPMetadata
         _setupIPMetadata();
+
+        // deploy and set up story NFT contracts
+        _setupStoryNftContracts();
     }
 
     function _setupUsers() internal {
@@ -178,6 +190,44 @@ contract BaseTest is Test, DeployHelper {
             nftMetadataURI: "test-nft-uri",
             nftMetadataHash: "test-nft-hash"
         });
+    }
+
+    function _setupStoryNftContracts() internal {
+        storyNftFactorySigner = u.alice;
+        rootStoryNftSigner = u.alice;
+        rootStoryNftOwner = u.admin;
+        storyNftFactorySignerSk = sk.alice;
+        rootStoryNftSignerSk = sk.alice;
+
+        (address defaultLicenseTemplate, uint256 defaultLicenseTermsId) = licenseRegistry.getDefaultLicenseTerms();
+        string memory rootOrgName = "Test Root Org";
+        string memory rootOrgTokenURI = "Test Token URI";
+
+        bytes memory rootStoryNftCustomInitParams = abi.encode(
+            IStoryBadgeNFT.CustomInitParams({ tokenURI: rootOrgTokenURI, signer: rootStoryNftSigner })
+        );
+
+        IStoryNFT.StoryNftInitParams memory rootStoryNftInitParams = IStoryNFT.StoryNftInitParams({
+            owner: rootStoryNftOwner,
+            name: "Test Org Badge",
+            symbol: "TOB",
+            contractURI: "Test Contract URI",
+            baseURI: "",
+            customInitData: rootStoryNftCustomInitParams
+        });
+
+        vm.startPrank(u.admin);
+        _deployAndConfigStoryNftContracts({
+            licenseTemplate_: defaultLicenseTemplate,
+            licenseTermsId_: defaultLicenseTermsId,
+            storyNftFactorySigner: storyNftFactorySigner,
+            rootOrgNftRecipient: rootStoryNftOwner,
+            rootOrgName: rootOrgName,
+            rootOrgTokenURI: rootOrgTokenURI,
+            rootStoryNftInitParams: rootStoryNftInitParams,
+            isTest: true
+        });
+        vm.stopPrank();
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -361,10 +411,31 @@ contract BaseTest is Test, DeployHelper {
         signature = abi.encodePacked(r, s, v);
     }
 
+    /// @dev Uses `signerSk` to sign `addr` and return the signature.
+    function _signAddress(uint256 signerSk, address addr) internal view returns (bytes memory signature) {
+        bytes32 digest = keccak256(abi.encodePacked(addr)).toEthSignedMessageHash();
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerSk, digest);
+        signature = abi.encodePacked(r, s, v);
+    }
+
     /// @dev Assert metadata for the IP.
     function assertMetadata(address ipId, WorkflowStructs.IPMetadata memory expectedMetadata) internal view {
         assertEq(coreMetadataViewModule.getMetadataURI(ipId), expectedMetadata.ipMetadataURI);
         assertEq(coreMetadataViewModule.getMetadataHash(ipId), expectedMetadata.ipMetadataHash);
         assertEq(coreMetadataViewModule.getNftMetadataHash(ipId), expectedMetadata.nftMetadataHash);
+    }
+
+    /// @dev Assert parent and derivative relationship.
+    function assertParentChild(
+        address parentIpId,
+        address childIpId,
+        uint256 expectedParentCount,
+        uint256 expectedParentIndex
+    ) internal view {
+        assertTrue(licenseRegistry.hasDerivativeIps(parentIpId));
+        assertTrue(licenseRegistry.isDerivativeIp(childIpId));
+        assertTrue(licenseRegistry.isParentIp({ parentIpId: parentIpId, childIpId: childIpId }));
+        assertEq(licenseRegistry.getParentIpCount(childIpId), expectedParentCount);
+        assertEq(licenseRegistry.getParentIp(childIpId, expectedParentIndex), parentIpId);
     }
 }

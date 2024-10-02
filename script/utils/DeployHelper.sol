@@ -32,17 +32,22 @@ import { RoyaltyPolicyLRP } from "@storyprotocol/core/modules/royalty/policies/L
 import { StorageLayoutChecker } from "@storyprotocol/script/utils/upgrades/StorageLayoutCheck.s.sol";
 
 // contracts
+import { IStoryNFT } from "../../contracts/interfaces/story-nft/IStoryNFT.sol";
 import { SPGNFT } from "../../contracts/SPGNFT.sol";
 import { DerivativeWorkflows } from "../../contracts/workflows/DerivativeWorkflows.sol";
 import { GroupingWorkflows } from "../../contracts/workflows/GroupingWorkflows.sol";
 import { LicenseAttachmentWorkflows } from "../../contracts/workflows/LicenseAttachmentWorkflows.sol";
+import { OrgNFT } from "../../contracts/story-nft/OrgNFT.sol";
 import { RegistrationWorkflows } from "../../contracts/workflows/RegistrationWorkflows.sol";
 import { RoyaltyWorkflows } from "../../contracts/workflows/RoyaltyWorkflows.sol";
+import { StoryBadgeNFT } from "../../contracts/story-nft/StoryBadgeNFT.sol";
+import { StoryNFTFactory } from "../../contracts/story-nft/StoryNFTFactory.sol";
 
 // script
 import { BroadcastManager } from "./BroadcastManager.s.sol";
 import { JsonDeploymentHandler } from "./JsonDeploymentHandler.s.sol";
 import { StoryProtocolCoreAddressManager } from "./StoryProtocolCoreAddressManager.sol";
+import { StoryProtocolPeripheryAddressManager } from "./StoryProtocolPeripheryAddressManager.sol";
 import { StringUtil } from "./StringUtil.sol";
 
 // test
@@ -53,7 +58,8 @@ contract DeployHelper is
     BroadcastManager,
     StorageLayoutChecker,
     JsonDeploymentHandler,
-    StoryProtocolCoreAddressManager
+    StoryProtocolCoreAddressManager,
+    StoryProtocolPeripheryAddressManager
 {
     using StringUtil for uint256;
     using stdJson for string;
@@ -79,8 +85,14 @@ contract DeployHelper is
     RegistrationWorkflows internal registrationWorkflows;
     RoyaltyWorkflows internal royaltyWorkflows;
 
+    // StoryNFT
+    StoryNFTFactory internal storyNftFactory;
+    OrgNFT internal orgNft;
+    StoryBadgeNFT internal rootStoryNft;
+    address internal defaultStoryNftTemplate;
+
     // DeployHelper variable
-    bool private writeDeploys;
+    bool internal writeDeploys;
 
     // Mock Core Contracts
     AccessController internal accessController;
@@ -135,14 +147,14 @@ contract DeployHelper is
             deployer = mockDeployer;
             _deployMockCoreContracts();
             _configureMockCoreContracts();
-            _deployPeripheryContracts();
-            _configurePeripheryContracts();
+            _deployWorkflowContracts();
+            _configureWorkflowContracts();
         } else {
             // production deployment
             _readStoryProtocolCoreAddresses(); // StoryProtocolCoreAddressManager.s.sol
             _beginBroadcast(); // BroadcastManager.s.sol
-            _deployPeripheryContracts();
-            _configurePeripheryContracts();
+            _deployWorkflowContracts();
+            _configureWorkflowContracts();
 
             // Check deployment configuration.
             if (spgNftBeacon.owner() != address(registrationWorkflows))
@@ -160,7 +172,112 @@ contract DeployHelper is
         }
     }
 
-    function _deployPeripheryContracts() private {
+    function _deployAndConfigStoryNftContracts(
+        address licenseTemplate_,
+        uint256 licenseTermsId_,
+        address storyNftFactorySigner,
+        address rootOrgNftRecipient,
+        string memory rootOrgName,
+        string memory rootOrgTokenURI,
+        IStoryNFT.StoryNftInitParams memory rootStoryNftInitParams,
+        bool isTest
+    ) internal {
+        if (!isTest) {
+            _readStoryProtocolCoreAddresses(); // StoryProtocolCoreAddressManager.s.sol
+            _readStoryProtocolPeripheryAddresses(); // StoryProtocolPeripheryAddressManager.s.sol
+            _beginBroadcast(); // BroadcastManager.s.sol
+
+            if (writeDeploys) {
+                _writeAddress("DerivativeWorkflows", address(derivativeWorkflowsAddr));
+                _writeAddress("GroupingWorkflows", address(groupingWorkflowsAddr));
+                _writeAddress("LicenseAttachmentWorkflows", address(licenseAttachmentWorkflowsAddr));
+                _writeAddress("RegistrationWorkflows", address(registrationWorkflowsAddr));
+                _writeAddress("RoyaltyWorkflows", address(royaltyWorkflowsAddr));
+                _writeAddress("SPGNFTBeacon", address(spgNftBeaconAddr));
+                _writeAddress("SPGNFTImpl", address(spgNftImplAddr));
+            }
+        }
+        address impl = address(0);
+
+        // OrgNFT
+        _predeploy("OrgNFT");
+        impl = address(
+            new OrgNFT(
+                ipAssetRegistryAddr,
+                licensingModuleAddr,
+                _getDeployedAddress(type(StoryNFTFactory).name),
+                licenseTemplate_,
+                licenseTermsId_
+            )
+        );
+        orgNft = OrgNFT(
+            TestProxyHelper.deployUUPSProxy(
+                create3Deployer,
+                _getSalt(type(OrgNFT).name),
+                impl,
+                abi.encodeCall(OrgNFT.initialize, protocolAccessManagerAddr)
+            )
+        );
+        impl = address(0);
+        _postdeploy("OrgNFT", address(orgNft));
+
+        // Default StoryNFT template
+        _predeploy("DefaultStoryNftTemplate");
+        defaultStoryNftTemplate = address(new StoryBadgeNFT(
+            ipAssetRegistryAddr,
+            licensingModuleAddr,
+            address(orgNft),
+            pilTemplateAddr,
+            licenseTermsId_
+        ));
+        _postdeploy("DefaultStoryNftTemplate", defaultStoryNftTemplate);
+
+        // StoryNFTFactory
+        _predeploy("StoryNFTFactory");
+        impl = address(
+            new StoryNFTFactory(
+                ipAssetRegistryAddr,
+                licensingModuleAddr,
+                licenseTemplate_,
+                licenseTermsId_,
+                address(orgNft)
+            )
+        );
+        storyNftFactory = StoryNFTFactory(
+            TestProxyHelper.deployUUPSProxy(
+                create3Deployer,
+                _getSalt(type(StoryNFTFactory).name),
+                impl,
+                abi.encodeCall(
+                    StoryNFTFactory.initialize,
+                    (
+                        protocolAccessManagerAddr,
+                        defaultStoryNftTemplate,
+                        storyNftFactorySigner
+                    )
+                )
+            )
+        );
+        impl = address(0);
+        _postdeploy("StoryNFTFactory", address(storyNftFactory));
+
+        ( , , , address rootStoryNftAddr) = storyNftFactory.deployStoryNftByAdmin(
+            defaultStoryNftTemplate,
+            rootOrgNftRecipient,
+            rootOrgName,
+            rootOrgTokenURI,
+            rootStoryNftInitParams,
+            true
+        );
+        rootStoryNft = StoryBadgeNFT(rootStoryNftAddr);
+
+        if (!isTest) {
+            if (writeDeploys) _writeDeployment();
+            _endBroadcast();
+        }
+    }
+
+    function _deployWorkflowContracts() private {
         address impl = address(0);
 
         // Periphery workflow contracts
@@ -296,7 +413,7 @@ contract DeployHelper is
         _postdeploy("SPGNFTBeacon", address(spgNftBeacon));
     }
 
-    function _configurePeripheryContracts() private {
+    function _configureWorkflowContracts() private {
        // Transfer ownership of beacon proxy to RegistrationWorkflows
        spgNftBeacon.transferOwnership(address(registrationWorkflows));
 
@@ -697,7 +814,7 @@ contract DeployHelper is
         // set up default license terms
         pilTemplate.registerLicenseTerms(PILFlavors.nonCommercialSocialRemixing());
         licenseRegistry.registerLicenseTemplate(address(pilTemplate));
-        licenseRegistry.setDefaultLicenseTerms(address(pilTemplate), 0);
+        licenseRegistry.setDefaultLicenseTerms(address(pilTemplate), PILFlavors.getNonCommercialSocialRemixingId(pilTemplate));
 
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLAP), true);
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLRP), true);
@@ -706,7 +823,7 @@ contract DeployHelper is
     }
 
     /// @dev get the salt for the contract deployment with CREATE3
-    function _getSalt(string memory name) private view returns (bytes32 salt) {
+    function _getSalt(string memory name) internal view returns (bytes32 salt) {
         salt = keccak256(abi.encode(name, create3SaltSeed));
     }
 
