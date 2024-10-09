@@ -49,7 +49,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         address payable ipId = ipAsset[1].ipId;
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory signature, , bytes memory data) = _getSetPermissionSigForPeriphery({
+        (bytes memory signature, , ) = _getSetPermissionSigForPeriphery({
             ipId: ipId,
             to: address(licenseAttachmentWorkflows),
             module: address(licensingModule),
@@ -59,24 +59,19 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             signerSk: sk.alice
         });
 
-        vm.prank(address(0x111));
-        IIPAccount(ipId).executeWithSig({
-            to: address(accessController),
-            value: 0,
-            data: data,
-            signer: u.alice,
-            deadline: deadline,
-            signature: signature
-        });
-
         uint256 ltAmt = pilTemplate.totalRegisteredLicenseTerms();
 
         uint256 licenseTermsId = licenseAttachmentWorkflows.registerPILTermsAndAttach({
-            ipId: ipAsset[1].ipId,
+            ipId: ipId,
             terms: PILFlavors.commercialUse({
                 mintingFee: 100,
                 currencyToken: address(mockToken),
                 royaltyPolicy: address(royaltyPolicyLAP)
+            }),
+            sigAttach: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: deadline,
+                signature: signature
             })
         });
 
@@ -168,7 +163,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         address payable ipId = ipAsset[1].ipId;
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory signature, , bytes memory data) = _getSetPermissionSigForPeriphery({
+        (bytes memory signature1, , ) = _getSetPermissionSigForPeriphery({
             ipId: ipId,
             to: address(licenseAttachmentWorkflows),
             module: address(licensingModule),
@@ -178,22 +173,28 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             signerSk: sk.alice
         });
 
-        IIPAccount(ipId).executeWithSig({
-            to: address(accessController),
-            value: 0,
-            data: data,
-            signer: u.alice,
-            deadline: deadline,
-            signature: signature
-        });
-
         uint256 licenseTermsId1 = licenseAttachmentWorkflows.registerPILTermsAndAttach({
             ipId: ipId,
             terms: PILFlavors.commercialUse({
                 mintingFee: 100,
                 currencyToken: address(mockToken),
                 royaltyPolicy: address(royaltyPolicyLAP)
+            }),
+            sigAttach: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: deadline,
+                signature: signature1
             })
+        });
+
+        (bytes memory signature2, , ) = _getSetPermissionSigForPeriphery({
+            ipId: ipId,
+            to: address(licenseAttachmentWorkflows),
+            module: address(licensingModule),
+            selector: ILicensingModule.attachLicenseTerms.selector,
+            deadline: deadline,
+            state: IIPAccount(ipId).state(),
+            signerSk: sk.alice
         });
 
         // attach the same license terms to the IP again, but it shouldn't revert
@@ -203,6 +204,11 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
                 mintingFee: 100,
                 currencyToken: address(mockToken),
                 royaltyPolicy: address(royaltyPolicyLAP)
+            }),
+            sigAttach: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: deadline,
+                signature: signature2
             })
         });
 
@@ -229,7 +235,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         uint256[] memory licenseTermsIds = new uint256[](1);
         licenseTermsIds[0] = licenseTermsIdParent;
 
-        (address ipIdChild, uint256 tokenIdChild) = derivativeWorkflows.mintAndRegisterIpAndMakeDerivative({
+        (address ipIdChild, ) = derivativeWorkflows.mintAndRegisterIpAndMakeDerivative({
             spgNftContract: address(nftContract),
             derivData: WorkflowStructs.MakeDerivative({
                 parentIpIds: parentIpIds,
@@ -243,7 +249,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
 
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory signature, , bytes memory data) = _getSetPermissionSigForPeriphery({
+        (bytes memory signature, , ) = _getSetPermissionSigForPeriphery({
             ipId: ipIdChild,
             to: address(licenseAttachmentWorkflows),
             module: address(licensingModule),
@@ -253,14 +259,6 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             signerSk: sk.alice
         });
 
-        IIPAccount(payable(ipIdChild)).executeWithSig({
-            to: address(accessController),
-            value: 0,
-            data: data,
-            signer: u.alice,
-            deadline: deadline,
-            signature: signature
-        });
 
         // attach a different license terms to the child ip, should revert with the correct error
         vm.expectRevert(CoreErrors.LicensingModule__DerivativesCannotAddLicenseTerms.selector);
@@ -270,6 +268,11 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
                 mintingFee: 100,
                 currencyToken: address(mockToken),
                 royaltyPolicy: address(royaltyPolicyLAP)
+            }),
+            sigAttach: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: deadline,
+                signature: signature
             })
         });
     }

@@ -116,7 +116,7 @@ contract StoryBadgeNFTTest is BaseTest {
         );
     }
 
-    function test_StoryBadgeNFT_interfaceSupport() public {
+    function test_StoryBadgeNFT_interfaceSupport() public view {
         assertTrue(BaseStoryNFT(rootStoryNft).supportsInterface(type(IStoryNFT).interfaceId));
         assertTrue(BaseStoryNFT(rootStoryNft).supportsInterface(type(IERC721).interfaceId));
         assertTrue(BaseStoryNFT(rootStoryNft).supportsInterface(type(IERC721Metadata).interfaceId));
@@ -210,7 +210,7 @@ contract StoryBadgeNFTTest is BaseTest {
         bytes memory signature = _signAddress(rootStoryNftSignerSk, u.carl);
 
         vm.startPrank(u.carl);
-        (uint256 tokenId, address ipId) = rootStoryNft.mint(u.carl, signature);
+        (uint256 tokenId, ) = rootStoryNft.mint(u.carl, signature);
 
         vm.expectRevert(IStoryBadgeNFT.StoryBadgeNFT__TransferLocked.selector);
         rootStoryNft.approve(u.bob, tokenId);

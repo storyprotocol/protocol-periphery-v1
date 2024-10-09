@@ -394,7 +394,35 @@ contract RoyaltyWorkflowsTest is BaseTest {
 
         // set permission for licensing module to attach license terms to ancestor IP
         {
-            (bytes memory signature, , bytes memory data) = _getSetPermissionSigForPeriphery({
+            (bytes memory signatureA, , ) = _getSetPermissionSigForPeriphery({
+                ipId: ancestorIpId,
+                to: address(licenseAttachmentWorkflows),
+                module: address(licensingModule),
+                selector: licensingModule.attachLicenseTerms.selector,
+                deadline: deadline,
+                state: IIPAccount(payable(ancestorIpId)).state(),
+            signerSk: sk.admin
+        });
+
+            // register and attach Terms A and C to ancestor IP
+            commRemixTermsIdA = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+                ipId: ancestorIpId,
+                terms: PILFlavors.commercialRemix({
+                    mintingFee: defaultMintingFeeA,
+                    commercialRevShare: defaultCommRevShareA,
+                    royaltyPolicy: address(royaltyPolicyLRP),
+                    currencyToken: address(mockTokenA)
+                }),
+                sigAttach: WorkflowStructs.SignatureData({
+                    signer: u.admin,
+                    deadline: deadline,
+                    signature: signatureA
+                })
+            });
+        }
+
+        {
+            (bytes memory signatureC, , ) = _getSetPermissionSigForPeriphery({
                 ipId: ancestorIpId,
                 to: address(licenseAttachmentWorkflows),
                 module: address(licensingModule),
@@ -404,36 +432,21 @@ contract RoyaltyWorkflowsTest is BaseTest {
                 signerSk: sk.admin
             });
 
-            IIPAccount(payable(ancestorIpId)).executeWithSig({
-                to: address(accessController),
-                value: 0,
-                data: data,
-                signer: u.admin,
-                deadline: deadline,
-                signature: signature
+            commRemixTermsIdC = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+                ipId: ancestorIpId,
+                terms: PILFlavors.commercialRemix({
+                    mintingFee: defaultMintingFeeC,
+                    commercialRevShare: defaultCommRevShareC,
+                    royaltyPolicy: address(royaltyPolicyLAP),
+                    currencyToken: address(mockTokenC)
+                }),
+                sigAttach: WorkflowStructs.SignatureData({
+                    signer: u.admin,
+                    deadline: deadline,
+                    signature: signatureC
+                })
             });
         }
-
-        // register and attach Terms A and C to ancestor IP
-        commRemixTermsIdA = licenseAttachmentWorkflows.registerPILTermsAndAttach({
-            ipId: ancestorIpId,
-            terms: PILFlavors.commercialRemix({
-                mintingFee: defaultMintingFeeA,
-                commercialRevShare: defaultCommRevShareA,
-                royaltyPolicy: address(royaltyPolicyLRP),
-                currencyToken: address(mockTokenA)
-            })
-        });
-
-        commRemixTermsIdC = licenseAttachmentWorkflows.registerPILTermsAndAttach({
-            ipId: ancestorIpId,
-            terms: PILFlavors.commercialRemix({
-                mintingFee: defaultMintingFeeC,
-                commercialRevShare: defaultCommRevShareC,
-                royaltyPolicy: address(royaltyPolicyLAP),
-                currencyToken: address(mockTokenC)
-            })
-        });
 
         // register childIpA as derivative of ancestorIp under Terms A
         {

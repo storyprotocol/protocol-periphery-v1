@@ -73,7 +73,7 @@ contract OrgNFTTest is BaseTest {
         );
     }
 
-    function test_OrgNFT_interfaceSupport() public {
+    function test_OrgNFT_interfaceSupport() public view {
         assertTrue(IOrgNFT(address(orgNft)).supportsInterface(type(IOrgNFT).interfaceId));
         assertTrue(orgNft.supportsInterface(type(IERC721).interfaceId));
         assertTrue(orgNft.supportsInterface(type(IERC721Metadata).interfaceId));

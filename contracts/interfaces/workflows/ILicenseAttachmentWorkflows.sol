@@ -11,8 +11,13 @@ interface ILicenseAttachmentWorkflows {
     /// @notice Register Programmable IP License Terms (if unregistered) and attach it to IP.
     /// @param ipId The ID of the IP.
     /// @param terms The PIL terms to be registered.
+    /// @param sigAttach Signature data for attachLicenseTerms to the IP via the Licensing Module.
     /// @return licenseTermsId The ID of the newly registered PIL terms.
-    function registerPILTermsAndAttach(address ipId, PILTerms calldata terms) external returns (uint256 licenseTermsId);
+    function registerPILTermsAndAttach(
+        address ipId,
+        PILTerms calldata terms,
+        WorkflowStructs.SignatureData calldata sigAttach
+    ) external returns (uint256 licenseTermsId);
 
     /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP,
     /// register Programmable IPLicense

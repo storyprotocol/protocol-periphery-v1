@@ -92,11 +92,21 @@ contract LicenseAttachmentWorkflows is
     /// @notice Register Programmable IP License Terms (if unregistered) and attach it to IP.
     /// @param ipId The ID of the IP.
     /// @param terms The PIL terms to be registered.
+    /// @param sigAttach Signature data for attachLicenseTerms to the IP via the Licensing Module.
     /// @return licenseTermsId The ID of the newly registered PIL terms.
     function registerPILTermsAndAttach(
         address ipId,
-        PILTerms calldata terms
+        PILTerms calldata terms,
+        WorkflowStructs.SignatureData calldata sigAttach
     ) external returns (uint256 licenseTermsId) {
+        PermissionHelper.setPermissionForModule(
+            ipId,
+            address(LICENSING_MODULE),
+            address(ACCESS_CONTROLLER),
+            ILicensingModule.attachLicenseTerms.selector,
+            sigAttach
+        );
+
         licenseTermsId = LicensingHelper.registerPILTermsAndAttach(
             ipId,
             address(PIL_TEMPLATE),

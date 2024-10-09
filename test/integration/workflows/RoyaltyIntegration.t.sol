@@ -310,26 +310,15 @@ contract RoyaltyIntegration is BaseIntegration {
         uint256 deadline = block.timestamp + 1000;
 
         // set permission for licensing module to attach license terms to ancestor IP
-        {
-            (bytes memory signature, , bytes memory data) = _getSetPermissionSigForPeriphery({
-                ipId: ancestorIpId,
-                to: licenseAttachmentWorkflowsAddr,
-                module: licensingModuleAddr,
-                selector: licensingModule.attachLicenseTerms.selector,
-                deadline: deadline,
-                state: IIPAccount(payable(ancestorIpId)).state(),
-                signerSk: testSenderSk
-            });
-
-            IIPAccount(payable(ancestorIpId)).executeWithSig({
-                to: accessControllerAddr,
-                value: 0,
-                data: data,
-                signer: testSender,
-                deadline: deadline,
-                signature: signature
-            });
-        }
+        (bytes memory signature, , ) = _getSetPermissionSigForPeriphery({
+            ipId: ancestorIpId,
+            to: licenseAttachmentWorkflowsAddr,
+            module: licensingModuleAddr,
+            selector: licensingModule.attachLicenseTerms.selector,
+            deadline: deadline,
+            state: IIPAccount(payable(ancestorIpId)).state(),
+            signerSk: testSenderSk
+        });
 
         // register and attach Terms A and C to ancestor IP
         commRemixTermsIdA = licenseAttachmentWorkflows.registerPILTermsAndAttach({
@@ -339,6 +328,11 @@ contract RoyaltyIntegration is BaseIntegration {
                 commercialRevShare: defaultCommRevShareA,
                 royaltyPolicy: royaltyPolicyLRPAddr,
                 currencyToken: address(StoryUSD)
+            }),
+            sigAttach: WorkflowStructs.SignatureData({
+                signer: testSender,
+                deadline: deadline,
+                signature: signature
             })
         });
 
@@ -349,6 +343,11 @@ contract RoyaltyIntegration is BaseIntegration {
                 commercialRevShare: defaultCommRevShareC,
                 royaltyPolicy: royaltyPolicyLAPAddr,
                 currencyToken: address(StoryUSD)
+            }),
+            sigAttach: WorkflowStructs.SignatureData({
+                signer: testSender,
+                deadline: deadline,
+                signature: signature
             })
         });
 

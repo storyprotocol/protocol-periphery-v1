@@ -200,7 +200,7 @@ contract StoryNFTFactoryTest is BaseTest {
 
     function test_StoryNFTFactory_getStoryNftAddress() public {
         vm.startPrank(u.carl);
-        (address orgNft, uint256 orgTokenId, address orgIpId, address storyNft) = storyNftFactory.deployStoryNft({
+        (, uint256 orgTokenId, address orgIpId, address storyNft) = storyNftFactory.deployStoryNft({
             storyNftTemplate: defaultStoryNftTemplate,
             orgNftRecipient: u.carl,
             orgName: orgName,

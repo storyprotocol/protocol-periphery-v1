@@ -49,7 +49,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         });
 
         uint256 deadline = block.timestamp + 1000;
-        (bytes memory signature, , bytes memory data) = _getSetPermissionSigForPeriphery({
+        (bytes memory signature, , ) = _getSetPermissionSigForPeriphery({
             ipId: ipId,
             to: licenseAttachmentWorkflowsAddr,
             module: licensingModuleAddr,
@@ -59,18 +59,14 @@ contract LicenseAttachmentIntegration is BaseIntegration {
             signerSk: testSenderSk
         });
 
-        IIPAccount(payable(ipId)).executeWithSig({
-            to: accessControllerAddr,
-            value: 0,
-            data: data,
-            signer: testSender,
-            deadline: deadline,
-            signature: signature
-        });
-
         uint256 licenseTermsId = licenseAttachmentWorkflows.registerPILTermsAndAttach({
             ipId: ipId,
-            terms: commUseTerms
+            terms: commUseTerms,
+            sigAttach: WorkflowStructs.SignatureData({
+                signer: testSender,
+                deadline: deadline,
+                signature: signature
+            })
         });
 
         assertEq(licenseTermsId, pilTemplate.getLicenseTermsId(commUseTerms));
