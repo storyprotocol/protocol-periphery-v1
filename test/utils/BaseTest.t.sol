@@ -19,6 +19,7 @@ import { ISPGNFT } from "../../contracts/interfaces/ISPGNFT.sol";
 import { WorkflowStructs } from "../../contracts/lib/WorkflowStructs.sol";
 import { IStoryBadgeNFT } from "../../contracts/interfaces/story-nft/IStoryBadgeNFT.sol";
 import { IStoryNFT } from "../../contracts/interfaces/story-nft/IStoryNFT.sol";
+import { StoryBadgeNFT } from "../../contracts/story-nft/StoryBadgeNFT.sol";
 
 // script
 import { DeployHelper } from "../../script/utils/DeployHelper.sol";
@@ -221,12 +222,18 @@ contract BaseTest is Test, DeployHelper {
             licenseTemplate_: defaultLicenseTemplate,
             licenseTermsId_: defaultLicenseTermsId,
             storyNftFactorySigner: storyNftFactorySigner,
-            rootOrgNftRecipient: rootStoryNftOwner,
-            rootOrgName: rootOrgName,
-            rootOrgTokenURI: rootOrgTokenURI,
-            rootStoryNftInitParams: rootStoryNftInitParams,
             isTest: true
         });
+
+        ( , , , address rootStoryNftAddr) = storyNftFactory.deployStoryNftByAdmin({
+            storyNftTemplate: defaultStoryNftTemplate,
+            orgNftRecipient: rootStoryNftOwner,
+            orgName: rootOrgName,
+            orgTokenURI: rootOrgTokenURI,
+            storyNftInitParams: rootStoryNftInitParams,
+            isRootOrg: true
+        });
+        rootStoryNft = StoryBadgeNFT(rootStoryNftAddr);
         vm.stopPrank();
     }
 

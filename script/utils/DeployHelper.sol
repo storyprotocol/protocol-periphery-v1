@@ -176,10 +176,6 @@ contract DeployHelper is
         address licenseTemplate_,
         uint256 licenseTermsId_,
         address storyNftFactorySigner,
-        address rootOrgNftRecipient,
-        string memory rootOrgName,
-        string memory rootOrgTokenURI,
-        IStoryNFT.StoryNftInitParams memory rootStoryNftInitParams,
         bool isTest
     ) internal {
         if (!isTest) {
@@ -260,16 +256,6 @@ contract DeployHelper is
         );
         impl = address(0);
         _postdeploy("StoryNFTFactory", address(storyNftFactory));
-
-        ( , , , address rootStoryNftAddr) = storyNftFactory.deployStoryNftByAdmin(
-            defaultStoryNftTemplate,
-            rootOrgNftRecipient,
-            rootOrgName,
-            rootOrgTokenURI,
-            rootStoryNftInitParams,
-            true
-        );
-        rootStoryNft = StoryBadgeNFT(rootStoryNftAddr);
 
         if (!isTest) {
             if (writeDeploys) _writeDeployment();
