@@ -225,7 +225,7 @@ contract BaseTest is Test, DeployHelper {
             isTest: true
         });
 
-        ( , , , address rootStoryNftAddr) = storyNftFactory.deployStoryNftByAdmin({
+        (, , , address rootStoryNftAddr) = storyNftFactory.deployStoryNftByAdmin({
             storyNftTemplate: defaultStoryNftTemplate,
             orgNftRecipient: rootStoryNftOwner,
             orgName: rootOrgName,

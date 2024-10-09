@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
 import { ILicenseRegistry } from "@storyprotocol/core/interfaces/registries/ILicenseRegistry.sol";
 
-import { IStoryBadgeNFT } from "../../contracts/interfaces/story-nft/IStoryBadgeNFT.sol";
-import { IStoryNFT } from "../../contracts/interfaces/story-nft/IStoryNFT.sol";
 import { DeployHelper } from "../utils/DeployHelper.sol";
 
 contract StoryNFT is DeployHelper {
