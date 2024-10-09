@@ -401,8 +401,8 @@ contract RoyaltyWorkflowsTest is BaseTest {
                 selector: licensingModule.attachLicenseTerms.selector,
                 deadline: deadline,
                 state: IIPAccount(payable(ancestorIpId)).state(),
-            signerSk: sk.admin
-        });
+                signerSk: sk.admin
+            });
 
             // register and attach Terms A and C to ancestor IP
             commRemixTermsIdA = licenseAttachmentWorkflows.registerPILTermsAndAttach({
@@ -413,11 +413,7 @@ contract RoyaltyWorkflowsTest is BaseTest {
                     royaltyPolicy: address(royaltyPolicyLRP),
                     currencyToken: address(mockTokenA)
                 }),
-                sigAttach: WorkflowStructs.SignatureData({
-                    signer: u.admin,
-                    deadline: deadline,
-                    signature: signatureA
-                })
+                sigAttach: WorkflowStructs.SignatureData({ signer: u.admin, deadline: deadline, signature: signatureA })
             });
         }
 
@@ -440,11 +436,7 @@ contract RoyaltyWorkflowsTest is BaseTest {
                     royaltyPolicy: address(royaltyPolicyLAP),
                     currencyToken: address(mockTokenC)
                 }),
-                sigAttach: WorkflowStructs.SignatureData({
-                    signer: u.admin,
-                    deadline: deadline,
-                    signature: signatureC
-                })
+                sigAttach: WorkflowStructs.SignatureData({ signer: u.admin, deadline: deadline, signature: signatureC })
             });
         }
 

@@ -62,11 +62,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         uint256 licenseTermsId = licenseAttachmentWorkflows.registerPILTermsAndAttach({
             ipId: ipId,
             terms: commUseTerms,
-            sigAttach: WorkflowStructs.SignatureData({
-                signer: testSender,
-                deadline: deadline,
-                signature: signature
-            })
+            sigAttach: WorkflowStructs.SignatureData({ signer: testSender, deadline: deadline, signature: signature })
         });
 
         assertEq(licenseTermsId, pilTemplate.getLicenseTermsId(commUseTerms));

@@ -329,11 +329,7 @@ contract RoyaltyIntegration is BaseIntegration {
                 royaltyPolicy: royaltyPolicyLRPAddr,
                 currencyToken: address(StoryUSD)
             }),
-            sigAttach: WorkflowStructs.SignatureData({
-                signer: testSender,
-                deadline: deadline,
-                signature: signature
-            })
+            sigAttach: WorkflowStructs.SignatureData({ signer: testSender, deadline: deadline, signature: signature })
         });
 
         commRemixTermsIdC = licenseAttachmentWorkflows.registerPILTermsAndAttach({
@@ -344,11 +340,7 @@ contract RoyaltyIntegration is BaseIntegration {
                 royaltyPolicy: royaltyPolicyLAPAddr,
                 currencyToken: address(StoryUSD)
             }),
-            sigAttach: WorkflowStructs.SignatureData({
-                signer: testSender,
-                deadline: deadline,
-                signature: signature
-            })
+            sigAttach: WorkflowStructs.SignatureData({ signer: testSender, deadline: deadline, signature: signature })
         });
 
         // register childIpA as derivative of ancestorIp under Terms A

@@ -68,11 +68,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
                 currencyToken: address(mockToken),
                 royaltyPolicy: address(royaltyPolicyLAP)
             }),
-            sigAttach: WorkflowStructs.SignatureData({
-                signer: u.alice,
-                deadline: deadline,
-                signature: signature
-            })
+            sigAttach: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: signature })
         });
 
         assertEq(licenseTermsId, ltAmt + 1);
@@ -180,11 +176,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
                 currencyToken: address(mockToken),
                 royaltyPolicy: address(royaltyPolicyLAP)
             }),
-            sigAttach: WorkflowStructs.SignatureData({
-                signer: u.alice,
-                deadline: deadline,
-                signature: signature1
-            })
+            sigAttach: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: signature1 })
         });
 
         (bytes memory signature2, , ) = _getSetPermissionSigForPeriphery({
@@ -205,11 +197,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
                 currencyToken: address(mockToken),
                 royaltyPolicy: address(royaltyPolicyLAP)
             }),
-            sigAttach: WorkflowStructs.SignatureData({
-                signer: u.alice,
-                deadline: deadline,
-                signature: signature2
-            })
+            sigAttach: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: signature2 })
         });
 
         assertEq(licenseTermsId1, licenseTermsId2);
@@ -259,7 +247,6 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             signerSk: sk.alice
         });
 
-
         // attach a different license terms to the child ip, should revert with the correct error
         vm.expectRevert(CoreErrors.LicensingModule__DerivativesCannotAddLicenseTerms.selector);
         licenseAttachmentWorkflows.registerPILTermsAndAttach({
@@ -269,11 +256,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
                 currencyToken: address(mockToken),
                 royaltyPolicy: address(royaltyPolicyLAP)
             }),
-            sigAttach: WorkflowStructs.SignatureData({
-                signer: u.alice,
-                deadline: deadline,
-                signature: signature
-            })
+            sigAttach: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: signature })
         });
     }
 }
