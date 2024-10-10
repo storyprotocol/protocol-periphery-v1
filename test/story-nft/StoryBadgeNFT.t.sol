@@ -116,7 +116,7 @@ contract StoryBadgeNFTTest is BaseTest {
         );
     }
 
-    function test_StoryBadgeNFT_interfaceSupport() public view {
+    function test_StoryBadgeNFT_interfaceSupport() public {
         assertTrue(BaseStoryNFT(rootStoryNft).supportsInterface(type(IStoryNFT).interfaceId));
         assertTrue(BaseStoryNFT(rootStoryNft).supportsInterface(type(IERC721).interfaceId));
         assertTrue(BaseStoryNFT(rootStoryNft).supportsInterface(type(IERC721Metadata).interfaceId));
