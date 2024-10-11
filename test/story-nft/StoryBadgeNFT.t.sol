@@ -70,7 +70,7 @@ contract StoryBadgeNFTTest is BaseTest {
     }
 
     function test_StoryBadgeNFT_revert_initialize_ZeroAddress() public {
-        vm.expectRevert(IStoryNFT.BaseStoryNFT__ZeroAddressParam.selector);
+        vm.expectRevert(IStoryNFT.StoryNFT__ZeroAddressParam.selector);
         StoryBadgeNFT testStoryBadgeNft = new StoryBadgeNFT(
             address(ipAssetRegistry),
             address(licensingModule),
@@ -149,6 +149,28 @@ contract StoryBadgeNFTTest is BaseTest {
             expectedParentCount: 1,
             expectedParentIndex: 0
         });
+    }
+
+    function test_StoryBadgeNFT_setContractURI() public {
+        string memory oldContractURI = rootStoryNft.contractURI();
+        string memory newContractURI = "New Contract URI";
+
+        assertNotEq(oldContractURI, newContractURI);
+
+        vm.startPrank(rootStoryNftOwner);
+        rootStoryNft.setContractURI(newContractURI);
+        assertEq(rootStoryNft.contractURI(), newContractURI);
+
+        rootStoryNft.setContractURI(oldContractURI);
+        assertEq(rootStoryNft.contractURI(), oldContractURI);
+        vm.stopPrank();
+    }
+
+    function test_StoryBadgeNFT_revert_setContractURI_CallerIsNotOwner() public {
+        vm.startPrank(u.carl);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, u.carl));
+        rootStoryNft.setContractURI("New Contract URI");
+        vm.stopPrank();
     }
 
     function test_StoryBadgeNFT_setSigner() public {

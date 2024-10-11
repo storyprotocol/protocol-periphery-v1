@@ -47,6 +47,27 @@ contract OrgNFTTest is BaseTest {
         assertEq(testOrgNft.authority(), address(protocolAccessManager));
     }
 
+    function test_OrgNFT_setTokenURI() public {
+        string memory oldTokenURI = orgNft.tokenURI(0);
+        string memory newTokenURI = "test";
+
+        assertNotEq(oldTokenURI, newTokenURI);
+
+        vm.startPrank(rootStoryNftOwner);
+        orgNft.setTokenURI(0, newTokenURI);
+        assertEq(orgNft.tokenURI(0), newTokenURI);
+        orgNft.setTokenURI(0, oldTokenURI);
+        assertEq(orgNft.tokenURI(0), oldTokenURI);
+        vm.stopPrank();
+    }
+
+    function test_OrgNFT_revert_setTokenURI_CallerIsNotOwner() public {
+        vm.startPrank(u.bob);
+        vm.expectRevert(abi.encodeWithSelector(IOrgNFT.OrgNFT__CallerNotOwner.selector, 0, u.bob, rootStoryNftOwner));
+        orgNft.setTokenURI(0, "test");
+        vm.stopPrank();
+    }
+
     function test_OrgNFT_revert_initialize_ZeroAddress() public {
         vm.expectRevert(IOrgNFT.OrgNFT__ZeroAddressParam.selector);
         OrgNFT testOrgNft = new OrgNFT({
