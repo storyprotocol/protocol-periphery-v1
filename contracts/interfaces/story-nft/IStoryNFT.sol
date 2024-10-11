@@ -9,8 +9,15 @@ interface IStoryNFT is IERC721 {
     ////////////////////////////////////////////////////////////////////////////
     //                              Errors                                     //
     ////////////////////////////////////////////////////////////////////////////
-    /// @notice Zero address provided as a param to BaseStoryNFT constructor.
-    error BaseStoryNFT__ZeroAddressParam();
+    /// @notice Zero address provided as a param to StoryNFT constructor.
+    error StoryNFT__ZeroAddressParam();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                              Events                                     //
+    ////////////////////////////////////////////////////////////////////////////
+    /// @notice Emitted when the contractURI is set.
+    /// @param contractURI The new contractURI of the collection.
+    event ContractMetadataUpdated(string contractURI);
 
     ////////////////////////////////////////////////////////////////////////////
     //                              Structs                                   //
@@ -39,6 +46,9 @@ interface IStoryNFT is IERC721 {
     /// @param orgIpId_ The ID of the organization IP.
     /// @param initParams The initialization parameters for StoryNFT {see {StoryNftInitParams}}.
     function initialize(uint256 orgTokenId_, address orgIpId_, StoryNftInitParams calldata initParams) external;
+
+    /// @notice Sets the contractURI of the collection (follows OpenSea contract-level metadata standard).
+    function setContractURI(string memory contractURI) external;
 
     /// @notice Returns the current total supply of the collection.
     function totalSupply() external view returns (uint256);

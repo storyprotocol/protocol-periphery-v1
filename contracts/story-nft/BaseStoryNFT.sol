@@ -50,7 +50,7 @@ abstract contract BaseStoryNFT is IStoryNFT, ERC721URIStorage, Ownable, Initiali
 
     constructor(address ipAssetRegistry, address licensingModule, address orgNft) ERC721("", "") Ownable(msg.sender) {
         if (ipAssetRegistry == address(0) || licensingModule == address(0) || orgNft == address(0))
-            revert BaseStoryNFT__ZeroAddressParam();
+            revert StoryNFT__ZeroAddressParam();
         IP_ASSET_REGISTRY = IIPAssetRegistry(ipAssetRegistry);
         LICENSING_MODULE = ILicensingModule(licensingModule);
         ORG_NFT = orgNft;
@@ -65,7 +65,7 @@ abstract contract BaseStoryNFT is IStoryNFT, ERC721URIStorage, Ownable, Initiali
         address orgIpId_,
         StoryNftInitParams calldata initParams
     ) public virtual initializer {
-        if (initParams.owner == address(0) || orgIpId_ == address(0)) revert BaseStoryNFT__ZeroAddressParam();
+        if (initParams.owner == address(0) || orgIpId_ == address(0)) revert StoryNFT__ZeroAddressParam();
 
         orgTokenId = orgTokenId_;
         orgIpId = orgIpId_;
@@ -77,6 +77,14 @@ abstract contract BaseStoryNFT is IStoryNFT, ERC721URIStorage, Ownable, Initiali
 
         _transferOwnership(initParams.owner);
         _customize(initParams.customInitData);
+    }
+
+    /// @notice Sets the contractURI of the collection (follows OpenSea contract-level metadata standard).
+    /// @param contractURI_ The new contractURI of the collection.
+    function setContractURI(string memory contractURI_) external onlyOwner {
+        _contractURI = contractURI_;
+
+        emit ContractMetadataUpdated(contractURI_);
     }
 
     /// @notice Mints a new token and registers as an IP asset without specifying a tokenURI.

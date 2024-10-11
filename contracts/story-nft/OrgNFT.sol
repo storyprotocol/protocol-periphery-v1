@@ -141,6 +141,14 @@ contract OrgNFT is IOrgNFT, ERC721URIStorageUpgradeable, AccessManagedUpgradeabl
         _safeTransfer(address(this), recipient, orgTokenId);
     }
 
+    /// @notice Sets the tokenURI of `tokenId` organization token.
+    /// @param tokenId The ID of the organization token.
+    /// @param tokenURI_ The new tokenURI of the organization token.
+    function setTokenURI(uint256 tokenId, string memory tokenURI_) external {
+        if (msg.sender != ownerOf(tokenId)) revert OrgNFT__CallerNotOwner(tokenId, msg.sender, ownerOf(tokenId));
+        _setTokenURI(tokenId, tokenURI_);
+    }
+
     /// @notice Mints a organization token and register it as an IP.
     /// @param recipient The address of the recipient of the minted organization token.
     /// @param tokenURI_ The URI of the minted organization token.

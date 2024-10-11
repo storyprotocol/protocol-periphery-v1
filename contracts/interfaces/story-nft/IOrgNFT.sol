@@ -16,6 +16,12 @@ interface IOrgNFT is IERC721Metadata {
     /// @param storyNftFactory The address of the `StoryNFTFactory` contract.
     error OrgNFT__CallerNotStoryNFTFactory(address caller, address storyNftFactory);
 
+    /// @notice Caller is not the owner of `tokenId` organization token.
+    /// @param tokenId The ID of the organization token.
+    /// @param caller The address of the caller.
+    /// @param owner The address of the owner of `tokenId` organization token.
+    error OrgNFT__CallerNotOwner(uint256 tokenId, address caller, address owner);
+
     /// @notice Root organization NFT has already been minted.
     error OrgNFT__RootOrgNftAlreadyMinted();
 
@@ -58,6 +64,11 @@ interface IOrgNFT is IERC721Metadata {
         address recipient,
         string memory tokenURI
     ) external returns (uint256 orgTokenId, address orgIpId);
+
+    /// @notice Sets the tokenURI of `tokenId` organization token.
+    /// @param tokenId The ID of the organization token.
+    /// @param tokenURI The new tokenURI of the organization token.
+    function setTokenURI(uint256 tokenId, string memory tokenURI) external;
 
     /// @notice Returns the ID of the root organization IP.
     function getRootOrgIpId() external view returns (address);
