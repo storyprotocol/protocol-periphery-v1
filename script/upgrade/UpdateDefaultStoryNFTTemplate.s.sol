@@ -6,14 +6,17 @@ pragma solidity 0.8.26;
 import { console2 } from "forge-std/console2.sol";
 
 // contracts
-import { LicenseAttachmentWorkflows } from "../../contracts/workflows/LicenseAttachmentWorkflows.sol";
+import { StoryBadgeNFT } from "../../contracts/story-nft/StoryBadgeNFT.sol";
+import { IStoryNFTFactory } from "../../contracts/interfaces/story-nft/IStoryNFTFactory.sol";
 
 // script
 import { UpgradeHelper } from "../utils/upgrades/UpgradeHelper.s.sol";
 
-contract UpgradeLicenseAttachmentWorkflows is UpgradeHelper {
+contract UpdateDefaultStoryNFTTemplate is UpgradeHelper {
+    uint256 public constant LICENSE_TERMS_ID = 1;
+
     /// @dev To use, run the following command (e.g., for Story Iliad testnet):
-    /// forge script script/upgrade/UpgradeLicenseAttachmentWorkflows.s.sol:UpgradeLicenseAttachmentWorkflows \
+    /// forge script script/upgrade/UpdateDefaultStoryNFTTemplate.s.sol:UpdateDefaultStoryNFTTemplate \
     /// --rpc-url=$TESTNET_URL -vvvv --broadcast --priority-gas-price=1 --legacy \
     /// --verify  --verifier=$VERIFIER_NAME --verifier-url=$VERIFIER_URL
     ///
@@ -21,36 +24,30 @@ contract UpgradeLicenseAttachmentWorkflows is UpgradeHelper {
     function run() public override {
         super.run();
         _beginBroadcast();
-        _deployLicenseAttachmentWorkflows();
-
-        // Upgrade via multisig (can't do here).
-        // licenseAttachmentWorkflows.upgradeToAndCall(address(newLicenseAttachmentWorkflowsImpl), "");
-
+        _updateDefaultStoryNFTTemplate();
         _writeDeployment();
         _endBroadcast();
     }
 
-    function _deployLicenseAttachmentWorkflows() private {
+    function _updateDefaultStoryNFTTemplate() private {
         _writeAddress("DerivativeWorkflows", address(derivativeWorkflows));
         _writeAddress("GroupingWorkflows", address(groupingWorkflows));
-        _predeploy("LicenseAttachmentWorkflows");
-        address newLicenseAttachmentWorkflowsImpl = address(
-            new LicenseAttachmentWorkflows(
-                accessControllerAddr,
-                coreMetadataModuleAddr,
-                ipAssetRegistryAddr,
-                licenseRegistryAddr,
-                licensingModuleAddr,
-                pilTemplateAddr
-            )
-        );
-        console2.log("New LicenseAttachmentWorkflows Implementation: ", newLicenseAttachmentWorkflowsImpl);
-        _postdeploy("LicenseAttachmentWorkflows", address(licenseAttachmentWorkflows));
+        _writeAddress("LicenseAttachmentWorkflows", address(licenseAttachmentWorkflows));
         _writeAddress("RegistrationWorkflows", address(registrationWorkflows));
         _writeAddress("RoyaltyWorkflows", address(royaltyWorkflows));
         _writeAddress("SPGNFTBeacon", address(spgNftBeacon));
         _writeAddress("SPGNFTImpl", address(spgNftImpl));
-        _writeAddress("DefaultStoryNftTemplate", defaultStoryNftTemplateAddr);
+        _predeploy("DefaultStoryNftTemplate");
+        StoryBadgeNFT newDefaultStoryNftTemplate = new StoryBadgeNFT(
+            ipAssetRegistryAddr,
+            licensingModuleAddr,
+            orgNftAddr,
+            pilTemplateAddr,
+            LICENSE_TERMS_ID
+        );
+        IStoryNFTFactory(storyNftFactoryAddr).setDefaultStoryNftTemplate(address(newDefaultStoryNftTemplate));
+        console2.log("New DefaultStoryNFTTemplate: ", address(newDefaultStoryNftTemplate));
+        _postdeploy("DefaultStoryNftTemplate", address(newDefaultStoryNftTemplate));
         _writeAddress("OrgNFT", orgNftAddr);
         _writeAddress("StoryNFTFactory", storyNftFactoryAddr);
     }

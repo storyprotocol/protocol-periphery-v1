@@ -46,5 +46,8 @@ contract UpgradeSPGNFT is UpgradeHelper {
         );
         console2.log("New SPGNFT Implementation: ", address(spgNftImpl));
         _postdeploy("SPGNFTImpl", address(spgNftImpl));
+        _writeAddress("DefaultStoryNftTemplate", defaultStoryNftTemplateAddr);
+        _writeAddress("OrgNFT", orgNftAddr);
+        _writeAddress("StoryNFTFactory", storyNftFactoryAddr);
     }
 }

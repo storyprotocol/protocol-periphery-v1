@@ -40,5 +40,8 @@ contract UpgradeRoyaltyWorkflows is UpgradeHelper {
         _postdeploy("RoyaltyWorkflows", address(royaltyWorkflows));
         _writeAddress("SPGNFTBeacon", address(spgNftBeacon));
         _writeAddress("SPGNFTImpl", address(spgNftImpl));
+        _writeAddress("DefaultStoryNftTemplate", defaultStoryNftTemplateAddr);
+        _writeAddress("OrgNFT", orgNftAddr);
+        _writeAddress("StoryNFTFactory", storyNftFactoryAddr);
     }
 }
