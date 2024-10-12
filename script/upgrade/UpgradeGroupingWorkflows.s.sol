@@ -45,7 +45,7 @@ contract UpgradeGroupingWorkflows is UpgradeHelper {
             )
         );
         console2.log("New GroupingWorkflows Implementation: ", newGroupingWorkflowsImpl);
-        _postdeploy("GroupingWorkflows", address(groupingWorkflows));
-        _writeOtherAddresses("GroupingWorkflows");
+        console2.log("GroupingWorkflows deployed to: ", groupingWorkflowsAddr);
+        _writeAllAddresses();
     }
 }

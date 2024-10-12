@@ -39,8 +39,8 @@ contract UpdateDefaultStoryNFTTemplate is UpgradeHelper {
             LICENSE_TERMS_ID
         );
         IStoryNFTFactory(storyNftFactoryAddr).setDefaultStoryNftTemplate(address(newDefaultStoryNftTemplate));
-        console2.log("New DefaultStoryNFTTemplate: ", address(newDefaultStoryNftTemplate));
-        _postdeploy("DefaultStoryNftTemplate", address(newDefaultStoryNftTemplate));
-        _writeOtherAddresses("DefaultStoryNftTemplate");
+        defaultStoryNftTemplateAddr = address(newDefaultStoryNftTemplate);
+        console2.log("DefaultStoryNftTemplate deployed to: ", defaultStoryNftTemplateAddr);
+        _writeAllAddresses();
     }
 }

@@ -43,7 +43,7 @@ contract UpgradeLicenseAttachmentWorkflows is UpgradeHelper {
             )
         );
         console2.log("New LicenseAttachmentWorkflows Implementation: ", newLicenseAttachmentWorkflowsImpl);
-        _postdeploy("LicenseAttachmentWorkflows", address(licenseAttachmentWorkflows));
-        _writeOtherAddresses("LicenseAttachmentWorkflows");
+        console2.log("LicenseAttachmentWorkflows deployed to: ", licenseAttachmentWorkflowsAddr);
+        _writeAllAddresses();
     }
 }

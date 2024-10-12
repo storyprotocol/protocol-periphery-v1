@@ -45,7 +45,7 @@ contract UpgradeDerivativeWorkflows is UpgradeHelper {
             )
         );
         console2.log("New DerivativeWorkflows Implementation: ", newDerivativeWorkflowsImpl);
-        _postdeploy("DerivativeWorkflows", address(derivativeWorkflows));
-        _writeOtherAddresses("DerivativeWorkflows");
+        console2.log("DerivativeWorkflows deployed to: ", derivativeWorkflowsAddr);
+        _writeAllAddresses();
     }
 }

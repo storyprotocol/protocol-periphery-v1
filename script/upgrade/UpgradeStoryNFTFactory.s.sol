@@ -38,7 +38,7 @@ contract UpgradeStoryNFTFactory is UpgradeHelper {
             orgNftAddr
         );
         console2.log("New StoryNFTFactory implementation: ", address(newStoryNftFactory));
-        _postdeploy("StoryNFTFactory", storyNftFactoryAddr);
-        _writeOtherAddresses("StoryNFTFactory");
+        console2.log("StoryNFTFactory deployed to: ", storyNftFactoryAddr);
+        _writeAllAddresses();
     }
 }

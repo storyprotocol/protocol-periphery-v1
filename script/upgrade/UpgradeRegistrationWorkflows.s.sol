@@ -43,7 +43,7 @@ contract UpgradeRegistrationWorkflows is UpgradeHelper {
             )
         );
         console2.log("New RegistrationWorkflows Implementation: ", newRegistrationWorkflowsImpl);
-        _postdeploy("RegistrationWorkflows", address(registrationWorkflows));
-        _writeOtherAddresses("RegistrationWorkflows");
+        console2.log("RegistrationWorkflows deployed to: ", registrationWorkflowsAddr);
+        _writeAllAddresses();
     }
 }

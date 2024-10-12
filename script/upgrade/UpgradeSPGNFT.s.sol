@@ -38,8 +38,8 @@ contract UpgradeSPGNFT is UpgradeHelper {
             address(licenseAttachmentWorkflows),
             address(registrationWorkflows)
         );
-        console2.log("New SPGNFT Implementation: ", address(spgNftImpl));
-        _postdeploy("SPGNFTImpl", address(spgNftImpl));
-        _writeOtherAddresses("SPGNFTImpl");
+        spgNftImplAddr = address(spgNftImpl);
+        console2.log("SPGNFTImpl deployed to: ", spgNftImplAddr);
+        _writeAllAddresses();
     }
 }

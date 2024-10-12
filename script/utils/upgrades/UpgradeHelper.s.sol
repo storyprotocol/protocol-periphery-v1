@@ -67,7 +67,7 @@ contract UpgradeHelper is
         console2.log(string.concat(contractKey, " deployed to:"), newAddress);
     }
 
-    function _writeOtherAddresses(string memory upgradedContractKey) internal {
+    function _writeAllAddresses() internal {
         string[] memory contractKeys = new string[](10);
         contractKeys[0] = "DerivativeWorkflows";
         contractKeys[1] = "GroupingWorkflows";
@@ -93,8 +93,6 @@ contract UpgradeHelper is
         addresses[9] = storyNftFactoryAddr;
 
         for (uint256 i = 0; i < contractKeys.length; i++) {
-            if (keccak256(abi.encodePacked(contractKeys[i])) == keccak256(abi.encodePacked(upgradedContractKey)))
-                continue;
             _writeAddress(contractKeys[i], addresses[i]);
         }
     }

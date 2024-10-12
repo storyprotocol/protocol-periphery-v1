@@ -34,7 +34,7 @@ contract UpgradeRoyaltyWorkflows is UpgradeHelper {
         _predeploy("RoyaltyWorkflows");
         address newRoyaltyWorkflowsImpl = address(new RoyaltyWorkflows(royaltyModuleAddr));
         console2.log("New RoyaltyWorkflows Implementation: ", newRoyaltyWorkflowsImpl);
-        _postdeploy("RoyaltyWorkflows", address(royaltyWorkflows));
-        _writeOtherAddresses("RoyaltyWorkflows");
+        console2.log("RoyaltyWorkflows deployed to: ", royaltyWorkflowsAddr);
+        _writeAllAddresses();
     }
 }

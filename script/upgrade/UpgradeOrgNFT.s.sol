@@ -38,7 +38,7 @@ contract UpgradeOrgNFT is UpgradeHelper {
             LICENSE_TERMS_ID
         );
         console2.log("New OrgNFT implementation: ", address(newOrgNft));
-        _postdeploy("OrgNFT", orgNftAddr);
-        _writeOtherAddresses("OrgNFT");
+        console2.log("OrgNFT deployed to: ", orgNftAddr);
+        _writeAllAddresses();
     }
 }
