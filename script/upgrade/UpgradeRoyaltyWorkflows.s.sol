@@ -31,17 +31,10 @@ contract UpgradeRoyaltyWorkflows is UpgradeHelper {
     }
 
     function _deployRoyaltyWorkflows() private {
-        _writeAddress("DerivativeWorkflows", address(derivativeWorkflows));
-        _writeAddress("LicenseAttachmentWorkflows", address(licenseAttachmentWorkflows));
-        _writeAddress("RegistrationWorkflows", address(registrationWorkflows));
         _predeploy("RoyaltyWorkflows");
         address newRoyaltyWorkflowsImpl = address(new RoyaltyWorkflows(royaltyModuleAddr));
         console2.log("New RoyaltyWorkflows Implementation: ", newRoyaltyWorkflowsImpl);
         _postdeploy("RoyaltyWorkflows", address(royaltyWorkflows));
-        _writeAddress("SPGNFTBeacon", address(spgNftBeacon));
-        _writeAddress("SPGNFTImpl", address(spgNftImpl));
-        _writeAddress("DefaultStoryNftTemplate", defaultStoryNftTemplateAddr);
-        _writeAddress("OrgNFT", orgNftAddr);
-        _writeAddress("StoryNFTFactory", storyNftFactoryAddr);
+        _writeOtherAddresses("RoyaltyWorkflows");
     }
 }

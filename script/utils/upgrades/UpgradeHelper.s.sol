@@ -66,4 +66,36 @@ contract UpgradeHelper is
         _writeAddress(contractKey, newAddress);
         console2.log(string.concat(contractKey, " deployed to:"), newAddress);
     }
+
+    function _writeOtherAddresses(string memory upgradedContractKey) internal {
+        string[] memory contractKeys = new string[](10);
+        contractKeys[0] = "DerivativeWorkflows";
+        contractKeys[1] = "GroupingWorkflows";
+        contractKeys[2] = "LicenseAttachmentWorkflows";
+        contractKeys[3] = "RegistrationWorkflows";
+        contractKeys[4] = "RoyaltyWorkflows";
+        contractKeys[5] = "SPGNFTBeacon";
+        contractKeys[6] = "SPGNFTImpl";
+        contractKeys[7] = "DefaultStoryNftTemplate";
+        contractKeys[8] = "OrgNFT";
+        contractKeys[9] = "StoryNFTFactory";
+
+        address[] memory addresses = new address[](10);
+        addresses[0] = derivativeWorkflowsAddr;
+        addresses[1] = groupingWorkflowsAddr;
+        addresses[2] = licenseAttachmentWorkflowsAddr;
+        addresses[3] = registrationWorkflowsAddr;
+        addresses[4] = royaltyWorkflowsAddr;
+        addresses[5] = spgNftBeaconAddr;
+        addresses[6] = spgNftImplAddr;
+        addresses[7] = defaultStoryNftTemplateAddr;
+        addresses[8] = orgNftAddr;
+        addresses[9] = storyNftFactoryAddr;
+
+        for (uint256 i = 0; i < contractKeys.length; i++) {
+            if (keccak256(abi.encodePacked(contractKeys[i])) == keccak256(abi.encodePacked(upgradedContractKey)))
+                continue;
+            _writeAddress(contractKeys[i], addresses[i]);
+        }
+    }
 }

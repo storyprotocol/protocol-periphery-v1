@@ -30,13 +30,6 @@ contract UpdateDefaultStoryNFTTemplate is UpgradeHelper {
     }
 
     function _updateDefaultStoryNFTTemplate() private {
-        _writeAddress("DerivativeWorkflows", address(derivativeWorkflows));
-        _writeAddress("GroupingWorkflows", address(groupingWorkflows));
-        _writeAddress("LicenseAttachmentWorkflows", address(licenseAttachmentWorkflows));
-        _writeAddress("RegistrationWorkflows", address(registrationWorkflows));
-        _writeAddress("RoyaltyWorkflows", address(royaltyWorkflows));
-        _writeAddress("SPGNFTBeacon", address(spgNftBeacon));
-        _writeAddress("SPGNFTImpl", address(spgNftImpl));
         _predeploy("DefaultStoryNftTemplate");
         StoryBadgeNFT newDefaultStoryNftTemplate = new StoryBadgeNFT(
             ipAssetRegistryAddr,
@@ -48,7 +41,6 @@ contract UpdateDefaultStoryNFTTemplate is UpgradeHelper {
         IStoryNFTFactory(storyNftFactoryAddr).setDefaultStoryNftTemplate(address(newDefaultStoryNftTemplate));
         console2.log("New DefaultStoryNFTTemplate: ", address(newDefaultStoryNftTemplate));
         _postdeploy("DefaultStoryNftTemplate", address(newDefaultStoryNftTemplate));
-        _writeAddress("OrgNFT", orgNftAddr);
-        _writeAddress("StoryNFTFactory", storyNftFactoryAddr);
+        _writeOtherAddresses("DefaultStoryNftTemplate");
     }
 }

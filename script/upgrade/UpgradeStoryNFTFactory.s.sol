@@ -29,15 +29,6 @@ contract UpgradeStoryNFTFactory is UpgradeHelper {
     }
 
     function _upgradeStoryNFTFactory() private {
-        _writeAddress("DerivativeWorkflows", address(derivativeWorkflows));
-        _writeAddress("GroupingWorkflows", address(groupingWorkflows));
-        _writeAddress("LicenseAttachmentWorkflows", address(licenseAttachmentWorkflows));
-        _writeAddress("RegistrationWorkflows", address(registrationWorkflows));
-        _writeAddress("RoyaltyWorkflows", address(royaltyWorkflows));
-        _writeAddress("SPGNFTBeacon", address(spgNftBeacon));
-        _writeAddress("SPGNFTImpl", address(spgNftImpl));
-        _writeAddress("DefaultStoryNftTemplate", defaultStoryNftTemplateAddr);
-        _writeAddress("OrgNFT", orgNftAddr);
         _predeploy("StoryNFTFactory");
         StoryNFTFactory newStoryNftFactory = new StoryNFTFactory(
             ipAssetRegistryAddr,
@@ -48,5 +39,6 @@ contract UpgradeStoryNFTFactory is UpgradeHelper {
         );
         console2.log("New StoryNFTFactory implementation: ", address(newStoryNftFactory));
         _postdeploy("StoryNFTFactory", storyNftFactoryAddr);
+        _writeOtherAddresses("StoryNFTFactory");
     }
 }

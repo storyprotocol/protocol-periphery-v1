@@ -31,8 +31,6 @@ contract UpgradeLicenseAttachmentWorkflows is UpgradeHelper {
     }
 
     function _deployLicenseAttachmentWorkflows() private {
-        _writeAddress("DerivativeWorkflows", address(derivativeWorkflows));
-        _writeAddress("GroupingWorkflows", address(groupingWorkflows));
         _predeploy("LicenseAttachmentWorkflows");
         address newLicenseAttachmentWorkflowsImpl = address(
             new LicenseAttachmentWorkflows(
@@ -46,12 +44,6 @@ contract UpgradeLicenseAttachmentWorkflows is UpgradeHelper {
         );
         console2.log("New LicenseAttachmentWorkflows Implementation: ", newLicenseAttachmentWorkflowsImpl);
         _postdeploy("LicenseAttachmentWorkflows", address(licenseAttachmentWorkflows));
-        _writeAddress("RegistrationWorkflows", address(registrationWorkflows));
-        _writeAddress("RoyaltyWorkflows", address(royaltyWorkflows));
-        _writeAddress("SPGNFTBeacon", address(spgNftBeacon));
-        _writeAddress("SPGNFTImpl", address(spgNftImpl));
-        _writeAddress("DefaultStoryNftTemplate", defaultStoryNftTemplateAddr);
-        _writeAddress("OrgNFT", orgNftAddr);
-        _writeAddress("StoryNFTFactory", storyNftFactoryAddr);
+        _writeOtherAddresses("LicenseAttachmentWorkflows");
     }
 }

@@ -31,7 +31,6 @@ contract UpgradeGroupingWorkflows is UpgradeHelper {
     }
 
     function _deployGroupingWorkflows() private {
-        _writeAddress("DerivativeWorkflows", address(derivativeWorkflows));
         _predeploy("GroupingWorkflows");
         address newGroupingWorkflowsImpl = address(
             new GroupingWorkflows(
@@ -47,13 +46,6 @@ contract UpgradeGroupingWorkflows is UpgradeHelper {
         );
         console2.log("New GroupingWorkflows Implementation: ", newGroupingWorkflowsImpl);
         _postdeploy("GroupingWorkflows", address(groupingWorkflows));
-        _writeAddress("LicenseAttachmentWorkflows", address(licenseAttachmentWorkflows));
-        _writeAddress("RegistrationWorkflows", address(registrationWorkflows));
-        _writeAddress("RoyaltyWorkflows", address(royaltyWorkflows));
-        _writeAddress("SPGNFTBeacon", address(spgNftBeacon));
-        _writeAddress("SPGNFTImpl", address(spgNftImpl));
-        _writeAddress("DefaultStoryNftTemplate", defaultStoryNftTemplateAddr);
-        _writeAddress("OrgNFT", orgNftAddr);
-        _writeAddress("StoryNFTFactory", storyNftFactoryAddr);
+        _writeOtherAddresses("GroupingWorkflows");
     }
 }

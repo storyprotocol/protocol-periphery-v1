@@ -29,14 +29,6 @@ contract UpgradeOrgNFT is UpgradeHelper {
     }
 
     function _upgradeOrgNFT() private {
-        _writeAddress("DerivativeWorkflows", address(derivativeWorkflows));
-        _writeAddress("GroupingWorkflows", address(groupingWorkflows));
-        _writeAddress("LicenseAttachmentWorkflows", address(licenseAttachmentWorkflows));
-        _writeAddress("RegistrationWorkflows", address(registrationWorkflows));
-        _writeAddress("RoyaltyWorkflows", address(royaltyWorkflows));
-        _writeAddress("SPGNFTBeacon", address(spgNftBeacon));
-        _writeAddress("SPGNFTImpl", address(spgNftImpl));
-        _writeAddress("DefaultStoryNftTemplate", defaultStoryNftTemplateAddr);
         _predeploy("OrgNFT");
         OrgNFT newOrgNft = new OrgNFT(
             ipAssetRegistryAddr,
@@ -47,6 +39,6 @@ contract UpgradeOrgNFT is UpgradeHelper {
         );
         console2.log("New OrgNFT implementation: ", address(newOrgNft));
         _postdeploy("OrgNFT", orgNftAddr);
-        _writeAddress("StoryNFTFactory", storyNftFactoryAddr);
+        _writeOtherAddresses("OrgNFT");
     }
 }

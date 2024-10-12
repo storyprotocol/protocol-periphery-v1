@@ -310,7 +310,7 @@ contract RoyaltyIntegration is BaseIntegration {
         uint256 deadline = block.timestamp + 1000;
 
         // set permission for licensing module to attach license terms to ancestor IP
-        (bytes memory signature, , ) = _getSetPermissionSigForPeriphery({
+        (bytes memory signatureA, , ) = _getSetPermissionSigForPeriphery({
             ipId: ancestorIpId,
             to: licenseAttachmentWorkflowsAddr,
             module: licensingModuleAddr,
@@ -329,7 +329,18 @@ contract RoyaltyIntegration is BaseIntegration {
                 royaltyPolicy: royaltyPolicyLRPAddr,
                 currencyToken: address(StoryUSD)
             }),
-            sigAttach: WorkflowStructs.SignatureData({ signer: testSender, deadline: deadline, signature: signature })
+            sigAttach: WorkflowStructs.SignatureData({ signer: testSender, deadline: deadline, signature: signatureA })
+        });
+
+        // set permission for licensing module to attach license terms to ancestor IP
+        (bytes memory signatureC, , ) = _getSetPermissionSigForPeriphery({
+            ipId: ancestorIpId,
+            to: licenseAttachmentWorkflowsAddr,
+            module: licensingModuleAddr,
+            selector: licensingModule.attachLicenseTerms.selector,
+            deadline: deadline,
+            state: IIPAccount(payable(ancestorIpId)).state(),
+            signerSk: testSenderSk
         });
 
         commRemixTermsIdC = licenseAttachmentWorkflows.registerPILTermsAndAttach({
@@ -340,7 +351,7 @@ contract RoyaltyIntegration is BaseIntegration {
                 royaltyPolicy: royaltyPolicyLAPAddr,
                 currencyToken: address(StoryUSD)
             }),
-            sigAttach: WorkflowStructs.SignatureData({ signer: testSender, deadline: deadline, signature: signature })
+            sigAttach: WorkflowStructs.SignatureData({ signer: testSender, deadline: deadline, signature: signatureC })
         });
 
         // register childIpA as derivative of ancestorIp under Terms A
