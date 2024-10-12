@@ -77,7 +77,7 @@ contract BaseTest is Test, DeployHelper {
 
     function setUp() public virtual {
         // mock IPGraph precompile
-        vm.etch(address(0x1B), address(new MockIPGraph()).code);
+        vm.etch(address(0x0101), address(new MockIPGraph()).code);
 
         // initialize users and their secret keys
         _setupUsers();

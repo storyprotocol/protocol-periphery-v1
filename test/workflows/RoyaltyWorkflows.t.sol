@@ -112,7 +112,7 @@ contract RoyaltyWorkflowsTest is BaseTest {
         );
         assertEq(
             claimerBalanceCAfter - claimerBalanceCBefore,
-            defaultMintingFeeC + (defaultMintingFeeC * defaultCommRevShareC) / royaltyModule.maxPercent() // 500 from from minting fee of childIpC // 500 * 20% = 100 royalty from childIpC
+            defaultMintingFeeC + (defaultMintingFeeC * defaultCommRevShareC) / royaltyModule.maxPercent() // 500 from from minting fee of childIpC, 500 * 20% = 100 royalty from childIpC
         );
     }
 
@@ -182,7 +182,7 @@ contract RoyaltyWorkflowsTest is BaseTest {
         );
         assertEq(
             claimerBalanceCAfter - claimerBalanceCBefore,
-            defaultMintingFeeC + (defaultMintingFeeC * defaultCommRevShareC) / royaltyModule.maxPercent() // 500 from minting fee of childIpC // 500 * 20% = 100 royalty from childIpC
+            defaultMintingFeeC + (defaultMintingFeeC * defaultCommRevShareC) / royaltyModule.maxPercent() // 500 from minting fee of childIpC, 500 * 20% = 100 royalty from childIpC
         );
     }
 

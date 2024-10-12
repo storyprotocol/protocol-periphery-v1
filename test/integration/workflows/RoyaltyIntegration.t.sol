@@ -109,7 +109,7 @@ contract RoyaltyIntegration is BaseIntegration {
         uint256 claimerBalanceAfter = StoryUSD.balanceOf(testSender);
 
         assertEq(snapshotId, numSnapshots + 1);
-        assertEq(amountsClaimed.length, 2); // there are 2 currency tokens
+        assertEq(amountsClaimed.length, 1); // there is 1 currency token
         assertEq(claimerBalanceAfter - claimerBalanceBefore, amountsClaimed[0]);
         assertEq(
             claimerBalanceAfter - claimerBalanceBefore,
@@ -121,8 +121,8 @@ contract RoyaltyIntegration is BaseIntegration {
                 royaltyModule.maxPercent() + // 1000 * 10% = 100 royalty from childIpB
                 (((defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent()) * defaultCommRevShareA) /
                 royaltyModule.maxPercent() + // 1000 * 10% * 10% * 2 = 20 royalty from grandChildIp
-                (defaultMintingFeeC * defaultCommRevShareC) /
-                royaltyModule.maxPercent() // 500 * 20% = 100 royalty from childIpC
+                defaultMintingFeeC + (defaultMintingFeeC * defaultCommRevShareC) /
+                royaltyModule.maxPercent() // 500 from from minting fee of childIpC,500 * 20% = 100 royalty from childIpC
         );
     }
 
@@ -189,8 +189,8 @@ contract RoyaltyIntegration is BaseIntegration {
                 royaltyModule.maxPercent() + // 1000 * 10% = 100 royalty from childIpB
                 (((defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent()) * defaultCommRevShareA) /
                 royaltyModule.maxPercent() + // 1000 * 10% * 10% = 10 royalty from grandChildIp
-                (defaultMintingFeeC * defaultCommRevShareC) /
-                royaltyModule.maxPercent() // 500 * 20% = 100 royalty from childIpC
+                defaultMintingFeeC + (defaultMintingFeeC * defaultCommRevShareC) /
+                royaltyModule.maxPercent() // 500 from from minting fee of childIpC, 500 * 20% = 100 royalty from childIpC
         );
     }
 
@@ -248,7 +248,7 @@ contract RoyaltyIntegration is BaseIntegration {
         uint256 claimerBalanceAfter = StoryUSD.balanceOf(testSender);
 
         assertEq(snapshotId, numSnapshots + 1);
-        assertEq(amountsClaimed.length, 2); // there are 2 currency tokens
+        assertEq(amountsClaimed.length, 1); // there is 1 currency token
         assertEq(claimerBalanceAfter - claimerBalanceBefore, amountsClaimed[0]);
         assertEq(
             claimerBalanceAfter - claimerBalanceBefore,

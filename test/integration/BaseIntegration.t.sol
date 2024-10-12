@@ -59,8 +59,8 @@ contract BaseIntegration is Test, Script, StoryProtocolCoreAddressManager, Story
     /// @dev Story USD
     SUSD internal StoryUSD = SUSD(0x91f6F05B08c16769d3c85867548615d270C42fC7);
 
-    /// @dev Mock even split group reward pool
-    address internal groupRewardPool = 0x69e0D5123bc0539a87a9dDcE82E803575e35cbb4;
+    /// @dev Even split group reward pool
+    address internal groupRewardPool = 0xA1dB7AB14900Cd9eF9A7eBA931A206250F403a14;
 
     /// @dev Test data
     string internal testCollectionName;

@@ -764,7 +764,8 @@ contract DeployHelper is
                 address(ipAssetRegistry),
                 address(licenseRegistry),
                 address(licenseToken),
-                address(groupNFT)
+                address(groupNFT),
+                address(royaltyModule)
             )
         );
         groupingModule = GroupingModule(
