@@ -2,16 +2,19 @@
 pragma solidity 0.8.26;
 
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
-import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC721Metadata } from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 
-interface ISPGNFT is IAccessControl, IERC721, IERC721Metadata {
+import { IERC7572 } from "./story-nft/IERC7572.sol";
+
+interface ISPGNFT is IAccessControl, IERC721Metadata, IERC7572 {
     /// @notice Struct for initializing the NFT collection.
     /// @dev If mint fee is non-zero, mint token must be set.
     /// @param name The name of the collection.
     /// @param symbol The symbol of the collection.
-    /// @param baseURI The base URI for the collection. If baseURI is not empty, tokenURI will be
-    /// either baseURI + token ID (if nftMetadataURI is empty) or baseURI + nftMetadataURI.
+    /// @param baseURI The base URI for the collection. If baseURI is not empty, tokenURI will be either
+    ///                baseURI + token ID (if nftMetadataURI is empty) or baseURI + nftMetadataURI.
+    /// @param contractURI The contract URI for the collection. Follows ERC-7572 standard.
+    ///                    See https://eips.ethereum.org/EIPS/eip-7572
     /// @param maxSupply The maximum supply of the collection.
     /// @param mintFee The fee to mint an NFT from the collection.
     /// @param mintFeeToken The token to pay for minting.
@@ -24,6 +27,7 @@ interface ISPGNFT is IAccessControl, IERC721, IERC721Metadata {
         string name;
         string symbol;
         string baseURI;
+        string contractURI;
         uint32 maxSupply;
         uint256 mintFee;
         address mintFeeToken;
@@ -91,6 +95,12 @@ interface ISPGNFT is IAccessControl, IERC721, IERC721Metadata {
     /// @dev Only callable by the admin role.
     /// @param baseURI The new base URI for the collection.
     function setBaseURI(string memory baseURI) external;
+
+    /// @notice Sets the contract URI for the collection.
+    /// @dev Only callable by the admin role.
+    /// @param contractURI The new contract URI for the collection. Follows ERC-7572 standard.
+    ///        See https://eips.ethereum.org/EIPS/eip-7572
+    function setContractURI(string memory contractURI) external;
 
     /// @notice Mints an NFT from the collection. Only callable by the minter role.
     /// @param to The address of the recipient of the minted NFT.

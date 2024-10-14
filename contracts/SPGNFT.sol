@@ -32,6 +32,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         bool _mintOpen;
         bool _publicMinting;
         string _baseURI;
+        string _contractURI;
     }
 
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.SPGNFT")) - 1)) & ~bytes32(uint256(0xff));
@@ -100,6 +101,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         $._mintOpen = initParams.mintOpen;
         $._publicMinting = initParams.isPublicMinting;
         $._baseURI = initParams.baseURI;
+        $._contractURI = initParams.contractURI;
 
         __ERC721_init(initParams.name, initParams.symbol);
     }
@@ -141,24 +143,29 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         return _baseURI();
     }
 
+    /// @notice Returns the contract URI for the collection.
+    function contractURI() external view returns (string memory) {
+        return _getSPGNFTStorage()._contractURI;
+    }
+
     /// @notice Sets the fee to mint an NFT from the collection. Payment is in the designated currency.
     /// @dev Only callable by the admin role.
     /// @param fee The new mint fee paid in the mint token.
-    function setMintFee(uint256 fee) public onlyRole(SPGNFTLib.ADMIN_ROLE) {
+    function setMintFee(uint256 fee) external onlyRole(SPGNFTLib.ADMIN_ROLE) {
         _getSPGNFTStorage()._mintFee = fee;
     }
 
     /// @notice Sets the mint token for the collection.
     /// @dev Only callable by the admin role.
     /// @param token The new mint token for mint payment.
-    function setMintFeeToken(address token) public onlyRole(SPGNFTLib.ADMIN_ROLE) {
+    function setMintFeeToken(address token) external onlyRole(SPGNFTLib.ADMIN_ROLE) {
         _getSPGNFTStorage()._mintFeeToken = token;
     }
 
     /// @notice Sets the recipient of mint fees.
     /// @dev Only callable by the fee recipient.
     /// @param newFeeRecipient The new fee recipient.
-    function setMintFeeRecipient(address newFeeRecipient) public {
+    function setMintFeeRecipient(address newFeeRecipient) external {
         if (msg.sender != _getSPGNFTStorage()._mintFeeRecipient) {
             revert Errors.SPGNFT__CallerNotFeeRecipient();
         }
@@ -168,14 +175,14 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @notice Sets the minting status.
     /// @dev Only callable by the admin role.
     /// @param mintOpen Whether minting is open or not.
-    function setMintOpen(bool mintOpen) public onlyRole(SPGNFTLib.ADMIN_ROLE) {
+    function setMintOpen(bool mintOpen) external onlyRole(SPGNFTLib.ADMIN_ROLE) {
         _getSPGNFTStorage()._mintOpen = mintOpen;
     }
 
     /// @notice Sets the public minting status.
     /// @dev Only callable by the admin role.
     /// @param isPublicMinting Whether the collection is open for public minting or not.
-    function setPublicMinting(bool isPublicMinting) public onlyRole(SPGNFTLib.ADMIN_ROLE) {
+    function setPublicMinting(bool isPublicMinting) external onlyRole(SPGNFTLib.ADMIN_ROLE) {
         _getSPGNFTStorage()._publicMinting = isPublicMinting;
     }
 
@@ -183,8 +190,18 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// either baseURI + token ID (if nftMetadataURI is empty) or baseURI + nftMetadataURI.
     /// @dev Only callable by the admin role.
     /// @param baseURI The new base URI for the collection.
-    function setBaseURI(string memory baseURI) public onlyRole(SPGNFTLib.ADMIN_ROLE) {
+    function setBaseURI(string memory baseURI) external onlyRole(SPGNFTLib.ADMIN_ROLE) {
         _getSPGNFTStorage()._baseURI = baseURI;
+    }
+
+    /// @notice Sets the contract URI for the collection.
+    /// @dev Only callable by the admin role.
+    /// @param contractURI The new contract URI for the collection. Follows ERC-7572 standard.
+    ///        See https://eips.ethereum.org/EIPS/eip-7572
+    function setContractURI(string memory contractURI) external onlyRole(SPGNFTLib.ADMIN_ROLE) {
+        _getSPGNFTStorage()._contractURI = contractURI;
+
+        emit ContractURIUpdated();
     }
 
     /// @notice Mints an NFT from the collection. Only callable by the minter role.
