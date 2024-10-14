@@ -3,21 +3,17 @@ pragma solidity 0.8.26;
 
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
+import { IERC7572 } from "./IERC7572.sol";
+
 /// @title IStoryNFT
 /// @notice Interface for StoryNFT contracts.
-interface IStoryNFT is IERC721 {
+interface IStoryNFT is IERC721, IERC7572 {
     ////////////////////////////////////////////////////////////////////////////
     //                              Errors                                     //
     ////////////////////////////////////////////////////////////////////////////
     /// @notice Zero address provided as a param to StoryNFT constructor.
     error StoryNFT__ZeroAddressParam();
 
-    ////////////////////////////////////////////////////////////////////////////
-    //                              Events                                     //
-    ////////////////////////////////////////////////////////////////////////////
-    /// @notice Emitted when the contractURI is set.
-    /// @param contractURI The new contractURI of the collection.
-    event ContractMetadataUpdated(string contractURI);
 
     ////////////////////////////////////////////////////////////////////////////
     //                              Structs                                   //
@@ -52,7 +48,4 @@ interface IStoryNFT is IERC721 {
 
     /// @notice Returns the current total supply of the collection.
     function totalSupply() external view returns (uint256);
-
-    /// @notice Returns the contract URI of the collection (follows OpenSea contract-level metadata standard).
-    function contractURI() external view returns (string memory);
 }

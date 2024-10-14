@@ -84,7 +84,7 @@ abstract contract BaseStoryNFT is IStoryNFT, ERC721URIStorage, Ownable, Initiali
     function setContractURI(string memory contractURI_) external onlyOwner {
         _contractURI = contractURI_;
 
-        emit ContractMetadataUpdated(contractURI_);
+        emit ContractURIUpdated();
     }
 
     /// @notice Mints a new token and registers as an IP asset without specifying a tokenURI.

@@ -8,7 +8,7 @@ import { IStoryNFT } from "./IStoryNFT.sol";
 
 /// @title Story Badge NFT Interface
 /// @notice A Story Badge NFT is a soulbound NFT that has an unified token URI for all tokens.
-interface IStoryBadgeNFT is IStoryNFT, IERC5192, IERC721Metadata {
+interface IStoryBadgeNFT is IStoryNFT, IERC721Metadata, IERC5192 {
     ////////////////////////////////////////////////////////////////////////////
     //                              Errors                                    //
     ////////////////////////////////////////////////////////////////////////////
