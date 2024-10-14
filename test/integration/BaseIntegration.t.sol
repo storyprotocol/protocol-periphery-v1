@@ -66,6 +66,7 @@ contract BaseIntegration is Test, Script, StoryProtocolCoreAddressManager, Story
     string internal testCollectionName;
     string internal testCollectionSymbol;
     string internal testBaseURI;
+    string internal testContractURI;
     uint32 internal testMaxSupply;
     uint256 internal testMintFee;
     address internal testMintFeeToken;
@@ -110,6 +111,7 @@ contract BaseIntegration is Test, Script, StoryProtocolCoreAddressManager, Story
         testCollectionName = "Test Collection";
         testCollectionSymbol = "TEST";
         testBaseURI = "https://test.com/";
+        testContractURI = "https://test-contract-uri.com/";
         testMaxSupply = 100_000;
         testMintFee = 10 * 10 ** StoryUSD.decimals(); // 10 SUSD
         testMintFeeToken = address(StoryUSD);

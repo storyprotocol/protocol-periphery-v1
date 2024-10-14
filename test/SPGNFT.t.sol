@@ -28,6 +28,7 @@ contract SPGNFTTest is BaseTest {
                     name: "Test Collection",
                     symbol: "TEST",
                     baseURI: testBaseURI,
+                    contractURI: testContractURI,
                     maxSupply: 100,
                     mintFee: 100 * 10 ** mockToken.decimals(),
                     mintFeeToken: address(mockToken),
@@ -57,6 +58,7 @@ contract SPGNFTTest is BaseTest {
                 name: "Test Collection",
                 symbol: "TEST",
                 baseURI: testBaseURI,
+                contractURI: testContractURI,
                 maxSupply: 100,
                 mintFee: 100 * 10 ** mockToken.decimals(),
                 mintFeeToken: address(mockToken),
@@ -76,6 +78,8 @@ contract SPGNFTTest is BaseTest {
         assertEq(anotherNftContract.mintFeeRecipient(), feeRecipient);
         assertTrue(anotherNftContract.mintOpen());
         assertFalse(anotherNftContract.publicMinting());
+        assertEq(anotherNftContract.contractURI(), testContractURI);
+        assertEq(anotherNftContract.baseURI(), testBaseURI);
     }
 
     function test_SPGNFT_initialize_revert_zeroParams() public {
@@ -96,6 +100,7 @@ contract SPGNFTTest is BaseTest {
                 name: "Test Collection",
                 symbol: "TEST",
                 baseURI: testBaseURI,
+                contractURI: testContractURI,
                 maxSupply: 100,
                 mintFee: 1,
                 mintFeeToken: address(0),
@@ -112,6 +117,7 @@ contract SPGNFTTest is BaseTest {
                 name: "Test Collection",
                 symbol: "TEST",
                 baseURI: testBaseURI,
+                contractURI: testContractURI,
                 maxSupply: 0,
                 mintFee: 0,
                 mintFeeToken: address(mockToken),
@@ -193,6 +199,18 @@ contract SPGNFTTest is BaseTest {
         assertEq(nftContract.tokenURI(tokenId2), ipMetadataEmpty.nftMetadataURI);
         assertEq(nftContract.tokenURI(tokenId3), ipMetadataDefault.nftMetadataURI);
 
+        vm.stopPrank();
+    }
+
+    function test_SPGNFT_setContractURI() public {
+        assertEq(nftContract.contractURI(), testContractURI);
+
+        vm.startPrank(u.alice); // owner (admin) of the collection
+        nftContract.setContractURI("test");
+        assertEq(nftContract.contractURI(), "test");
+
+        nftContract.setContractURI(testContractURI);
+        assertEq(nftContract.contractURI(), testContractURI);
         vm.stopPrank();
     }
 

@@ -44,6 +44,7 @@ contract RegistrationIntegration is BaseIntegration {
                     name: testCollectionName,
                     symbol: testCollectionSymbol,
                     baseURI: testBaseURI,
+                    contractURI: testContractURI,
                     maxSupply: testMaxSupply,
                     mintFee: testMintFee,
                     mintFeeToken: testMintFeeToken,
@@ -58,6 +59,7 @@ contract RegistrationIntegration is BaseIntegration {
         assertEq(spgNftContract.name(), testCollectionName);
         assertEq(spgNftContract.symbol(), testCollectionSymbol);
         assertEq(spgNftContract.baseURI(), testBaseURI);
+        assertEq(spgNftContract.contractURI(), testContractURI);
         assertEq(spgNftContract.totalSupply(), 0);
         assertEq(spgNftContract.mintFee(), testMintFee);
         assertEq(spgNftContract.mintFeeToken(), testMintFeeToken);
@@ -137,6 +139,7 @@ contract RegistrationIntegration is BaseIntegration {
                     name: testCollectionName,
                     symbol: testCollectionSymbol,
                     baseURI: testBaseURI,
+                    contractURI: testContractURI,
                     maxSupply: testMaxSupply,
                     mintFee: testMintFee,
                     mintFeeToken: testMintFeeToken,
@@ -163,6 +166,7 @@ contract RegistrationIntegration is BaseIntegration {
             assertEq(nftContracts[i].mintFeeRecipient(), testSender);
             assertTrue(nftContracts[i].mintOpen());
             assertFalse(nftContracts[i].publicMinting());
+            assertEq(nftContracts[i].contractURI(), testContractURI);
         }
     }
 

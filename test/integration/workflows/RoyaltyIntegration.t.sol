@@ -590,6 +590,7 @@ contract RoyaltyIntegration is BaseIntegration {
                     name: testCollectionName,
                     symbol: testCollectionSymbol,
                     baseURI: testBaseURI,
+                    contractURI: testContractURI,
                     maxSupply: testMaxSupply,
                     mintFee: 0,
                     mintFeeToken: testMintFeeToken,

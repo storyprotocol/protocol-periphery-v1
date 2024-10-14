@@ -366,6 +366,7 @@ contract GroupingIntegration is BaseIntegration {
                         name: testCollectionName,
                         symbol: testCollectionSymbol,
                         baseURI: testBaseURI,
+                        contractURI: testContractURI,
                         maxSupply: testMaxSupply,
                         mintFee: testMintFee,
                         mintFeeToken: testMintFeeToken,

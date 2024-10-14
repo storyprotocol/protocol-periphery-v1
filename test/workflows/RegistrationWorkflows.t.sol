@@ -26,6 +26,8 @@ contract RegistrationWorkflowsTest is BaseTest {
     function test_RegistrationWorkflows_createCollection() public withCollection {
         assertEq(nftContract.name(), "Test Collection");
         assertEq(nftContract.symbol(), "TEST");
+        assertEq(nftContract.baseURI(), testBaseURI);
+        assertEq(nftContract.contractURI(), testContractURI);
         assertEq(nftContract.totalSupply(), 0);
         assertTrue(nftContract.hasRole(SPGNFTLib.MINTER_ROLE, u.alice));
         assertEq(nftContract.mintFee(), 100 * 10 ** mockToken.decimals());
@@ -43,6 +45,7 @@ contract RegistrationWorkflowsTest is BaseTest {
                     name: "Test Private Collection",
                     symbol: "TESTPRIV",
                     baseURI: testBaseURI,
+                    contractURI: testContractURI,
                     maxSupply: 100,
                     mintFee: 100 * 10 ** mockToken.decimals(),
                     mintFeeToken: address(mockToken),
@@ -71,6 +74,7 @@ contract RegistrationWorkflowsTest is BaseTest {
                     name: "Test Public Collection",
                     symbol: "TESTPUB",
                     baseURI: testBaseURI,
+                    contractURI: testContractURI,
                     maxSupply: 100,
                     mintFee: 1 * 10 ** mockToken.decimals(),
                     mintFeeToken: address(mockToken),
@@ -163,6 +167,7 @@ contract RegistrationWorkflowsTest is BaseTest {
                 ISPGNFT.InitParams({
                     name: "Test Collection",
                     symbol: "TEST",
+                    contractURI: testContractURI,
                     baseURI: testBaseURI,
                     maxSupply: 100,
                     mintFee: 100 * 10 ** mockToken.decimals(),
@@ -190,6 +195,7 @@ contract RegistrationWorkflowsTest is BaseTest {
             assertEq(nftContracts[i].mintFeeRecipient(), u.carl);
             assertTrue(nftContracts[i].mintOpen());
             assertFalse(nftContracts[i].publicMinting());
+            assertEq(nftContracts[i].contractURI(), testContractURI);
         }
     }
 

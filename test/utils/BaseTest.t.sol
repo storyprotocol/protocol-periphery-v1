@@ -72,6 +72,7 @@ contract BaseTest is Test, DeployHelper {
 
     /// @dev test baseURI
     string internal testBaseURI = "https://test-base-uri.com/";
+    string internal testContractURI = "https://test-contract-uri.com/";
 
     constructor() DeployHelper(CREATE3_DEPLOYER) {}
 
@@ -143,6 +144,7 @@ contract BaseTest is Test, DeployHelper {
                     name: "Test SPG NFT Public",
                     symbol: "TSPGNFTPUB",
                     baseURI: testBaseURI,
+                    contractURI: testContractURI,
                     maxSupply: 100_000_000,
                     mintFee: 1 * 10 ** mockToken.decimals(), // 1 token
                     mintFeeToken: address(mockToken),
@@ -160,6 +162,7 @@ contract BaseTest is Test, DeployHelper {
                     name: "Test SPG NFT Private",
                     symbol: "TSPGNFTPRI",
                     baseURI: testBaseURI,
+                    contractURI: testContractURI,
                     maxSupply: 100_000_000,
                     mintFee: 1 * 10 ** mockToken.decimals(), // 1 token
                     mintFeeToken: address(mockToken),
@@ -247,6 +250,7 @@ contract BaseTest is Test, DeployHelper {
                     name: "Test Collection",
                     symbol: "TEST",
                     baseURI: testBaseURI,
+                    contractURI: testContractURI,
                     maxSupply: 100,
                     mintFee: 100 * 10 ** mockToken.decimals(),
                     mintFeeToken: address(mockToken),
