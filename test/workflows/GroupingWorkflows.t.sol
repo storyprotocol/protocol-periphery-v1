@@ -7,10 +7,14 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { ILicenseRegistry } from "@storyprotocol/core/interfaces/registries/ILicenseRegistry.sol";
 import { IIPAssetRegistry } from "@storyprotocol/core/interfaces/registries/IIPAssetRegistry.sol";
+import { IIpRoyaltyVault } from "@storyprotocol/core/interfaces/modules/royalty/policies/IIpRoyaltyVault.sol";
 import { IGroupingModule } from "@storyprotocol/core/interfaces/modules/grouping/IGroupingModule.sol";
 import { IGroupIPAssetRegistry } from "@storyprotocol/core/interfaces/registries/IGroupIPAssetRegistry.sol";
+import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
+import { PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 
 // contracts
+import { Errors } from "../../contracts/lib/Errors.sol";
 import { LicensingHelper } from "../../contracts/lib/LicensingHelper.sol";
 import { WorkflowStructs } from "../../contracts/lib/WorkflowStructs.sol";
 
@@ -22,7 +26,9 @@ import { BaseTest } from "../utils/BaseTest.t.sol";
 contract GroupingWorkflowsTest is BaseTest {
     using Strings for uint256;
 
-    uint256 internal constant testLicenseTermsId = 1;
+    uint256 internal testLicenseTermsId;
+    PILTerms internal testLicenseTerms;
+    uint32 internal revShare;
 
     address internal groupOwner;
     address internal groupId;
@@ -37,6 +43,16 @@ contract GroupingWorkflowsTest is BaseTest {
 
         groupOwner = u.bob;
         groupOwnerSk = sk.bob;
+
+        // register license terms
+        revShare = 10 * 10 ** 6; // 10%
+        testLicenseTerms = PILFlavors.commercialRemix({
+            mintingFee: 0,
+            commercialRevShare: revShare,
+            currencyToken: address(mockToken),
+            royaltyPolicy: address(royaltyPolicyLAP)
+        });
+        testLicenseTermsId = pilTemplate.registerLicenseTerms(testLicenseTerms);
 
         // setup a group IPA
         _setupGroup();
@@ -177,7 +193,7 @@ contract GroupingWorkflowsTest is BaseTest {
     function test_GroupingWorkflows_registerGroupAndAttachLicense() public {
         vm.startPrank(groupOwner);
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicense({
-            groupPool: address(mockRewardPool),
+            groupPool: address(evenSplitGroupPool),
             licenseTemplate: address(pilTemplate),
             licenseTermsId: testLicenseTermsId
         });
@@ -199,7 +215,7 @@ contract GroupingWorkflowsTest is BaseTest {
     function test_GroupingWorkflows_registerGroupAndAttachLicenseAndAddIps() public {
         vm.startPrank(groupOwner);
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
-            groupPool: address(mockRewardPool),
+            groupPool: address(evenSplitGroupPool),
             ipIds: ipIds,
             licenseTemplate: address(pilTemplate),
             licenseTermsId: testLicenseTermsId
@@ -222,6 +238,153 @@ contract GroupingWorkflowsTest is BaseTest {
         );
         assertEq(licenseTemplate, address(pilTemplate));
         assertEq(licenseTermsId, testLicenseTermsId);
+    }
+
+    // Collect royalties for the entire group and distribute to each member IP's royalty vault
+    function test_GroupingWorkflows_collectRoyaltiesAndClaimReward() public {
+        address ipOwner1 = u.bob;
+        address ipOwner2 = u.carl;
+
+        vm.startPrank(groupOwner);
+        address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
+            groupPool: address(evenSplitGroupPool),
+            ipIds: ipIds,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: testLicenseTermsId
+        });
+        vm.stopPrank();
+
+        assertEq(ipAssetRegistry.totalMembers(newGroupId), 10);
+        assertEq(evenSplitGroupPool.getTotalIps(newGroupId), 10);
+
+        address[] memory parentIpIds = new address[](1);
+        parentIpIds[0] = newGroupId;
+        uint256[] memory licenseTermsIds = new uint256[](1);
+        licenseTermsIds[0] = testLicenseTermsId;
+
+        vm.startPrank(ipOwner1);
+        // approve nft minting fee
+        mockToken.mint(ipOwner1, 1 * 10 ** mockToken.decimals());
+        mockToken.approve(address(spgNftPublic), 1 * 10 ** mockToken.decimals());
+
+        (address ipId1, ) = derivativeWorkflows.mintAndRegisterIpAndMakeDerivative({
+            spgNftContract: address(spgNftPublic),
+            derivData: WorkflowStructs.MakeDerivative({
+                parentIpIds: parentIpIds,
+                licenseTermsIds: licenseTermsIds,
+                licenseTemplate: address(pilTemplate),
+                royaltyContext: ""
+            }),
+            ipMetadata: ipMetadataDefault,
+            recipient: ipOwner1
+        });
+        vm.stopPrank();
+
+        vm.startPrank(ipOwner2);
+        // approve nft minting fee
+        mockToken.mint(ipOwner2, 1 * 10 ** mockToken.decimals());
+        mockToken.approve(address(spgNftPublic), 1 * 10 ** mockToken.decimals());
+
+        (address ipId2, ) = derivativeWorkflows.mintAndRegisterIpAndMakeDerivative({
+            spgNftContract: address(spgNftPublic),
+            derivData: WorkflowStructs.MakeDerivative({
+                parentIpIds: parentIpIds,
+                licenseTermsIds: licenseTermsIds,
+                licenseTemplate: address(pilTemplate),
+                royaltyContext: ""
+            }),
+            ipMetadata: ipMetadataDefault,
+            recipient: ipOwner2
+        });
+        vm.stopPrank();
+
+        uint256 amount1 = 1_000 * 10 ** mockToken.decimals(); // 1,000 tokens
+        mockToken.mint(ipOwner1, amount1);
+        vm.startPrank(ipOwner1);
+        mockToken.approve(address(royaltyModule), amount1);
+        royaltyModule.payRoyaltyOnBehalf(ipId1, ipOwner1, address(mockToken), amount1);
+        royaltyPolicyLAP.transferToVault(
+            ipId1,
+            newGroupId,
+            address(mockToken),
+            (amount1 * revShare) / royaltyModule.maxPercent()
+        );
+        vm.stopPrank();
+        uint256 snapshotId1 = IIpRoyaltyVault(royaltyModule.ipRoyaltyVaults(newGroupId)).snapshot();
+
+        uint256 amount2 = 10_000 * 10 ** mockToken.decimals(); // 10,000 tokens
+        mockToken.mint(ipOwner2, amount2);
+        vm.startPrank(ipOwner2);
+        mockToken.approve(address(royaltyModule), amount2);
+        royaltyModule.payRoyaltyOnBehalf(ipId2, ipOwner2, address(mockToken), amount2);
+        royaltyPolicyLAP.transferToVault(
+            ipId2,
+            newGroupId,
+            address(mockToken),
+            (amount2 * revShare) / royaltyModule.maxPercent()
+        );
+        vm.stopPrank();
+        uint256 snapshotId2 = IIpRoyaltyVault(royaltyModule.ipRoyaltyVaults(newGroupId)).snapshot();
+
+        uint256[] memory snapshotIds = new uint256[](2);
+        address[] memory royaltyTokens = new address[](1);
+        snapshotIds[0] = snapshotId1;
+        snapshotIds[1] = snapshotId2;
+        royaltyTokens[0] = address(mockToken);
+
+        {
+            /* TODO: This is a workaround to avoid the error where the member IP's IP royalty vault is not initialized
+             *       when claiming reward. remove this when the issue is fixed in core protocol.
+             */
+            for (uint256 i = 0; i < ipIds.length; i++) {
+                licensingModule.mintLicenseTokens({
+                    licensorIpId: ipIds[i],
+                    licenseTemplate: address(pilTemplate),
+                    licenseTermsId: testLicenseTermsId,
+                    amount: 1,
+                    receiver: u.admin,
+                    royaltyContext: ""
+                });
+            }
+        }
+
+        uint256[] memory collectedRoyalties = groupingWorkflows.collectRoyaltiesAndClaimReward(
+            newGroupId,
+            royaltyTokens,
+            snapshotIds,
+            ipIds
+        );
+
+        assertEq(collectedRoyalties.length, 1);
+        assertEq(
+            collectedRoyalties[0],
+            (amount1 * revShare) / royaltyModule.maxPercent() + (amount2 * revShare) / royaltyModule.maxPercent()
+        );
+
+        // check each member IP received the reward in their IP royalty vault
+        for (uint256 i = 0; i < ipIds.length; i++) {
+            assertEq(
+                MockERC20(mockToken).balanceOf(royaltyModule.ipRoyaltyVaults(ipIds[i])),
+                collectedRoyalties[0] / ipIds.length // even split between all member IPs
+            );
+        }
+    }
+
+    // Revert if currency token contains zero address
+    function test_GroupingWorkflows_revert_collectRoyaltiesAndClaimReward_zeroAddressParam() public {
+        address[] memory currencyTokens = new address[](1);
+        currencyTokens[0] = address(0);
+
+        uint256[] memory snapshotIds = new uint256[](1);
+        snapshotIds[0] = 0;
+
+        vm.expectRevert(Errors.GroupingWorkflows__ZeroAddressParam.selector);
+        groupingWorkflows.collectRoyaltiesAndClaimReward(
+            groupId,
+            currencyTokens,
+            snapshotIds,
+            ipIds
+        );
     }
 
     // Multicall (mint → Register IP → Attach PIL terms → Add new IP to group IPA)
@@ -371,7 +534,7 @@ contract GroupingWorkflowsTest is BaseTest {
     function _setupGroup() internal {
         // register a group and attach default PIL terms to it
         vm.startPrank(groupOwner);
-        groupId = IGroupingModule(groupingModule).registerGroup(address(mockRewardPool));
+        groupId = IGroupingModule(groupingModule).registerGroup(address(evenSplitGroupPool));
         vm.label(groupId, "Group1");
         LicensingHelper.attachLicenseTerms(
             groupId,

@@ -11,7 +11,6 @@ import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/meta
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
 import { MetaTx } from "@storyprotocol/core/lib/MetaTx.sol";
-import { MockEvenSplitGroupPool } from "@storyprotocol/test/mocks/grouping/MockEvenSplitGroupPool.sol";
 import { MockIPGraph } from "@storyprotocol/test/mocks/MockIPGraph.sol";
 
 // contracts
@@ -55,9 +54,6 @@ contract BaseTest is Test, DeployHelper {
     /// @dev Create3 deployer address
     address internal CREATE3_DEPLOYER = address(new Create3Deployer());
     uint256 internal CREATE3_DEFAULT_SEED = 1234567890;
-
-    /// @dev MockEvenSplitGroupPool for testing
-    MockEvenSplitGroupPool internal mockRewardPool;
 
     /// @dev Mock assets
     MockERC20 internal mockToken;
@@ -122,11 +118,6 @@ contract BaseTest is Test, DeployHelper {
         groupingWorkflows.setNftContractBeacon(address(spgNftBeacon));
         licenseAttachmentWorkflows.setNftContractBeacon(address(spgNftBeacon));
         registrationWorkflows.setNftContractBeacon(address(spgNftBeacon));
-
-        // whitelist mockRewardPool as a group reward pool
-        mockRewardPool = new MockEvenSplitGroupPool(royaltyModuleAddr);
-        groupingModule.whitelistGroupRewardPool(address(mockRewardPool));
-
         vm.stopPrank();
     }
 
