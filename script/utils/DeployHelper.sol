@@ -15,6 +15,7 @@ import { CoreMetadataModule } from "@storyprotocol/core/modules/metadata/CoreMet
 import { CoreMetadataViewModule } from "@storyprotocol/core/modules/metadata/CoreMetadataViewModule.sol";
 import { DisputeModule } from "@storyprotocol/core/modules/dispute/DisputeModule.sol";
 import { GroupingModule } from "@storyprotocol/core/modules/grouping/GroupingModule.sol";
+import { EvenSplitGroupPool } from "@storyprotocol/core/modules/grouping/EvenSplitGroupPool.sol";
 import { GroupNFT } from "@storyprotocol/core/GroupNFT.sol";
 import { IPAccountImpl } from "@storyprotocol/core/IPAccountImpl.sol";
 import { IPAssetRegistry } from "@storyprotocol/core/registries/IPAssetRegistry.sol";
@@ -32,7 +33,6 @@ import { RoyaltyPolicyLRP } from "@storyprotocol/core/modules/royalty/policies/L
 import { StorageLayoutChecker } from "@storyprotocol/script/utils/upgrades/StorageLayoutCheck.s.sol";
 
 // contracts
-import { IStoryNFT } from "../../contracts/interfaces/story-nft/IStoryNFT.sol";
 import { SPGNFT } from "../../contracts/SPGNFT.sol";
 import { DerivativeWorkflows } from "../../contracts/workflows/DerivativeWorkflows.sol";
 import { GroupingWorkflows } from "../../contracts/workflows/GroupingWorkflows.sol";
@@ -114,6 +114,7 @@ contract DeployHelper is
     RoyaltyPolicyLAP internal royaltyPolicyLAP;
     RoyaltyPolicyLRP internal royaltyPolicyLRP;
     UpgradeableBeacon internal ipRoyaltyVaultBeacon;
+    EvenSplitGroupPool internal evenSplitGroupPool;
 
     // mock core contract deployer
     address internal mockDeployer;
@@ -782,6 +783,28 @@ contract DeployHelper is
             "Deploy: Grouping Module Address Mismatch"
         );
         require(_loadProxyImpl(address(groupingModule)) == impl, "GroupingModule Proxy Implementation Mismatch");
+
+         _predeploy("EvenSplitGroupPool");
+        impl = address(new EvenSplitGroupPool(
+            address(groupingModule),
+            address(royaltyModule),
+            address(ipAssetRegistry)
+        ));
+        evenSplitGroupPool = EvenSplitGroupPool(
+            TestProxyHelper.deployUUPSProxy(
+                create3Deployer,
+                _getSalt(type(EvenSplitGroupPool).name),
+                impl,
+                abi.encodeCall(EvenSplitGroupPool.initialize, address(protocolAccessManager))
+            )
+        );
+        require(
+            _getDeployedAddress(type(EvenSplitGroupPool).name) == address(evenSplitGroupPool),
+            "Deploy: EvenSplitGroupPool Address Mismatch"
+        );
+        require(_loadProxyImpl(address(evenSplitGroupPool)) == impl, "EvenSplitGroupPool Proxy Implementation Mismatch");
+        impl = address(0);
+        _postdeploy("EvenSplitGroupPool", address(evenSplitGroupPool));
     }
 
     function _configureMockCoreContracts() private {
@@ -807,6 +830,9 @@ contract DeployHelper is
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLRP), true);
         royaltyModule.setIpRoyaltyVaultBeacon(address(ipRoyaltyVaultBeacon));
         ipRoyaltyVaultBeacon.transferOwnership(address(royaltyPolicyLAP));
+
+        // add evenSplitGroupPool to whitelist of group pools
+        groupingModule.whitelistGroupRewardPool(address(evenSplitGroupPool));
     }
 
     /// @dev get the salt for the contract deployment with CREATE3
