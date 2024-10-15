@@ -121,7 +121,8 @@ contract RoyaltyIntegration is BaseIntegration {
                 royaltyModule.maxPercent() + // 1000 * 10% = 100 royalty from childIpB
                 (((defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent()) * defaultCommRevShareA) /
                 royaltyModule.maxPercent() + // 1000 * 10% * 10% * 2 = 20 royalty from grandChildIp
-                defaultMintingFeeC + (defaultMintingFeeC * defaultCommRevShareC) /
+                defaultMintingFeeC +
+                (defaultMintingFeeC * defaultCommRevShareC) /
                 royaltyModule.maxPercent() // 500 from from minting fee of childIpC,500 * 20% = 100 royalty from childIpC
         );
     }
@@ -189,7 +190,8 @@ contract RoyaltyIntegration is BaseIntegration {
                 royaltyModule.maxPercent() + // 1000 * 10% = 100 royalty from childIpB
                 (((defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent()) * defaultCommRevShareA) /
                 royaltyModule.maxPercent() + // 1000 * 10% * 10% = 10 royalty from grandChildIp
-                defaultMintingFeeC + (defaultMintingFeeC * defaultCommRevShareC) /
+                defaultMintingFeeC +
+                (defaultMintingFeeC * defaultCommRevShareC) /
                 royaltyModule.maxPercent() // 500 from from minting fee of childIpC, 500 * 20% = 100 royalty from childIpC
         );
     }

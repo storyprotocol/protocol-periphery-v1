@@ -379,12 +379,7 @@ contract GroupingWorkflowsTest is BaseTest {
         snapshotIds[0] = 0;
 
         vm.expectRevert(Errors.GroupingWorkflows__ZeroAddressParam.selector);
-        groupingWorkflows.collectRoyaltiesAndClaimReward(
-            groupId,
-            currencyTokens,
-            snapshotIds,
-            ipIds
-        );
+        groupingWorkflows.collectRoyaltiesAndClaimReward(groupId, currencyTokens, snapshotIds, ipIds);
     }
 
     // Multicall (mint → Register IP → Attach PIL terms → Add new IP to group IPA)

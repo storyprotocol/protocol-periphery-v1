@@ -14,7 +14,6 @@ interface IStoryNFT is IERC721, IERC7572 {
     /// @notice Zero address provided as a param to StoryNFT constructor.
     error StoryNFT__ZeroAddressParam();
 
-
     ////////////////////////////////////////////////////////////////////////////
     //                              Structs                                   //
     ////////////////////////////////////////////////////////////////////////////
