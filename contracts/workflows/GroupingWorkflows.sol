@@ -274,6 +274,26 @@ contract GroupingWorkflows is
         GROUP_NFT.safeTransferFrom(address(this), msg.sender, GROUP_NFT.totalSupply() - 1);
     }
 
+    /// @notice Collect royalties for the entire group and distribute the rewards to each member IP's royalty vault
+    /// @param groupId The ID of the group IP.
+    /// @param currencyTokens The addresses of the currency (revenue) tokens to claim.
+    /// @param groupSnapshotIds The IDs of the snapshots to collect royalties on.
+    /// @param memberIpIds The IDs of the member IPs to distribute the rewards to.
+    /// @return collectedRoyalties The amounts of royalties collected for each currency token.
+    function collectRoyaltiesAndClaimReward(
+        address groupId,
+        address[] calldata currencyTokens,
+        uint256[] calldata groupSnapshotIds,
+        address[] calldata memberIpIds
+    ) external returns (uint256[] memory collectedRoyalties) {
+        collectedRoyalties = new uint256[](currencyTokens.length);
+        for (uint256 i = 0; i < currencyTokens.length; i++) {
+            if (currencyTokens[i] == address(0)) revert Errors.GroupingWorkflows__ZeroAddressParam();
+            collectedRoyalties[i] = GROUPING_MODULE.collectRoyalties(groupId, currencyTokens[i], groupSnapshotIds);
+            GROUPING_MODULE.claimReward(groupId, currencyTokens[i], memberIpIds);
+        }
+    }
+
     //
     // Upgrade
     //
