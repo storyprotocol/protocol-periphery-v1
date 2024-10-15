@@ -129,6 +129,9 @@ contract StoryNFTFactory is IStoryNFTFactory, AccessManagedUpgradeable, UUPSUpgr
         // The given signature must not have been used
         if ($.usedSignatures[signature]) revert StoryNFTFactory__SignatureAlreadyUsed(signature);
 
+        // Mark the signature as used
+        $.usedSignatures[signature] = true;
+
         // The given organization name must not have been used
         if ($.deployedStoryNftsByOrgName[orgName] != address(0))
             revert StoryNFTFactory__OrgAlreadyDeployed(orgName, $.deployedStoryNftsByOrgName[orgName]);
@@ -151,9 +154,6 @@ contract StoryNFTFactory is IStoryNFTFactory, AccessManagedUpgradeable, UUPSUpgr
         $.deployedStoryNftsByOrgName[orgName] = storyNft;
         $.deployedStoryNftsByOrgTokenId[orgTokenId] = storyNft;
         $.deployedStoryNftsByOrgIpId[orgIpId] = storyNft;
-
-        // Mark the signature as used
-        $.usedSignatures[signature] = true;
 
         emit StoryNftDeployed(orgName, orgNft, orgTokenId, orgIpId, storyNft);
     }

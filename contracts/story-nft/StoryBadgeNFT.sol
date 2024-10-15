@@ -70,6 +70,9 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseStoryNFT, ERC721Holder {
         // The given signature must not have been used
         if (_usedSignatures[signature]) revert StoryBadgeNFT__SignatureAlreadyUsed();
 
+        // Mark the signature as used
+        _usedSignatures[signature] = true;
+
         // The given signature must be valid
         bytes32 digest = keccak256(abi.encodePacked(msg.sender)).toEthSignedMessageHash();
         if (!SignatureChecker.isValidSignatureNow(_signer, digest, signature)) revert StoryBadgeNFT__InvalidSignature();
@@ -87,9 +90,6 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseStoryNFT, ERC721Holder {
 
         // Transfer the badge to the recipient
         _safeTransfer(address(this), recipient, tokenId);
-
-        // Mark the signature as used
-        _usedSignatures[signature] = true;
 
         emit StoryBadgeNFTMinted(recipient, tokenId, ipId);
     }
