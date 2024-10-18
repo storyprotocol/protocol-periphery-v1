@@ -145,7 +145,8 @@ contract DerivativeWorkflows is
             parentIpIds: derivData.parentIpIds,
             licenseTermsIds: derivData.licenseTermsIds,
             licenseTemplate: derivData.licenseTemplate,
-            royaltyContext: derivData.royaltyContext
+            royaltyContext: derivData.royaltyContext,
+            maxMintingFee: 0
         });
 
         ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
@@ -198,7 +199,8 @@ contract DerivativeWorkflows is
             parentIpIds: derivData.parentIpIds,
             licenseTermsIds: derivData.licenseTermsIds,
             licenseTemplate: derivData.licenseTemplate,
-            royaltyContext: derivData.royaltyContext
+            royaltyContext: derivData.royaltyContext,
+            maxMintingFee: derivData.maxMintingFee
         });
     }
 

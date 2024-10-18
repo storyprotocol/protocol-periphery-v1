@@ -86,7 +86,7 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseStoryNFT, ERC721Holder {
         licenseTermsIds[0] = DEFAULT_LICENSE_TERMS_ID;
 
         // Make the badge a derivative of the organization IP
-        _makeDerivative(ipId, parentIpIds, PIL_TEMPLATE, licenseTermsIds, "");
+        _makeDerivative(ipId, parentIpIds, PIL_TEMPLATE, licenseTermsIds, "", 0);
 
         // Transfer the badge to the recipient
         _safeTransfer(address(this), recipient, tokenId);
