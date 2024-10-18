@@ -33,7 +33,18 @@ contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingH
     /// @param totalSupply The total supply of the license tokens
     /// @param amount The amount of license tokens to mint
     /// @param limit The total license token limit
-    error TotalLicenseTokenLimitExceeded(uint256 totalSupply, uint256 amount, uint256 limit);
+    error TotalLicenseTokenLimitHook_TotalLicenseTokenLimitExceeded(uint256 totalSupply, uint256 amount, uint256 limit);
+
+    /// @notice Emitted when the limit is lower than the existing supply
+    /// @param totalSupply The total supply of the license tokens
+    /// @param limit The total license token limit
+    error TotalLicenseTokenLimitHook_LimitLowerThanTotalSupply(uint256 totalSupply, uint256 limit);
+
+    /// @notice Emitted when the license registry is the zero address
+    error TotalLicenseTokenLimitHook_ZeroLicenseRegistry();
+
+    /// @notice Emitted when the license token is the zero address
+    error TotalLicenseTokenLimitHook_ZeroLicenseToken();
 
     constructor(
         address licenseRegistry,
@@ -41,8 +52,8 @@ contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingH
         address accessController,
         address ipAssetRegistry
     ) AccessControlled(accessController, ipAssetRegistry) {
-        require(licenseRegistry != address(0), "TotalLicenseTokenLimitHook: licenseRegistry is the zero address");
-        require(licenseToken != address(0), "TotalLicenseTokenLimitHook: licenseToken is the zero address");
+        if (licenseRegistry == address(0)) revert TotalLicenseTokenLimitHook_ZeroLicenseRegistry();
+        if (licenseToken == address(0)) revert TotalLicenseTokenLimitHook_ZeroLicenseToken();
         LICENSE_REGISTRY = ILicenseRegistry(licenseRegistry);
         LICENSE_TOKEN = ILicenseToken(licenseToken);
     }
@@ -59,6 +70,8 @@ contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingH
         uint256 limit
     ) external verifyPermission(licensorIpId) {
         bytes32 key = keccak256(abi.encodePacked(licensorIpId, licenseTemplate, licenseTermsId));
+        uint256 totalSupply = _getTotalSupply(licensorIpId);
+        if (limit < totalSupply) revert TotalLicenseTokenLimitHook_LimitLowerThanTotalSupply(totalSupply, limit);
         totalLicenseTokenLimit[key] = limit;
         emit SetTotalLicenseTokenLimit(licensorIpId, licenseTemplate, licenseTermsId, limit);
     }
@@ -163,10 +176,9 @@ contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingH
         uint256 limit = totalLicenseTokenLimit[key];
         if (limit != 0) {
             // derivative IPs are also considered as minted license tokens
-            uint256 totalSupply = LICENSE_REGISTRY.getDerivativeIpCount(licensorIpId) +
-                LICENSE_TOKEN.getTotalTokensByLicensor(licensorIpId);
+            uint256 totalSupply = _getTotalSupply(licensorIpId);
             if (totalSupply + amount > limit) {
-                revert TotalLicenseTokenLimitExceeded(totalSupply, amount, limit);
+                revert TotalLicenseTokenLimitHook_TotalLicenseTokenLimitExceeded(totalSupply, amount, limit);
             }
         }
     }
@@ -178,5 +190,10 @@ contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingH
     ) internal view returns (uint256 totalMintingFee) {
         (, , uint256 mintingFee, ) = ILicenseTemplate(licenseTemplate).getRoyaltyPolicy(licenseTermsId);
         return amount * mintingFee;
+    }
+
+    function _getTotalSupply(address licensorIpId) internal view returns (uint256) {
+        return
+            LICENSE_REGISTRY.getDerivativeIpCount(licensorIpId) + LICENSE_TOKEN.getTotalTokensByLicensor(licensorIpId);
     }
 }

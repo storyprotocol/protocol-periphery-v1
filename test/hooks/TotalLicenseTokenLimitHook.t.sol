@@ -3,7 +3,6 @@ pragma solidity 0.8.26;
 
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
-import "@storyprotocol/core/lib/Errors.sol";
 
 import { TotalLicenseTokenLimitHook } from "contracts/hooks/TotalLicenseTokenLimitHook.sol";
 
@@ -73,12 +72,22 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
         licensingModule.mintLicenseTokens(ipId3, address(pilTemplate), socialRemixTermsId, 10, u.alice, "");
 
         vm.expectRevert(
-            abi.encodeWithSelector(TotalLicenseTokenLimitHook.TotalLicenseTokenLimitExceeded.selector, 10, 5, 10)
+            abi.encodeWithSelector(
+                TotalLicenseTokenLimitHook.TotalLicenseTokenLimitHook_TotalLicenseTokenLimitExceeded.selector,
+                10,
+                5,
+                10
+            )
         );
         licensingModule.mintLicenseTokens(ipId1, address(pilTemplate), socialRemixTermsId, 5, u.alice, "");
 
         vm.expectRevert(
-            abi.encodeWithSelector(TotalLicenseTokenLimitHook.TotalLicenseTokenLimitExceeded.selector, 20, 5, 20)
+            abi.encodeWithSelector(
+                TotalLicenseTokenLimitHook.TotalLicenseTokenLimitHook_TotalLicenseTokenLimitExceeded.selector,
+                20,
+                5,
+                20
+            )
         );
         licensingModule.mintLicenseTokens(ipId2, address(pilTemplate), socialRemixTermsId, 5, u.alice, "");
     }
@@ -108,8 +117,50 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
         vm.stopPrank();
 
         vm.startPrank(ipOwner2);
-        vm.expectRevert(abi.encodeWithSelector(Errors.AccessController__PermissionDenied.selector, ipId1, ipOwner2, address(totalLimitHook), totalLimitHook.setTotalLicenseTokenLimit.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__PermissionDenied.selector,
+                ipId1,
+                ipOwner2,
+                address(totalLimitHook),
+                totalLimitHook.setTotalLicenseTokenLimit.selector
+            )
+        );
         totalLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), socialRemixTermsId, 20);
+    }
 
+    function test_TotalLicenseTokenLimitHook_revert_limitLowerThanTotalSupply_setLimit() public {
+        uint256 socialRemixTermsId = pilTemplate.registerLicenseTerms(PILFlavors.nonCommercialSocialRemixing());
+        TotalLicenseTokenLimitHook totalLimitHook = new TotalLicenseTokenLimitHook(
+            address(licenseRegistry),
+            address(licenseToken),
+            address(accessController),
+            address(ipAssetRegistry)
+        );
+
+        vm.prank(u.admin);
+        moduleRegistry.registerModule("TotalLicenseTokenLimitHook", address(totalLimitHook));
+        Licensing.LicensingConfig memory licensingConfig = Licensing.LicensingConfig({
+            isSet: true,
+            mintingFee: 100,
+            licensingHook: address(totalLimitHook),
+            hookData: ""
+        });
+
+        vm.startPrank(ipOwner1);
+        licensingModule.setLicensingConfig(ipId1, address(pilTemplate), socialRemixTermsId, licensingConfig);
+        totalLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), socialRemixTermsId, 10);
+        assertEq(totalLimitHook.getTotalLicenseTokenLimit(ipId1, address(pilTemplate), socialRemixTermsId), 10);
+
+        licensingModule.mintLicenseTokens(ipId1, address(pilTemplate), socialRemixTermsId, 10, u.alice, "");
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TotalLicenseTokenLimitHook.TotalLicenseTokenLimitHook_LimitLowerThanTotalSupply.selector,
+                10,
+                5
+            )
+        );
+        totalLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), socialRemixTermsId, 5);
     }
 }
