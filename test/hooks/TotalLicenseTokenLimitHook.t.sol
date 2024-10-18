@@ -3,6 +3,7 @@ pragma solidity 0.8.26;
 
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
+import { Errors } from "@storyprotocol/core/lib/Errors.sol";
 
 import { TotalLicenseTokenLimitHook } from "contracts/hooks/TotalLicenseTokenLimitHook.sol";
 
