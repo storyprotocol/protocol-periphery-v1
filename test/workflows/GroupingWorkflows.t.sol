@@ -273,7 +273,8 @@ contract GroupingWorkflowsTest is BaseTest {
                 parentIpIds: parentIpIds,
                 licenseTermsIds: licenseTermsIds,
                 licenseTemplate: address(pilTemplate),
-                royaltyContext: ""
+                royaltyContext: "",
+                maxMintingFee: 0
             }),
             ipMetadata: ipMetadataDefault,
             recipient: ipOwner1
@@ -291,7 +292,8 @@ contract GroupingWorkflowsTest is BaseTest {
                 parentIpIds: parentIpIds,
                 licenseTermsIds: licenseTermsIds,
                 licenseTemplate: address(pilTemplate),
-                royaltyContext: ""
+                royaltyContext: "",
+                maxMintingFee: 0
             }),
             ipMetadata: ipMetadataDefault,
             recipient: ipOwner2
@@ -343,7 +345,8 @@ contract GroupingWorkflowsTest is BaseTest {
                     licenseTermsId: testLicenseTermsId,
                     amount: 1,
                     receiver: u.admin,
-                    royaltyContext: ""
+                    royaltyContext: "",
+                    maxMintingFee: 0
                 });
             }
         }

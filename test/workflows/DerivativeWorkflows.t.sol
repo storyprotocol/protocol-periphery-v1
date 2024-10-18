@@ -39,10 +39,11 @@ contract DerivativeWorkflowsTest is BaseTest {
             spgNftContract: address(nftContract),
             recipient: caller,
             ipMetadata: ipMetadataDefault,
-            terms: PILFlavors.commercialUse({
+            terms: PILFlavors.commercialRemix({
                 mintingFee: 100 * 10 ** mockToken.decimals(),
-                currencyToken: address(mockToken),
-                royaltyPolicy: address(royaltyPolicyLAP)
+                commercialRevShare: 10, // 1%
+                royaltyPolicy: address(royaltyPolicyLAP),
+                currencyToken: address(mockToken)
             })
         });
         _;
@@ -106,7 +107,8 @@ contract DerivativeWorkflowsTest is BaseTest {
             licenseTermsId: licenseTermsIdParent,
             amount: 1,
             receiver: caller,
-            royaltyContext: ""
+            royaltyContext: "",
+            maxMintingFee: 0
         });
 
         // Need so that derivative workflows can transfer the license tokens
@@ -166,7 +168,8 @@ contract DerivativeWorkflowsTest is BaseTest {
             licenseTermsId: licenseTermsIdParent,
             amount: 1,
             receiver: caller,
-            royaltyContext: ""
+            royaltyContext: "",
+            maxMintingFee: 0
         });
 
         uint256[] memory licenseTokenIds = new uint256[](1);
@@ -245,7 +248,8 @@ contract DerivativeWorkflowsTest is BaseTest {
                     parentIpIds: parentIpIds,
                     licenseTemplate: address(pilTemplate),
                     licenseTermsIds: licenseTermsIds,
-                    royaltyContext: ""
+                    royaltyContext: "",
+                    maxMintingFee: 0
                 }),
                 ipMetadataDefault,
                 caller
@@ -294,7 +298,8 @@ contract DerivativeWorkflowsTest is BaseTest {
                 parentIpIds: parentIpIds,
                 licenseTemplate: address(pilTemplate),
                 licenseTermsIds: licenseTermsIds,
-                royaltyContext: ""
+                royaltyContext: "",
+                maxMintingFee: 0
             }),
             ipMetadata: ipMetadataDefault,
             recipient: caller
@@ -362,7 +367,8 @@ contract DerivativeWorkflowsTest is BaseTest {
                 parentIpIds: parentIpIds,
                 licenseTemplate: address(pilTemplate),
                 licenseTermsIds: licenseTermsIds,
-                royaltyContext: ""
+                royaltyContext: "",
+                maxMintingFee: 0
             }),
             ipMetadata: ipMetadataDefault,
             sigMetadata: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: sigMetadata }),

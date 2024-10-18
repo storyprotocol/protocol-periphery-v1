@@ -229,7 +229,8 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
                 parentIpIds: parentIpIds,
                 licenseTemplate: address(pilTemplate),
                 licenseTermsIds: licenseTermsIds,
-                royaltyContext: ""
+                royaltyContext: "",
+                maxMintingFee: 0
             }),
             ipMetadata: ipMetadataDefault,
             recipient: caller

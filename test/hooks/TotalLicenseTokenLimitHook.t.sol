@@ -48,7 +48,8 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
             isSet: true,
             mintingFee: 100,
             licensingHook: address(totalLimitHook),
-            hookData: ""
+            hookData: "",
+            commercialRevShare: 0
         });
 
         vm.startPrank(ipOwner1);
@@ -68,9 +69,33 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
         assertEq(totalLimitHook.getTotalLicenseTokenLimit(ipId3, address(pilTemplate), socialRemixTermsId), 0);
         vm.stopPrank();
 
-        licensingModule.mintLicenseTokens(ipId1, address(pilTemplate), socialRemixTermsId, 10, u.alice, "");
-        licensingModule.mintLicenseTokens(ipId2, address(pilTemplate), socialRemixTermsId, 20, u.alice, "");
-        licensingModule.mintLicenseTokens(ipId3, address(pilTemplate), socialRemixTermsId, 10, u.alice, "");
+        licensingModule.mintLicenseTokens({
+            licensorIpId: ipId1,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: socialRemixTermsId,
+            amount: 10,
+            receiver: u.alice,
+            royaltyContext: "",
+            maxMintingFee: 0
+        });
+        licensingModule.mintLicenseTokens({
+            licensorIpId: ipId2,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: socialRemixTermsId,
+            amount: 20,
+            receiver: u.alice,
+            royaltyContext: "",
+            maxMintingFee: 0
+        });
+        licensingModule.mintLicenseTokens({
+            licensorIpId: ipId3,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: socialRemixTermsId,
+            amount: 10,
+            receiver: u.alice,
+            royaltyContext: "",
+            maxMintingFee: 0
+        });
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -80,7 +105,15 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
                 10
             )
         );
-        licensingModule.mintLicenseTokens(ipId1, address(pilTemplate), socialRemixTermsId, 5, u.alice, "");
+        licensingModule.mintLicenseTokens({
+            licensorIpId: ipId1,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: socialRemixTermsId,
+            amount: 5,
+            receiver: u.alice,
+            royaltyContext: "",
+            maxMintingFee: 0
+        });
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -90,7 +123,15 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
                 20
             )
         );
-        licensingModule.mintLicenseTokens(ipId2, address(pilTemplate), socialRemixTermsId, 5, u.alice, "");
+        licensingModule.mintLicenseTokens({
+            licensorIpId: ipId2,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: socialRemixTermsId,
+            amount: 5,
+            receiver: u.alice,
+            royaltyContext: "",
+            maxMintingFee: 0
+        });
     }
 
     function test_TotalLicenseTokenLimitHook_revert_nonIpOwner_setLimit() public {
@@ -108,7 +149,8 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
             isSet: true,
             mintingFee: 100,
             licensingHook: address(totalLimitHook),
-            hookData: ""
+            hookData: "",
+            commercialRevShare: 0
         });
 
         vm.startPrank(ipOwner1);
@@ -145,7 +187,8 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
             isSet: true,
             mintingFee: 100,
             licensingHook: address(totalLimitHook),
-            hookData: ""
+            hookData: "",
+            commercialRevShare: 0
         });
 
         vm.startPrank(ipOwner1);
@@ -153,7 +196,15 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
         totalLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), socialRemixTermsId, 10);
         assertEq(totalLimitHook.getTotalLicenseTokenLimit(ipId1, address(pilTemplate), socialRemixTermsId), 10);
 
-        licensingModule.mintLicenseTokens(ipId1, address(pilTemplate), socialRemixTermsId, 10, u.alice, "");
+        licensingModule.mintLicenseTokens({
+            licensorIpId: ipId1,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: socialRemixTermsId,
+            amount: 10,
+            receiver: u.alice,
+            royaltyContext: "",
+            maxMintingFee: 0
+        });
 
         vm.expectRevert(
             abi.encodeWithSelector(

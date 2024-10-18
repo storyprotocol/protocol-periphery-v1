@@ -466,7 +466,8 @@ contract RoyaltyWorkflowsTest is BaseTest {
                     parentIpIds: parentIpIds,
                     licenseTemplate: address(pilTemplate),
                     licenseTermsIds: licenseTermsIds,
-                    royaltyContext: ""
+                    royaltyContext: "",
+                    maxMintingFee: 0
                 }),
                 ipMetadata: emptyIpMetadata,
                 sigMetadata: emptySigData,
@@ -525,7 +526,8 @@ contract RoyaltyWorkflowsTest is BaseTest {
                     parentIpIds: parentIpIds,
                     licenseTemplate: address(pilTemplate),
                     licenseTermsIds: licenseTermsIds,
-                    royaltyContext: ""
+                    royaltyContext: "",
+                    maxMintingFee: 0
                 }),
                 ipMetadata: emptyIpMetadata,
                 sigMetadata: emptySigData,
@@ -575,7 +577,8 @@ contract RoyaltyWorkflowsTest is BaseTest {
                     parentIpIds: parentIpIds,
                     licenseTemplate: address(pilTemplate),
                     licenseTermsIds: licenseTermsIds,
-                    royaltyContext: ""
+                    royaltyContext: "",
+                    maxMintingFee: 0
                 }),
                 ipMetadata: emptyIpMetadata,
                 sigMetadata: emptySigData,
@@ -628,7 +631,8 @@ contract RoyaltyWorkflowsTest is BaseTest {
                     parentIpIds: parentIpIds,
                     licenseTemplate: address(pilTemplate),
                     licenseTermsIds: licenseTermsIds,
-                    royaltyContext: ""
+                    royaltyContext: "",
+                    maxMintingFee: 0
                 }),
                 ipMetadata: emptyIpMetadata,
                 sigMetadata: emptySigData,
@@ -655,7 +659,8 @@ contract RoyaltyWorkflowsTest is BaseTest {
                 licenseTermsId: commRemixTermsIdA,
                 amount: amountLicenseTokensToMint,
                 receiver: address(0xbeef),
-                royaltyContext: ""
+                royaltyContext: "",
+                maxMintingFee: 0
             });
 
             mockTokenC.mint(address(0xbeef), defaultMintingFeeC * amountLicenseTokensToMint);
@@ -668,7 +673,8 @@ contract RoyaltyWorkflowsTest is BaseTest {
                 licenseTermsId: commRemixTermsIdC,
                 amount: amountLicenseTokensToMint,
                 receiver: address(0xbeef),
-                royaltyContext: ""
+                royaltyContext: "",
+                maxMintingFee: 0
             });
             vm.stopPrank();
         }

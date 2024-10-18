@@ -141,7 +141,7 @@ contract DeployHelper is
         writeDeploys = writeDeploys_;
 
         // This will run OZ storage layout check for all contracts. Requires --ffi flag.
-        if (runStorageLayoutCheck) super.run();
+        if (runStorageLayoutCheck) _validate(); // StorageLayoutChecker.s.sol
 
         if (isTest) {
             // local test deployment
@@ -641,7 +641,7 @@ contract DeployHelper is
                 _getSalt(type(IpRoyaltyVault).name),
                 abi.encodePacked(
                     type(IpRoyaltyVault).creationCode,
-                    abi.encode(address(disputeModule), address(royaltyModule))
+                    abi.encode(address(disputeModule), address(royaltyModule), address(ipAssetRegistry), _getDeployedAddress(type(GroupingModule).name))
                 )
             )
         );
@@ -832,7 +832,7 @@ contract DeployHelper is
         ipRoyaltyVaultBeacon.transferOwnership(address(royaltyPolicyLAP));
 
         // add evenSplitGroupPool to whitelist of group pools
-        groupingModule.whitelistGroupRewardPool(address(evenSplitGroupPool));
+        groupingModule.whitelistGroupRewardPool(address(evenSplitGroupPool), true);
     }
 
     /// @dev get the salt for the contract deployment with CREATE3

@@ -17,7 +17,7 @@ contract Main is DeployHelper {
     /// --verify --verifier=$VERIFIER_NAME --verifier-url=$VERIFIER_URL
     ///
     /// For detailed examples, see the documentation in `../../docs/DEPLOY_UPGRADE.md`.
-    function run() public virtual override {
+    function run() public virtual {
         _run(CREATE3_DEFAULT_SEED);
     }
 

@@ -10,7 +10,7 @@ contract StoryNFT is DeployHelper {
     uint256 private constant CREATE3_DEFAULT_SEED = 1234567890;
     constructor() DeployHelper(CREATE3_DEPLOYER) {}
 
-    function run() public override {
+    function run() public {
         create3SaltSeed = CREATE3_DEFAULT_SEED;
         writeDeploys = true;
 
