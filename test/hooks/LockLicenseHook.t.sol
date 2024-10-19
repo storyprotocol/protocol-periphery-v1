@@ -98,7 +98,7 @@ contract LockLicenseHookTest is BaseTest {
         });
     }
 
-    function test_LockLicenseHook_revert_calculateMintingFee() public {
+    function test_LockLicenseHook_calculateMintingFee() public {
         uint256 socialRemixTermsId = pilTemplate.registerLicenseTerms(PILFlavors.nonCommercialSocialRemixing());
         LockLicenseHook lockLicenseHook = new LockLicenseHook();
         vm.prank(u.admin);
@@ -107,7 +107,7 @@ contract LockLicenseHookTest is BaseTest {
         vm.startPrank(ipOwner);
         Licensing.LicensingConfig memory licensingConfig = Licensing.LicensingConfig({
             isSet: true,
-            mintingFee: 0,
+            mintingFee: 1000,
             licensingHook: address(lockLicenseHook),
             hookData: "",
             commercialRevShare: 0
@@ -116,15 +116,7 @@ contract LockLicenseHookTest is BaseTest {
         vm.stopPrank();
 
         vm.startPrank(u.bob);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                LockLicenseHook.LockLicenseHook_LicenseLocked.selector,
-                ipId,
-                address(pilTemplate),
-                socialRemixTermsId
-            )
-        );
-        licensingModule.predictMintingLicenseFee({
+        (, uint256 mintingFee) = licensingModule.predictMintingLicenseFee({
             licensorIpId: ipId,
             licenseTemplate: address(pilTemplate),
             licenseTermsId: socialRemixTermsId,
@@ -132,5 +124,6 @@ contract LockLicenseHookTest is BaseTest {
             receiver: u.bob,
             royaltyContext: ""
         });
+        assertEq(mintingFee, 0);
     }
 }

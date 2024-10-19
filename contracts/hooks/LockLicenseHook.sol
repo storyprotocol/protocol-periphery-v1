@@ -58,7 +58,7 @@ contract LockLicenseHook is BaseModule, ILicensingHook {
     }
 
     /// @notice This function is called when the LicensingModule calculates/predict the minting fee for license tokens.
-    /// @dev This function will always revert to prevent any license minting fee calculation/prediction.
+    /// @dev This function will always return 0 to signal that license is locked/disabled.
     /// @param caller The address of the caller who calling the mintLicenseTokens() function.
     /// @param licensorIpId The ID of licensor IP from which issue the license tokens.
     /// @param licenseTemplate The address of the license template.
@@ -77,7 +77,7 @@ contract LockLicenseHook is BaseModule, ILicensingHook {
         address receiver,
         bytes calldata hookData
     ) external view returns (uint256 totalMintingFee) {
-        revert LockLicenseHook_LicenseLocked(licensorIpId, licenseTemplate, licenseTermsId);
+        totalMintingFee = 0;
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(BaseModule, IERC165) returns (bool) {
