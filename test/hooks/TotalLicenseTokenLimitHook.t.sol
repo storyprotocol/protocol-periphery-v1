@@ -5,7 +5,7 @@ import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
 import { Errors } from "@storyprotocol/core/lib/Errors.sol";
 
-import { TotalLicenseTokenLimitHook } from "contracts/hooks/TotalLicenseTokenLimitHook.sol";
+import { TotalLicenseTokenLimitHook } from "../../contracts/hooks/TotalLicenseTokenLimitHook.sol";
 
 import { BaseTest } from "../utils/BaseTest.t.sol";
 
