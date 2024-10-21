@@ -1,0 +1,11 @@
+{
+    "main": {
+        "DerivativeWorkflows": "0xE0e1d222E024bF14B1e0A4b48fC6e6B6F8ebaEB3",
+        "GroupingWorkflows": "0xfAa9CCd49DCDfB9a950CBF036cD6082e623a6bcC",
+        "LicenseAttachmentWorkflows": "0xC7A40c41Cbe44C6B326447081877d69F98127C59",
+        "RegistrationWorkflows": "0x8D8E0d24E7B6420d3209EfA185Fa451c95D8316A",
+        "RoyaltyWorkflows": "0x19E435b1C0857375F9423C8ba508203054CE1d9F",
+        "SPGNFTBeacon": "0xD753c698aE69194C851d60BF759d537DE7477696",
+        "SPGNFTImpl": "0xA12e66a4429c9B7f38893c9b00E80646e0e76446"
+    }
+}

@@ -365,10 +365,11 @@ contract DerivativeIntegration is BaseIntegration {
                 spgNftContract: address(spgNftContract),
                 recipient: testSender,
                 ipMetadata: testIpMetadata,
-                terms: PILFlavors.commercialUse({
+                terms: PILFlavors.commercialRemix({
                     mintingFee: testMintFee,
-                    currencyToken: testMintFeeToken,
-                    royaltyPolicy: royaltyPolicyLRPAddr
+                    commercialRevShare: 10 * 10 ** 6, // 10%
+                    royaltyPolicy: royaltyPolicyLRPAddr,
+                    currencyToken: testMintFeeToken
                 })
             });
 

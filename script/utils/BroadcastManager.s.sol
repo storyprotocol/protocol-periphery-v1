@@ -14,7 +14,7 @@ contract BroadcastManager is Script {
             deployer = vm.envAddress("MAINNET_DEPLOYER_ADDRESS");
             multisig = vm.envAddress("MAINNET_MULTISIG_ADDRESS");
             vm.startBroadcast(deployerPrivateKey);
-        } else if (block.chainid == 1513 || block.chainid == 11155111) {
+        } else if (block.chainid == 1513 || block.chainid == 1516 || block.chainid == 11155111) {
             deployerPrivateKey = vm.envUint("TESTNET_PRIVATEKEY");
             deployer = vm.envAddress("TESTNET_DEPLOYER_ADDRESS");
             multisig = vm.envAddress("TESTNET_MULTISIG_ADDRESS");

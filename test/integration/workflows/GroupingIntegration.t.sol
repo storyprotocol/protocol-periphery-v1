@@ -153,7 +153,7 @@ contract GroupingIntegration is BaseIntegration {
         logTest("test_GroupingIntegration_registerGroupAndAttachLicense")
     {
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicense({
-            groupPool: groupRewardPool,
+            groupPool: evenSplitGroupPoolAddr,
             licenseTemplate: testLicenseTemplate,
             licenseTermsId: testLicenseTermsId
         });
@@ -172,7 +172,7 @@ contract GroupingIntegration is BaseIntegration {
         logTest("test_GroupingIntegration_registerGroupAndAttachLicenseAndAddIps")
     {
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
-            groupPool: groupRewardPool,
+            groupPool: evenSplitGroupPoolAddr,
             ipIds: ipIds,
             licenseTemplate: testLicenseTemplate,
             licenseTermsId: testLicenseTermsId
@@ -348,7 +348,7 @@ contract GroupingIntegration is BaseIntegration {
 
         // setup a group
         {
-            groupId = groupingModule.registerGroup(groupRewardPool);
+            groupId = groupingModule.registerGroup(evenSplitGroupPoolAddr);
             LicensingHelper.attachLicenseTerms(
                 groupId,
                 licensingModuleAddr,

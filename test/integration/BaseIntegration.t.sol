@@ -21,6 +21,7 @@ import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensi
 import { IPILicenseTemplate } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 import { IRoyaltyModule } from "@storyprotocol/core/interfaces/modules/royalty/IRoyaltyModule.sol";
 import { MetaTx } from "@storyprotocol/core/lib/MetaTx.sol";
+import { MockIPGraph } from "@storyprotocol/test/mocks/MockIPGraph.sol";
 
 // contracts
 import { DerivativeWorkflows } from "../../contracts/workflows/DerivativeWorkflows.sol";
@@ -57,10 +58,7 @@ contract BaseIntegration is Test, Script, StoryProtocolCoreAddressManager, Story
     RoyaltyWorkflows internal royaltyWorkflows;
 
     /// @dev Story USD
-    SUSD internal StoryUSD = SUSD(0x91f6F05B08c16769d3c85867548615d270C42fC7);
-
-    /// @dev Even split group reward pool
-    address internal groupRewardPool = 0xA1dB7AB14900Cd9eF9A7eBA931A206250F403a14;
+    SUSD internal StoryUSD = SUSD(0x6058bB8A2a51a8e63Bd18cE897D08616331C25a7);
 
     /// @dev Test data
     string internal testCollectionName;
@@ -79,6 +77,8 @@ contract BaseIntegration is Test, Script, StoryProtocolCoreAddressManager, Story
     }
 
     function run() public virtual {
+        // mock IPGraph precompile
+        vm.etch(address(0x0101), address(new MockIPGraph()).code);
         _setUp();
     }
 

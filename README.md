@@ -36,17 +36,17 @@ Batch calling functions is supported both natively and through the `Multicall3` 
 
 ### Deployed Contracts
 
-[![Version](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fstoryprotocol%2Fprotocol-periphery-v1%2Fmain%2Fpackage.json&query=%24.version&label=PoC%20Periphery)](https://github.com/storyprotocol/protocol-periphery-v1/releases) contracts are deployed on Story's Iliad Testnet at the following addresses:
+[![Version](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fstoryprotocol%2Fprotocol-periphery-v1%2Fmain%2Fpackage.json&query=%24.version&label=PoC%20Periphery)](https://github.com/storyprotocol/protocol-periphery-v1/releases) contracts are deployed on Story Testnet at the following addresses:
 
 ```json
 {
-  "DerivativeWorkflows": "0xC022C70DA8c23Ae8e36B3de9039Ed24E4E42a127",
-  "GroupingWorkflows": "0x426fF4F7E9Debe565F5Fe6F53334Ad3982295E20",
-  "LicenseAttachmentWorkflows": "0x1B95144b62B4566501482e928aa435Dd205fE71B",
-  "RegistrationWorkflows": "0xF403fcCAAE6C503D0CC1D25904A0B2cCd5B96C6F",
-  "RoyaltyWorkflows": "0xc757921ee0f7c8E935d44BFBDc2602786e0eda6C",
-  "SPGNFTBeacon": "0x02324ca8f369abB445F50c4cE79e956e49AC75d8",
-  "SPGNFTImpl": "0xC8E4376Da033cE244027B03f9b94dc0d7005D67E"
+  "DerivativeWorkflows": "0xE0e1d222E024bF14B1e0A4b48fC6e6B6F8ebaEB3",
+  "GroupingWorkflows": "0xfAa9CCd49DCDfB9a950CBF036cD6082e623a6bcC",
+  "LicenseAttachmentWorkflows": "0xC7A40c41Cbe44C6B326447081877d69F98127C59",
+  "RegistrationWorkflows": "0x8D8E0d24E7B6420d3209EfA185Fa451c95D8316A",
+  "RoyaltyWorkflows": "0x19E435b1C0857375F9423C8ba508203054CE1d9F",
+  "SPGNFTBeacon": "0xD753c698aE69194C851d60BF759d537DE7477696",
+  "SPGNFTImpl": "0xA12e66a4429c9B7f38893c9b00E80646e0e76446"
 }
 ```
 

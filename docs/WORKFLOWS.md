@@ -41,6 +41,8 @@
   - Registers a group IP → Attaches the given license terms to the group IP
 - `registerGroupAndAttachLicenseAndAddIps`:
   - Registers a group IP → Attaches the given license terms to the group IP → Adds existing IPs to the group IP
+- `collectRoyaltiesAndClaimReward`:
+  - Collects revenue tokens to the group's reward pool → Distributes the rewards to each given member IP's royalty vault
 
 ### [Royalty Workflows](../contracts/interfaces/workflows/IRoyaltyWorkflows.sol)
 

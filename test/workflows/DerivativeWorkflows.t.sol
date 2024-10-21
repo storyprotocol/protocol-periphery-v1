@@ -41,7 +41,7 @@ contract DerivativeWorkflowsTest is BaseTest {
             ipMetadata: ipMetadataDefault,
             terms: PILFlavors.commercialRemix({
                 mintingFee: 100 * 10 ** mockToken.decimals(),
-                commercialRevShare: 10, // 1%
+                commercialRevShare: 10 * 10 ** 6, // 10%
                 royaltyPolicy: address(royaltyPolicyLAP),
                 currencyToken: address(mockToken)
             })
