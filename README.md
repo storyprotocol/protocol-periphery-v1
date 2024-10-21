@@ -77,7 +77,7 @@ forge compile --build-info
 3. Run the script to generate boilerplate code for storage handling and the namespace hash:
 
 ```sh
-forge script script/utils/upgrades/ERC7201Helper.s.sol 
+forge script script/utils/upgrades/ERC7201Helper.s.sol
 ```
 
 4. The log output is the boilerplate code, copy and paste in your contract
