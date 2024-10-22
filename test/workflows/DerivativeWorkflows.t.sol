@@ -42,7 +42,7 @@ contract DerivativeWorkflowsTest is BaseTest {
             terms: PILFlavors.commercialRemix({
                 mintingFee: 100 * 10 ** mockToken.decimals(),
                 commercialRevShare: 10, // 1%
-                royaltyPolicy: address(royaltyPolicyLAP),
+                royaltyPolicy: address(royaltyPolicyLRP),
                 currencyToken: address(mockToken)
             })
         });

@@ -41,7 +41,8 @@ contract UpgradeGroupingWorkflows is UpgradeHelper {
                 ipAssetRegistryAddr,
                 licenseRegistryAddr,
                 licensingModuleAddr,
-                pilTemplateAddr
+                pilTemplateAddr,
+                royaltyModuleAddr
             )
         );
         console2.log("New GroupingWorkflows Implementation: ", newGroupingWorkflowsImpl);
