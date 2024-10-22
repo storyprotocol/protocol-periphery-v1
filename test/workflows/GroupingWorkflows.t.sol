@@ -334,23 +334,6 @@ contract GroupingWorkflowsTest is BaseTest {
         snapshotIds[1] = snapshotId2;
         royaltyTokens[0] = address(mockToken);
 
-        {
-            /* TODO: This is a workaround to avoid the error where the member IP's IP royalty vault is not initialized
-             *       when claiming reward. remove this when the issue is fixed in core protocol.
-             */
-            for (uint256 i = 0; i < ipIds.length; i++) {
-                licensingModule.mintLicenseTokens({
-                    licensorIpId: ipIds[i],
-                    licenseTemplate: address(pilTemplate),
-                    licenseTermsId: testLicenseTermsId,
-                    amount: 1,
-                    receiver: u.admin,
-                    royaltyContext: "",
-                    maxMintingFee: 0
-                });
-            }
-        }
-
         uint256[] memory collectedRoyalties = groupingWorkflows.collectRoyaltiesAndClaimReward(
             newGroupId,
             royaltyTokens,

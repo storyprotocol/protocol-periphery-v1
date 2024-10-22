@@ -302,7 +302,8 @@ contract DeployHelper is
                 ipAssetRegistryAddr,
                 licenseRegistryAddr,
                 licensingModuleAddr,
-                pilTemplateAddr
+                pilTemplateAddr,
+                royaltyModuleAddr
             )
         );
         groupingWorkflows = GroupingWorkflows(
