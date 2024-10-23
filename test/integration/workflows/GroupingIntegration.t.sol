@@ -3,10 +3,14 @@ pragma solidity 0.8.26;
 
 // external
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import { EvenSplitGroupPool } from "@storyprotocol/core/modules/grouping/EvenSplitGroupPool.sol";
 import { IGroupingModule } from "@storyprotocol/core/interfaces/modules/grouping/IGroupingModule.sol";
 import { IGroupIPAssetRegistry } from "@storyprotocol/core/interfaces/registries/IGroupIPAssetRegistry.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
+import { IIpRoyaltyVault } from "@storyprotocol/core/interfaces/modules/royalty/policies/IIpRoyaltyVault.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
+/* solhint-disable max-line-length */
+import { IGraphAwareRoyaltyPolicy } from "@storyprotocol/core/interfaces/modules/royalty/policies/IGraphAwareRoyaltyPolicy.sol";
 
 // contracts
 import { ISPGNFT } from "../../../contracts/interfaces/ISPGNFT.sol";
@@ -23,6 +27,8 @@ contract GroupingIntegration is BaseIntegration {
     address private groupId;
     address private testLicenseTemplate;
     uint256 private testLicenseTermsId;
+    uint32 private revShare;
+    uint256 private numIps = 10;
     address[] private ipIds;
 
     /// @dev To use, run the following command:
@@ -36,6 +42,7 @@ contract GroupingIntegration is BaseIntegration {
         _test_GroupingIntegration_registerIpAndAttachLicenseAndAddToGroup();
         _test_GroupingIntegration_registerGroupAndAttachLicense();
         _test_GroupingIntegration_registerGroupAndAttachLicenseAndAddIps();
+        _test_GroupingIntegration_collectRoyaltiesAndClaimReward();
         _test_GroupingIntegration_multicall_mintAndRegisterIpAndAttachLicenseAndAddToGroup();
         _test_GroupingIntegration_multicall_registerIpAndAttachLicenseAndAddToGroup();
         _endBroadcast();
@@ -193,6 +200,104 @@ contract GroupingIntegration is BaseIntegration {
         assertEq(licenseTermsId, testLicenseTermsId);
     }
 
+    function _test_GroupingIntegration_collectRoyaltiesAndClaimReward()
+        private
+        logTest("test_GroupingIntegration_collectRoyaltiesAndClaimReward")
+    {
+        address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
+            groupPool: evenSplitGroupPoolAddr,
+            ipIds: ipIds,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: testLicenseTermsId
+        });
+
+        assertEq(IGroupIPAssetRegistry(ipAssetRegistryAddr).totalMembers(newGroupId), numIps);
+        assertEq(EvenSplitGroupPool(evenSplitGroupPoolAddr).getTotalIps(newGroupId), numIps);
+
+        address[] memory parentIpIds = new address[](1);
+        parentIpIds[0] = newGroupId;
+        uint256[] memory licenseTermsIds = new uint256[](1);
+        licenseTermsIds[0] = testLicenseTermsId;
+
+        StoryUSD.mint(testSender, testMintFee);
+        StoryUSD.approve(address(spgNftContract), testMintFee);
+        (address ipId1, ) = derivativeWorkflows.mintAndRegisterIpAndMakeDerivative({
+            spgNftContract: address(spgNftContract),
+            derivData: WorkflowStructs.MakeDerivative({
+                parentIpIds: parentIpIds,
+                licenseTermsIds: licenseTermsIds,
+                licenseTemplate: address(pilTemplate),
+                royaltyContext: "",
+                maxMintingFee: 0
+            }),
+            ipMetadata: testIpMetadata,
+            recipient: testSender
+        });
+
+        StoryUSD.mint(testSender, testMintFee);
+        StoryUSD.approve(address(spgNftContract), testMintFee);
+        (address ipId2, ) = derivativeWorkflows.mintAndRegisterIpAndMakeDerivative({
+            spgNftContract: address(spgNftContract),
+            derivData: WorkflowStructs.MakeDerivative({
+                parentIpIds: parentIpIds,
+                licenseTermsIds: licenseTermsIds,
+                licenseTemplate: address(pilTemplate),
+                royaltyContext: "",
+                maxMintingFee: 0
+            }),
+            ipMetadata: testIpMetadata,
+            recipient: testSender
+        });
+
+        uint256 amount1 = 1_000 * 10 ** StoryUSD.decimals(); // 1,000 tokens
+        StoryUSD.mint(testSender, amount1);
+        StoryUSD.approve(address(royaltyModule), amount1);
+        royaltyModule.payRoyaltyOnBehalf(ipId1, testSender, address(StoryUSD), amount1);
+        IGraphAwareRoyaltyPolicy(royaltyPolicyLAPAddr).transferToVault(
+            ipId1,
+            newGroupId,
+            address(StoryUSD),
+            (amount1 * revShare) / royaltyModule.maxPercent()
+        );
+        uint256 snapshotId1 = IIpRoyaltyVault(royaltyModule.ipRoyaltyVaults(newGroupId)).snapshot();
+
+        uint256 amount2 = 10_000 * 10 ** StoryUSD.decimals(); // 10,000 tokens
+        StoryUSD.mint(testSender, amount2);
+        StoryUSD.approve(address(royaltyModule), amount2);
+        royaltyModule.payRoyaltyOnBehalf(ipId2, testSender, address(StoryUSD), amount2);
+        IGraphAwareRoyaltyPolicy(royaltyPolicyLAPAddr).transferToVault(
+            ipId2,
+            newGroupId,
+            address(StoryUSD),
+            (amount2 * revShare) / royaltyModule.maxPercent()
+        );
+        uint256 snapshotId2 = IIpRoyaltyVault(royaltyModule.ipRoyaltyVaults(newGroupId)).snapshot();
+
+        uint256[] memory snapshotIds = new uint256[](2);
+        snapshotIds[0] = snapshotId1;
+        snapshotIds[1] = snapshotId2;
+        address[] memory royaltyTokens = new address[](1);
+        royaltyTokens[0] = address(StoryUSD);
+
+        uint256[] memory collectedRoyalties = groupingWorkflows.collectRoyaltiesAndClaimReward(
+            newGroupId,
+            royaltyTokens,
+            snapshotIds,
+            ipIds
+        );
+
+        assertEq(collectedRoyalties.length, 1);
+        assertEq(
+            collectedRoyalties[0],
+            (amount1 * revShare) / royaltyModule.maxPercent() + (amount2 * revShare) / royaltyModule.maxPercent()
+        );
+
+        // check each member IP received the reward in their IP royalty vault
+        for (uint256 i = 0; i < ipIds.length; i++) {
+            assertEq(StoryUSD.balanceOf(royaltyModule.ipRoyaltyVaults(ipIds[i])), collectedRoyalties[0] / ipIds.length);
+        }
+    }
+
     function _test_GroupingIntegration_multicall_mintAndRegisterIpAndAttachLicenseAndAddToGroup()
         private
         logTest("test_GroupingIntegration_multicall_mintAndRegisterIpAndAttachLicenseAndAddToGroup")
@@ -340,10 +445,16 @@ contract GroupingIntegration is BaseIntegration {
     }
 
     function _setUpTest() private {
+        revShare = 10 * 10 ** 6; // 10%
         testLicenseTemplate = pilTemplateAddr;
         testLicenseTermsId = pilTemplate.registerLicenseTerms(
             // minting fee is set to 0 beacause currently core protocol requires group IP's minting fee to be 0
-            PILFlavors.commercialUse(0, testMintFeeToken, royaltyPolicyLRPAddr)
+            PILFlavors.commercialRemix({
+                mintingFee: 0,
+                commercialRevShare: revShare,
+                royaltyPolicy: royaltyPolicyLAPAddr,
+                currencyToken: address(StoryUSD)
+            })
         );
 
         // setup a group
@@ -377,8 +488,6 @@ contract GroupingIntegration is BaseIntegration {
                     })
                 )
             );
-
-            uint256 numIps = 10;
 
             bytes[] memory data = new bytes[](numIps);
             for (uint256 i = 0; i < numIps; i++) {
