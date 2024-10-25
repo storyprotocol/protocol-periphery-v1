@@ -62,8 +62,38 @@ contract RegistrationWorkflowsTest is BaseTest {
         registrationWorkflows.mintAndRegisterIp({
             spgNftContract: address(nftContract),
             recipient: u.bob,
-            ipMetadata: ipMetadataEmpty
+            ipMetadata: ipMetadataEmpty,
+            dedup: false
         });
+    }
+
+    function test_RegistrationWorkflows_mintAndRegisterIP_dedup() public withCollection whenCallerHasMinterRole {
+        mockToken.mint(address(caller), 1000 * 10 ** mockToken.decimals());
+        mockToken.approve(address(nftContract), 1000 * 10 ** mockToken.decimals());
+
+        (address ipId1, uint256 tokenId1) = registrationWorkflows.mintAndRegisterIp({
+            spgNftContract: address(nftContract),
+            recipient: u.bob,
+            ipMetadata: ipMetadataDefault,
+            dedup: true
+        });
+        assertEq(tokenId1, 1);
+        assertTrue(ipAssetRegistry.isRegistered(ipId1));
+        assertEq(nftContract.tokenURI(tokenId1), string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
+        assertMetadata(ipId1, ipMetadataDefault);
+
+        (address ipId2, uint256 tokenId2) = registrationWorkflows.mintAndRegisterIp({
+            spgNftContract: address(nftContract),
+            recipient: u.bob,
+            ipMetadata: ipMetadataDefault,
+            dedup: true
+        });
+
+        // check that the tokenId is the same as the first one
+        assertEq(tokenId2, tokenId1);
+        assertTrue(ipAssetRegistry.isRegistered(ipId2));
+        assertEq(nftContract.tokenURI(tokenId2), string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
+        assertMetadata(ipId2, ipMetadataDefault);
     }
 
     function test_RegistrationWorkflows_mintAndRegisterIp_publicMint() public {
@@ -94,7 +124,8 @@ contract RegistrationWorkflowsTest is BaseTest {
         (address ipId, uint256 tokenId) = registrationWorkflows.mintAndRegisterIp({
             spgNftContract: address(nftContract),
             recipient: u.bob,
-            ipMetadata: ipMetadataEmpty
+            ipMetadata: ipMetadataEmpty,
+            dedup: false
         });
         vm.stopPrank();
 
@@ -111,7 +142,8 @@ contract RegistrationWorkflowsTest is BaseTest {
         (address ipId1, uint256 tokenId1) = registrationWorkflows.mintAndRegisterIp({
             spgNftContract: address(nftContract),
             recipient: u.bob,
-            ipMetadata: ipMetadataEmpty
+            ipMetadata: ipMetadataEmpty,
+            dedup: false
         });
         assertEq(tokenId1, 1);
         assertTrue(ipAssetRegistry.isRegistered(ipId1));
@@ -121,7 +153,8 @@ contract RegistrationWorkflowsTest is BaseTest {
         (address ipId2, uint256 tokenId2) = registrationWorkflows.mintAndRegisterIp({
             spgNftContract: address(nftContract),
             recipient: u.bob,
-            ipMetadata: ipMetadataDefault
+            ipMetadata: ipMetadataDefault,
+            dedup: false
         });
         assertEq(tokenId2, 2);
         assertTrue(ipAssetRegistry.isRegistered(ipId2));
@@ -209,7 +242,8 @@ contract RegistrationWorkflowsTest is BaseTest {
                 registrationWorkflows.mintAndRegisterIp.selector,
                 address(nftContract),
                 u.bob,
-                ipMetadataDefault
+                ipMetadataDefault,
+                false
             );
         }
         bytes[] memory results = registrationWorkflows.multicall(data);

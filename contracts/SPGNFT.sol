@@ -22,6 +22,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @param _publicMinting True if the collection is open for everyone to mint.
     /// @param _baseURI The base URI for the collection. If baseURI is not empty, tokenURI will be
     /// either baseURI + token ID (if nftMetadataURI is empty) or baseURI + nftMetadataURI.
+    /// @param _nftMetadataHashToTokenId The mapping of nftMetadataHash to token ID.
     /// @custom:storage-location erc7201:story-protocol-periphery.SPGNFT
     struct SPGNFTStorage {
         uint32 _maxSupply;
@@ -33,6 +34,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         bool _publicMinting;
         string _baseURI;
         string _contractURI;
+        mapping (bytes32 nftMetadataHash => uint256 tokenId) _nftMetadataHashToTokenId;
     }
 
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.SPGNFT")) - 1)) & ~bytes32(uint256(0xff));
@@ -148,6 +150,14 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         return _getSPGNFTStorage()._contractURI;
     }
 
+    /// @notice Returns the token ID by the metadata hash.
+    /// @dev Returns 0 if the metadata hash has not been used in this collection.
+    /// @param nftMetadataHash A bytes32 hash of the NFT's metadata.
+    /// @return tokenId The token ID of the NFT with the given metadata hash.
+    function getTokenIdByMetadataHash(bytes32 nftMetadataHash) external view returns (uint256) {
+        return _getSPGNFTStorage()._nftMetadataHashToTokenId[nftMetadataHash];
+    }
+
     /// @notice Sets the fee to mint an NFT from the collection. Payment is in the designated currency.
     /// @dev Only callable by the admin role.
     /// @param fee The new mint fee paid in the mint token.
@@ -207,25 +217,54 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @notice Mints an NFT from the collection. Only callable by the minter role.
     /// @param to The address of the recipient of the minted NFT.
     /// @param nftMetadataURI OPTIONAL. The URI of the desired metadata for the newly minted NFT.
-    /// @return tokenId The ID of the minted NFT.
-    function mint(address to, string calldata nftMetadataURI) public virtual returns (uint256 tokenId) {
+    /// @param nftMetadataHash OPTIONAL. A bytes32 hash of the NFT's metadata.
+    /// This metadata is accessible via the NFT's tokenURI.
+    /// @param dedup Set to true to enable checking for duplicate metadata hashes.
+    /// If a duplicate is found, the function will return the existing token ID instead of minting a new one.
+    /// @return tokenId The token ID of the minted NFT with the given metadata hash.
+    /// @return deduped true if dedup is enabled and the metadata hash is already used, false otherwise.
+    function mint(
+        address to,
+        string calldata nftMetadataURI,
+        bytes32 nftMetadataHash,
+        bool dedup
+    ) public virtual returns (uint256 tokenId, bool deduped) {
         if (!_getSPGNFTStorage()._publicMinting && !hasRole(SPGNFTLib.MINTER_ROLE, msg.sender)) {
             revert Errors.SPGNFT__MintingDenied();
         }
-        tokenId = _mintToken({ to: to, payer: msg.sender, nftMetadataURI: nftMetadataURI });
+        (tokenId, deduped) = _mintToken({
+            to: to,
+            payer: msg.sender,
+            nftMetadataURI: nftMetadataURI,
+            nftMetadataHash: nftMetadataHash,
+            dedup: dedup
+        });
     }
 
     /// @notice Mints an NFT from the collection. Only callable by the Periphery contracts.
     /// @param to The address of the recipient of the minted NFT.
     /// @param payer The address of the payer for the mint fee.
     /// @param nftMetadataURI OPTIONAL. The URI of the desired metadata for the newly minted NFT.
-    /// @return tokenId The ID of the minted NFT.
+    /// @param nftMetadataHash OPTIONAL. A bytes32 hash of the NFT's metadata.
+    /// This metadata is accessible via the NFT's tokenURI.
+    /// @param dedup Set to true to enable checking for duplicate metadata hashes.
+    /// If a duplicate is found, the function will return the existing token ID instead of minting a new one.
+    /// @return tokenId The token ID of the minted NFT with the given metadata hash.
+    /// @return deduped true if dedup is enabled and the metadata hash is already used, false otherwise.
     function mintByPeriphery(
         address to,
         address payer,
-        string calldata nftMetadataURI
-    ) public virtual onlyPeriphery returns (uint256 tokenId) {
-        tokenId = _mintToken({ to: to, payer: payer, nftMetadataURI: nftMetadataURI });
+        string calldata nftMetadataURI,
+        bytes32 nftMetadataHash,
+        bool dedup
+    ) public virtual onlyPeriphery returns (uint256 tokenId, bool deduped) {
+        (tokenId, deduped) = _mintToken({
+            to: to,
+            payer: payer,
+            nftMetadataURI: nftMetadataURI,
+            nftMetadataHash: nftMetadataHash,
+            dedup: dedup
+        });
     }
 
     /// @dev Withdraws the contract's token balance to the fee recipient.
@@ -246,20 +285,43 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @param to The address of the recipient of the minted NFT.
     /// @param payer The address of the payer for the mint fee.
     /// @param nftMetadataURI OPTIONAL. The URI of the desired metadata for the newly minted NFT.
-    /// @return tokenId The ID of the minted NFT.
-    function _mintToken(address to, address payer, string calldata nftMetadataURI) internal returns (uint256 tokenId) {
+    /// @param nftMetadataHash OPTIONAL. A bytes32 hash of the NFT's metadata.
+    /// This metadata is accessible via the NFT's tokenURI.
+    /// @param dedup Set to true to enable checking for duplicate metadata hashes.
+    /// If a duplicate is found, the function will return the existing token ID instead of minting a new one.
+    /// @return tokenId The token ID of the minted NFT with the given metadata hash.
+    /// @return deduped true if dedup is enabled and the metadata hash is already used, false otherwise.
+    function _mintToken(
+        address to,
+        address payer,
+        string calldata nftMetadataURI,
+        bytes32 nftMetadataHash,
+        bool dedup
+    ) internal returns (uint256 tokenId, bool deduped) {
         SPGNFTStorage storage $ = _getSPGNFTStorage();
         if (!$._mintOpen) revert Errors.SPGNFT__MintingClosed();
         if ($._totalSupply + 1 > $._maxSupply) revert Errors.SPGNFT__MaxSupplyReached();
+
+        tokenId = $._nftMetadataHashToTokenId[nftMetadataHash];
+        if (dedup && tokenId != 0) {
+            return (tokenId, true);
+        }
 
         if ($._mintFeeToken != address(0) && $._mintFee > 0) {
             IERC20($._mintFeeToken).transferFrom(payer, address(this), $._mintFee);
         }
 
         tokenId = ++$._totalSupply;
+        if ($._nftMetadataHashToTokenId[nftMetadataHash] == 0) {
+            // only store the token ID if the metadata hash is not used
+            $._nftMetadataHashToTokenId[nftMetadataHash] = tokenId;
+        }
+
         _mint(to, tokenId);
 
         if (bytes(nftMetadataURI).length > 0) _setTokenURI(tokenId, nftMetadataURI);
+
+        return (tokenId, false);
     }
 
     /// @dev Base URI for computing tokenURI.
