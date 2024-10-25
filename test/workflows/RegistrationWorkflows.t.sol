@@ -67,7 +67,11 @@ contract RegistrationWorkflowsTest is BaseTest {
         });
     }
 
-    function test_RegistrationWorkflows_mintAndRegisterIP_dedup() public withCollection whenCallerHasMinterRole {
+    function test_RegistrationWorkflows_revert_duplicatedNftMetadataHash()
+        public
+        withCollection
+        whenCallerHasMinterRole
+    {
         mockToken.mint(address(caller), 1000 * 10 ** mockToken.decimals());
         mockToken.approve(address(nftContract), 1000 * 10 ** mockToken.decimals());
 
@@ -82,18 +86,21 @@ contract RegistrationWorkflowsTest is BaseTest {
         assertEq(nftContract.tokenURI(tokenId1), string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
         assertMetadata(ipId1, ipMetadataDefault);
 
-        (address ipId2, uint256 tokenId2) = registrationWorkflows.mintAndRegisterIp({
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.RegistrationWorkflows__DuplicatedNFTMetadataHash.selector,
+                address(nftContract),
+                tokenId1,
+                ipId1,
+                ipMetadataDefault.nftMetadataHash
+            )
+        );
+        registrationWorkflows.mintAndRegisterIp({
             spgNftContract: address(nftContract),
             recipient: u.bob,
             ipMetadata: ipMetadataDefault,
             dedup: true
         });
-
-        // check that the tokenId is the same as the first one
-        assertEq(tokenId2, tokenId1);
-        assertTrue(ipAssetRegistry.isRegistered(ipId2));
-        assertEq(nftContract.tokenURI(tokenId2), string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
-        assertMetadata(ipId2, ipMetadataDefault);
     }
 
     function test_RegistrationWorkflows_mintAndRegisterIp_publicMint() public {

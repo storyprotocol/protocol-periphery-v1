@@ -14,6 +14,18 @@ library Errors {
     /// @notice Zero address provided as a param to the RegistrationWorkflows.
     error RegistrationWorkflows__ZeroAddressParam();
 
+    /// @notice Error thrown when attempting to mint an NFT with a metadata hash that already exists.
+    /// @param spgNftContract The address of the SPGNFT collection contract where the duplicate was detected.
+    /// @param tokenId The ID of the original NFT that was first minted with this metadata hash.
+    /// @param ipId The identifier of the registered IP associated with this NFT.
+    /// @param nftMetadataHash The hash of the NFT metadata that caused the duplication error.
+    error RegistrationWorkflows__DuplicatedNFTMetadataHash(
+        address spgNftContract,
+        uint256 tokenId,
+        address ipId,
+        bytes32 nftMetadataHash
+    );
+
     ////////////////////////////////////////////////////////////////////////////
     //                         LicenseAttachmentWorkflows                     //
     ////////////////////////////////////////////////////////////////////////////

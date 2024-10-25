@@ -125,7 +125,13 @@ contract RegistrationWorkflows is
             dedup: dedup
         });
 
-        if (deduped) return (_getIpId(spgNftContract, tokenId), tokenId);
+        if (deduped)
+            revert Errors.RegistrationWorkflows__DuplicatedNFTMetadataHash({
+                spgNftContract: spgNftContract,
+                tokenId: tokenId,
+                ipId: _getIpId(spgNftContract, tokenId),
+                nftMetadataHash: ipMetadata.nftMetadataHash
+            });
 
         ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
