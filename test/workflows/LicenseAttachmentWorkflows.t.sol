@@ -39,7 +39,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             spgNftContract: address(nftContract),
             recipient: owner,
             ipMetadata: ipMetadataDefault,
-            dedup: false
+            allowDuplicates: true
         });
         ipAsset[1] = IPAsset({ ipId: payable(ipId), tokenId: tokenId, owner: owner });
         vm.stopPrank();
@@ -58,15 +58,14 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
                 recipient: caller,
                 ipMetadata: ipMetadataDefault,
                 terms: PILFlavors.nonCommercialSocialRemixing(),
-                dedup: true
+                allowDuplicates: true
             });
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Errors.LicenseAttachmentWorkflows__DuplicatedNFTMetadataHash.selector,
+                Errors.SPGNFT__DuplicatedNFTMetadataHash.selector,
                 address(nftContract),
                 1,
-                ipId1,
                 ipMetadataDefault.nftMetadataHash
             )
         );
@@ -75,7 +74,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             recipient: caller,
             ipMetadata: ipMetadataDefault,
             terms: PILFlavors.nonCommercialSocialRemixing(),
-            dedup: true
+            allowDuplicates: false
         });
     }
 
@@ -120,7 +119,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
                 recipient: caller,
                 ipMetadata: ipMetadataEmpty,
                 terms: PILFlavors.nonCommercialSocialRemixing(),
-                dedup: false
+                allowDuplicates: true
             });
         assertTrue(ipAssetRegistry.isRegistered(ipId1));
         assertEq(tokenId1, 1);
@@ -137,7 +136,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
                 recipient: caller,
                 ipMetadata: ipMetadataDefault,
                 terms: PILFlavors.nonCommercialSocialRemixing(),
-                dedup: false
+                allowDuplicates: true
             });
         assertTrue(ipAssetRegistry.isRegistered(ipId2));
         assertEq(tokenId2, 2);
@@ -152,12 +151,12 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         whenCallerHasMinterRole
         withEnoughTokens(address(licenseAttachmentWorkflows))
     {
-        (uint256 tokenId, ) = nftContract.mint(
-            address(caller),
-            ipMetadataEmpty.nftMetadataURI,
-            ipMetadataEmpty.nftMetadataHash,
-            false
-        );
+        uint256 tokenId = nftContract.mint({
+            to: caller,
+            nftMetadataURI: ipMetadataEmpty.nftMetadataURI,
+            nftMetadataHash: ipMetadataEmpty.nftMetadataHash,
+            allowDuplicates: true
+        });
         address payable ipId = payable(ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenId));
 
         uint256 deadline = block.timestamp + 1000;
@@ -256,7 +255,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
                 recipient: caller,
                 ipMetadata: ipMetadataDefault,
                 terms: PILFlavors.nonCommercialSocialRemixing(),
-                dedup: false
+                allowDuplicates: true
             });
 
         address[] memory parentIpIds = new address[](1);
@@ -276,7 +275,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             }),
             ipMetadata: ipMetadataDefault,
             recipient: caller,
-            dedup: false
+            allowDuplicates: true
         });
 
         uint256 deadline = block.timestamp + 1000;

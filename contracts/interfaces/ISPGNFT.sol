@@ -114,16 +114,14 @@ interface ISPGNFT is IAccessControl, IERC721Metadata, IERC7572 {
     /// @param nftMetadataURI OPTIONAL. The desired metadata for the newly minted NFT.
     /// @param nftMetadataHash OPTIONAL. A bytes32 hash of the NFT's metadata.
     /// This metadata is accessible via the NFT's tokenURI.
-    /// @param dedup Set to true to enable checking for duplicate metadata hashes.
-    /// If a duplicate is found, the function will return the existing token ID instead of minting a new one.
+    /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
     /// @return tokenId The token ID of the minted NFT with the given metadata hash.
-    /// @return deduped true if dedup is enabled and the metadata hash is already used, false otherwise.
     function mint(
         address to,
         string calldata nftMetadataURI,
         bytes32 nftMetadataHash,
-        bool dedup
-    ) external returns (uint256 tokenId, bool deduped);
+        bool allowDuplicates
+    ) external returns (uint256 tokenId);
 
     /// @notice Mints an NFT from the collection. Only callable by Periphery contracts.
     /// @param to The address of the recipient of the minted NFT.
@@ -131,17 +129,15 @@ interface ISPGNFT is IAccessControl, IERC721Metadata, IERC7572 {
     /// @param nftMetadataURI OPTIONAL. The desired metadata for the newly minted NFT.
     /// @param nftMetadataHash OPTIONAL. A bytes32 hash of the NFT's metadata.
     /// This metadata is accessible via the NFT's tokenURI.
-    /// @param dedup Set to true to enable checking for duplicate metadata hashes.
-    /// If a duplicate is found, the function will return the existing token ID instead of minting a new one.
+    /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
     /// @return tokenId The token ID of the minted NFT with the given metadata hash.
-    /// @return deduped true if dedup is enabled and the metadata hash is already used, false otherwise.
     function mintByPeriphery(
         address to,
         address payer,
         string calldata nftMetadataURI,
         bytes32 nftMetadataHash,
-        bool dedup
-    ) external returns (uint256 tokenId, bool deduped);
+        bool allowDuplicates
+    ) external returns (uint256 tokenId);
 
     /// @dev Withdraws the contract's token balance to the fee recipient.
     /// @param token The token to withdraw.

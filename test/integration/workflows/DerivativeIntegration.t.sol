@@ -56,7 +56,7 @@ contract DerivativeIntegration is BaseIntegration {
             }),
             ipMetadata: testIpMetadata,
             recipient: testSender,
-            dedup: false
+            allowDuplicates: true
         });
 
         assertTrue(ipAssetRegistry.isRegistered(childIpId));
@@ -85,12 +85,12 @@ contract DerivativeIntegration is BaseIntegration {
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee); // for nft minting fee
 
-        (uint256 childTokenId, ) = spgNftContract.mint(
-            testSender,
-            testIpMetadata.nftMetadataURI,
-            testIpMetadata.nftMetadataHash,
-            false
-        );
+        uint256 childTokenId = spgNftContract.mint({
+            to: testSender,
+            nftMetadataURI: testIpMetadata.nftMetadataURI,
+            nftMetadataHash: testIpMetadata.nftMetadataHash,
+            allowDuplicates: true
+        });
         address childIpId = ipAssetRegistry.ipId(block.chainid, address(spgNftContract), childTokenId);
 
         uint256 deadline = block.timestamp + 1000;
@@ -190,7 +190,7 @@ contract DerivativeIntegration is BaseIntegration {
                 royaltyContext: "",
                 ipMetadata: testIpMetadata,
                 recipient: testSender,
-                dedup: false
+                allowDuplicates: true
             });
 
         assertTrue(ipAssetRegistry.isRegistered(childIpId));
@@ -219,12 +219,12 @@ contract DerivativeIntegration is BaseIntegration {
     {
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee); // for nft minting fee
-        (uint256 childTokenId, ) = spgNftContract.mint(
-            testSender,
-            testIpMetadata.nftMetadataURI,
-            testIpMetadata.nftMetadataHash,
-            false
-        );
+        uint256 childTokenId = spgNftContract.mint({
+            to: testSender,
+            nftMetadataURI: testIpMetadata.nftMetadataURI,
+            nftMetadataHash: testIpMetadata.nftMetadataHash,
+            allowDuplicates: true
+        });
         address childIpId = ipAssetRegistry.ipId(block.chainid, address(spgNftContract), childTokenId);
 
         uint256 deadline = block.timestamp + 1000;
@@ -383,7 +383,7 @@ contract DerivativeIntegration is BaseIntegration {
                     royaltyPolicy: royaltyPolicyLRPAddr,
                     currencyToken: testMintFeeToken
                 }),
-                dedup: false
+                allowDuplicates: true
             });
 
         parentIpIds = new address[](1);

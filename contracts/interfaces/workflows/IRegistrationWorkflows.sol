@@ -21,7 +21,7 @@ interface IRegistrationWorkflows {
     /// @param spgNftContract The address of the SPGNFT collection.
     /// @param recipient The address of the recipient of the minted NFT.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
-    /// @param dedup Set to true to enable checking for duplicate metadata hashes in the SPGNFT collection.
+    /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
     /// If a duplicate is found, returns existing token Id and IP Id instead of minting/registering a new one.
     /// @return ipId The ID of the registered IP.
     /// @return tokenId The ID of the newly minted NFT.
@@ -29,7 +29,7 @@ interface IRegistrationWorkflows {
         address spgNftContract,
         address recipient,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        bool dedup
+        bool allowDuplicates
     ) external returns (address ipId, uint256 tokenId);
 
     /// @notice Registers an NFT as IP with metadata.

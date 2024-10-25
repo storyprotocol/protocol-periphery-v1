@@ -14,36 +14,12 @@ library Errors {
     /// @notice Zero address provided as a param to the RegistrationWorkflows.
     error RegistrationWorkflows__ZeroAddressParam();
 
-    /// @notice Error thrown when attempting to mint an NFT with a metadata hash that already exists.
-    /// @param spgNftContract The address of the SPGNFT collection contract where the duplicate was detected.
-    /// @param tokenId The ID of the original NFT that was first minted with this metadata hash.
-    /// @param ipId The identifier of the registered IP associated with this NFT.
-    /// @param nftMetadataHash The hash of the NFT metadata that caused the duplication error.
-    error RegistrationWorkflows__DuplicatedNFTMetadataHash(
-        address spgNftContract,
-        uint256 tokenId,
-        address ipId,
-        bytes32 nftMetadataHash
-    );
-
     ////////////////////////////////////////////////////////////////////////////
     //                         LicenseAttachmentWorkflows                     //
     ////////////////////////////////////////////////////////////////////////////
 
     /// @notice Zero address provided as a param to the LicenseAttachmentWorkflows.
     error LicenseAttachmentWorkflows__ZeroAddressParam();
-
-    /// @notice Error thrown when attempting to mint an NFT with a metadata hash that already exists.
-    /// @param spgNftContract The address of the SPGNFT collection contract where the duplicate was detected.
-    /// @param tokenId The ID of the original NFT that was first minted with this metadata hash.
-    /// @param ipId The identifier of the registered IP associated with this NFT.
-    /// @param nftMetadataHash The hash of the NFT metadata that caused the duplication error.
-    error LicenseAttachmentWorkflows__DuplicatedNFTMetadataHash(
-        address spgNftContract,
-        uint256 tokenId,
-        address ipId,
-        bytes32 nftMetadataHash
-    );
 
     ////////////////////////////////////////////////////////////////////////////
     //                         DerivativeWorkflows                            //
@@ -58,36 +34,12 @@ library Errors {
     /// @notice Caller is not the owner of the license token.
     error DerivativeWorkflows__CallerAndNotTokenOwner(uint256 tokenId, address caller, address actualTokenOwner);
 
-    /// @notice Error thrown when attempting to mint an NFT with a metadata hash that already exists.
-    /// @param spgNftContract The address of the SPGNFT collection contract where the duplicate was detected.
-    /// @param tokenId The ID of the original NFT that was first minted with this metadata hash.
-    /// @param ipId The identifier of the registered IP associated with this NFT.
-    /// @param nftMetadataHash The hash of the NFT metadata that caused the duplication error.
-    error DerivativeWorkflows__DuplicatedNFTMetadataHash(
-        address spgNftContract,
-        uint256 tokenId,
-        address ipId,
-        bytes32 nftMetadataHash
-    );
-
     ////////////////////////////////////////////////////////////////////////////
     //                             Grouping Workflows                         //
     ////////////////////////////////////////////////////////////////////////////
 
     /// @notice Zero address provided as a param to the GroupingWorkflows.
     error GroupingWorkflows__ZeroAddressParam();
-
-    /// @notice Error thrown when attempting to mint an NFT with a metadata hash that already exists.
-    /// @param spgNftContract The address of the SPGNFT collection contract where the duplicate was detected.
-    /// @param tokenId The ID of the original NFT that was first minted with this metadata hash.
-    /// @param ipId The identifier of the registered IP associated with this NFT.
-    /// @param nftMetadataHash The hash of the NFT metadata that caused the duplication error.
-    error GroupingWorkflows__DuplicatedNFTMetadataHash(
-        address spgNftContract,
-        uint256 tokenId,
-        address ipId,
-        bytes32 nftMetadataHash
-    );
 
     ////////////////////////////////////////////////////////////////////////////
     //                              Royalty Workflows                         //
@@ -119,4 +71,10 @@ library Errors {
 
     /// @notice Caller is not one of the periphery contracts.
     error SPGNFT__CallerNotPeripheryContract();
+
+    /// @notice Error thrown when attempting to mint an NFT with a metadata hash that already exists.
+    /// @param spgNftContract The address of the SPGNFT collection contract where the duplicate was detected.
+    /// @param tokenId The ID of the original NFT that was first minted with this metadata hash.
+    /// @param nftMetadataHash The hash of the NFT metadata that caused the duplication error.
+    error SPGNFT__DuplicatedNFTMetadataHash(address spgNftContract, uint256 tokenId, bytes32 nftMetadataHash);
 }

@@ -46,7 +46,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
             spgNftContract: address(spgNftContract),
             recipient: testSender,
             ipMetadata: testIpMetadata,
-            dedup: false
+            allowDuplicates: true
         });
 
         uint256 deadline = block.timestamp + 1000;
@@ -84,7 +84,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
                     recipient: testSender,
                     ipMetadata: testIpMetadata,
                     terms: commUseTerms,
-                    dedup: false
+                    allowDuplicates: true
                 });
             assertTrue(ipAssetRegistry.isRegistered(ipId1));
             assertEq(tokenId1, spgNftContract.totalSupply());
@@ -107,7 +107,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
                     recipient: testSender,
                     ipMetadata: testIpMetadata,
                     terms: commUseTerms,
-                    dedup: false
+                    allowDuplicates: true
                 });
             assertTrue(ipAssetRegistry.isRegistered(ipId2));
             assertEq(tokenId2, spgNftContract.totalSupply());
@@ -127,7 +127,12 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee);
 
-        (uint256 tokenId, ) = spgNftContract.mint(testSender, "", bytes32(0), false);
+        uint256 tokenId = spgNftContract.mint({
+            to: testSender,
+            nftMetadataURI: "",
+            nftMetadataHash: bytes32(0),
+            allowDuplicates: true
+        });
         address expectedIpId = ipAssetRegistry.ipId(block.chainid, address(spgNftContract), tokenId);
 
         uint256 deadline = block.timestamp + 1000;

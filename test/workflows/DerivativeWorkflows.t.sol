@@ -31,7 +31,7 @@ contract DerivativeWorkflowsTest is BaseTest {
             recipient: caller,
             ipMetadata: ipMetadataDefault,
             terms: PILFlavors.nonCommercialSocialRemixing(),
-            dedup: false
+            allowDuplicates: true
         });
         _;
     }
@@ -47,7 +47,7 @@ contract DerivativeWorkflowsTest is BaseTest {
                 royaltyPolicy: address(royaltyPolicyLAP),
                 currencyToken: address(mockToken)
             }),
-            dedup: false
+            allowDuplicates: true
         });
         _;
     }
@@ -82,16 +82,15 @@ contract DerivativeWorkflowsTest is BaseTest {
             }),
             ipMetadata: ipMetadataDefault,
             recipient: caller,
-            dedup: false
+            allowDuplicates: true
         });
 
         // Now attempt to create another derivative with the same NFT metadata hash but with dedup turned on
         vm.expectRevert(
             abi.encodeWithSelector(
-                Errors.DerivativeWorkflows__DuplicatedNFTMetadataHash.selector,
+                Errors.SPGNFT__DuplicatedNFTMetadataHash.selector,
                 address(nftContract),
                 1,
-                ipIdParent,
                 ipMetadataDefault.nftMetadataHash
             )
         );
@@ -106,7 +105,7 @@ contract DerivativeWorkflowsTest is BaseTest {
             }),
             ipMetadata: ipMetadataDefault,
             recipient: caller,
-            dedup: true
+            allowDuplicates: false
         });
     }
 
@@ -185,7 +184,7 @@ contract DerivativeWorkflowsTest is BaseTest {
                 royaltyContext: "",
                 ipMetadata: ipMetadataDefault,
                 recipient: caller,
-                dedup: false
+                allowDuplicates: true
             });
         assertTrue(ipAssetRegistry.isRegistered(ipIdChild));
         assertEq(tokenIdChild, 2);
@@ -219,12 +218,12 @@ contract DerivativeWorkflowsTest is BaseTest {
             0
         );
 
-        (uint256 tokenIdChild, ) = nftContract.mint(
-            caller,
-            ipMetadataDefault.nftMetadataURI,
-            ipMetadataDefault.nftMetadataHash,
-            false
-        );
+        uint256 tokenIdChild = nftContract.mint({
+            to: caller,
+            nftMetadataURI: ipMetadataDefault.nftMetadataURI,
+            nftMetadataHash: ipMetadataDefault.nftMetadataHash,
+            allowDuplicates: true
+        });
         address ipIdChild = ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenIdChild);
 
         uint256 deadline = block.timestamp + 1000;
@@ -320,7 +319,7 @@ contract DerivativeWorkflowsTest is BaseTest {
                 }),
                 ipMetadataDefault,
                 caller,
-                false
+                true
             );
         }
 
@@ -371,7 +370,7 @@ contract DerivativeWorkflowsTest is BaseTest {
             }),
             ipMetadata: ipMetadataDefault,
             recipient: caller,
-            dedup: false
+            allowDuplicates: true
         });
         assertTrue(ipAssetRegistry.isRegistered(ipIdChild));
         assertEq(tokenIdChild, 2);
@@ -399,12 +398,12 @@ contract DerivativeWorkflowsTest is BaseTest {
             0
         );
 
-        (uint256 tokenIdChild, ) = nftContract.mint(
-            address(caller),
-            ipMetadataDefault.nftMetadataURI,
-            ipMetadataDefault.nftMetadataHash,
-            false
-        );
+        uint256 tokenIdChild = nftContract.mint({
+            to: caller,
+            nftMetadataURI: ipMetadataDefault.nftMetadataURI,
+            nftMetadataHash: ipMetadataDefault.nftMetadataHash,
+            allowDuplicates: true
+        });
         address ipIdChild = ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenIdChild);
 
         uint256 deadline = block.timestamp + 1000;

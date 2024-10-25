@@ -77,10 +77,9 @@ contract GroupingWorkflowsTest is BaseTest {
         vm.startPrank(minter);
         vm.expectRevert(
             abi.encodeWithSelector(
-                Errors.GroupingWorkflows__DuplicatedNFTMetadataHash.selector,
+                Errors.SPGNFT__DuplicatedNFTMetadataHash.selector,
                 address(spgNftPublic),
                 1,
-                ipIds[0],
                 ipMetadataDefault.nftMetadataHash
             )
         );
@@ -96,7 +95,7 @@ contract GroupingWorkflowsTest is BaseTest {
                 deadline: deadline,
                 signature: sigAddToGroup
             }),
-            dedup: true
+            allowDuplicates: false
         });
         vm.stopPrank();
     }
@@ -130,7 +129,7 @@ contract GroupingWorkflowsTest is BaseTest {
                 deadline: deadline,
                 signature: sigAddToGroup
             }),
-            dedup: false
+            allowDuplicates: true
         });
         vm.stopPrank();
 
@@ -319,7 +318,7 @@ contract GroupingWorkflowsTest is BaseTest {
             }),
             ipMetadata: ipMetadataDefault,
             recipient: ipOwner1,
-            dedup: false
+            allowDuplicates: true
         });
         vm.stopPrank();
 
@@ -339,7 +338,7 @@ contract GroupingWorkflowsTest is BaseTest {
             }),
             ipMetadata: ipMetadataDefault,
             recipient: ipOwner2,
-            dedup: false
+            allowDuplicates: true
         });
         vm.stopPrank();
 
@@ -443,7 +442,7 @@ contract GroupingWorkflowsTest is BaseTest {
                 testLicenseTermsId,
                 ipMetadataDefault,
                 WorkflowStructs.SignatureData({ signer: groupOwner, deadline: deadline, signature: sigsAddToGroup[i] }),
-                false
+                true
             );
         }
 
@@ -587,7 +586,7 @@ contract GroupingWorkflowsTest is BaseTest {
                 address(spgNftPublic),
                 minter,
                 ipMetadataDefault,
-                false
+                true
             );
         }
 

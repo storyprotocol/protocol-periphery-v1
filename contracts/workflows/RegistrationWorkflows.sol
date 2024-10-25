@@ -107,31 +107,22 @@ contract RegistrationWorkflows is
     /// @param spgNftContract The address of the SPGNFT collection.
     /// @param recipient The address of the recipient of the minted NFT.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
-    /// @param dedup Set to true to enable checking for duplicate metadata hashes in the SPGNFT collection.
+    /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
     /// @return ipId The ID of the registered IP.
     /// @return tokenId The ID of the newly minted NFT.
     function mintAndRegisterIp(
         address spgNftContract,
         address recipient,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        bool dedup
+        bool allowDuplicates
     ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId) {
-        bool deduped;
-        (tokenId, deduped) = ISPGNFT(spgNftContract).mintByPeriphery({
+        tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
             to: address(this),
             payer: msg.sender,
             nftMetadataURI: ipMetadata.nftMetadataURI,
             nftMetadataHash: ipMetadata.nftMetadataHash,
-            dedup: dedup
+            allowDuplicates: allowDuplicates
         });
-
-        if (deduped)
-            revert Errors.RegistrationWorkflows__DuplicatedNFTMetadataHash({
-                spgNftContract: spgNftContract,
-                tokenId: tokenId,
-                ipId: _getIpId(spgNftContract, tokenId),
-                nftMetadataHash: ipMetadata.nftMetadataHash
-            });
 
         ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);

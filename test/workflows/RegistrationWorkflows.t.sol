@@ -63,7 +63,7 @@ contract RegistrationWorkflowsTest is BaseTest {
             spgNftContract: address(nftContract),
             recipient: u.bob,
             ipMetadata: ipMetadataEmpty,
-            dedup: false
+            allowDuplicates: true
         });
     }
 
@@ -79,7 +79,7 @@ contract RegistrationWorkflowsTest is BaseTest {
             spgNftContract: address(nftContract),
             recipient: u.bob,
             ipMetadata: ipMetadataDefault,
-            dedup: true
+            allowDuplicates: false
         });
         assertEq(tokenId1, 1);
         assertTrue(ipAssetRegistry.isRegistered(ipId1));
@@ -88,10 +88,9 @@ contract RegistrationWorkflowsTest is BaseTest {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Errors.RegistrationWorkflows__DuplicatedNFTMetadataHash.selector,
+                Errors.SPGNFT__DuplicatedNFTMetadataHash.selector,
                 address(nftContract),
                 tokenId1,
-                ipId1,
                 ipMetadataDefault.nftMetadataHash
             )
         );
@@ -99,7 +98,7 @@ contract RegistrationWorkflowsTest is BaseTest {
             spgNftContract: address(nftContract),
             recipient: u.bob,
             ipMetadata: ipMetadataDefault,
-            dedup: true
+            allowDuplicates: false
         });
     }
 
@@ -132,7 +131,7 @@ contract RegistrationWorkflowsTest is BaseTest {
             spgNftContract: address(nftContract),
             recipient: u.bob,
             ipMetadata: ipMetadataEmpty,
-            dedup: false
+            allowDuplicates: true
         });
         vm.stopPrank();
 
@@ -150,7 +149,7 @@ contract RegistrationWorkflowsTest is BaseTest {
             spgNftContract: address(nftContract),
             recipient: u.bob,
             ipMetadata: ipMetadataEmpty,
-            dedup: false
+            allowDuplicates: true
         });
         assertEq(tokenId1, 1);
         assertTrue(ipAssetRegistry.isRegistered(ipId1));
@@ -161,7 +160,7 @@ contract RegistrationWorkflowsTest is BaseTest {
             spgNftContract: address(nftContract),
             recipient: u.bob,
             ipMetadata: ipMetadataDefault,
-            dedup: false
+            allowDuplicates: true
         });
         assertEq(tokenId2, 2);
         assertTrue(ipAssetRegistry.isRegistered(ipId2));
@@ -250,7 +249,7 @@ contract RegistrationWorkflowsTest is BaseTest {
                 address(nftContract),
                 u.bob,
                 ipMetadataDefault,
-                false
+                true
             );
         }
         bytes[] memory results = registrationWorkflows.multicall(data);

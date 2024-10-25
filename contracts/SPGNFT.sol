@@ -219,25 +219,23 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @param nftMetadataURI OPTIONAL. The URI of the desired metadata for the newly minted NFT.
     /// @param nftMetadataHash OPTIONAL. A bytes32 hash of the NFT's metadata.
     /// This metadata is accessible via the NFT's tokenURI.
-    /// @param dedup Set to true to enable checking for duplicate metadata hashes.
-    /// If a duplicate is found, the function will return the existing token ID instead of minting a new one.
+    /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
     /// @return tokenId The token ID of the minted NFT with the given metadata hash.
-    /// @return deduped true if dedup is enabled and the metadata hash is already used, false otherwise.
     function mint(
         address to,
         string calldata nftMetadataURI,
         bytes32 nftMetadataHash,
-        bool dedup
-    ) public virtual returns (uint256 tokenId, bool deduped) {
+        bool allowDuplicates
+    ) public virtual returns (uint256 tokenId) {
         if (!_getSPGNFTStorage()._publicMinting && !hasRole(SPGNFTLib.MINTER_ROLE, msg.sender)) {
             revert Errors.SPGNFT__MintingDenied();
         }
-        (tokenId, deduped) = _mintToken({
+        tokenId = _mintToken({
             to: to,
             payer: msg.sender,
             nftMetadataURI: nftMetadataURI,
             nftMetadataHash: nftMetadataHash,
-            dedup: dedup
+            allowDuplicates: allowDuplicates
         });
     }
 
@@ -247,23 +245,21 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @param nftMetadataURI OPTIONAL. The URI of the desired metadata for the newly minted NFT.
     /// @param nftMetadataHash OPTIONAL. A bytes32 hash of the NFT's metadata.
     /// This metadata is accessible via the NFT's tokenURI.
-    /// @param dedup Set to true to enable checking for duplicate metadata hashes.
-    /// If a duplicate is found, the function will return the existing token ID instead of minting a new one.
+    /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
     /// @return tokenId The token ID of the minted NFT with the given metadata hash.
-    /// @return deduped true if dedup is enabled and the metadata hash is already used, false otherwise.
     function mintByPeriphery(
         address to,
         address payer,
         string calldata nftMetadataURI,
         bytes32 nftMetadataHash,
-        bool dedup
-    ) public virtual onlyPeriphery returns (uint256 tokenId, bool deduped) {
-        (tokenId, deduped) = _mintToken({
+        bool allowDuplicates
+    ) public virtual onlyPeriphery returns (uint256 tokenId) {
+        tokenId = _mintToken({
             to: to,
             payer: payer,
             nftMetadataURI: nftMetadataURI,
             nftMetadataHash: nftMetadataHash,
-            dedup: dedup
+            allowDuplicates: allowDuplicates
         });
     }
 
@@ -287,24 +283,26 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @param nftMetadataURI OPTIONAL. The URI of the desired metadata for the newly minted NFT.
     /// @param nftMetadataHash OPTIONAL. A bytes32 hash of the NFT's metadata.
     /// This metadata is accessible via the NFT's tokenURI.
-    /// @param dedup Set to true to enable checking for duplicate metadata hashes.
-    /// If a duplicate is found, the function will return the existing token ID instead of minting a new one.
+    /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
     /// @return tokenId The token ID of the minted NFT with the given metadata hash.
-    /// @return deduped true if dedup is enabled and the metadata hash is already used, false otherwise.
     function _mintToken(
         address to,
         address payer,
         string calldata nftMetadataURI,
         bytes32 nftMetadataHash,
-        bool dedup
-    ) internal returns (uint256 tokenId, bool deduped) {
+        bool allowDuplicates
+    ) internal returns (uint256 tokenId) {
         SPGNFTStorage storage $ = _getSPGNFTStorage();
         if (!$._mintOpen) revert Errors.SPGNFT__MintingClosed();
         if ($._totalSupply + 1 > $._maxSupply) revert Errors.SPGNFT__MaxSupplyReached();
 
         tokenId = $._nftMetadataHashToTokenId[nftMetadataHash];
-        if (dedup && tokenId != 0) {
-            return (tokenId, true);
+        if (!allowDuplicates && tokenId != 0) {
+            revert Errors.SPGNFT__DuplicatedNFTMetadataHash({
+                spgNftContract: address(this),
+                tokenId: tokenId,
+                nftMetadataHash: nftMetadataHash
+            });
         }
 
         if ($._mintFeeToken != address(0) && $._mintFee > 0) {
@@ -320,8 +318,6 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         _mint(to, tokenId);
 
         if (bytes(nftMetadataURI).length > 0) _setTokenURI(tokenId, nftMetadataURI);
-
-        return (tokenId, false);
     }
 
     /// @dev Base URI for computing tokenURI.

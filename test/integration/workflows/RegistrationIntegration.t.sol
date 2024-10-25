@@ -80,7 +80,7 @@ contract RegistrationIntegration is BaseIntegration {
             spgNftContract: address(spgNftContract),
             recipient: testSender,
             ipMetadata: testIpMetadata,
-            dedup: false
+            allowDuplicates: true
         });
 
         assertEq(tokenId, 1);
@@ -92,7 +92,7 @@ contract RegistrationIntegration is BaseIntegration {
     function _test_RegistrationIntegration_registerIp() private logTest("test_RegistrationIntegration_registerIp") {
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee);
-        (uint256 tokenId, ) = spgNftContract.mint(testSender, "", bytes32(0), false);
+        uint256 tokenId = spgNftContract.mint(testSender, "", bytes32(0), true);
 
         // get signature for setting IP metadata
         uint256 deadline = block.timestamp + 1000;
