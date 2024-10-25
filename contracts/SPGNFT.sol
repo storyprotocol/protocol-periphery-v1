@@ -34,7 +34,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         bool _publicMinting;
         string _baseURI;
         string _contractURI;
-        mapping (bytes32 nftMetadataHash => uint256 tokenId) _nftMetadataHashToTokenId;
+        mapping(bytes32 nftMetadataHash => uint256 tokenId) _nftMetadataHashToTokenId;
     }
 
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.SPGNFT")) - 1)) & ~bytes32(uint256(0xff));

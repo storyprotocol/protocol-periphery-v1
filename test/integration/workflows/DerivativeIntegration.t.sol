@@ -85,7 +85,7 @@ contract DerivativeIntegration is BaseIntegration {
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee); // for nft minting fee
 
-        (uint256 childTokenId,) = spgNftContract.mint(
+        (uint256 childTokenId, ) = spgNftContract.mint(
             testSender,
             testIpMetadata.nftMetadataURI,
             testIpMetadata.nftMetadataHash,
@@ -219,7 +219,7 @@ contract DerivativeIntegration is BaseIntegration {
     {
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee); // for nft minting fee
-        (uint256 childTokenId,) = spgNftContract.mint(
+        (uint256 childTokenId, ) = spgNftContract.mint(
             testSender,
             testIpMetadata.nftMetadataURI,
             testIpMetadata.nftMetadataHash,

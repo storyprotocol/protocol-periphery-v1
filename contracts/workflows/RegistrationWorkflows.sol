@@ -125,8 +125,7 @@ contract RegistrationWorkflows is
             dedup: dedup
         });
 
-        if (deduped)
-            return (_getIpId(spgNftContract, tokenId), tokenId);
+        if (deduped) return (_getIpId(spgNftContract, tokenId), tokenId);
 
         ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);

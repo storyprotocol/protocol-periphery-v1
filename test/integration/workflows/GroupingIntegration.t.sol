@@ -99,7 +99,9 @@ contract GroupingIntegration is BaseIntegration {
     {
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee);
-        (uint256 tokenId,) = spgNftContract.mint(testSender, testIpMetadata.nftMetadataURI,
+        (uint256 tokenId, ) = spgNftContract.mint(
+            testSender,
+            testIpMetadata.nftMetadataURI,
             testIpMetadata.nftMetadataHash,
             false
         );
@@ -373,7 +375,9 @@ contract GroupingIntegration is BaseIntegration {
         // mint a NFT from the spgNftContract
         uint256[] memory tokenIds = new uint256[](numCalls);
         for (uint256 i = 0; i < numCalls; i++) {
-            (tokenIds[i], ) = spgNftContract.mint(testSender, testIpMetadata.nftMetadataURI,
+            (tokenIds[i], ) = spgNftContract.mint(
+                testSender,
+                testIpMetadata.nftMetadataURI,
                 testIpMetadata.nftMetadataHash,
                 false
             );

@@ -152,9 +152,12 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         whenCallerHasMinterRole
         withEnoughTokens(address(licenseAttachmentWorkflows))
     {
-        (uint256 tokenId, ) = nftContract.mint(address(caller), ipMetadataEmpty.nftMetadataURI,
+        (uint256 tokenId, ) = nftContract.mint(
+            address(caller),
+            ipMetadataEmpty.nftMetadataURI,
             ipMetadataEmpty.nftMetadataHash,
-            false);
+            false
+        );
         address payable ipId = payable(ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenId));
 
         uint256 deadline = block.timestamp + 1000;

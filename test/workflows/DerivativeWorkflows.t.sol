@@ -52,7 +52,8 @@ contract DerivativeWorkflowsTest is BaseTest {
         _;
     }
 
-    function test_DerivativeWorkflows_revert_DuplicatedNFTMetadataHash() public
+    function test_DerivativeWorkflows_revert_DuplicatedNFTMetadataHash()
+        public
         withCollection
         whenCallerHasMinterRole
         withEnoughTokens(address(derivativeWorkflows))
@@ -218,9 +219,12 @@ contract DerivativeWorkflowsTest is BaseTest {
             0
         );
 
-        (uint256 tokenIdChild, ) = nftContract.mint(caller, ipMetadataDefault.nftMetadataURI,
+        (uint256 tokenIdChild, ) = nftContract.mint(
+            caller,
+            ipMetadataDefault.nftMetadataURI,
             ipMetadataDefault.nftMetadataHash,
-            false);
+            false
+        );
         address ipIdChild = ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenIdChild);
 
         uint256 deadline = block.timestamp + 1000;
@@ -395,9 +399,12 @@ contract DerivativeWorkflowsTest is BaseTest {
             0
         );
 
-        (uint256 tokenIdChild, ) = nftContract.mint(address(caller), ipMetadataDefault.nftMetadataURI,
+        (uint256 tokenIdChild, ) = nftContract.mint(
+            address(caller),
+            ipMetadataDefault.nftMetadataURI,
             ipMetadataDefault.nftMetadataHash,
-            false);
+            false
+        );
         address ipIdChild = ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenIdChild);
 
         uint256 deadline = block.timestamp + 1000;
