@@ -12,13 +12,15 @@ interface IDerivativeWorkflows {
     /// @param derivData The derivative data to be used for registerDerivative.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
     /// @param recipient The address to receive the minted NFT.
+    /// @param dedup Set to true to enable checking for duplicate metadata hashes in the SPGNFT collection.
     /// @return ipId The ID of the newly registered IP.
     /// @return tokenId The ID of the newly minted NFT.
     function mintAndRegisterIpAndMakeDerivative(
         address spgNftContract,
         WorkflowStructs.MakeDerivative calldata derivData,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        address recipient
+        address recipient,
+        bool dedup
     ) external returns (address ipId, uint256 tokenId);
 
     /// @notice Register the given NFT as a derivative IP with metadata without license tokens.
@@ -46,6 +48,7 @@ interface IDerivativeWorkflows {
     /// @param royaltyContext The context for royalty module, should be empty for Royalty Policy LAP.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
     /// @param recipient The address to receive the minted NFT.
+    /// @param dedup Set to true to enable checking for duplicate metadata hashes in the SPGNFT collection.
     /// @return ipId The ID of the newly registered IP.
     /// @return tokenId The ID of the newly minted NFT.
     function mintAndRegisterIpAndMakeDerivativeWithLicenseTokens(
@@ -53,7 +56,8 @@ interface IDerivativeWorkflows {
         uint256[] calldata licenseTokenIds,
         bytes calldata royaltyContext,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        address recipient
+        address recipient,
+        bool dedup
     ) external returns (address ipId, uint256 tokenId);
 
     /// @notice Register the given NFT as a derivative IP using license tokens.

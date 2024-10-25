@@ -120,6 +120,7 @@ contract GroupingWorkflows is
     /// @param licenseTermsId The ID of the registered license terms that will be attached to the new IP.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
     /// @param sigAddToGroup Signature data for addIp to the group IP via the Grouping Module.
+    /// @param dedup Set to true to enable checking for duplicate metadata hashes in the SPGNFT collection.
     /// @return ipId The ID of the newly registered IP.
     /// @return tokenId The ID of the newly minted NFT.
     function mintAndRegisterIpAndAttachLicenseAndAddToGroup(
@@ -129,13 +130,26 @@ contract GroupingWorkflows is
         address licenseTemplate,
         uint256 licenseTermsId,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        WorkflowStructs.SignatureData calldata sigAddToGroup
+        WorkflowStructs.SignatureData calldata sigAddToGroup,
+        bool dedup
     ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId) {
-        tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
+        bool deduped;
+        (tokenId, deduped) = ISPGNFT(spgNftContract).mintByPeriphery({
             to: address(this),
             payer: msg.sender,
-            nftMetadataURI: ipMetadata.nftMetadataURI
+            nftMetadataURI: ipMetadata.nftMetadataURI,
+            nftMetadataHash: ipMetadata.nftMetadataHash,
+            dedup: dedup
         });
+
+        if (deduped)
+            revert Errors.GroupingWorkflows__DuplicatedNFTMetadataHash(
+                spgNftContract,
+                tokenId,
+                _getIpId(spgNftContract, tokenId),
+                ipMetadata.nftMetadataHash
+            );
+
         ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 

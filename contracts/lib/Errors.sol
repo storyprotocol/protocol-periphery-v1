@@ -21,6 +21,18 @@ library Errors {
     /// @notice Zero address provided as a param to the LicenseAttachmentWorkflows.
     error LicenseAttachmentWorkflows__ZeroAddressParam();
 
+    /// @notice Duplicated NFT metadata hash.
+    /// @param spgNftContract The address of the SPGNFT collection.
+    /// @param tokenId The ID of the NFT.
+    /// @param ipId The ID of the registered IP.
+    /// @param nftMetadataHash The duplicated NFT metadata hash.
+    error LicenseAttachmentWorkflows__DuplicatedNFTMetadataHash(
+        address spgNftContract,
+        uint256 tokenId,
+        address ipId,
+        bytes32 nftMetadataHash
+    );
+
     ////////////////////////////////////////////////////////////////////////////
     //                         DerivativeWorkflows                            //
     ////////////////////////////////////////////////////////////////////////////
@@ -34,12 +46,36 @@ library Errors {
     /// @notice Caller is not the owner of the license token.
     error DerivativeWorkflows__CallerAndNotTokenOwner(uint256 tokenId, address caller, address actualTokenOwner);
 
+    /// @notice Duplicated NFT metadata hash.
+    /// @param spgNftContract The address of the SPGNFT collection.
+    /// @param tokenId The ID of the NFT.
+    /// @param ipId The ID of the registered IP.
+    /// @param nftMetadataHash The duplicated NFT metadata hash.
+    error DerivativeWorkflows__DuplicatedNFTMetadataHash(
+        address spgNftContract,
+        uint256 tokenId,
+        address ipId,
+        bytes32 nftMetadataHash
+    );
+
     ////////////////////////////////////////////////////////////////////////////
     //                             Grouping Workflows                         //
     ////////////////////////////////////////////////////////////////////////////
 
     /// @notice Zero address provided as a param to the GroupingWorkflows.
     error GroupingWorkflows__ZeroAddressParam();
+
+    /// @notice Duplicated NFT metadata hash.
+    /// @param spgNftContract The address of the SPGNFT collection.
+    /// @param tokenId The ID of the NFT.
+    /// @param ipId The ID of the registered IP.
+    /// @param nftMetadataHash The duplicated NFT metadata hash.
+    error GroupingWorkflows__DuplicatedNFTMetadataHash(
+        address spgNftContract,
+        uint256 tokenId,
+        address ipId,
+        bytes32 nftMetadataHash
+    );
 
     ////////////////////////////////////////////////////////////////////////////
     //                              Royalty Workflows                         //

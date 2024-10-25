@@ -27,6 +27,7 @@ interface ILicenseAttachmentWorkflows {
     /// @param recipient The address of the recipient of the minted NFT.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
     /// @param terms The PIL terms to be registered.
+    /// @param dedup Set to true to enable checking for duplicate metadata hashes in the SPGNFT collection.
     /// @return ipId The ID of the newly registered IP.
     /// @return tokenId The ID of the newly minted NFT.
     /// @return licenseTermsId The ID of the newly registered PIL terms.
@@ -34,7 +35,8 @@ interface ILicenseAttachmentWorkflows {
         address spgNftContract,
         address recipient,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        PILTerms calldata terms
+        PILTerms calldata terms,
+        bool dedup
     ) external returns (address ipId, uint256 tokenId, uint256 licenseTermsId);
 
     /// @notice Register a given NFT as an IP and attach Programmable IP License Terms.

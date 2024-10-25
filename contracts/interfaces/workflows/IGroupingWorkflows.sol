@@ -16,6 +16,7 @@ interface IGroupingWorkflows {
     /// @param licenseTermsId The ID of the registered license terms that will be attached to the new IP.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
     /// @param sigAddToGroup Signature data for addIp to the group IP via the Grouping Module.
+    /// @param dedup Set to true to enable checking for duplicate metadata hashes in the SPGNFT collection.
     /// @return ipId The ID of the newly registered IP.
     /// @return tokenId The ID of the newly minted NFT.
     function mintAndRegisterIpAndAttachLicenseAndAddToGroup(
@@ -25,7 +26,8 @@ interface IGroupingWorkflows {
         address licenseTemplate,
         uint256 licenseTermsId,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        WorkflowStructs.SignatureData calldata sigAddToGroup
+        WorkflowStructs.SignatureData calldata sigAddToGroup,
+        bool dedup
     ) external returns (address ipId, uint256 tokenId);
 
     /// @notice Register an NFT as IP with metadata, attach license terms to the registered IP,

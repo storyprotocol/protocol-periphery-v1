@@ -123,6 +123,7 @@ contract LicenseAttachmentWorkflows is
     /// @param recipient The address of the recipient of the minted NFT.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
     /// @param terms The PIL terms to be registered.
+    /// @param dedup Set to true to enable checking for duplicate metadata hashes in the SPGNFT collection.
     /// @return ipId The ID of the newly registered IP.
     /// @return tokenId The ID of the newly minted NFT.
     /// @return licenseTermsId The ID of the newly registered PIL terms.
@@ -130,13 +131,26 @@ contract LicenseAttachmentWorkflows is
         address spgNftContract,
         address recipient,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        PILTerms calldata terms
+        PILTerms calldata terms,
+        bool dedup
     ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId, uint256 licenseTermsId) {
-        tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
+        bool deduped;
+        (tokenId, deduped) = ISPGNFT(spgNftContract).mintByPeriphery({
             to: address(this),
             payer: msg.sender,
-            nftMetadataURI: ipMetadata.nftMetadataURI
+            nftMetadataURI: ipMetadata.nftMetadataURI,
+            nftMetadataHash: ipMetadata.nftMetadataHash,
+            dedup: dedup
         });
+
+        if (deduped)
+            revert Errors.LicenseAttachmentWorkflows__DuplicatedNFTMetadataHash(
+                spgNftContract,
+                tokenId,
+                _getIpId(spgNftContract, tokenId),
+                ipMetadata.nftMetadataHash
+            );
+
         ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 

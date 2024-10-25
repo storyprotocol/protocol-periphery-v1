@@ -60,4 +60,12 @@ abstract contract BaseWorkflow {
         ) revert Errors.Workflow__CallerNotAuthorizedToMint();
         _;
     }
+
+    /// @notice Gets the IP ID associated with an NFT.
+    /// @param nftContract The address of the NFT.
+    /// @param tokenId The token identifier of the NFT.
+    /// @return The IP's canonical address identifier (IP ID).
+    function _getIpId(address nftContract, uint256 tokenId) internal view returns (address) {
+        return IP_ASSET_REGISTRY.ipId(block.chainid, nftContract, tokenId);
+    }
 }
