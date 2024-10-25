@@ -284,11 +284,11 @@ contract RoyaltyIntegration is BaseIntegration {
     /// - `grandChildIp`: It has all 3 license terms attached. It has 3 parents and 1 grandparent IPs.
     /// @param numSnapshots The number of snapshots to take of the ancestor IP's royalty vault.
     function _setupIpGraph(uint256 numSnapshots) private {
-        uint256 ancestorTokenId = spgNftContract.mint(testSender, "");
-        uint256 childTokenIdA = spgNftContract.mint(testSender, "");
-        uint256 childTokenIdB = spgNftContract.mint(testSender, "");
-        uint256 childTokenIdC = spgNftContract.mint(testSender, "");
-        uint256 grandChildTokenId = spgNftContract.mint(testSender, "");
+        (uint256 ancestorTokenId, ) = spgNftContract.mint(testSender, "", bytes32(0), false);
+        (uint256 childTokenIdA, ) = spgNftContract.mint(testSender, "", bytes32(0), false);
+        (uint256 childTokenIdB, ) = spgNftContract.mint(testSender, "", bytes32(0), false);
+        (uint256 childTokenIdC, ) = spgNftContract.mint(testSender, "", bytes32(0), false);
+        (uint256 grandChildTokenId, ) = spgNftContract.mint(testSender, "", bytes32(0), false);
 
         WorkflowStructs.IPMetadata memory emptyIpMetadata = WorkflowStructs.IPMetadata({
             ipMetadataURI: "",

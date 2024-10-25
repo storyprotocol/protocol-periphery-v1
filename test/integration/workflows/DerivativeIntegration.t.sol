@@ -55,7 +55,8 @@ contract DerivativeIntegration is BaseIntegration {
                 maxMintingFee: 0
             }),
             ipMetadata: testIpMetadata,
-            recipient: testSender
+            recipient: testSender,
+            dedup: false
         });
 
         assertTrue(ipAssetRegistry.isRegistered(childIpId));
@@ -84,7 +85,12 @@ contract DerivativeIntegration is BaseIntegration {
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee); // for nft minting fee
 
-        uint256 childTokenId = spgNftContract.mint(testSender, testIpMetadata.nftMetadataURI);
+        (uint256 childTokenId,) = spgNftContract.mint(
+            testSender,
+            testIpMetadata.nftMetadataURI,
+            testIpMetadata.nftMetadataHash,
+            false
+        );
         address childIpId = ipAssetRegistry.ipId(block.chainid, address(spgNftContract), childTokenId);
 
         uint256 deadline = block.timestamp + 1000;
@@ -183,7 +189,8 @@ contract DerivativeIntegration is BaseIntegration {
                 licenseTokenIds: licenseTokenIds,
                 royaltyContext: "",
                 ipMetadata: testIpMetadata,
-                recipient: testSender
+                recipient: testSender,
+                dedup: false
             });
 
         assertTrue(ipAssetRegistry.isRegistered(childIpId));
@@ -212,7 +219,12 @@ contract DerivativeIntegration is BaseIntegration {
     {
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee); // for nft minting fee
-        uint256 childTokenId = spgNftContract.mint(testSender, testIpMetadata.nftMetadataURI);
+        (uint256 childTokenId,) = spgNftContract.mint(
+            testSender,
+            testIpMetadata.nftMetadataURI,
+            testIpMetadata.nftMetadataHash,
+            false
+        );
         address childIpId = ipAssetRegistry.ipId(block.chainid, address(spgNftContract), childTokenId);
 
         uint256 deadline = block.timestamp + 1000;
@@ -370,7 +382,8 @@ contract DerivativeIntegration is BaseIntegration {
                     commercialRevShare: 10 * 10 ** 6, // 10%
                     royaltyPolicy: royaltyPolicyLRPAddr,
                     currencyToken: testMintFeeToken
-                })
+                }),
+                dedup: false
             });
 
         parentIpIds = new address[](1);

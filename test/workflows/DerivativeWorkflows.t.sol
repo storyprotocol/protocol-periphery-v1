@@ -10,6 +10,7 @@ import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensi
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 
 // contracts
+import { Errors } from "../../contracts/lib/Errors.sol";
 import { WorkflowStructs } from "../../contracts/lib/WorkflowStructs.sol";
 
 // test
@@ -29,7 +30,8 @@ contract DerivativeWorkflowsTest is BaseTest {
             spgNftContract: address(nftContract),
             recipient: caller,
             ipMetadata: ipMetadataDefault,
-            terms: PILFlavors.nonCommercialSocialRemixing()
+            terms: PILFlavors.nonCommercialSocialRemixing(),
+            dedup: false
         });
         _;
     }
@@ -44,9 +46,67 @@ contract DerivativeWorkflowsTest is BaseTest {
                 commercialRevShare: 10 * 10 ** 6, // 10%
                 royaltyPolicy: address(royaltyPolicyLAP),
                 currencyToken: address(mockToken)
-            })
+            }),
+            dedup: false
         });
         _;
+    }
+
+    function test_DerivativeWorkflows_revert_DuplicatedNFTMetadataHash() public
+        withCollection
+        whenCallerHasMinterRole
+        withEnoughTokens(address(derivativeWorkflows))
+        withNonCommercialParentIp
+    {
+        // First, create an derivative with the same NFT metadata hash but with dedup turned off
+        (address licenseTemplateParent, uint256 licenseTermsIdParent) = licenseRegistry.getAttachedLicenseTerms(
+            ipIdParent,
+            0
+        );
+
+        address[] memory parentIpIds = new address[](1);
+        parentIpIds[0] = ipIdParent;
+
+        uint256[] memory licenseTermsIds = new uint256[](1);
+        licenseTermsIds[0] = licenseTermsIdParent;
+
+        (address ipIdChild, ) = derivativeWorkflows.mintAndRegisterIpAndMakeDerivative({
+            spgNftContract: address(nftContract),
+            derivData: WorkflowStructs.MakeDerivative({
+                parentIpIds: parentIpIds,
+                licenseTemplate: address(pilTemplate),
+                licenseTermsIds: licenseTermsIds,
+                royaltyContext: "",
+                maxMintingFee: 0
+            }),
+            ipMetadata: ipMetadataDefault,
+            recipient: caller,
+            dedup: false
+        });
+
+        // Now attempt to create another derivative with the same NFT metadata hash but with dedup turned on
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.DerivativeWorkflows__DuplicatedNFTMetadataHash.selector,
+                address(nftContract),
+                1,
+                ipIdParent,
+                ipMetadataDefault.nftMetadataHash
+            )
+        );
+        derivativeWorkflows.mintAndRegisterIpAndMakeDerivative({
+            spgNftContract: address(nftContract),
+            derivData: WorkflowStructs.MakeDerivative({
+                parentIpIds: parentIpIds,
+                licenseTemplate: address(pilTemplate),
+                licenseTermsIds: licenseTermsIds,
+                royaltyContext: "",
+                maxMintingFee: 0
+            }),
+            ipMetadata: ipMetadataDefault,
+            recipient: caller,
+            dedup: true
+        });
     }
 
     function test_DerivativeWorkflows_mintAndRegisterIpAndMakeDerivative_withNonCommercialLicense()
@@ -123,7 +183,8 @@ contract DerivativeWorkflowsTest is BaseTest {
                 licenseTokenIds: licenseTokenIds,
                 royaltyContext: "",
                 ipMetadata: ipMetadataDefault,
-                recipient: caller
+                recipient: caller,
+                dedup: false
             });
         assertTrue(ipAssetRegistry.isRegistered(ipIdChild));
         assertEq(tokenIdChild, 2);
@@ -157,7 +218,9 @@ contract DerivativeWorkflowsTest is BaseTest {
             0
         );
 
-        uint256 tokenIdChild = nftContract.mint(caller, ipMetadataDefault.nftMetadataURI);
+        (uint256 tokenIdChild, ) = nftContract.mint(caller, ipMetadataDefault.nftMetadataURI,
+            ipMetadataDefault.nftMetadataHash,
+            false);
         address ipIdChild = ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenIdChild);
 
         uint256 deadline = block.timestamp + 1000;
@@ -252,7 +315,8 @@ contract DerivativeWorkflowsTest is BaseTest {
                     maxMintingFee: 0
                 }),
                 ipMetadataDefault,
-                caller
+                caller,
+                false
             );
         }
 
@@ -302,7 +366,8 @@ contract DerivativeWorkflowsTest is BaseTest {
                 maxMintingFee: 0
             }),
             ipMetadata: ipMetadataDefault,
-            recipient: caller
+            recipient: caller,
+            dedup: false
         });
         assertTrue(ipAssetRegistry.isRegistered(ipIdChild));
         assertEq(tokenIdChild, 2);
@@ -330,7 +395,9 @@ contract DerivativeWorkflowsTest is BaseTest {
             0
         );
 
-        uint256 tokenIdChild = nftContract.mint(address(caller), ipMetadataDefault.nftMetadataURI);
+        (uint256 tokenIdChild, ) = nftContract.mint(address(caller), ipMetadataDefault.nftMetadataURI,
+            ipMetadataDefault.nftMetadataHash,
+            false);
         address ipIdChild = ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenIdChild);
 
         uint256 deadline = block.timestamp + 1000;
