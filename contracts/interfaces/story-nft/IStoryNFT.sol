@@ -37,10 +37,8 @@ interface IStoryNFT is IERC721, IERC7572 {
     //                              Functions                                  //
     ////////////////////////////////////////////////////////////////////////////
     /// @notice Initializes the StoryNFT.
-    /// @param orgTokenId_ The token ID of the organization NFT.
-    /// @param orgIpId_ The ID of the organization IP.
     /// @param initParams The initialization parameters for StoryNFT {see {StoryNftInitParams}}.
-    function initialize(uint256 orgTokenId_, address orgIpId_, StoryNftInitParams calldata initParams) external;
+    function initialize(StoryNftInitParams calldata initParams) external;
 
     /// @notice Sets the contractURI of the collection (follows OpenSea contract-level metadata standard).
     function setContractURI(string memory contractURI) external;

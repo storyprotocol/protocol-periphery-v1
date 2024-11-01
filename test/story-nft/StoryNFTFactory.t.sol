@@ -256,7 +256,7 @@ contract StoryNFTFactoryTest is BaseTest {
         storyNftFactory.setDefaultStoryNftTemplate(address(0));
 
         vm.expectRevert(
-            abi.encodeWithSelector(IStoryNFTFactory.StoryNFTFactory__UnsupportedIStoryNFT.selector, address(orgNft))
+            abi.encodeWithSelector(IStoryNFTFactory.StoryNFTFactory__UnsupportedIOrgStoryNFT.selector, address(orgNft))
         );
         storyNftFactory.setDefaultStoryNftTemplate(address(orgNft));
         vm.stopPrank();
@@ -272,7 +272,7 @@ contract StoryNFTFactoryTest is BaseTest {
         storyNftFactory.whitelistNftTemplate(address(0));
 
         vm.expectRevert(
-            abi.encodeWithSelector(IStoryNFTFactory.StoryNFTFactory__UnsupportedIStoryNFT.selector, address(orgNft))
+            abi.encodeWithSelector(IStoryNFTFactory.StoryNFTFactory__UnsupportedIOrgStoryNFT.selector, address(orgNft))
         );
         storyNftFactory.whitelistNftTemplate(address(orgNft));
         vm.stopPrank();

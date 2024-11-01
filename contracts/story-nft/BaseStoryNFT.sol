@@ -2,10 +2,9 @@
 pragma solidity 0.8.26;
 
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import { ERC721URIStorage } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+/* solhint-disable-next-line max-line-length */
+import { ERC721URIStorageUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import { IIPAssetRegistry } from "@story-protocol/protocol-core/contracts/interfaces/registries/IIPAssetRegistry.sol";
 /*solhint-disable-next-line max-line-length*/
 import { ILicensingModule } from "@story-protocol/protocol-core/contracts/interfaces/modules/licensing/ILicensingModule.sol";
@@ -17,72 +16,58 @@ import { IStoryNFT } from "../interfaces/story-nft/IStoryNFT.sol";
 ///         To create a new custom StoryNFT, inherit from this contract and override the required functions.
 ///         Note: the new StoryNFT must be whitelisted in `StoryNFTFactory` by the Story governance in order
 ///         to use the Story NFT Factory features.
-abstract contract BaseStoryNFT is IStoryNFT, ERC721URIStorage, Ownable, Initializable {
+abstract contract BaseStoryNFT is IStoryNFT, ERC721URIStorageUpgradeable, OwnableUpgradeable {
     /// @notice Story Proof-of-Creativity IP Asset Registry address.
     IIPAssetRegistry public immutable IP_ASSET_REGISTRY;
 
     /// @notice Story Proof-of-Creativity Licensing Module address.
     ILicensingModule public immutable LICENSING_MODULE;
 
-    /// @notice Organization NFT address (see {OrgNFT}).
-    address public immutable ORG_NFT;
-
-    /// @notice Associated Organization NFT token ID.
-    uint256 public orgTokenId;
-
-    /// @notice Associated Organization IP ID.
-    address public orgIpId;
-
-    /// @dev Name of the collection.
-    string private _name;
-
-    /// @dev Symbol of the collection.
-    string private _symbol;
-
-    /// @dev Contract URI of the collection (follows OpenSea contract-level metadata standard).
-    string private _contractURI;
-
-    /// @dev Base URI of the collection (see {ERC721URIStorage-tokenURI} for how it is used).
-    string private _baseURI_;
-
-    /// @dev Current total supply of the collection.
-    uint256 private _totalSupply;
-
-    constructor(address ipAssetRegistry, address licensingModule, address orgNft) ERC721("", "") Ownable(msg.sender) {
-        if (ipAssetRegistry == address(0) || licensingModule == address(0) || orgNft == address(0))
-            revert StoryNFT__ZeroAddressParam();
-        IP_ASSET_REGISTRY = IIPAssetRegistry(ipAssetRegistry);
-        LICENSING_MODULE = ILicensingModule(licensingModule);
-        ORG_NFT = orgNft;
+    /// @dev Storage structure for the BaseStoryNFT
+    /// @param contractURI The contract URI of the collection.
+    /// @param baseURI The base URI of the collection.
+    /// @param totalSupply The total supply of the collection.
+    /// @custom:storage-location erc7201:story-protocol-periphery.BaseStoryNFT
+    struct BaseStoryNFTStorage {
+        string contractURI;
+        string baseURI;
+        uint256 totalSupply;
     }
 
-    /// @notice Initializes the StoryNFT
-    /// @param orgTokenId_ The token ID of the organization NFT.
-    /// @param orgIpId_ The ID of the organization IP.
+    // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.BaseStoryNFT")) - 1)) & ~bytes32(uint256(0xff));
+    bytes32 private constant BaseStoryNFTStorageLocation =
+        0x81ed94d7560ff7bef5060a232718049e514c358c346e3254b876807a753c0e00;
+
+    constructor(address ipAssetRegistry, address licensingModule) {
+        if (ipAssetRegistry == address(0) || licensingModule == address(0)) revert StoryNFT__ZeroAddressParam();
+        IP_ASSET_REGISTRY = IIPAssetRegistry(ipAssetRegistry);
+        LICENSING_MODULE = ILicensingModule(licensingModule);
+
+        _disableInitializers();
+    }
+
+    /// @dev External initializer function, to be overridden by the inheriting contracts.
     /// @param initParams The initialization parameters for StoryNFT {see {IStoryNFT-StoryNftInitParams}}.
-    function initialize(
-        uint256 orgTokenId_,
-        address orgIpId_,
-        StoryNftInitParams calldata initParams
-    ) public virtual initializer {
-        if (initParams.owner == address(0) || orgIpId_ == address(0)) revert StoryNFT__ZeroAddressParam();
+    function initialize(StoryNftInitParams calldata initParams) external virtual initializer {}
 
-        orgTokenId = orgTokenId_;
-        orgIpId = orgIpId_;
+    /// @notice Initializes the StoryNFT
+    /// @param initParams The initialization parameters for StoryNFT {see {IStoryNFT-StoryNftInitParams}}.
+    function __BaseStoryNFT_init(StoryNftInitParams calldata initParams) internal onlyInitializing {
+        __Ownable_init(initParams.owner);
+        __ERC721URIStorage_init();
+        __ERC721_init(initParams.name, initParams.symbol);
 
-        _name = initParams.name;
-        _symbol = initParams.symbol;
-        _contractURI = initParams.contractURI;
-        _baseURI_ = initParams.baseURI;
+        BaseStoryNFTStorage storage $ = _getBaseStoryNFTStorage();
+        $.contractURI = initParams.contractURI;
+        $.baseURI = initParams.baseURI;
 
-        _transferOwnership(initParams.owner);
         _customize(initParams.customInitData);
     }
 
     /// @notice Sets the contractURI of the collection (follows OpenSea contract-level metadata standard).
     /// @param contractURI_ The new contractURI of the collection.
     function setContractURI(string memory contractURI_) external onlyOwner {
-        _contractURI = contractURI_;
+        _getBaseStoryNFTStorage().contractURI = contractURI_;
 
         emit ContractURIUpdated();
     }
@@ -104,7 +89,7 @@ abstract contract BaseStoryNFT is IStoryNFT, ERC721URIStorage, Ownable, Initiali
         address recipient,
         string memory tokenURI_
     ) internal virtual returns (uint256 tokenId, address ipId) {
-        tokenId = _totalSupply++;
+        tokenId = _getBaseStoryNFTStorage().totalSupply++;
         _safeMint(recipient, tokenId);
         _setTokenURI(tokenId, tokenURI_);
         ipId = IP_ASSET_REGISTRY.register(block.chainid, address(this), tokenId);
@@ -138,28 +123,18 @@ abstract contract BaseStoryNFT is IStoryNFT, ERC721URIStorage, Ownable, Initiali
     /// @notice IERC165 interface support.
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(ERC721URIStorage, IERC165) returns (bool) {
+    ) public view virtual override(ERC721URIStorageUpgradeable, IERC165) returns (bool) {
         return interfaceId == type(IStoryNFT).interfaceId || super.supportsInterface(interfaceId);
-    }
-
-    /// @notice Returns the name of the collection.
-    function name() public view override returns (string memory) {
-        return _name;
-    }
-
-    /// @notice Returns the symbol of the collection.
-    function symbol() public view override returns (string memory) {
-        return _symbol;
     }
 
     /// @notice Returns the current total supply of the collection.
     function totalSupply() public view returns (uint256) {
-        return _totalSupply;
+        return _getBaseStoryNFTStorage().totalSupply;
     }
 
     /// @notice Returns the contract URI of the collection (follows OpenSea contract-level metadata standard).
     function contractURI() external view virtual returns (string memory) {
-        return _contractURI;
+        return _getBaseStoryNFTStorage().contractURI;
     }
 
     /// @notice Initializes the StoryNFT with custom data, required to be overridden by the inheriting contracts.
@@ -169,6 +144,13 @@ abstract contract BaseStoryNFT is IStoryNFT, ERC721URIStorage, Ownable, Initiali
 
     /// @notice Returns the base URI of the collection (see {ERC721URIStorage-tokenURI} for how it is used).
     function _baseURI() internal view virtual override returns (string memory) {
-        return _baseURI_;
+        return _getBaseStoryNFTStorage().baseURI;
+    }
+
+    /// @dev Returns the storage struct of BaseStoryNFT.
+    function _getBaseStoryNFTStorage() private pure returns (BaseStoryNFTStorage storage $) {
+        assembly {
+            $.slot := BaseStoryNFTStorageLocation
+        }
     }
 }

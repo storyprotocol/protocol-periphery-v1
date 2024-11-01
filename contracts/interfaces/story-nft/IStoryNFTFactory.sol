@@ -39,8 +39,8 @@ interface IStoryNFTFactory {
     error StoryNFTFactory__SignatureAlreadyUsed(bytes signature);
 
     /// @notice BaseStoryNFT is not supported by the StoryNFTFactory.
-    /// @param tokenContract The address of the token contract that does not implement IStoryNFT.
-    error StoryNFTFactory__UnsupportedIStoryNFT(address tokenContract);
+    /// @param tokenContract The address of the token contract that does not implement IOrgStoryNFT.
+    error StoryNFTFactory__UnsupportedIOrgStoryNFT(address tokenContract);
 
     /// @notice Zero address provided as a param to StoryNFTFactory functions.
     error StoryNFTFactory__ZeroAddressParam();

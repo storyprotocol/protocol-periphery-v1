@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
-import { ERC721URIStorage } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+/* solhint-disable-next-line max-line-length */
+import { ERC721URIStorageUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC721Metadata } from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import { SignatureChecker } from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 
-import { BaseStoryNFT } from "./BaseStoryNFT.sol";
+import { BaseOrgStoryNFT } from "./BaseOrgStoryNFT.sol";
 import { IStoryBadgeNFT } from "../interfaces/story-nft/IStoryBadgeNFT.sol";
 
 /// @title Story Badge NFT
 /// @notice A Story Badge is a soulbound NFT that has an unified token URI for all tokens.
-contract StoryBadgeNFT is IStoryBadgeNFT, BaseStoryNFT, ERC721Holder {
+contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, ERC721Holder {
     using MessageHashUtils for bytes32;
 
     /// @notice Story Proof-of-Creativity PILicense Template address.
@@ -38,7 +39,7 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseStoryNFT, ERC721Holder {
         address orgNft,
         address pilTemplate,
         uint256 defaultLicenseTermsId
-    ) BaseStoryNFT(ipAssetRegistry, licensingModule, orgNft) {
+    ) BaseOrgStoryNFT(ipAssetRegistry, licensingModule, orgNft) {
         if (
             ipAssetRegistry == address(0) ||
             licensingModule == address(0) ||
@@ -50,6 +51,18 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseStoryNFT, ERC721Holder {
         DEFAULT_LICENSE_TERMS_ID = defaultLicenseTermsId;
 
         _disableInitializers();
+    }
+
+    /// @notice Initializes the StoryBadgeNFT.
+    /// @param orgTokenId_ The token ID of the organization NFT.
+    /// @param orgIpId_ The ID of the organization IP.
+    /// @param initParams The initialization parameters for StoryNFT {see {IStoryNFT-StoryNftInitParams}}.
+    function initialize(
+        uint256 orgTokenId_,
+        address orgIpId_,
+        StoryNftInitParams calldata initParams
+    ) external override initializer {
+        __BaseOrgStoryNFT_init(orgTokenId_, orgIpId_, initParams);
     }
 
     /// @notice Returns true if the token is locked.
@@ -82,7 +95,7 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseStoryNFT, ERC721Holder {
 
         address[] memory parentIpIds = new address[](1);
         uint256[] memory licenseTermsIds = new uint256[](1);
-        parentIpIds[0] = orgIpId;
+        parentIpIds[0] = orgIpId();
         licenseTermsIds[0] = DEFAULT_LICENSE_TERMS_ID;
 
         // Make the badge a derivative of the organization IP
@@ -111,14 +124,16 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseStoryNFT, ERC721Holder {
     /// @notice Returns the token URI for the given token ID.
     /// @param tokenId The token ID.
     /// @return The unified token URI for all badges.
-    function tokenURI(uint256 tokenId) public view override(ERC721URIStorage, IERC721Metadata) returns (string memory) {
+    function tokenURI(
+        uint256 tokenId
+    ) public view override(ERC721URIStorageUpgradeable, IERC721Metadata) returns (string memory) {
         return _tokenURI;
     }
 
     /// @notice Initializes the StoryBadgeNFT with custom data (see {IStoryBadgeNFT-CustomInitParams}).
     /// @dev This function is called by BaseStoryNFT's `initialize` function.
     /// @param customInitData The custom data to initialize the StoryBadgeNFT.
-    function _customize(bytes memory customInitData) internal override {
+    function _customize(bytes memory customInitData) internal override onlyInitializing {
         CustomInitParams memory customParams = abi.decode(customInitData, (CustomInitParams));
         if (customParams.signer == address(0)) revert StoryBadgeNFT__ZeroAddressParam();
 
@@ -136,15 +151,15 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseStoryNFT, ERC721Holder {
     //                           Locked Functions                             //
     ////////////////////////////////////////////////////////////////////////////
 
-    function approve(address to, uint256 tokenId) public pure override(ERC721, IERC721) {
+    function approve(address to, uint256 tokenId) public pure override(ERC721Upgradeable, IERC721) {
         revert StoryBadgeNFT__TransferLocked();
     }
 
-    function setApprovalForAll(address operator, bool approved) public pure override(ERC721, IERC721) {
+    function setApprovalForAll(address operator, bool approved) public pure override(ERC721Upgradeable, IERC721) {
         revert StoryBadgeNFT__TransferLocked();
     }
 
-    function transferFrom(address from, address to, uint256 tokenId) public pure override(ERC721, IERC721) {
+    function transferFrom(address from, address to, uint256 tokenId) public pure override(ERC721Upgradeable, IERC721) {
         revert StoryBadgeNFT__TransferLocked();
     }
 
@@ -153,7 +168,7 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseStoryNFT, ERC721Holder {
         address to,
         uint256 tokenId,
         bytes memory data
-    ) public pure override(ERC721, IERC721) {
+    ) public pure override(ERC721Upgradeable, IERC721) {
         revert StoryBadgeNFT__TransferLocked();
     }
 }

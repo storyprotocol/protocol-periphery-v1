@@ -9,8 +9,9 @@ import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/Mes
 import { SignatureChecker } from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-import { IStoryNFT } from "../interfaces/story-nft/IStoryNFT.sol";
+import { IOrgStoryNFT } from "../interfaces/story-nft/IOrgStoryNFT.sol";
 import { IOrgNFT } from "../interfaces/story-nft/IOrgNFT.sol";
+import { IStoryNFT } from "../interfaces/story-nft/IStoryNFT.sol";
 import { IStoryNFTFactory } from "../interfaces/story-nft/IStoryNFTFactory.sol";
 
 /// @title StoryNFTFactory
@@ -148,7 +149,7 @@ contract StoryNFTFactory is IStoryNFTFactory, AccessManagedUpgradeable, UUPSUpgr
 
         // Clones the story NFT template and initializes it
         storyNft = Clones.clone(storyNftTemplate);
-        IStoryNFT(storyNft).initialize(orgTokenId, orgIpId, storyNftInitParams);
+        IOrgStoryNFT(storyNft).initialize(orgTokenId, orgIpId, storyNftInitParams);
 
         // Stores the deployed story NFT address
         $.deployedStoryNftsByOrgName[orgName] = storyNft;
@@ -200,7 +201,7 @@ contract StoryNFTFactory is IStoryNFTFactory, AccessManagedUpgradeable, UUPSUpgr
 
         // Clones the story NFT template and initializes it
         storyNft = Clones.clone(storyNftTemplate);
-        IStoryNFT(storyNft).initialize(orgTokenId, orgIpId, storyNftInitParams);
+        IOrgStoryNFT(storyNft).initialize(orgTokenId, orgIpId, storyNftInitParams);
 
         // Stores the deployed story NFT address
         $.deployedStoryNftsByOrgName[orgName] = storyNft;
@@ -215,8 +216,8 @@ contract StoryNFTFactory is IStoryNFTFactory, AccessManagedUpgradeable, UUPSUpgr
     /// @param defaultStoryNftTemplate The new default StoryNFT template.
     function setDefaultStoryNftTemplate(address defaultStoryNftTemplate) external restricted {
         if (defaultStoryNftTemplate == address(0)) revert StoryNFTFactory__ZeroAddressParam();
-        if (!defaultStoryNftTemplate.supportsInterface(type(IStoryNFT).interfaceId))
-            revert StoryNFTFactory__UnsupportedIStoryNFT(defaultStoryNftTemplate);
+        if (!defaultStoryNftTemplate.supportsInterface(type(IOrgStoryNFT).interfaceId))
+            revert StoryNFTFactory__UnsupportedIOrgStoryNFT(defaultStoryNftTemplate);
 
         _getStoryNFTFactoryStorage().whitelistedNftTemplates[defaultStoryNftTemplate] = true;
         _getStoryNFTFactoryStorage().defaultStoryNftTemplate = defaultStoryNftTemplate;
@@ -238,9 +239,9 @@ contract StoryNFTFactory is IStoryNFTFactory, AccessManagedUpgradeable, UUPSUpgr
     function whitelistNftTemplate(address storyNftTemplate) external restricted {
         if (storyNftTemplate == address(0)) revert StoryNFTFactory__ZeroAddressParam();
 
-        // The given story NFT template must implement IStoryNFT
-        if (!storyNftTemplate.supportsInterface(type(IStoryNFT).interfaceId))
-            revert StoryNFTFactory__UnsupportedIStoryNFT(storyNftTemplate);
+        // The given story NFT template must implement IOrgStoryNFT
+        if (!storyNftTemplate.supportsInterface(type(IOrgStoryNFT).interfaceId))
+            revert StoryNFTFactory__UnsupportedIOrgStoryNFT(storyNftTemplate);
 
         _getStoryNFTFactoryStorage().whitelistedNftTemplates[storyNftTemplate] = true;
         emit StoryNFTFactoryNftTemplateWhitelisted(storyNftTemplate);

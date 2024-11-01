@@ -10,6 +10,7 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 // contracts
 import { BaseStoryNFT } from "../../contracts/story-nft/BaseStoryNFT.sol";
 import { IStoryBadgeNFT } from "../../contracts/interfaces/story-nft/IStoryBadgeNFT.sol";
+import { IOrgStoryNFT } from "../../contracts/interfaces/story-nft/IOrgStoryNFT.sol";
 import { IStoryNFT } from "../../contracts/interfaces/story-nft/IStoryNFT.sol";
 import { StoryBadgeNFT } from "../../contracts/story-nft/StoryBadgeNFT.sol";
 
@@ -51,7 +52,7 @@ contract StoryBadgeNFTTest is BaseTest {
         StoryBadgeNFT testStoryBadgeNft = StoryBadgeNFT(
             TestProxyHelper.deployUUPSProxy(
                 testStoryBadgeNftImpl,
-                abi.encodeCall(IStoryNFT.initialize, (0, address(1), storyBadgeNftInitParams))
+                abi.encodeCall(IOrgStoryNFT.initialize, (0, address(1), storyBadgeNftInitParams))
             )
         );
 
@@ -111,13 +112,13 @@ contract StoryBadgeNFTTest is BaseTest {
         testStoryBadgeNft = StoryBadgeNFT(
             TestProxyHelper.deployUUPSProxy(
                 testStoryBadgeNftImpl,
-                abi.encodeCall(IStoryNFT.initialize, (0, address(1), storyBadgeNftInitParams))
+                abi.encodeCall(IOrgStoryNFT.initialize, (0, address(1), storyBadgeNftInitParams))
             )
         );
     }
 
     function test_StoryBadgeNFT_interfaceSupport() public {
-        assertTrue(BaseStoryNFT(rootStoryNft).supportsInterface(type(IStoryNFT).interfaceId));
+        assertTrue(BaseStoryNFT(rootStoryNft).supportsInterface(type(IOrgStoryNFT).interfaceId));
         assertTrue(BaseStoryNFT(rootStoryNft).supportsInterface(type(IERC721).interfaceId));
         assertTrue(BaseStoryNFT(rootStoryNft).supportsInterface(type(IERC721Metadata).interfaceId));
     }
