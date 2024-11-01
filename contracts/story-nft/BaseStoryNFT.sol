@@ -46,10 +46,6 @@ abstract contract BaseStoryNFT is IStoryNFT, ERC721URIStorageUpgradeable, Ownabl
         _disableInitializers();
     }
 
-    /// @dev External initializer function, to be overridden by the inheriting contracts.
-    /// @param initParams The initialization parameters for StoryNFT {see {IStoryNFT-StoryNftInitParams}}.
-    function initialize(StoryNftInitParams calldata initParams) external virtual initializer {}
-
     /// @notice Initializes the StoryNFT
     /// @param initParams The initialization parameters for StoryNFT {see {IStoryNFT-StoryNftInitParams}}.
     function __BaseStoryNFT_init(StoryNftInitParams calldata initParams) internal onlyInitializing {
