@@ -53,18 +53,6 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, ERC721Holder {
         _disableInitializers();
     }
 
-    /// @notice Initializes the StoryBadgeNFT.
-    /// @param orgTokenId_ The token ID of the organization NFT.
-    /// @param orgIpId_ The ID of the organization IP.
-    /// @param initParams The initialization parameters for StoryNFT {see {IStoryNFT-StoryNftInitParams}}.
-    function initialize(
-        uint256 orgTokenId_,
-        address orgIpId_,
-        StoryNftInitParams calldata initParams
-    ) external override initializer {
-        __BaseOrgStoryNFT_init(orgTokenId_, orgIpId_, initParams);
-    }
-
     /// @notice Returns true if the token is locked.
     /// @dev This is a placeholder function to satisfy the ERC5192 interface.
     /// @return bool Always true.

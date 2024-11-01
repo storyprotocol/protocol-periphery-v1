@@ -18,9 +18,11 @@ import { IStoryNFT } from "../interfaces/story-nft/IStoryNFT.sol";
 ///         to use the Story NFT Factory features.
 abstract contract BaseStoryNFT is IStoryNFT, ERC721URIStorageUpgradeable, OwnableUpgradeable {
     /// @notice Story Proof-of-Creativity IP Asset Registry address.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IIPAssetRegistry public immutable IP_ASSET_REGISTRY;
 
     /// @notice Story Proof-of-Creativity Licensing Module address.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     ILicensingModule public immutable LICENSING_MODULE;
 
     /// @dev Storage structure for the BaseStoryNFT

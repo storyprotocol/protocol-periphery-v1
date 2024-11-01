@@ -10,6 +10,7 @@ import { BaseStoryNFT } from "./BaseStoryNFT.sol";
 /// @notice Base Story NFT which integrates with the OrgNFT and StoryNFTFactory.
 abstract contract BaseOrgStoryNFT is IOrgStoryNFT, BaseStoryNFT {
     /// @notice Organization NFT address (see {OrgNFT}).
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable ORG_NFT;
 
     /// @dev Storage structure for the BaseOrgStoryNFT
@@ -43,7 +44,9 @@ abstract contract BaseOrgStoryNFT is IOrgStoryNFT, BaseStoryNFT {
         uint256 orgTokenId_,
         address orgIpId_,
         StoryNftInitParams calldata initParams
-    ) external virtual initializer {}
+    ) external virtual initializer {
+        __BaseOrgStoryNFT_init(orgTokenId_, orgIpId_, initParams);
+    }
 
     /// @dev Initialize the BaseOrgStoryNFT
     /// @param orgTokenId_ The token ID of the organization NFT.
