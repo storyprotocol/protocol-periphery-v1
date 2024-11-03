@@ -34,7 +34,7 @@ contract OrgNFT is IOrgNFT, ERC721URIStorageUpgradeable, AccessManagedUpgradeabl
     uint256 public immutable LICENSE_TERMS_ID;
 
     /// @notice Story NFT Factory address.
-    address public immutable STORY_NFT_FACTORY;
+    address public immutable ORG_STORY_NFT_FACTORY;
 
     /// @dev Storage structure for the OrgNFT
     /// @custom:storage-location erc7201:story-protocol-periphery.OrgNFT
@@ -49,8 +49,8 @@ contract OrgNFT is IOrgNFT, ERC721URIStorageUpgradeable, AccessManagedUpgradeabl
     bytes32 private constant OrgNFTStorageLocation = 0xa4a36278839a4db2ab2cd96ad705f696fd1f52c0a329c48dd114f7acbbc8db00;
 
     modifier onlyStoryNFTFactory() {
-        if (msg.sender != address(STORY_NFT_FACTORY)) {
-            revert OrgNFT__CallerNotStoryNFTFactory(msg.sender, STORY_NFT_FACTORY);
+        if (msg.sender != address(ORG_STORY_NFT_FACTORY)) {
+            revert OrgNFT__CallerNotOrgStoryNFTFactory(msg.sender, ORG_STORY_NFT_FACTORY);
         }
         _;
     }
@@ -59,20 +59,20 @@ contract OrgNFT is IOrgNFT, ERC721URIStorageUpgradeable, AccessManagedUpgradeabl
     constructor(
         address ipAssetRegistry,
         address licensingModule,
-        address storyNftFactory,
+        address orgStoryNftFactory,
         address licenseTemplate,
         uint256 licenseTermsId
     ) {
         if (
             ipAssetRegistry == address(0) ||
             licensingModule == address(0) ||
-            storyNftFactory == address(0) ||
+            orgStoryNftFactory == address(0) ||
             licenseTemplate == address(0)
         ) revert OrgNFT__ZeroAddressParam();
 
         IP_ASSET_REGISTRY = IIPAssetRegistry(ipAssetRegistry);
         LICENSING_MODULE = ILicensingModule(licensingModule);
-        STORY_NFT_FACTORY = storyNftFactory;
+        ORG_STORY_NFT_FACTORY = orgStoryNftFactory;
         LICENSE_TEMPLATE = licenseTemplate;
         LICENSE_TERMS_ID = licenseTermsId;
 
@@ -91,7 +91,7 @@ contract OrgNFT is IOrgNFT, ERC721URIStorageUpgradeable, AccessManagedUpgradeabl
     }
 
     /// @notice Mints the root organization token and register it as an IP.
-    /// @dev This function is only callable by the StoryNFTFactory contract.
+    /// @dev This function is only callable by the OrgStoryNFTFactory contract.
     /// @param recipient The address of the recipient of the root organization token.
     /// @param tokenURI_ The URI of the root organization token.
     /// @return rootOrgTokenId The ID of the root organization token.
@@ -109,7 +109,7 @@ contract OrgNFT is IOrgNFT, ERC721URIStorageUpgradeable, AccessManagedUpgradeabl
 
     /// @notice Mints a organization token, register it as an IP,
     /// and makes the IP as a derivative of the root organization IP.
-    /// @dev This function is only callable by the StoryNFTFactory contract.
+    /// @dev This function is only callable by the OrgStoryNFTFactory contract.
     /// @param recipient The address of the recipient of the minted organization token.
     /// @param tokenURI_ The URI of the minted organization token.
     /// @return orgTokenId The ID of the minted organization token.

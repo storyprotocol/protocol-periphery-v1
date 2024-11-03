@@ -7,11 +7,15 @@ import { IOrgStoryNFT } from "../interfaces/story-nft/IOrgStoryNFT.sol";
 import { BaseStoryNFT } from "./BaseStoryNFT.sol";
 
 /// @title Base Story NFT with OrgNFT integration
-/// @notice Base Story NFT which integrates with the OrgNFT and StoryNFTFactory.
+/// @notice Base Story NFT which integrates with the OrgNFT and OrgStoryNFTFactory.
 abstract contract BaseOrgStoryNFT is IOrgStoryNFT, BaseStoryNFT {
     /// @notice Organization NFT address (see {OrgNFT}).
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable ORG_NFT;
+
+    /// @notice The upgradeable beacon address.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+    address public immutable UPGRADEABLE_BEACON;
 
     /// @dev Storage structure for the BaseOrgStoryNFT
     /// @param orgTokenId Associated Organization NFT token ID.
@@ -29,10 +33,13 @@ abstract contract BaseOrgStoryNFT is IOrgStoryNFT, BaseStoryNFT {
     constructor(
         address ipAssetRegistry,
         address licensingModule,
+        address upgradeableBeacon,
         address orgNft
     ) BaseStoryNFT(ipAssetRegistry, licensingModule) {
         if (orgNft == address(0)) revert StoryNFT__ZeroAddressParam();
         ORG_NFT = orgNft;
+        UPGRADEABLE_BEACON = upgradeableBeacon;
+
         _disableInitializers();
     }
 
@@ -73,6 +80,11 @@ abstract contract BaseOrgStoryNFT is IOrgStoryNFT, BaseStoryNFT {
     /// @notice Returns the ID of the associated Organization IP.
     function orgIpId() public view returns (address) {
         return _getBaseOrgStoryNFTStorage().orgIpId;
+    }
+
+    /// @notice Returns the upgradeable beacon address.
+    function getBeacon() external view returns (address) {
+        return UPGRADEABLE_BEACON;
     }
 
     /// @notice IERC165 interface support.

@@ -19,27 +19,35 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, ERC721Holder {
     using MessageHashUtils for bytes32;
 
     /// @notice Story Proof-of-Creativity PILicense Template address.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable PIL_TEMPLATE;
 
     /// @notice Story Proof-of-Creativity default license terms ID.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 public immutable DEFAULT_LICENSE_TERMS_ID;
 
-    /// @notice Signer of the whitelist signatures.
-    address private _signer;
+    /// @dev Storage structure for the StoryBadgeNFT
+    /// @param signer The signer of the whitelist signatures.
+    /// @param tokenURI The unified token URI for all tokens.
+    /// @param usedSignatures Mapping of signatures to booleans indicating whether they have been used.
+    /// @custom:storage-location erc7201:story-protocol-periphery.StoryBadgeNFT
+    struct StoryBadgeNFTStorage {
+        address signer;
+        string tokenURI;
+        mapping(bytes signature => bool used) usedSignatures;
+    }
 
-    /// @notice The unified token URI for all tokens.
-    string private _tokenURI;
-
-    /// @notice Mapping of signatures to booleans indicating whether they have been used.
-    mapping(bytes signature => bool used) private _usedSignatures;
+    // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.StoryBadgeNFT")) - 1)) & ~bytes32(uint256(0xff));
+    bytes32 private constant StoryBadgeNFTStorageLocation = 0x00c5d7dc46f601fb1120e8b9ebb4fdf899cffbfddad19ced3e4dad5853224400;
 
     constructor(
         address ipAssetRegistry,
         address licensingModule,
+        address upgradeableBeacon,
         address orgNft,
         address pilTemplate,
         uint256 defaultLicenseTermsId
-    ) BaseOrgStoryNFT(ipAssetRegistry, licensingModule, orgNft) {
+    ) BaseOrgStoryNFT(ipAssetRegistry, licensingModule, upgradeableBeacon, orgNft) {
         if (
             ipAssetRegistry == address(0) ||
             licensingModule == address(0) ||
@@ -68,18 +76,20 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, ERC721Holder {
     /// @return tokenId The token ID of the minted badge NFT.
     /// @return ipId The ID of the badge NFT IP.
     function mint(address recipient, bytes calldata signature) external returns (uint256 tokenId, address ipId) {
+        StoryBadgeNFTStorage storage $ = _getStoryBadgeNFTStorage();
+
         // The given signature must not have been used
-        if (_usedSignatures[signature]) revert StoryBadgeNFT__SignatureAlreadyUsed();
+        if ($.usedSignatures[signature]) revert StoryBadgeNFT__SignatureAlreadyUsed();
 
         // Mark the signature as used
-        _usedSignatures[signature] = true;
+        $.usedSignatures[signature] = true;
 
         // The given signature must be valid
         bytes32 digest = keccak256(abi.encodePacked(msg.sender)).toEthSignedMessageHash();
-        if (!SignatureChecker.isValidSignatureNow(_signer, digest, signature)) revert StoryBadgeNFT__InvalidSignature();
+        if (!SignatureChecker.isValidSignatureNow($.signer, digest, signature)) revert StoryBadgeNFT__InvalidSignature();
 
         // Mint the badge and register it as an IP
-        (tokenId, ipId) = _mintAndRegisterIp(address(this), _tokenURI);
+        (tokenId, ipId) = _mintAndRegisterIp(address(this), $.tokenURI);
 
         address[] memory parentIpIds = new address[](1);
         uint256[] memory licenseTermsIds = new uint256[](1);
@@ -98,14 +108,14 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, ERC721Holder {
     /// @notice Updates the whitelist signer.
     /// @param signer_ The new whitelist signer address.
     function setSigner(address signer_) external onlyOwner {
-        _signer = signer_;
+        _getStoryBadgeNFTStorage().signer = signer_;
         emit StoryBadgeNFTSignerUpdated(signer_);
     }
 
     /// @notice Updates the unified token URI for all badges.
     /// @param tokenURI_ The new token URI.
     function setTokenURI(string memory tokenURI_) external onlyOwner {
-        _tokenURI = tokenURI_;
+        _getStoryBadgeNFTStorage().tokenURI = tokenURI_;
         emit BatchMetadataUpdate(0, totalSupply());
     }
 
@@ -115,7 +125,7 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, ERC721Holder {
     function tokenURI(
         uint256 tokenId
     ) public view override(ERC721URIStorageUpgradeable, IERC721Metadata) returns (string memory) {
-        return _tokenURI;
+        return _getStoryBadgeNFTStorage().tokenURI;
     }
 
     /// @notice Initializes the StoryBadgeNFT with custom data (see {IStoryBadgeNFT-CustomInitParams}).
@@ -125,14 +135,22 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, ERC721Holder {
         CustomInitParams memory customParams = abi.decode(customInitData, (CustomInitParams));
         if (customParams.signer == address(0)) revert StoryBadgeNFT__ZeroAddressParam();
 
-        _tokenURI = customParams.tokenURI;
-        _signer = customParams.signer;
+        StoryBadgeNFTStorage storage $ = _getStoryBadgeNFTStorage();
+        $.tokenURI = customParams.tokenURI;
+        $.signer = customParams.signer;
     }
 
     /// @notice Returns the base URI
     /// @return empty string
     function _baseURI() internal pure override returns (string memory) {
         return "";
+    }
+
+    /// @dev Returns the storage struct of StoryBadgeNFT.
+    function _getStoryBadgeNFTStorage() private pure returns (StoryBadgeNFTStorage storage $) {
+        assembly {
+            $.slot := StoryBadgeNFTStorageLocation
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////

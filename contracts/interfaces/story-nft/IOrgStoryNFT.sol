@@ -11,4 +11,7 @@ interface IOrgStoryNFT is IStoryNFT {
     /// @param orgIpId_ The ID of the organization IP.
     /// @param initParams The initialization parameters for StoryNFT {see {StoryNftInitParams}}.
     function initialize(uint256 orgTokenId_, address orgIpId_, StoryNftInitParams calldata initParams) external;
+
+    /// @notice Returns the upgradeable beacon address.
+    function getBeacon() external view returns (address);
 }

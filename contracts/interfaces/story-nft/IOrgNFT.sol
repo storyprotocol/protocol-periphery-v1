@@ -11,10 +11,10 @@ interface IOrgNFT is IERC721Metadata {
     ////////////////////////////////////////////////////////////////////////////
     //                              Errors                                     //
     ////////////////////////////////////////////////////////////////////////////
-    /// @notice Caller is not the StoryNFTFactory contract.
+    /// @notice Caller is not the OrgStoryNFTFactory contract.
     /// @param caller The address of the caller.
-    /// @param storyNftFactory The address of the `StoryNFTFactory` contract.
-    error OrgNFT__CallerNotStoryNFTFactory(address caller, address storyNftFactory);
+    /// @param orgStoryNftFactory The address of the `OrgStoryNFTFactory` contract.
+    error OrgNFT__CallerNotOrgStoryNFTFactory(address caller, address orgStoryNftFactory);
 
     /// @notice Caller is not the owner of `tokenId` organization token.
     /// @param tokenId The ID of the organization token.
