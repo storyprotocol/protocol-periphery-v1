@@ -23,7 +23,7 @@ contract OrgNFTTest is BaseTest {
             new OrgNFT({
                 ipAssetRegistry: address(ipAssetRegistry),
                 licensingModule: address(licensingModule),
-                storyNftFactory: address(storyNftFactory),
+                orgStoryNftFactory: address(orgStoryNftFactory),
                 licenseTemplate: address(pilTemplate),
                 licenseTermsId: 1
             })
@@ -38,7 +38,7 @@ contract OrgNFTTest is BaseTest {
 
         assertEq(address(testOrgNft.IP_ASSET_REGISTRY()), address(ipAssetRegistry));
         assertEq(address(testOrgNft.LICENSING_MODULE()), address(licensingModule));
-        assertEq(address(testOrgNft.STORY_NFT_FACTORY()), address(storyNftFactory));
+        assertEq(address(testOrgNft.ORG_STORY_NFT_FACTORY()), address(orgStoryNftFactory));
         assertEq(testOrgNft.LICENSE_TEMPLATE(), address(pilTemplate));
         assertEq(testOrgNft.LICENSE_TERMS_ID(), 1);
 
@@ -53,7 +53,7 @@ contract OrgNFTTest is BaseTest {
 
         assertNotEq(oldTokenURI, newTokenURI);
 
-        vm.startPrank(rootStoryNftOwner);
+        vm.startPrank(rootOrgStoryNftOwner);
         orgNft.setTokenURI(0, newTokenURI);
         assertEq(orgNft.tokenURI(0), newTokenURI);
         orgNft.setTokenURI(0, oldTokenURI);
@@ -63,7 +63,7 @@ contract OrgNFTTest is BaseTest {
 
     function test_OrgNFT_revert_setTokenURI_CallerIsNotOwner() public {
         vm.startPrank(u.bob);
-        vm.expectRevert(abi.encodeWithSelector(IOrgNFT.OrgNFT__CallerNotOwner.selector, 0, u.bob, rootStoryNftOwner));
+        vm.expectRevert(abi.encodeWithSelector(IOrgNFT.OrgNFT__CallerNotOwner.selector, 0, u.bob, rootOrgStoryNftOwner));
         orgNft.setTokenURI(0, "test");
         vm.stopPrank();
     }
@@ -73,7 +73,7 @@ contract OrgNFTTest is BaseTest {
         OrgNFT testOrgNft = new OrgNFT({
             ipAssetRegistry: address(ipAssetRegistry),
             licensingModule: address(licensingModule),
-            storyNftFactory: address(storyNftFactory),
+            orgStoryNftFactory: address(orgStoryNftFactory),
             licenseTemplate: address(0),
             licenseTermsId: 1
         });
@@ -82,7 +82,7 @@ contract OrgNFTTest is BaseTest {
             new OrgNFT({
                 ipAssetRegistry: address(ipAssetRegistry),
                 licensingModule: address(licensingModule),
-                storyNftFactory: address(storyNftFactory),
+                orgStoryNftFactory: address(orgStoryNftFactory),
                 licenseTemplate: address(pilTemplate),
                 licenseTermsId: 1
             })
@@ -103,12 +103,12 @@ contract OrgNFTTest is BaseTest {
     function test_OrgNFT_revert_mintOrgNft_CallerIsNotStoryNftFactory() public {
         vm.startPrank(u.bob);
         vm.expectRevert(
-            abi.encodeWithSelector(IOrgNFT.OrgNFT__CallerNotStoryNFTFactory.selector, u.bob, address(storyNftFactory))
+            abi.encodeWithSelector(IOrgNFT.OrgNFT__CallerNotOrgStoryNFTFactory.selector, u.bob, address(orgStoryNftFactory))
         );
         orgNft.mintRootOrgNft(u.bob, "test");
 
         vm.expectRevert(
-            abi.encodeWithSelector(IOrgNFT.OrgNFT__CallerNotStoryNFTFactory.selector, u.bob, address(storyNftFactory))
+            abi.encodeWithSelector(IOrgNFT.OrgNFT__CallerNotOrgStoryNFTFactory.selector, u.bob, address(orgStoryNftFactory))
         );
         orgNft.mintOrgNft(u.bob, "test");
         vm.stopPrank();

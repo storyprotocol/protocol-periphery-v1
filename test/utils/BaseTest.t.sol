@@ -45,11 +45,12 @@ contract BaseTest is Test, DeployHelper {
     uint256 internal minterSk;
 
     /// @dev User roles for story NFT tests
-    address internal storyNftFactorySigner;
-    address internal rootStoryNftSigner;
-    address internal rootStoryNftOwner;
-    uint256 internal storyNftFactorySignerSk;
-    uint256 internal rootStoryNftSignerSk;
+    StoryBadgeNFT internal rootOrgStoryNft;
+    address internal orgStoryNftFactorySigner;
+    address internal rootOrgStoryNftSigner;
+    address internal rootOrgStoryNftOwner;
+    uint256 internal orgStoryNftFactorySignerSk;
+    uint256 internal rootOrgStoryNftSignerSk;
 
     /// @dev Create3 deployer address
     address internal CREATE3_DEPLOYER = address(new Create3Deployer());
@@ -188,46 +189,46 @@ contract BaseTest is Test, DeployHelper {
     }
 
     function _setupStoryNftContracts() internal {
-        storyNftFactorySigner = u.alice;
-        rootStoryNftSigner = u.alice;
-        rootStoryNftOwner = u.admin;
-        storyNftFactorySignerSk = sk.alice;
-        rootStoryNftSignerSk = sk.alice;
+        orgStoryNftFactorySigner = u.alice;
+        rootOrgStoryNftSigner = u.alice;
+        rootOrgStoryNftOwner = u.admin;
+        orgStoryNftFactorySignerSk = sk.alice;
+        rootOrgStoryNftSignerSk = sk.alice;
 
         (address defaultLicenseTemplate, uint256 defaultLicenseTermsId) = licenseRegistry.getDefaultLicenseTerms();
         string memory rootOrgName = "Test Root Org";
         string memory rootOrgTokenURI = "Test Token URI";
 
-        bytes memory rootStoryNftCustomInitParams = abi.encode(
-            IStoryBadgeNFT.CustomInitParams({ tokenURI: rootOrgTokenURI, signer: rootStoryNftSigner })
+        bytes memory rootOrgStoryNftCustomInitParams = abi.encode(
+            IStoryBadgeNFT.CustomInitParams({ tokenURI: rootOrgTokenURI, signer: rootOrgStoryNftSigner })
         );
 
-        IStoryNFT.StoryNftInitParams memory rootStoryNftInitParams = IStoryNFT.StoryNftInitParams({
-            owner: rootStoryNftOwner,
+        IStoryNFT.StoryNftInitParams memory rootOrgStoryNftInitParams = IStoryNFT.StoryNftInitParams({
+            owner: rootOrgStoryNftOwner,
             name: "Test Org Badge",
             symbol: "TOB",
             contractURI: "Test Contract URI",
             baseURI: "",
-            customInitData: rootStoryNftCustomInitParams
+            customInitData: rootOrgStoryNftCustomInitParams
         });
 
         vm.startPrank(u.admin);
         _deployAndConfigStoryNftContracts({
             licenseTemplate_: defaultLicenseTemplate,
             licenseTermsId_: defaultLicenseTermsId,
-            storyNftFactorySigner: storyNftFactorySigner,
+            orgStoryNftFactorySigner: orgStoryNftFactorySigner,
             isTest: true
         });
 
-        (, , , address rootStoryNftAddr) = storyNftFactory.deployStoryNftByAdmin({
-            storyNftTemplate: defaultStoryNftTemplate,
-            orgNftRecipient: rootStoryNftOwner,
+        (, , , address rootOrgStoryNftAddr) = orgStoryNftFactory.deployOrgStoryNftByAdmin({
+            orgStoryNftTemplate: defaultOrgStoryNftTemplate,
+            orgNftRecipient: rootOrgStoryNftOwner,
             orgName: rootOrgName,
             orgTokenURI: rootOrgTokenURI,
-            storyNftInitParams: rootStoryNftInitParams,
+            storyNftInitParams: rootOrgStoryNftInitParams,
             isRootOrg: true
         });
-        rootStoryNft = StoryBadgeNFT(rootStoryNftAddr);
+        rootOrgStoryNft = StoryBadgeNFT(rootOrgStoryNftAddr);
         vm.stopPrank();
     }
 

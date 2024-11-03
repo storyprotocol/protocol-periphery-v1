@@ -28,6 +28,7 @@ contract StoryBadgeNFTTest is BaseTest {
             new StoryBadgeNFT({
                 ipAssetRegistry: address(ipAssetRegistry),
                 licensingModule: address(licensingModule),
+                upgradeableBeacon: address(defaultOrgStoryNftBeacon),
                 orgNft: address(orgNft),
                 pilTemplate: address(pilTemplate),
                 defaultLicenseTermsId: 1
@@ -37,11 +38,11 @@ contract StoryBadgeNFTTest is BaseTest {
         string memory tokenURI = "Test Token URI";
 
         bytes memory storyBadgeNftCustomInitParams = abi.encode(
-            IStoryBadgeNFT.CustomInitParams({ tokenURI: tokenURI, signer: rootStoryNftSigner })
+            IStoryBadgeNFT.CustomInitParams({ tokenURI: tokenURI, signer: rootOrgStoryNftSigner })
         );
 
         IStoryNFT.StoryNftInitParams memory storyBadgeNftInitParams = IStoryNFT.StoryNftInitParams({
-            owner: rootStoryNftOwner,
+            owner: rootOrgStoryNftOwner,
             name: "Test Badge",
             symbol: "TB",
             contractURI: "Test Contract URI",
@@ -65,7 +66,7 @@ contract StoryBadgeNFTTest is BaseTest {
         assertEq(testStoryBadgeNft.symbol(), "TB");
         assertEq(testStoryBadgeNft.contractURI(), "Test Contract URI");
         assertEq(testStoryBadgeNft.tokenURI(0), tokenURI);
-        assertEq(testStoryBadgeNft.owner(), rootStoryNftOwner);
+        assertEq(testStoryBadgeNft.owner(), rootOrgStoryNftOwner);
         assertEq(testStoryBadgeNft.totalSupply(), 0);
         assertTrue(testStoryBadgeNft.locked(0));
     }
@@ -75,6 +76,7 @@ contract StoryBadgeNFTTest is BaseTest {
         StoryBadgeNFT testStoryBadgeNft = new StoryBadgeNFT(
             address(ipAssetRegistry),
             address(licensingModule),
+            address(defaultOrgStoryNftBeacon),
             address(0),
             address(pilTemplate),
             1
@@ -84,6 +86,7 @@ contract StoryBadgeNFTTest is BaseTest {
             new StoryBadgeNFT({
                 ipAssetRegistry: address(ipAssetRegistry),
                 licensingModule: address(licensingModule),
+                upgradeableBeacon: address(defaultOrgStoryNftBeacon),
                 orgNft: address(orgNft),
                 pilTemplate: address(pilTemplate),
                 defaultLicenseTermsId: 1
@@ -100,7 +103,7 @@ contract StoryBadgeNFTTest is BaseTest {
         );
 
         IStoryNFT.StoryNftInitParams memory storyBadgeNftInitParams = IStoryNFT.StoryNftInitParams({
-            owner: rootStoryNftOwner,
+            owner: rootOrgStoryNftOwner,
             name: "Test Badge",
             symbol: "TB",
             contractURI: "Test Contract URI",
@@ -118,26 +121,26 @@ contract StoryBadgeNFTTest is BaseTest {
     }
 
     function test_StoryBadgeNFT_interfaceSupport() public {
-        assertTrue(BaseStoryNFT(rootStoryNft).supportsInterface(type(IOrgStoryNFT).interfaceId));
-        assertTrue(BaseStoryNFT(rootStoryNft).supportsInterface(type(IERC721).interfaceId));
-        assertTrue(BaseStoryNFT(rootStoryNft).supportsInterface(type(IERC721Metadata).interfaceId));
+        assertTrue(BaseStoryNFT(rootOrgStoryNft).supportsInterface(type(IOrgStoryNFT).interfaceId));
+        assertTrue(BaseStoryNFT(rootOrgStoryNft).supportsInterface(type(IERC721).interfaceId));
+        assertTrue(BaseStoryNFT(rootOrgStoryNft).supportsInterface(type(IERC721Metadata).interfaceId));
     }
 
     function test_StoryBadgeNFT_mint() public {
-        bytes memory signature = _signAddress(rootStoryNftSignerSk, u.carl);
+        bytes memory signature = _signAddress(rootOrgStoryNftSignerSk, u.carl);
 
-        uint256 totalSupplyBefore = rootStoryNft.totalSupply();
+        uint256 totalSupplyBefore = rootOrgStoryNft.totalSupply();
         vm.startPrank(u.carl);
-        (uint256 tokenId, address ipId) = rootStoryNft.mint(u.carl, signature);
+        (uint256 tokenId, address ipId) = rootOrgStoryNft.mint(u.carl, signature);
         vm.stopPrank();
 
-        assertEq(rootStoryNft.ownerOf(tokenId), u.carl);
+        assertEq(rootOrgStoryNft.ownerOf(tokenId), u.carl);
         assertTrue(ipAssetRegistry.isRegistered(ipId));
-        assertEq(rootStoryNft.tokenURI(tokenId), "Test Token URI");
-        assertEq(rootStoryNft.totalSupply(), totalSupplyBefore + 1);
+        assertEq(rootOrgStoryNft.tokenURI(tokenId), "Test Token URI");
+        assertEq(rootOrgStoryNft.totalSupply(), totalSupplyBefore + 1);
         (address licenseTemplateChild, uint256 licenseTermsIdChild) = licenseRegistry.getAttachedLicenseTerms(ipId, 0);
         (address licenseTemplateParent, uint256 licenseTermsIdParent) = licenseRegistry.getAttachedLicenseTerms(
-            rootStoryNft.orgIpId(),
+            rootOrgStoryNft.orgIpId(),
             0
         );
         assertEq(licenseTemplateParent, licenseTemplateChild);
@@ -145,7 +148,7 @@ contract StoryBadgeNFTTest is BaseTest {
         assertEq(IIPAccount(payable(ipId)).owner(), u.carl);
 
         assertParentChild({
-            parentIpId: rootStoryNft.orgIpId(),
+            parentIpId: rootOrgStoryNft.orgIpId(),
             childIpId: ipId,
             expectedParentCount: 1,
             expectedParentIndex: 0
@@ -153,70 +156,70 @@ contract StoryBadgeNFTTest is BaseTest {
     }
 
     function test_StoryBadgeNFT_setContractURI() public {
-        string memory oldContractURI = rootStoryNft.contractURI();
+        string memory oldContractURI = rootOrgStoryNft.contractURI();
         string memory newContractURI = "New Contract URI";
 
         assertNotEq(oldContractURI, newContractURI);
 
-        vm.startPrank(rootStoryNftOwner);
-        rootStoryNft.setContractURI(newContractURI);
-        assertEq(rootStoryNft.contractURI(), newContractURI);
+        vm.startPrank(rootOrgStoryNftOwner);
+        rootOrgStoryNft.setContractURI(newContractURI);
+        assertEq(rootOrgStoryNft.contractURI(), newContractURI);
 
-        rootStoryNft.setContractURI(oldContractURI);
-        assertEq(rootStoryNft.contractURI(), oldContractURI);
+        rootOrgStoryNft.setContractURI(oldContractURI);
+        assertEq(rootOrgStoryNft.contractURI(), oldContractURI);
         vm.stopPrank();
     }
 
     function test_StoryBadgeNFT_revert_setContractURI_CallerIsNotOwner() public {
         vm.startPrank(u.carl);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, u.carl));
-        rootStoryNft.setContractURI("New Contract URI");
+        rootOrgStoryNft.setContractURI("New Contract URI");
         vm.stopPrank();
     }
 
     function test_StoryBadgeNFT_setSigner() public {
-        vm.prank(rootStoryNftOwner);
-        rootStoryNft.setSigner(u.bob);
+        vm.prank(rootOrgStoryNftOwner);
+        rootOrgStoryNft.setSigner(u.bob);
 
         bytes memory signature = _signAddress(sk.bob, u.carl);
 
         vm.prank(u.carl);
-        rootStoryNft.mint(u.carl, signature);
+        rootOrgStoryNft.mint(u.carl, signature);
 
-        vm.prank(rootStoryNftOwner);
-        rootStoryNft.setSigner(rootStoryNftSigner);
+        vm.prank(rootOrgStoryNftOwner);
+        rootOrgStoryNft.setSigner(rootOrgStoryNftSigner);
     }
 
     function test_StoryBadgeNFT_setTokenURI() public {
-        assertEq(rootStoryNft.tokenURI(0), "Test Token URI");
+        assertEq(rootOrgStoryNft.tokenURI(0), "Test Token URI");
 
-        vm.prank(rootStoryNftOwner);
-        rootStoryNft.setTokenURI("New Token URI");
+        vm.prank(rootOrgStoryNftOwner);
+        rootOrgStoryNft.setTokenURI("New Token URI");
 
-        assertEq(rootStoryNft.tokenURI(0), "New Token URI");
+        assertEq(rootOrgStoryNft.tokenURI(0), "New Token URI");
     }
 
     function test_StoryBadgeNFT_revert_setSigner_CallerIsNotOwner() public {
         vm.startPrank(u.carl);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, u.carl));
-        rootStoryNft.setSigner(u.carl);
+        rootOrgStoryNft.setSigner(u.carl);
         vm.stopPrank();
     }
 
     function test_StoryBadgeNFT_revert_setTokenURI_CallerIsNotOwner() public {
         vm.startPrank(u.carl);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, u.carl));
-        rootStoryNft.setTokenURI("New Token URI");
+        rootOrgStoryNft.setTokenURI("New Token URI");
         vm.stopPrank();
     }
 
     function test_StoryBadgeNFT_revert_mint_SignatureAlreadyUsed() public {
-        bytes memory signature = _signAddress(rootStoryNftSignerSk, u.carl);
+        bytes memory signature = _signAddress(rootOrgStoryNftSignerSk, u.carl);
 
         vm.startPrank(u.carl);
-        rootStoryNft.mint(u.carl, signature);
+        rootOrgStoryNft.mint(u.carl, signature);
         vm.expectRevert(IStoryBadgeNFT.StoryBadgeNFT__SignatureAlreadyUsed.selector);
-        rootStoryNft.mint(u.carl, signature);
+        rootOrgStoryNft.mint(u.carl, signature);
         vm.stopPrank();
     }
 
@@ -225,27 +228,27 @@ contract StoryBadgeNFTTest is BaseTest {
 
         vm.startPrank(u.carl);
         vm.expectRevert(IStoryBadgeNFT.StoryBadgeNFT__InvalidSignature.selector);
-        rootStoryNft.mint(u.carl, signature);
+        rootOrgStoryNft.mint(u.carl, signature);
         vm.stopPrank();
     }
 
     function test_StoryBadgeNFT_revert_TransferLocked() public {
-        bytes memory signature = _signAddress(rootStoryNftSignerSk, u.carl);
+        bytes memory signature = _signAddress(rootOrgStoryNftSignerSk, u.carl);
 
         vm.startPrank(u.carl);
-        (uint256 tokenId, ) = rootStoryNft.mint(u.carl, signature);
+        (uint256 tokenId, ) = rootOrgStoryNft.mint(u.carl, signature);
 
         vm.expectRevert(IStoryBadgeNFT.StoryBadgeNFT__TransferLocked.selector);
-        rootStoryNft.approve(u.bob, tokenId);
+        rootOrgStoryNft.approve(u.bob, tokenId);
 
         vm.expectRevert(IStoryBadgeNFT.StoryBadgeNFT__TransferLocked.selector);
-        rootStoryNft.setApprovalForAll(u.bob, true);
+        rootOrgStoryNft.setApprovalForAll(u.bob, true);
 
         vm.expectRevert(IStoryBadgeNFT.StoryBadgeNFT__TransferLocked.selector);
-        rootStoryNft.transferFrom(u.carl, u.bob, tokenId);
+        rootOrgStoryNft.transferFrom(u.carl, u.bob, tokenId);
 
         vm.expectRevert(IStoryBadgeNFT.StoryBadgeNFT__TransferLocked.selector);
-        rootStoryNft.safeTransferFrom(u.carl, u.bob, tokenId);
+        rootOrgStoryNft.safeTransferFrom(u.carl, u.bob, tokenId);
         vm.stopPrank();
     }
 }

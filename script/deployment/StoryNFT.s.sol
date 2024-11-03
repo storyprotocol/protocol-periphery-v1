@@ -17,12 +17,12 @@ contract StoryNFT is DeployHelper {
         _readStoryProtocolCoreAddresses();
         (address defaultLicenseTemplate, uint256 defaultLicenseTermsId) =
             ILicenseRegistry(licenseRegistryAddr).getDefaultLicenseTerms();
-        address storyNftFactorySigner = vm.envAddress("STORY_NFT_FACTORY_SIGNER");
+        address orgStoryNftFactorySigner = vm.envAddress("ORG_STORY_NFT_FACTORY_SIGNER");
 
         _deployAndConfigStoryNftContracts({
             licenseTemplate_: defaultLicenseTemplate,
             licenseTermsId_: defaultLicenseTermsId,
-            storyNftFactorySigner: storyNftFactorySigner,
+            orgStoryNftFactorySigner: orgStoryNftFactorySigner,
             isTest: false
         });
 

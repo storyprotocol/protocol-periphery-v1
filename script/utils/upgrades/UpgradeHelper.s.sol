@@ -76,9 +76,10 @@ contract UpgradeHelper is
         contractKeys[4] = "RoyaltyWorkflows";
         contractKeys[5] = "SPGNFTBeacon";
         contractKeys[6] = "SPGNFTImpl";
-        contractKeys[7] = "DefaultStoryNftTemplate";
-        contractKeys[8] = "OrgNFT";
-        contractKeys[9] = "StoryNFTFactory";
+        contractKeys[7] = "DefaultOrgStoryNFTTemplate";
+        contractKeys[8] = "DefaultOrgStoryNFTBeacon";
+        contractKeys[9] = "OrgNFT";
+        contractKeys[10] = "OrgStoryNFTFactory";
 
         address[] memory addresses = new address[](10);
         addresses[0] = derivativeWorkflowsAddr;
@@ -88,9 +89,10 @@ contract UpgradeHelper is
         addresses[4] = royaltyWorkflowsAddr;
         addresses[5] = spgNftBeaconAddr;
         addresses[6] = spgNftImplAddr;
-        addresses[7] = defaultStoryNftTemplateAddr;
-        addresses[8] = orgNftAddr;
-        addresses[9] = storyNftFactoryAddr;
+        addresses[7] = defaultOrgStoryNftTemplateAddr;
+        addresses[8] = defaultOrgStoryNftBeaconAddr;
+        addresses[9] = orgNftAddr;
+        addresses[10] = orgStoryNftFactoryAddr;
 
         for (uint256 i = 0; i < contractKeys.length; i++) {
             _writeAddress(contractKeys[i], addresses[i]);

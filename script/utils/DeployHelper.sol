@@ -41,7 +41,7 @@ import { OrgNFT } from "../../contracts/story-nft/OrgNFT.sol";
 import { RegistrationWorkflows } from "../../contracts/workflows/RegistrationWorkflows.sol";
 import { RoyaltyWorkflows } from "../../contracts/workflows/RoyaltyWorkflows.sol";
 import { StoryBadgeNFT } from "../../contracts/story-nft/StoryBadgeNFT.sol";
-import { StoryNFTFactory } from "../../contracts/story-nft/StoryNFTFactory.sol";
+import { OrgStoryNFTFactory } from "../../contracts/story-nft/OrgStoryNFTFactory.sol";
 
 // script
 import { BroadcastManager } from "./BroadcastManager.s.sol";
@@ -86,10 +86,10 @@ contract DeployHelper is
     RoyaltyWorkflows internal royaltyWorkflows;
 
     // StoryNFT
-    StoryNFTFactory internal storyNftFactory;
+    OrgStoryNFTFactory internal orgStoryNftFactory;
     OrgNFT internal orgNft;
-    StoryBadgeNFT internal rootStoryNft;
-    address internal defaultStoryNftTemplate;
+    address internal defaultOrgStoryNftTemplate;
+    address internal defaultOrgStoryNftBeacon;
 
     // DeployHelper variable
     bool internal writeDeploys;
@@ -176,7 +176,7 @@ contract DeployHelper is
     function _deployAndConfigStoryNftContracts(
         address licenseTemplate_,
         uint256 licenseTermsId_,
-        address storyNftFactorySigner,
+        address orgStoryNftFactorySigner,
         bool isTest
     ) internal {
         if (!isTest) {
@@ -202,7 +202,7 @@ contract DeployHelper is
             new OrgNFT(
                 ipAssetRegistryAddr,
                 licensingModuleAddr,
-                _getDeployedAddress(type(StoryNFTFactory).name),
+                _getDeployedAddress(type(OrgStoryNFTFactory).name),
                 licenseTemplate_,
                 licenseTermsId_
             )
@@ -219,20 +219,40 @@ contract DeployHelper is
         _postdeploy("OrgNFT", address(orgNft));
 
         // Default StoryNFT template
-        _predeploy("DefaultStoryNftTemplate");
-        defaultStoryNftTemplate = address(new StoryBadgeNFT(
+        _predeploy("DefaultOrgStoryNFTTemplate");
+        defaultOrgStoryNftTemplate = address(new StoryBadgeNFT(
             ipAssetRegistryAddr,
             licensingModuleAddr,
+            _getDeployedAddress("DefaultOrgStoryNFTBeacon"),
             address(orgNft),
             pilTemplateAddr,
             licenseTermsId_
         ));
-        _postdeploy("DefaultStoryNftTemplate", defaultStoryNftTemplate);
+        _postdeploy("DefaultOrgStoryNFTTemplate", defaultOrgStoryNftTemplate);
 
-        // StoryNFTFactory
-        _predeploy("StoryNFTFactory");
+        // Upgradeable Beacon for DefaultOrgStoryNFTTemplate
+        _predeploy("DefaultOrgStoryNFTBeacon");
+        defaultOrgStoryNftBeacon = address(UpgradeableBeacon(
+            create3Deployer.deploy(
+                _getSalt("DefaultOrgStoryNFTBeacon"),
+                abi.encodePacked(type(UpgradeableBeacon).creationCode, abi.encode(defaultOrgStoryNftTemplate, deployer))
+            )
+        ));
+        _postdeploy("DefaultOrgStoryNFTBeacon", address(defaultOrgStoryNftBeacon));
+
+        require(
+            UpgradeableBeacon(defaultOrgStoryNftBeacon).implementation() == address(defaultOrgStoryNftTemplate),
+            "DeployHelper: Invalid beacon implementation"
+        );
+        require(
+            StoryBadgeNFT(defaultOrgStoryNftTemplate).UPGRADEABLE_BEACON() == address(defaultOrgStoryNftBeacon),
+            "DeployHelper: Invalid beacon address in template"
+        );
+
+        // OrgStoryNFTFactory
+        _predeploy("OrgStoryNFTFactory");
         impl = address(
-            new StoryNFTFactory(
+            new OrgStoryNFTFactory(
                 ipAssetRegistryAddr,
                 licensingModuleAddr,
                 licenseTemplate_,
@@ -240,23 +260,23 @@ contract DeployHelper is
                 address(orgNft)
             )
         );
-        storyNftFactory = StoryNFTFactory(
+        orgStoryNftFactory = OrgStoryNFTFactory(
             TestProxyHelper.deployUUPSProxy(
                 create3Deployer,
-                _getSalt(type(StoryNFTFactory).name),
+                _getSalt(type(OrgStoryNFTFactory).name),
                 impl,
                 abi.encodeCall(
-                    StoryNFTFactory.initialize,
+                    OrgStoryNFTFactory.initialize,
                     (
                         protocolAccessManagerAddr,
-                        defaultStoryNftTemplate,
-                        storyNftFactorySigner
+                        defaultOrgStoryNftTemplate,
+                        orgStoryNftFactorySigner
                     )
                 )
             )
         );
         impl = address(0);
-        _postdeploy("StoryNFTFactory", address(storyNftFactory));
+        _postdeploy("OrgStoryNFTFactory", address(orgStoryNftFactory));
 
         if (!isTest) {
             if (writeDeploys) _writeDeployment();

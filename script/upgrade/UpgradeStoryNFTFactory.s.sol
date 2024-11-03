@@ -6,7 +6,7 @@ pragma solidity 0.8.26;
 import { console2 } from "forge-std/console2.sol";
 
 // contracts
-import { StoryNFTFactory } from "../../contracts/story-nft/StoryNFTFactory.sol";
+import { OrgStoryNFTFactory } from "../../contracts/story-nft/OrgStoryNFTFactory.sol";
 
 // script
 import { UpgradeHelper } from "../utils/upgrades/UpgradeHelper.s.sol";
@@ -29,16 +29,16 @@ contract UpgradeStoryNFTFactory is UpgradeHelper {
     }
 
     function _upgradeStoryNFTFactory() private {
-        _predeploy("StoryNFTFactory");
-        StoryNFTFactory newStoryNftFactory = new StoryNFTFactory(
+        _predeploy("OrgStoryNFTFactory");
+        OrgStoryNFTFactory newOrgStoryNftFactory = new OrgStoryNFTFactory(
             ipAssetRegistryAddr,
             licensingModuleAddr,
             pilTemplateAddr,
             LICENSE_TERMS_ID,
             orgNftAddr
         );
-        console2.log("New StoryNFTFactory implementation: ", address(newStoryNftFactory));
-        console2.log("StoryNFTFactory deployed to: ", storyNftFactoryAddr);
+        console2.log("New OrgStoryNFTFactory implementation: ", address(newOrgStoryNftFactory));
+        console2.log("OrgStoryNFTFactory deployed to: ", orgStoryNftFactoryAddr);
         _writeAllAddresses();
     }
 }

@@ -10,14 +10,14 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { IOrgNFT } from "../../contracts/interfaces/story-nft/IOrgNFT.sol";
 import { IStoryBadgeNFT } from "../../contracts/interfaces/story-nft/IStoryBadgeNFT.sol";
 import { IStoryNFT } from "../../contracts/interfaces/story-nft/IStoryNFT.sol";
-import { IStoryNFTFactory } from "../../contracts/interfaces/story-nft/IStoryNFTFactory.sol";
-import { StoryNFTFactory } from "../../contracts/story-nft/StoryNFTFactory.sol";
+import { IOrgStoryNFTFactory } from "../../contracts/interfaces/story-nft/IOrgStoryNFTFactory.sol";
+import { OrgStoryNFTFactory } from "../../contracts/story-nft/OrgStoryNFTFactory.sol";
 
 // test
 import { BaseTest } from "../utils/BaseTest.t.sol";
 import { TestProxyHelper } from "../utils/TestProxyHelper.t.sol";
 
-contract StoryNFTFactoryTest is BaseTest {
+contract OrgStoryNFTFactoryTest is BaseTest {
     string private orgName;
     string private orgTokenURI;
     string private storyNftName;
@@ -49,8 +49,8 @@ contract StoryNFTFactoryTest is BaseTest {
     }
 
     function test_StoryNFTFactory_initialize() public {
-        address testStoryNftFactoryImpl = address(
-            new StoryNFTFactory({
+        address testOrgStoryNftFactoryImpl = address(
+            new OrgStoryNFTFactory({
                 ipAssetRegistry: address(ipAssetRegistry),
                 licensingModule: address(licensingModule),
                 pilTemplate: address(pilTemplate),
@@ -59,35 +59,35 @@ contract StoryNFTFactoryTest is BaseTest {
             })
         );
 
-        StoryNFTFactory testStoryNftFactory = StoryNFTFactory(
+        OrgStoryNFTFactory testOrgStoryNftFactory = OrgStoryNFTFactory(
             TestProxyHelper.deployUUPSProxy(
-                testStoryNftFactoryImpl,
+                testOrgStoryNftFactoryImpl,
                 abi.encodeCall(
-                    StoryNFTFactory.initialize,
-                    (address(protocolAccessManager), address(defaultStoryNftTemplate), address(storyNftFactorySigner))
+                    OrgStoryNFTFactory.initialize,
+                    (address(protocolAccessManager), address(defaultOrgStoryNftTemplate), address(orgStoryNftFactorySigner))
                 )
             )
         );
 
-        assertEq(testStoryNftFactory.IP_ASSET_REGISTRY(), address(ipAssetRegistry));
-        assertEq(testStoryNftFactory.LICENSING_MODULE(), address(licensingModule));
-        assertEq(testStoryNftFactory.PIL_TEMPLATE(), address(pilTemplate));
-        assertEq(testStoryNftFactory.DEFAULT_LICENSE_TERMS_ID(), 1);
-        assertEq(address(testStoryNftFactory.ORG_NFT()), address(orgNft));
-        assertEq(testStoryNftFactory.getDefaultStoryNftTemplate(), address(defaultStoryNftTemplate));
-        assertEq(testStoryNftFactory.authority(), address(protocolAccessManager));
+        assertEq(testOrgStoryNftFactory.IP_ASSET_REGISTRY(), address(ipAssetRegistry));
+        assertEq(testOrgStoryNftFactory.LICENSING_MODULE(), address(licensingModule));
+        assertEq(testOrgStoryNftFactory.PIL_TEMPLATE(), address(pilTemplate));
+        assertEq(testOrgStoryNftFactory.DEFAULT_LICENSE_TERMS_ID(), 1);
+        assertEq(address(testOrgStoryNftFactory.ORG_NFT()), address(orgNft));
+        assertEq(testOrgStoryNftFactory.getDefaultOrgStoryNftTemplate(), address(defaultOrgStoryNftTemplate));
+        assertEq(testOrgStoryNftFactory.authority(), address(protocolAccessManager));
     }
 
     function test_StoryNFTFactory_deployStoryNft() public {
         uint256 totalSupplyBefore = IOrgNFT(orgNft).totalSupply();
 
         vm.startPrank(u.carl);
-        (address orgNft, uint256 orgTokenId, address orgIpId, address storyNft) = storyNftFactory.deployStoryNft({
-            storyNftTemplate: defaultStoryNftTemplate,
+        (address orgNft, uint256 orgTokenId, address orgIpId, address storyNft) = orgStoryNftFactory.deployOrgStoryNft({
+            orgStoryNftTemplate: defaultOrgStoryNftTemplate,
             orgNftRecipient: u.carl,
             orgName: orgName,
             orgTokenURI: orgTokenURI,
-            signature: _signAddress(storyNftFactorySignerSk, u.carl),
+            signature: _signAddress(orgStoryNftFactorySignerSk, u.carl),
             storyNftInitParams: storyNftInitParams
         });
 
@@ -105,14 +105,14 @@ contract StoryNFTFactoryTest is BaseTest {
             0
         );
         (address licenseTemplateParent, uint256 licenseTermsIdParent) = licenseRegistry.getAttachedLicenseTerms(
-            rootStoryNft.orgIpId(),
+            rootOrgStoryNft.orgIpId(),
             0
         );
         assertEq(licenseTemplateParent, licenseTemplateChild);
         assertEq(licenseTermsIdParent, licenseTermsIdChild);
         assertEq(IIPAccount(payable(orgIpId)).owner(), u.carl);
         assertParentChild({
-            parentIpId: rootStoryNft.orgIpId(),
+            parentIpId: rootOrgStoryNft.orgIpId(),
             childIpId: orgIpId,
             expectedParentCount: 1,
             expectedParentIndex: 0
@@ -123,9 +123,9 @@ contract StoryNFTFactoryTest is BaseTest {
         uint256 totalSupplyBefore = IOrgNFT(orgNft).totalSupply();
 
         vm.startPrank(u.admin);
-        (address orgNft, uint256 orgTokenId, address orgIpId, address storyNft) = storyNftFactory
-            .deployStoryNftByAdmin({
-                storyNftTemplate: defaultStoryNftTemplate,
+        (address orgNft, uint256 orgTokenId, address orgIpId, address storyNft) = orgStoryNftFactory
+            .deployOrgStoryNftByAdmin({
+                orgStoryNftTemplate: defaultOrgStoryNftTemplate,
                 orgNftRecipient: u.carl,
                 orgName: orgName,
                 orgTokenURI: orgTokenURI,
@@ -147,14 +147,14 @@ contract StoryNFTFactoryTest is BaseTest {
             0
         );
         (address licenseTemplateParent, uint256 licenseTermsIdParent) = licenseRegistry.getAttachedLicenseTerms(
-            rootStoryNft.orgIpId(),
+            rootOrgStoryNft.orgIpId(),
             0
         );
         assertEq(licenseTemplateParent, licenseTemplateChild);
         assertEq(licenseTermsIdParent, licenseTermsIdChild);
         assertEq(IIPAccount(payable(orgIpId)).owner(), u.carl);
         assertParentChild({
-            parentIpId: rootStoryNft.orgIpId(),
+            parentIpId: rootOrgStoryNft.orgIpId(),
             childIpId: orgIpId,
             expectedParentCount: 1,
             expectedParentIndex: 0
@@ -162,24 +162,24 @@ contract StoryNFTFactoryTest is BaseTest {
     }
 
     function test_StoryNFTFactory_setDefaultStoryNftTemplate() public {
-        assertEq(storyNftFactory.getDefaultStoryNftTemplate(), defaultStoryNftTemplate);
+        assertEq(orgStoryNftFactory.getDefaultOrgStoryNftTemplate(), defaultOrgStoryNftTemplate);
 
         vm.prank(u.admin);
-        storyNftFactory.setDefaultStoryNftTemplate(address(rootStoryNft));
-        assertEq(storyNftFactory.getDefaultStoryNftTemplate(), address(rootStoryNft));
+        orgStoryNftFactory.setDefaultOrgStoryNftTemplate(address(rootOrgStoryNft));
+        assertEq(orgStoryNftFactory.getDefaultOrgStoryNftTemplate(), address(rootOrgStoryNft));
 
         vm.prank(u.admin);
-        storyNftFactory.setDefaultStoryNftTemplate(address(defaultStoryNftTemplate));
-        assertEq(storyNftFactory.getDefaultStoryNftTemplate(), address(defaultStoryNftTemplate));
+        orgStoryNftFactory.setDefaultOrgStoryNftTemplate(address(defaultOrgStoryNftTemplate));
+        assertEq(orgStoryNftFactory.getDefaultOrgStoryNftTemplate(), address(defaultOrgStoryNftTemplate));
     }
 
     function test_StoryNFTFactory_setSigner() public {
         vm.prank(u.admin);
-        storyNftFactory.setSigner(u.bob);
+        orgStoryNftFactory.setSigner(u.bob);
 
         vm.prank(u.carl);
-        storyNftFactory.deployStoryNft({
-            storyNftTemplate: address(defaultStoryNftTemplate),
+        orgStoryNftFactory.deployOrgStoryNft({
+            orgStoryNftTemplate: address(defaultOrgStoryNftTemplate),
             orgNftRecipient: u.carl,
             orgName: orgName,
             orgTokenURI: orgTokenURI,
@@ -188,35 +188,35 @@ contract StoryNFTFactoryTest is BaseTest {
         });
 
         vm.prank(u.admin);
-        storyNftFactory.setSigner(storyNftFactorySigner);
+        orgStoryNftFactory.setSigner(orgStoryNftFactorySigner);
     }
 
     function test_StoryNFTFactory_whitelistNftTemplate() public {
-        assertFalse(storyNftFactory.isNftTemplateWhitelisted(address(rootStoryNft)));
+        assertFalse(orgStoryNftFactory.isNftTemplateWhitelisted(address(rootOrgStoryNft)));
         vm.prank(u.admin);
-        storyNftFactory.whitelistNftTemplate(address(rootStoryNft));
-        assertTrue(storyNftFactory.isNftTemplateWhitelisted(address(rootStoryNft)));
+        orgStoryNftFactory.whitelistNftTemplate(address(rootOrgStoryNft));
+        assertTrue(orgStoryNftFactory.isNftTemplateWhitelisted(address(rootOrgStoryNft)));
     }
 
     function test_StoryNFTFactory_getStoryNftAddress() public {
         vm.startPrank(u.carl);
-        (, uint256 orgTokenId, address orgIpId, address storyNft) = storyNftFactory.deployStoryNft({
-            storyNftTemplate: defaultStoryNftTemplate,
+        (, uint256 orgTokenId, address orgIpId, address storyNft) = orgStoryNftFactory.deployOrgStoryNft({
+            orgStoryNftTemplate: defaultOrgStoryNftTemplate,
             orgNftRecipient: u.carl,
             orgName: orgName,
             orgTokenURI: orgTokenURI,
-            signature: _signAddress(storyNftFactorySignerSk, u.carl),
+            signature: _signAddress(orgStoryNftFactorySignerSk, u.carl),
             storyNftInitParams: storyNftInitParams
         });
 
-        assertEq(storyNftFactory.getStoryNftAddressByOrgName(orgName), address(storyNft));
-        assertEq(storyNftFactory.getStoryNftAddressByOrgTokenId(orgTokenId), address(storyNft));
-        assertEq(storyNftFactory.getStoryNftAddressByOrgIpId(orgIpId), address(storyNft));
+        assertEq(orgStoryNftFactory.getOrgStoryNftAddressByOrgName(orgName), address(storyNft));
+        assertEq(orgStoryNftFactory.getOrgStoryNftAddressByOrgTokenId(orgTokenId), address(storyNft));
+        assertEq(orgStoryNftFactory.getOrgStoryNftAddressByOrgIpId(orgIpId), address(storyNft));
     }
 
     function test_StoryNFTFactory_revert_initialize_ZeroAddress() public {
-        vm.expectRevert(IStoryNFTFactory.StoryNFTFactory__ZeroAddressParam.selector);
-        StoryNFTFactory testStoryNftFactory = new StoryNFTFactory({
+        vm.expectRevert(IOrgStoryNFTFactory.OrgStoryNFTFactory__ZeroAddressParam.selector);
+        OrgStoryNFTFactory testOrgStoryNftFactory = new OrgStoryNFTFactory({
             ipAssetRegistry: address(ipAssetRegistry),
             licensingModule: address(0),
             pilTemplate: address(pilTemplate),
@@ -224,8 +224,8 @@ contract StoryNFTFactoryTest is BaseTest {
             orgNft: address(orgNft)
         });
 
-        address testStoryNftFactoryImpl = address(
-            new StoryNFTFactory({
+        address testOrgStoryNftFactoryImpl = address(
+            new OrgStoryNFTFactory({
                 ipAssetRegistry: address(ipAssetRegistry),
                 licensingModule: address(licensingModule),
                 pilTemplate: address(pilTemplate),
@@ -234,13 +234,13 @@ contract StoryNFTFactoryTest is BaseTest {
             })
         );
 
-        vm.expectRevert(IStoryNFTFactory.StoryNFTFactory__ZeroAddressParam.selector);
-        testStoryNftFactory = StoryNFTFactory(
+        vm.expectRevert(IOrgStoryNFTFactory.OrgStoryNFTFactory__ZeroAddressParam.selector);
+        testOrgStoryNftFactory = OrgStoryNFTFactory(
             TestProxyHelper.deployUUPSProxy(
-                testStoryNftFactoryImpl,
+                testOrgStoryNftFactoryImpl,
                 abi.encodeCall(
-                    StoryNFTFactory.initialize,
-                    (address(protocolAccessManager), address(0), address(storyNftFactorySigner))
+                    OrgStoryNFTFactory.initialize,
+                    (address(protocolAccessManager), address(0), address(orgStoryNftFactorySigner))
                 )
             )
         );
@@ -249,32 +249,32 @@ contract StoryNFTFactoryTest is BaseTest {
     function test_StoryNFTFactory_revert_setDefaultStoryNftTemplate() public {
         vm.prank(u.carl);
         vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, u.carl));
-        storyNftFactory.setDefaultStoryNftTemplate(defaultStoryNftTemplate);
+        orgStoryNftFactory.setDefaultOrgStoryNftTemplate(defaultOrgStoryNftTemplate);
 
         vm.startPrank(u.admin);
-        vm.expectRevert(IStoryNFTFactory.StoryNFTFactory__ZeroAddressParam.selector);
-        storyNftFactory.setDefaultStoryNftTemplate(address(0));
+        vm.expectRevert(IOrgStoryNFTFactory.OrgStoryNFTFactory__ZeroAddressParam.selector);
+        orgStoryNftFactory.setDefaultOrgStoryNftTemplate(address(0));
 
         vm.expectRevert(
-            abi.encodeWithSelector(IStoryNFTFactory.StoryNFTFactory__UnsupportedIOrgStoryNFT.selector, address(orgNft))
+            abi.encodeWithSelector(IOrgStoryNFTFactory.OrgStoryNFTFactory__UnsupportedIOrgStoryNFT.selector, address(orgNft))
         );
-        storyNftFactory.setDefaultStoryNftTemplate(address(orgNft));
+        orgStoryNftFactory.setDefaultOrgStoryNftTemplate(address(orgNft));
         vm.stopPrank();
     }
 
     function test_StoryNFTFactory_revert_whitelistNftTemplate_ZeroAddress() public {
         vm.prank(u.carl);
         vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, u.carl));
-        storyNftFactory.whitelistNftTemplate(defaultStoryNftTemplate);
+        orgStoryNftFactory.whitelistNftTemplate(defaultOrgStoryNftTemplate);
 
         vm.startPrank(u.admin);
-        vm.expectRevert(IStoryNFTFactory.StoryNFTFactory__ZeroAddressParam.selector);
-        storyNftFactory.whitelistNftTemplate(address(0));
+        vm.expectRevert(IOrgStoryNFTFactory.OrgStoryNFTFactory__ZeroAddressParam.selector);
+        orgStoryNftFactory.whitelistNftTemplate(address(0));
 
         vm.expectRevert(
-            abi.encodeWithSelector(IStoryNFTFactory.StoryNFTFactory__UnsupportedIOrgStoryNFT.selector, address(orgNft))
+            abi.encodeWithSelector(IOrgStoryNFTFactory.OrgStoryNFTFactory__UnsupportedIOrgStoryNFT.selector, address(orgNft))
         );
-        storyNftFactory.whitelistNftTemplate(address(orgNft));
+        orgStoryNftFactory.whitelistNftTemplate(address(orgNft));
         vm.stopPrank();
     }
 
@@ -282,23 +282,23 @@ contract StoryNFTFactoryTest is BaseTest {
         vm.prank(u.carl);
         vm.expectRevert(
             abi.encodeWithSelector(
-                IStoryNFTFactory.StoryNFTFactory__NftTemplateNotWhitelisted.selector,
-                address(rootStoryNft)
+                IOrgStoryNFTFactory.OrgStoryNFTFactory__NftTemplateNotWhitelisted.selector,
+                address(rootOrgStoryNft)
             )
         );
-        storyNftFactory.deployStoryNft({
-            storyNftTemplate: address(rootStoryNft),
+        orgStoryNftFactory.deployOrgStoryNft({
+            orgStoryNftTemplate: address(rootOrgStoryNft),
             orgNftRecipient: u.carl,
             orgName: orgName,
             orgTokenURI: orgTokenURI,
-            signature: _signAddress(storyNftFactorySignerSk, u.carl),
+            signature: _signAddress(orgStoryNftFactorySignerSk, u.carl),
             storyNftInitParams: storyNftInitParams
         });
 
-        bytes memory signature = _signAddress(storyNftFactorySignerSk, u.carl);
+        bytes memory signature = _signAddress(orgStoryNftFactorySignerSk, u.carl);
         vm.startPrank(u.carl);
-        (, , , address storyNft) = storyNftFactory.deployStoryNft({
-            storyNftTemplate: address(defaultStoryNftTemplate),
+        (, , , address storyNft) = orgStoryNftFactory.deployOrgStoryNft({
+            orgStoryNftTemplate: address(defaultOrgStoryNftTemplate),
             orgNftRecipient: u.carl,
             orgName: orgName,
             orgTokenURI: orgTokenURI,
@@ -306,10 +306,10 @@ contract StoryNFTFactoryTest is BaseTest {
             storyNftInitParams: storyNftInitParams
         });
         vm.expectRevert(
-            abi.encodeWithSelector(IStoryNFTFactory.StoryNFTFactory__SignatureAlreadyUsed.selector, signature)
+            abi.encodeWithSelector(IOrgStoryNFTFactory.OrgStoryNFTFactory__SignatureAlreadyUsed.selector, signature)
         );
-        storyNftFactory.deployStoryNft({
-            storyNftTemplate: address(defaultStoryNftTemplate),
+        orgStoryNftFactory.deployOrgStoryNft({
+            orgStoryNftTemplate: address(defaultOrgStoryNftTemplate),
             orgNftRecipient: u.carl,
             orgName: orgName,
             orgTokenURI: orgTokenURI,
@@ -321,25 +321,25 @@ contract StoryNFTFactoryTest is BaseTest {
         vm.prank(u.bob);
         vm.expectRevert(
             abi.encodeWithSelector(
-                IStoryNFTFactory.StoryNFTFactory__OrgAlreadyDeployed.selector,
+                IOrgStoryNFTFactory.OrgStoryNFTFactory__OrgAlreadyDeployed.selector,
                 orgName,
                 address(storyNft)
             )
         );
-        storyNftFactory.deployStoryNft({
-            storyNftTemplate: address(defaultStoryNftTemplate),
+        orgStoryNftFactory.deployOrgStoryNft({
+            orgStoryNftTemplate: address(defaultOrgStoryNftTemplate),
             orgNftRecipient: u.carl,
             orgName: orgName,
             orgTokenURI: orgTokenURI,
-            signature: _signAddress(storyNftFactorySignerSk, u.bob),
+            signature: _signAddress(orgStoryNftFactorySignerSk, u.bob),
             storyNftInitParams: storyNftInitParams
         });
 
-        signature = _signAddress(storyNftFactorySignerSk, u.bob);
+        signature = _signAddress(orgStoryNftFactorySignerSk, u.bob);
         vm.prank(u.alice);
-        vm.expectRevert(abi.encodeWithSelector(IStoryNFTFactory.StoryNFTFactory__InvalidSignature.selector, signature));
-        storyNftFactory.deployStoryNft({
-            storyNftTemplate: address(defaultStoryNftTemplate),
+        vm.expectRevert(abi.encodeWithSelector(IOrgStoryNFTFactory.OrgStoryNFTFactory__InvalidSignature.selector, signature));
+        orgStoryNftFactory.deployOrgStoryNft({
+            orgStoryNftTemplate: address(defaultOrgStoryNftTemplate),
             orgNftRecipient: u.alice,
             orgName: "Alice's Org",
             orgTokenURI: orgTokenURI,
