@@ -68,7 +68,7 @@ contract UpgradeHelper is
     }
 
     function _writeAllAddresses() internal {
-        string[] memory contractKeys = new string[](10);
+        string[] memory contractKeys = new string[](11);
         contractKeys[0] = "DerivativeWorkflows";
         contractKeys[1] = "GroupingWorkflows";
         contractKeys[2] = "LicenseAttachmentWorkflows";
@@ -81,7 +81,7 @@ contract UpgradeHelper is
         contractKeys[9] = "OrgNFT";
         contractKeys[10] = "OrgStoryNFTFactory";
 
-        address[] memory addresses = new address[](10);
+        address[] memory addresses = new address[](11);
         addresses[0] = derivativeWorkflowsAddr;
         addresses[1] = groupingWorkflowsAddr;
         addresses[2] = licenseAttachmentWorkflowsAddr;

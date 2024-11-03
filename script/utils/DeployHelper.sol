@@ -278,6 +278,8 @@ contract DeployHelper is
         impl = address(0);
         _postdeploy("OrgStoryNFTFactory", address(orgStoryNftFactory));
 
+        orgStoryNftFactory.setDefaultOrgStoryNftTemplate(defaultOrgStoryNftTemplate);
+
         if (!isTest) {
             if (writeDeploys) _writeDeployment();
             _endBroadcast();
