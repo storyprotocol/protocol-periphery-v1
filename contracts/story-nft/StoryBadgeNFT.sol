@@ -38,7 +38,8 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, ERC721Holder {
     }
 
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.StoryBadgeNFT")) - 1)) & ~bytes32(uint256(0xff));
-    bytes32 private constant StoryBadgeNFTStorageLocation = 0x00c5d7dc46f601fb1120e8b9ebb4fdf899cffbfddad19ced3e4dad5853224400;
+    bytes32 private constant StoryBadgeNFTStorageLocation =
+        0x00c5d7dc46f601fb1120e8b9ebb4fdf899cffbfddad19ced3e4dad5853224400;
 
     constructor(
         address ipAssetRegistry,
@@ -86,7 +87,8 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, ERC721Holder {
 
         // The given signature must be valid
         bytes32 digest = keccak256(abi.encodePacked(msg.sender)).toEthSignedMessageHash();
-        if (!SignatureChecker.isValidSignatureNow($.signer, digest, signature)) revert StoryBadgeNFT__InvalidSignature();
+        if (!SignatureChecker.isValidSignatureNow($.signer, digest, signature))
+            revert StoryBadgeNFT__InvalidSignature();
 
         // Mint the badge and register it as an IP
         (tokenId, ipId) = _mintAndRegisterIp(address(this), $.tokenURI);

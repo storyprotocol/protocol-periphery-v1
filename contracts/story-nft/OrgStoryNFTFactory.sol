@@ -62,7 +62,8 @@ contract OrgStoryNFTFactory is IOrgStoryNFTFactory, AccessManagedUpgradeable, UU
 
     // solhint-disable-next-line max-line-length
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.OrgStoryNFTFactory")) - 1)) & ~bytes32(uint256(0xff));
-    bytes32 private constant OrgStoryNFTFactoryStorageLocation = 0x7ed1ac2e1c0769416119d5b0f885c648d2baac2de18cef73faf81ee04f3f7300;
+    bytes32 private constant OrgStoryNFTFactoryStorageLocation =
+        0x7ed1ac2e1c0769416119d5b0f885c648d2baac2de18cef73faf81ee04f3f7300;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
@@ -156,7 +157,8 @@ contract OrgStoryNFTFactory is IOrgStoryNFTFactory, AccessManagedUpgradeable, UU
         orgNft = address(ORG_NFT);
 
         // Creates a new BeaconProxy for the story NFT template and initializes it
-        orgStoryNft = address(new BeaconProxy(
+        orgStoryNft = address(
+            new BeaconProxy(
                 IOrgStoryNFT(orgStoryNftTemplate).getBeacon(),
                 abi.encodeWithSelector(IOrgStoryNFT.initialize.selector, orgTokenId, orgIpId, storyNftInitParams)
             )
@@ -211,7 +213,8 @@ contract OrgStoryNFTFactory is IOrgStoryNFTFactory, AccessManagedUpgradeable, UU
         orgNft = address(ORG_NFT);
 
         // Creates a new BeaconProxy for the story NFT template and initializes it
-        orgStoryNft = address(new BeaconProxy(
+        orgStoryNft = address(
+            new BeaconProxy(
                 IOrgStoryNFT(orgStoryNftTemplate).getBeacon(),
                 abi.encodeWithSelector(IOrgStoryNFT.initialize.selector, orgTokenId, orgIpId, storyNftInitParams)
             )

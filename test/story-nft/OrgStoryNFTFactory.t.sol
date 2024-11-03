@@ -64,7 +64,11 @@ contract OrgStoryNFTFactoryTest is BaseTest {
                 testOrgStoryNftFactoryImpl,
                 abi.encodeCall(
                     OrgStoryNFTFactory.initialize,
-                    (address(protocolAccessManager), address(defaultOrgStoryNftTemplate), address(orgStoryNftFactorySigner))
+                    (
+                        address(protocolAccessManager),
+                        address(defaultOrgStoryNftTemplate),
+                        address(orgStoryNftFactorySigner)
+                    )
                 )
             )
         );
@@ -256,7 +260,10 @@ contract OrgStoryNFTFactoryTest is BaseTest {
         orgStoryNftFactory.setDefaultOrgStoryNftTemplate(address(0));
 
         vm.expectRevert(
-            abi.encodeWithSelector(IOrgStoryNFTFactory.OrgStoryNFTFactory__UnsupportedIOrgStoryNFT.selector, address(orgNft))
+            abi.encodeWithSelector(
+                IOrgStoryNFTFactory.OrgStoryNFTFactory__UnsupportedIOrgStoryNFT.selector,
+                address(orgNft)
+            )
         );
         orgStoryNftFactory.setDefaultOrgStoryNftTemplate(address(orgNft));
         vm.stopPrank();
@@ -272,7 +279,10 @@ contract OrgStoryNFTFactoryTest is BaseTest {
         orgStoryNftFactory.whitelistNftTemplate(address(0));
 
         vm.expectRevert(
-            abi.encodeWithSelector(IOrgStoryNFTFactory.OrgStoryNFTFactory__UnsupportedIOrgStoryNFT.selector, address(orgNft))
+            abi.encodeWithSelector(
+                IOrgStoryNFTFactory.OrgStoryNFTFactory__UnsupportedIOrgStoryNFT.selector,
+                address(orgNft)
+            )
         );
         orgStoryNftFactory.whitelistNftTemplate(address(orgNft));
         vm.stopPrank();
@@ -337,7 +347,9 @@ contract OrgStoryNFTFactoryTest is BaseTest {
 
         signature = _signAddress(orgStoryNftFactorySignerSk, u.bob);
         vm.prank(u.alice);
-        vm.expectRevert(abi.encodeWithSelector(IOrgStoryNFTFactory.OrgStoryNFTFactory__InvalidSignature.selector, signature));
+        vm.expectRevert(
+            abi.encodeWithSelector(IOrgStoryNFTFactory.OrgStoryNFTFactory__InvalidSignature.selector, signature)
+        );
         orgStoryNftFactory.deployOrgStoryNft({
             orgStoryNftTemplate: address(defaultOrgStoryNftTemplate),
             orgNftRecipient: u.alice,

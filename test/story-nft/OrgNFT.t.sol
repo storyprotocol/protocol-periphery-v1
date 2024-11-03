@@ -63,7 +63,9 @@ contract OrgNFTTest is BaseTest {
 
     function test_OrgNFT_revert_setTokenURI_CallerIsNotOwner() public {
         vm.startPrank(u.bob);
-        vm.expectRevert(abi.encodeWithSelector(IOrgNFT.OrgNFT__CallerNotOwner.selector, 0, u.bob, rootOrgStoryNftOwner));
+        vm.expectRevert(
+            abi.encodeWithSelector(IOrgNFT.OrgNFT__CallerNotOwner.selector, 0, u.bob, rootOrgStoryNftOwner)
+        );
         orgNft.setTokenURI(0, "test");
         vm.stopPrank();
     }
@@ -103,12 +105,20 @@ contract OrgNFTTest is BaseTest {
     function test_OrgNFT_revert_mintOrgNft_CallerIsNotStoryNftFactory() public {
         vm.startPrank(u.bob);
         vm.expectRevert(
-            abi.encodeWithSelector(IOrgNFT.OrgNFT__CallerNotOrgStoryNFTFactory.selector, u.bob, address(orgStoryNftFactory))
+            abi.encodeWithSelector(
+                IOrgNFT.OrgNFT__CallerNotOrgStoryNFTFactory.selector,
+                u.bob,
+                address(orgStoryNftFactory)
+            )
         );
         orgNft.mintRootOrgNft(u.bob, "test");
 
         vm.expectRevert(
-            abi.encodeWithSelector(IOrgNFT.OrgNFT__CallerNotOrgStoryNFTFactory.selector, u.bob, address(orgStoryNftFactory))
+            abi.encodeWithSelector(
+                IOrgNFT.OrgNFT__CallerNotOrgStoryNFTFactory.selector,
+                u.bob,
+                address(orgStoryNftFactory)
+            )
         );
         orgNft.mintOrgNft(u.bob, "test");
         vm.stopPrank();
