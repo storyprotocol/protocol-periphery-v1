@@ -44,7 +44,15 @@ contract OrgStoryNFTFactoryTest is BaseTest {
             symbol: storyNftSymbol,
             contractURI: storyNftContractURI,
             baseURI: storyNftBaseURI,
-            customInitData: abi.encode(IStoryBadgeNFT.CustomInitParams({ tokenURI: storyNftTokenURI, signer: u.carl }))
+            customInitData: abi.encode(
+                IStoryBadgeNFT.CustomInitParams({
+                    tokenURI: storyNftTokenURI,
+                    signer: u.carl,
+                    ipMetadataURI: ipMetadataDefault.ipMetadataURI,
+                    ipMetadataHash: ipMetadataDefault.ipMetadataHash,
+                    nftMetadataHash: ipMetadataDefault.nftMetadataHash
+                })
+            )
         });
     }
 
@@ -90,14 +98,15 @@ contract OrgStoryNFTFactoryTest is BaseTest {
             orgStoryNftTemplate: defaultOrgStoryNftTemplate,
             orgNftRecipient: u.carl,
             orgName: orgName,
-            orgTokenURI: orgTokenURI,
+            orgIpMetadata: ipMetadataDefault,
             signature: _signAddress(orgStoryNftFactorySignerSk, u.carl),
             storyNftInitParams: storyNftInitParams
         });
 
         assertEq(IOrgNFT(orgNft).totalSupply(), totalSupplyBefore + 1);
         assertEq(IOrgNFT(orgNft).ownerOf(orgTokenId), u.carl);
-        assertEq(IOrgNFT(orgNft).tokenURI(orgTokenId), orgTokenURI);
+        assertEq(IOrgNFT(orgNft).tokenURI(orgTokenId), ipMetadataDefault.nftMetadataURI);
+        assertMetadata(orgIpId, ipMetadataDefault);
         assertTrue(ipAssetRegistry.isRegistered(orgIpId));
         assertEq(Ownable(storyNft).owner(), u.carl);
         assertEq(IStoryBadgeNFT(storyNft).name(), storyNftName);
@@ -132,14 +141,15 @@ contract OrgStoryNFTFactoryTest is BaseTest {
                 orgStoryNftTemplate: defaultOrgStoryNftTemplate,
                 orgNftRecipient: u.carl,
                 orgName: orgName,
-                orgTokenURI: orgTokenURI,
+                orgIpMetadata: ipMetadataDefault,
                 storyNftInitParams: storyNftInitParams,
                 isRootOrg: false
             });
 
         assertEq(IOrgNFT(orgNft).totalSupply(), totalSupplyBefore + 1);
         assertEq(IOrgNFT(orgNft).ownerOf(orgTokenId), u.carl);
-        assertEq(IOrgNFT(orgNft).tokenURI(orgTokenId), orgTokenURI);
+        assertEq(IOrgNFT(orgNft).tokenURI(orgTokenId), ipMetadataDefault.nftMetadataURI);
+        assertMetadata(orgIpId, ipMetadataDefault);
         assertTrue(ipAssetRegistry.isRegistered(orgIpId));
         assertEq(Ownable(storyNft).owner(), u.carl);
         assertEq(IStoryBadgeNFT(storyNft).name(), storyNftName);
@@ -186,7 +196,7 @@ contract OrgStoryNFTFactoryTest is BaseTest {
             orgStoryNftTemplate: address(defaultOrgStoryNftTemplate),
             orgNftRecipient: u.carl,
             orgName: orgName,
-            orgTokenURI: orgTokenURI,
+            orgIpMetadata: ipMetadataDefault,
             signature: _signAddress(sk.bob, u.carl),
             storyNftInitParams: storyNftInitParams
         });
@@ -208,7 +218,7 @@ contract OrgStoryNFTFactoryTest is BaseTest {
             orgStoryNftTemplate: defaultOrgStoryNftTemplate,
             orgNftRecipient: u.carl,
             orgName: orgName,
-            orgTokenURI: orgTokenURI,
+            orgIpMetadata: ipMetadataDefault,
             signature: _signAddress(orgStoryNftFactorySignerSk, u.carl),
             storyNftInitParams: storyNftInitParams
         });
@@ -300,7 +310,7 @@ contract OrgStoryNFTFactoryTest is BaseTest {
             orgStoryNftTemplate: address(rootOrgStoryNft),
             orgNftRecipient: u.carl,
             orgName: orgName,
-            orgTokenURI: orgTokenURI,
+            orgIpMetadata: ipMetadataDefault,
             signature: _signAddress(orgStoryNftFactorySignerSk, u.carl),
             storyNftInitParams: storyNftInitParams
         });
@@ -311,7 +321,7 @@ contract OrgStoryNFTFactoryTest is BaseTest {
             orgStoryNftTemplate: address(defaultOrgStoryNftTemplate),
             orgNftRecipient: u.carl,
             orgName: orgName,
-            orgTokenURI: orgTokenURI,
+            orgIpMetadata: ipMetadataDefault,
             signature: signature,
             storyNftInitParams: storyNftInitParams
         });
@@ -322,7 +332,7 @@ contract OrgStoryNFTFactoryTest is BaseTest {
             orgStoryNftTemplate: address(defaultOrgStoryNftTemplate),
             orgNftRecipient: u.carl,
             orgName: orgName,
-            orgTokenURI: orgTokenURI,
+            orgIpMetadata: ipMetadataDefault,
             signature: signature,
             storyNftInitParams: storyNftInitParams
         });
@@ -340,7 +350,7 @@ contract OrgStoryNFTFactoryTest is BaseTest {
             orgStoryNftTemplate: address(defaultOrgStoryNftTemplate),
             orgNftRecipient: u.carl,
             orgName: orgName,
-            orgTokenURI: orgTokenURI,
+            orgIpMetadata: ipMetadataDefault,
             signature: _signAddress(orgStoryNftFactorySignerSk, u.bob),
             storyNftInitParams: storyNftInitParams
         });
@@ -354,7 +364,7 @@ contract OrgStoryNFTFactoryTest is BaseTest {
             orgStoryNftTemplate: address(defaultOrgStoryNftTemplate),
             orgNftRecipient: u.alice,
             orgName: "Alice's Org",
-            orgTokenURI: orgTokenURI,
+            orgIpMetadata: ipMetadataDefault,
             signature: signature,
             storyNftInitParams: storyNftInitParams
         });

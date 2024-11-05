@@ -13,6 +13,7 @@ import { IOrgStoryNFT } from "../interfaces/story-nft/IOrgStoryNFT.sol";
 import { IOrgNFT } from "../interfaces/story-nft/IOrgNFT.sol";
 import { IStoryNFT } from "../interfaces/story-nft/IStoryNFT.sol";
 import { IOrgStoryNFTFactory } from "../interfaces/story-nft/IOrgStoryNFTFactory.sol";
+import { WorkflowStructs } from "../lib/WorkflowStructs.sol";
 
 /// @title Organization Story NFT Factory
 /// @notice Organization Story NFT Factory is the entrypoint for creating new Story NFT collections.
@@ -114,7 +115,7 @@ contract OrgStoryNFTFactory is IOrgStoryNFTFactory, AccessManagedUpgradeable, UU
     /// @param orgStoryNftTemplate The address of a whitelisted OrgStoryNFT template to be cloned.
     /// @param orgNftRecipient The address of the recipient of the organization NFT.
     /// @param orgName The name of the organization.
-    /// @param orgTokenURI The token URI of the organization NFT.
+    /// @param orgIpMetadata OPTIONAL. The desired metadata for the newly minted OrgNFT and registered IP.
     /// @param signature The signature from the OrgStoryNFTFactory's whitelist signer. This signautre is genreated by
     ///  having the whitelist signer sign the caller's address (msg.sender) for this `deployStoryNft` function.
     /// @param storyNftInitParams The initialization data for the OrgStoryNFT (see {IOrgStoryNFT-InitParams}).
@@ -126,7 +127,7 @@ contract OrgStoryNFTFactory is IOrgStoryNFTFactory, AccessManagedUpgradeable, UU
         address orgStoryNftTemplate,
         address orgNftRecipient,
         string calldata orgName,
-        string calldata orgTokenURI,
+        WorkflowStructs.IPMetadata calldata orgIpMetadata,
         bytes calldata signature,
         IStoryNFT.StoryNftInitParams calldata storyNftInitParams
     ) external returns (address orgNft, uint256 orgTokenId, address orgIpId, address orgStoryNft) {
@@ -152,7 +153,7 @@ contract OrgStoryNFTFactory is IOrgStoryNFTFactory, AccessManagedUpgradeable, UU
             revert OrgStoryNFTFactory__InvalidSignature(signature);
 
         // Mint the organization NFT and register it as an IP
-        (orgTokenId, orgIpId) = ORG_NFT.mintOrgNft(orgNftRecipient, orgTokenURI);
+        (orgTokenId, orgIpId) = ORG_NFT.mintOrgNft(orgNftRecipient, orgIpMetadata);
 
         orgNft = address(ORG_NFT);
 
@@ -178,7 +179,7 @@ contract OrgStoryNFTFactory is IOrgStoryNFTFactory, AccessManagedUpgradeable, UU
     /// @param orgStoryNftTemplate The address of a whitelisted OrgStoryNFT template to be cloned.
     /// @param orgNftRecipient The address of the recipient of the organization NFT.
     /// @param orgName The name of the organization.
-    /// @param orgTokenURI The token URI of the organization NFT.
+    /// @param orgIpMetadata OPTIONAL. The desired metadata for the newly minted OrgNFT and registered IP.
     /// @param storyNftInitParams The initialization data for the OrgStoryNFT (see {IOrgStoryNFT-InitParams}).
     /// @param isRootOrg Whether the organization is the root organization.
     /// @return orgNft The address of the organization NFT.
@@ -189,7 +190,7 @@ contract OrgStoryNFTFactory is IOrgStoryNFTFactory, AccessManagedUpgradeable, UU
         address orgStoryNftTemplate,
         address orgNftRecipient,
         string calldata orgName,
-        string calldata orgTokenURI,
+        WorkflowStructs.IPMetadata calldata orgIpMetadata,
         IStoryNFT.StoryNftInitParams calldata storyNftInitParams,
         bool isRootOrg
     ) external restricted returns (address orgNft, uint256 orgTokenId, address orgIpId, address orgStoryNft) {
@@ -205,9 +206,9 @@ contract OrgStoryNFTFactory is IOrgStoryNFTFactory, AccessManagedUpgradeable, UU
 
         // Mint the organization NFT and register it as an IP
         if (isRootOrg) {
-            (orgTokenId, orgIpId) = ORG_NFT.mintRootOrgNft(orgNftRecipient, orgTokenURI);
+            (orgTokenId, orgIpId) = ORG_NFT.mintRootOrgNft(orgNftRecipient, orgIpMetadata);
         } else {
-            (orgTokenId, orgIpId) = ORG_NFT.mintOrgNft(orgNftRecipient, orgTokenURI);
+            (orgTokenId, orgIpId) = ORG_NFT.mintOrgNft(orgNftRecipient, orgIpMetadata);
         }
 
         orgNft = address(ORG_NFT);

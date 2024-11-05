@@ -33,6 +33,7 @@ contract UpgradeOrgNFT is UpgradeHelper {
         OrgNFT newOrgNft = new OrgNFT(
             ipAssetRegistryAddr,
             licensingModuleAddr,
+            coreMetadataModuleAddr,
             orgStoryNftFactoryAddr,
             pilTemplateAddr,
             LICENSE_TERMS_ID

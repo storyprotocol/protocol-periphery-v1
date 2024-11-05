@@ -200,7 +200,13 @@ contract BaseTest is Test, DeployHelper {
         string memory rootOrgTokenURI = "Test Token URI";
 
         bytes memory rootOrgStoryNftCustomInitParams = abi.encode(
-            IStoryBadgeNFT.CustomInitParams({ tokenURI: rootOrgTokenURI, signer: rootOrgStoryNftSigner })
+            IStoryBadgeNFT.CustomInitParams({
+                tokenURI: rootOrgTokenURI,
+                signer: rootOrgStoryNftSigner,
+                ipMetadataURI: ipMetadataDefault.ipMetadataURI,
+                ipMetadataHash: ipMetadataDefault.ipMetadataHash,
+                nftMetadataHash: ipMetadataDefault.nftMetadataHash
+            })
         );
 
         IStoryNFT.StoryNftInitParams memory rootOrgStoryNftInitParams = IStoryNFT.StoryNftInitParams({
@@ -224,7 +230,7 @@ contract BaseTest is Test, DeployHelper {
             orgStoryNftTemplate: defaultOrgStoryNftTemplate,
             orgNftRecipient: rootOrgStoryNftOwner,
             orgName: rootOrgName,
-            orgTokenURI: rootOrgTokenURI,
+            orgIpMetadata: ipMetadataDefault,
             storyNftInitParams: rootOrgStoryNftInitParams,
             isRootOrg: true
         });

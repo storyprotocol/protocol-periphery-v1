@@ -29,11 +29,17 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, ERC721Holder {
     /// @dev Storage structure for the StoryBadgeNFT
     /// @param signer The signer of the whitelist signatures.
     /// @param tokenURI The unified token URI for all tokens.
+    /// @param ipMetadataURI The URI of the metadata for all IP from this collection.
+    /// @param ipMetadataHash The hash of the metadata for all IP from this collection.
+    /// @param nftMetadataHash The hash of the metadata for all IP NFTs from this collection.
     /// @param usedSignatures Mapping of signatures to booleans indicating whether they have been used.
     /// @custom:storage-location erc7201:story-protocol-periphery.StoryBadgeNFT
     struct StoryBadgeNFTStorage {
         address signer;
         string tokenURI;
+        string ipMetadataURI;
+        bytes32 ipMetadataHash;
+        bytes32 nftMetadataHash;
         mapping(bytes signature => bool used) usedSignatures;
     }
 
@@ -44,11 +50,12 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, ERC721Holder {
     constructor(
         address ipAssetRegistry,
         address licensingModule,
+        address coreMetadataModule,
         address upgradeableBeacon,
         address orgNft,
         address pilTemplate,
         uint256 defaultLicenseTermsId
-    ) BaseOrgStoryNFT(ipAssetRegistry, licensingModule, upgradeableBeacon, orgNft) {
+    ) BaseOrgStoryNFT(ipAssetRegistry, licensingModule, coreMetadataModule, upgradeableBeacon, orgNft) {
         if (
             ipAssetRegistry == address(0) ||
             licensingModule == address(0) ||
@@ -91,7 +98,13 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, ERC721Holder {
             revert StoryBadgeNFT__InvalidSignature();
 
         // Mint the badge and register it as an IP
-        (tokenId, ipId) = _mintAndRegisterIp(address(this), $.tokenURI);
+        (tokenId, ipId) = _mintAndRegisterIp(
+            address(this),
+            $.tokenURI,
+            $.ipMetadataURI,
+            $.ipMetadataHash,
+            $.nftMetadataHash
+        );
 
         address[] memory parentIpIds = new address[](1);
         uint256[] memory licenseTermsIds = new uint256[](1);
@@ -140,6 +153,9 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, ERC721Holder {
         StoryBadgeNFTStorage storage $ = _getStoryBadgeNFTStorage();
         $.tokenURI = customParams.tokenURI;
         $.signer = customParams.signer;
+        $.ipMetadataURI = customParams.ipMetadataURI;
+        $.ipMetadataHash = customParams.ipMetadataHash;
+        $.nftMetadataHash = customParams.nftMetadataHash;
     }
 
     /// @notice Returns the base URI

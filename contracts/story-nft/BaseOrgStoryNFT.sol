@@ -33,9 +33,10 @@ abstract contract BaseOrgStoryNFT is IOrgStoryNFT, BaseStoryNFT {
     constructor(
         address ipAssetRegistry,
         address licensingModule,
+        address coreMetadataModule,
         address upgradeableBeacon,
         address orgNft
-    ) BaseStoryNFT(ipAssetRegistry, licensingModule) {
+    ) BaseStoryNFT(ipAssetRegistry, licensingModule, coreMetadataModule) {
         if (orgNft == address(0)) revert StoryNFT__ZeroAddressParam();
         ORG_NFT = orgNft;
         UPGRADEABLE_BEACON = upgradeableBeacon;

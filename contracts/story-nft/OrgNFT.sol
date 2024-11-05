@@ -8,11 +8,13 @@ import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/utils/ERC721H
 import { ERC721URIStorageUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
 import { IIPAssetRegistry } from "@storyprotocol/core/interfaces/registries/IIPAssetRegistry.sol";
 // solhint-disable-next-line max-line-length
 import { ILicensingModule } from "@story-protocol/protocol-core/contracts/interfaces/modules/licensing/ILicensingModule.sol";
 
 import { IOrgNFT } from "../interfaces/story-nft/IOrgNFT.sol";
+import { WorkflowStructs } from "../lib/WorkflowStructs.sol";
 
 /// @title Organization NFT
 /// @notice Each organization token represents a Story ecosystem project.
@@ -22,18 +24,27 @@ contract OrgNFT is IOrgNFT, ERC721URIStorageUpgradeable, AccessManagedUpgradeabl
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
 
     /// @notice Story Proof-of-Creativity IP Asset Registry address.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IIPAssetRegistry public immutable IP_ASSET_REGISTRY;
 
     /// @notice Story Proof-of-Creativity Licensing Module address.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     ILicensingModule public immutable LICENSING_MODULE;
 
+    /// @notice Core Metadata Module address.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+    ICoreMetadataModule public immutable CORE_METADATA_MODULE;
+
     /// @notice License template address.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable LICENSE_TEMPLATE;
 
     /// @notice License terms ID.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     uint256 public immutable LICENSE_TERMS_ID;
 
     /// @notice Story NFT Factory address.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable ORG_STORY_NFT_FACTORY;
 
     /// @dev Storage structure for the OrgNFT
@@ -59,6 +70,7 @@ contract OrgNFT is IOrgNFT, ERC721URIStorageUpgradeable, AccessManagedUpgradeabl
     constructor(
         address ipAssetRegistry,
         address licensingModule,
+        address coreMetadataModule,
         address orgStoryNftFactory,
         address licenseTemplate,
         uint256 licenseTermsId
@@ -66,6 +78,7 @@ contract OrgNFT is IOrgNFT, ERC721URIStorageUpgradeable, AccessManagedUpgradeabl
         if (
             ipAssetRegistry == address(0) ||
             licensingModule == address(0) ||
+            coreMetadataModule == address(0) ||
             orgStoryNftFactory == address(0) ||
             licenseTemplate == address(0)
         ) revert OrgNFT__ZeroAddressParam();
@@ -75,6 +88,7 @@ contract OrgNFT is IOrgNFT, ERC721URIStorageUpgradeable, AccessManagedUpgradeabl
         ORG_STORY_NFT_FACTORY = orgStoryNftFactory;
         LICENSE_TEMPLATE = licenseTemplate;
         LICENSE_TERMS_ID = licenseTermsId;
+        CORE_METADATA_MODULE = ICoreMetadataModule(coreMetadataModule);
 
         _disableInitializers();
     }
@@ -93,36 +107,38 @@ contract OrgNFT is IOrgNFT, ERC721URIStorageUpgradeable, AccessManagedUpgradeabl
     /// @notice Mints the root organization token and register it as an IP.
     /// @dev This function is only callable by the OrgStoryNFTFactory contract.
     /// @param recipient The address of the recipient of the root organization token.
-    /// @param tokenURI_ The URI of the root organization token.
+    /// @param orgIpMetadata OPTIONAL. The desired metadata for the newly minted OrgNFT and registered IP.
     /// @return rootOrgTokenId The ID of the root organization token.
     /// @return rootOrgIpId The ID of the root organization IP.
     function mintRootOrgNft(
         address recipient,
-        string memory tokenURI_
+        WorkflowStructs.IPMetadata calldata orgIpMetadata
     ) external onlyStoryNFTFactory returns (uint256 rootOrgTokenId, address rootOrgIpId) {
         OrgNFTStorage storage $ = _getOrgNFTStorage();
         if ($.rootOrgIpId != address(0)) revert OrgNFT__RootOrgNftAlreadyMinted();
 
-        (rootOrgTokenId, rootOrgIpId) = _mintAndRegisterIp(recipient, tokenURI_);
+        (rootOrgTokenId, rootOrgIpId) = _mintAndRegisterIp(address(this), orgIpMetadata);
         $.rootOrgIpId = rootOrgIpId;
+
+        _safeTransfer(address(this), recipient, rootOrgTokenId);
     }
 
     /// @notice Mints a organization token, register it as an IP,
     /// and makes the IP as a derivative of the root organization IP.
     /// @dev This function is only callable by the OrgStoryNFTFactory contract.
     /// @param recipient The address of the recipient of the minted organization token.
-    /// @param tokenURI_ The URI of the minted organization token.
+    /// @param orgIpMetadata OPTIONAL. The desired metadata for the newly minted OrgNFT and registered IP.
     /// @return orgTokenId The ID of the minted organization token.
     /// @return orgIpId The ID of the organization IP.
     function mintOrgNft(
         address recipient,
-        string memory tokenURI_
+        WorkflowStructs.IPMetadata calldata orgIpMetadata
     ) external onlyStoryNFTFactory returns (uint256 orgTokenId, address orgIpId) {
         OrgNFTStorage storage $ = _getOrgNFTStorage();
         if ($.rootOrgIpId == address(0)) revert OrgNFT__RootOrgNftNotMinted();
 
         // Mint the organization token and register it as an IP.
-        (orgTokenId, orgIpId) = _mintAndRegisterIp(address(this), tokenURI_);
+        (orgTokenId, orgIpId) = _mintAndRegisterIp(address(this), orgIpMetadata);
 
         address[] memory parentIpIds = new address[](1);
         uint256[] memory licenseTermsIds = new uint256[](1);
@@ -152,18 +168,32 @@ contract OrgNFT is IOrgNFT, ERC721URIStorageUpgradeable, AccessManagedUpgradeabl
 
     /// @notice Mints a organization token and register it as an IP.
     /// @param recipient The address of the recipient of the minted organization token.
-    /// @param tokenURI_ The URI of the minted organization token.
+    /// @param orgIpMetadata OPTIONAL. The desired metadata for the newly minted OrgNFT and registered IP.
     /// @return orgTokenId The ID of the minted organization token.
     /// @return orgIpId The ID of the organization IP.
     function _mintAndRegisterIp(
         address recipient,
-        string memory tokenURI_
+        WorkflowStructs.IPMetadata calldata orgIpMetadata
     ) private returns (uint256 orgTokenId, address orgIpId) {
         OrgNFTStorage storage $ = _getOrgNFTStorage();
         orgTokenId = $.totalSupply++;
         _safeMint(recipient, orgTokenId);
-        _setTokenURI(orgTokenId, tokenURI_);
+        _setTokenURI(orgTokenId, orgIpMetadata.nftMetadataURI);
         orgIpId = IP_ASSET_REGISTRY.register(block.chainid, address(this), orgTokenId);
+
+        // set the IP metadata if they are not empty
+        if (
+            keccak256(abi.encodePacked(orgIpMetadata.ipMetadataURI)) != keccak256("") ||
+            orgIpMetadata.ipMetadataHash != bytes32(0) ||
+            orgIpMetadata.nftMetadataHash != bytes32(0)
+        ) {
+            ICoreMetadataModule(CORE_METADATA_MODULE).setAll(
+                orgIpId,
+                orgIpMetadata.ipMetadataURI,
+                orgIpMetadata.ipMetadataHash,
+                orgIpMetadata.nftMetadataHash
+            );
+        }
 
         emit OrgNFTMinted(recipient, address(this), orgTokenId, orgIpId);
     }

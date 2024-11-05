@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import { IStoryNFT } from "./IStoryNFT.sol";
+import { WorkflowStructs } from "../../lib/WorkflowStructs.sol";
 
 /// @title Organization Story NFT Factory Interface
 /// @notice Organization Story NFT Factory is the entrypoint for creating new Story NFT collections.
@@ -76,7 +77,7 @@ interface IOrgStoryNFTFactory {
     /// @param orgStoryNftTemplate The address of a whitelisted OrgStoryNFT template to be cloned.
     /// @param orgNftRecipient The address of the recipient of the organization NFT.
     /// @param orgName The name of the organization.
-    /// @param orgTokenURI The token URI of the organization NFT.
+    /// @param orgIpMetadata OPTIONAL. The desired metadata for the newly minted OrgNFT and registered IP.
     /// @param signature The signature from the OrgStoryNFTFactory's whitelist signer. This signautre is genreated by
     /// having the whitelist signer sign the caller's address (msg.sender) for this `deployOrgStoryNft` function.
     /// @param storyNftInitParams The initialization parameters for StoryNFT {see {IStoryNFT-StoryNftInitParams}}.
@@ -88,7 +89,7 @@ interface IOrgStoryNFTFactory {
         address orgStoryNftTemplate,
         address orgNftRecipient,
         string calldata orgName,
-        string calldata orgTokenURI,
+        WorkflowStructs.IPMetadata calldata orgIpMetadata,
         bytes calldata signature,
         IStoryNFT.StoryNftInitParams calldata storyNftInitParams
     ) external returns (address orgNft, uint256 orgTokenId, address orgIpId, address orgStoryNft);
@@ -99,7 +100,7 @@ interface IOrgStoryNFTFactory {
     /// @param orgStoryNftTemplate The address of a whitelisted OrgStoryNFT template to be cloned.
     /// @param orgNftRecipient The address of the recipient of the organization NFT.
     /// @param orgName The name of the organization.
-    /// @param orgTokenURI The token URI of the organization NFT.
+    /// @param orgIpMetadata OPTIONAL. The desired metadata for the newly minted OrgNFT and registered IP.
     /// @param storyNftInitParams The initialization parameters for StoryNFT {see {IStoryNFT-StoryNftInitParams}}.
     /// @param isRootOrg Whether the organization is the root organization.
     /// @return orgNft The address of the organization NFT.
@@ -110,7 +111,7 @@ interface IOrgStoryNFTFactory {
         address orgStoryNftTemplate,
         address orgNftRecipient,
         string calldata orgName,
-        string calldata orgTokenURI,
+        WorkflowStructs.IPMetadata calldata orgIpMetadata,
         IStoryNFT.StoryNftInitParams calldata storyNftInitParams,
         bool isRootOrg
     ) external returns (address orgNft, uint256 orgTokenId, address orgIpId, address orgStoryNft);

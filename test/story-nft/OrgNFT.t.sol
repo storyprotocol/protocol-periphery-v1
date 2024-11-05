@@ -23,6 +23,7 @@ contract OrgNFTTest is BaseTest {
             new OrgNFT({
                 ipAssetRegistry: address(ipAssetRegistry),
                 licensingModule: address(licensingModule),
+                coreMetadataModule: address(coreMetadataModule),
                 orgStoryNftFactory: address(orgStoryNftFactory),
                 licenseTemplate: address(pilTemplate),
                 licenseTermsId: 1
@@ -75,6 +76,7 @@ contract OrgNFTTest is BaseTest {
         OrgNFT testOrgNft = new OrgNFT({
             ipAssetRegistry: address(ipAssetRegistry),
             licensingModule: address(licensingModule),
+            coreMetadataModule: address(coreMetadataModule),
             orgStoryNftFactory: address(orgStoryNftFactory),
             licenseTemplate: address(0),
             licenseTermsId: 1
@@ -84,6 +86,7 @@ contract OrgNFTTest is BaseTest {
             new OrgNFT({
                 ipAssetRegistry: address(ipAssetRegistry),
                 licensingModule: address(licensingModule),
+                coreMetadataModule: address(coreMetadataModule),
                 orgStoryNftFactory: address(orgStoryNftFactory),
                 licenseTemplate: address(pilTemplate),
                 licenseTermsId: 1
@@ -111,7 +114,7 @@ contract OrgNFTTest is BaseTest {
                 address(orgStoryNftFactory)
             )
         );
-        orgNft.mintRootOrgNft(u.bob, "test");
+        orgNft.mintRootOrgNft(u.bob, ipMetadataDefault);
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -120,7 +123,7 @@ contract OrgNFTTest is BaseTest {
                 address(orgStoryNftFactory)
             )
         );
-        orgNft.mintOrgNft(u.bob, "test");
+        orgNft.mintOrgNft(u.bob, ipMetadataDefault);
         vm.stopPrank();
     }
 }

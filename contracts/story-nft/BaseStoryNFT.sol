@@ -5,6 +5,7 @@ import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol
 /* solhint-disable-next-line max-line-length */
 import { ERC721URIStorageUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
 import { IIPAssetRegistry } from "@story-protocol/protocol-core/contracts/interfaces/registries/IIPAssetRegistry.sol";
 /*solhint-disable-next-line max-line-length*/
 import { ILicensingModule } from "@story-protocol/protocol-core/contracts/interfaces/modules/licensing/ILicensingModule.sol";
@@ -25,6 +26,10 @@ abstract contract BaseStoryNFT is IStoryNFT, ERC721URIStorageUpgradeable, Ownabl
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     ILicensingModule public immutable LICENSING_MODULE;
 
+    /// @notice Core Metadata Module address.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+    ICoreMetadataModule public immutable CORE_METADATA_MODULE;
+
     /// @dev Storage structure for the BaseStoryNFT
     /// @param contractURI The contract URI of the collection.
     /// @param baseURI The base URI of the collection.
@@ -40,10 +45,12 @@ abstract contract BaseStoryNFT is IStoryNFT, ERC721URIStorageUpgradeable, Ownabl
     bytes32 private constant BaseStoryNFTStorageLocation =
         0x81ed94d7560ff7bef5060a232718049e514c358c346e3254b876807a753c0e00;
 
-    constructor(address ipAssetRegistry, address licensingModule) {
-        if (ipAssetRegistry == address(0) || licensingModule == address(0)) revert StoryNFT__ZeroAddressParam();
+    constructor(address ipAssetRegistry, address licensingModule, address coreMetadataModule) {
+        if (ipAssetRegistry == address(0) || licensingModule == address(0) || coreMetadataModule == address(0))
+            revert StoryNFT__ZeroAddressParam();
         IP_ASSET_REGISTRY = IIPAssetRegistry(ipAssetRegistry);
         LICENSING_MODULE = ILicensingModule(licensingModule);
+        CORE_METADATA_MODULE = ICoreMetadataModule(coreMetadataModule);
 
         _disableInitializers();
     }
@@ -75,22 +82,38 @@ abstract contract BaseStoryNFT is IStoryNFT, ERC721URIStorageUpgradeable, Ownabl
     /// @return tokenId The ID of the minted token.
     /// @return ipId The ID of the newly created IP.
     function _mintAndRegisterIp(address recipient) internal virtual returns (uint256 tokenId, address ipId) {
-        (tokenId, ipId) = _mintAndRegisterIp(recipient, "");
+        (tokenId, ipId) = _mintAndRegisterIp(recipient, "", "", bytes32(0), bytes32(0));
     }
 
     /// @notice Mints a new token and registers as an IP asset.
     /// @param recipient The address to mint the token to.
     /// @param tokenURI_ The token URI of the token (see {ERC721URIStorage-tokenURI} for how it is used).
+    /// @param ipMetadataURI The URI of the metadata for the IP.
+    /// @param ipMetadataHash The hash of the metadata for the IP.
+    /// @param nftMetadataHash The hash of the metadata for the IP NFT.
     /// @return tokenId The ID of the minted token.
     /// @return ipId The ID of the newly created IP.
     function _mintAndRegisterIp(
         address recipient,
-        string memory tokenURI_
+        string memory tokenURI_,
+        string memory ipMetadataURI,
+        bytes32 ipMetadataHash,
+        bytes32 nftMetadataHash
     ) internal virtual returns (uint256 tokenId, address ipId) {
         tokenId = _getBaseStoryNFTStorage().totalSupply++;
         _safeMint(recipient, tokenId);
         _setTokenURI(tokenId, tokenURI_);
+
         ipId = IP_ASSET_REGISTRY.register(block.chainid, address(this), tokenId);
+
+        // set the IP metadata if they are not empty
+        if (
+            keccak256(abi.encodePacked(ipMetadataURI)) != keccak256("") ||
+            ipMetadataHash != bytes32(0) ||
+            nftMetadataHash != bytes32(0)
+        ) {
+            ICoreMetadataModule(CORE_METADATA_MODULE).setAll(ipId, ipMetadataURI, ipMetadataHash, nftMetadataHash);
+        }
     }
 
     /// @notice Register `ipId` as a derivative of `parentIpIds` under `licenseTemplate` with `licenseTermsIds`.

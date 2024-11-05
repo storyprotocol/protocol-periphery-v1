@@ -30,9 +30,15 @@ interface IStoryBadgeNFT is IStoryNFT, IERC721Metadata, IERC5192 {
     /// @notice Struct for custom data for initializing the StoryBadgeNFT contract.
     /// @param tokenURI The token URI for all the badges (follows OpenSea metadata standard).
     /// @param signer The signer of the whitelist signatures.
+    /// @param ipMetadataURI The URI of the metadata for all IP from this collection.
+    /// @param ipMetadataHash The hash of the metadata for all IP from this collection.
+    /// @param nftMetadataHash The hash of the metadata for all IP NFTs from this collection.
     struct CustomInitParams {
         string tokenURI;
         address signer;
+        string ipMetadataURI;
+        bytes32 ipMetadataHash;
+        bytes32 nftMetadataHash;
     }
 
     ////////////////////////////////////////////////////////////////////////////

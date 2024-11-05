@@ -202,6 +202,7 @@ contract DeployHelper is
             new OrgNFT(
                 ipAssetRegistryAddr,
                 licensingModuleAddr,
+                coreMetadataModuleAddr,
                 _getDeployedAddress(type(OrgStoryNFTFactory).name),
                 licenseTemplate_,
                 licenseTermsId_
@@ -223,6 +224,7 @@ contract DeployHelper is
         defaultOrgStoryNftTemplate = address(new StoryBadgeNFT(
             ipAssetRegistryAddr,
             licensingModuleAddr,
+            coreMetadataModuleAddr,
             _getDeployedAddress("DefaultOrgStoryNFTBeacon"),
             address(orgNft),
             pilTemplateAddr,

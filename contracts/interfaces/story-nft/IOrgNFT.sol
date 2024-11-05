@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import { IERC721Metadata } from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
+import { WorkflowStructs } from "../../lib/WorkflowStructs.sol";
 
 /// @title Organization NFT Interface
 /// @notice Each organization token represents a Story ecosystem project.
@@ -46,23 +47,23 @@ interface IOrgNFT is IERC721Metadata {
     ////////////////////////////////////////////////////////////////////////////
     /// @notice Mints the root organization token and register it as an IP.
     /// @param recipient The address of the recipient of the root organization token.
-    /// @param tokenURI The URI of the root organization token.
+    /// @param orgIpMetadata OPTIONAL. The desired metadata for the newly minted OrgNFT and registered IP.
     /// @return rootOrgTokenId The ID of the root organization token.
     /// @return rootOrgIpId The ID of the root organization IP.
     function mintRootOrgNft(
         address recipient,
-        string memory tokenURI
+        WorkflowStructs.IPMetadata calldata orgIpMetadata
     ) external returns (uint256 rootOrgTokenId, address rootOrgIpId);
 
     /// @notice Mints a organization token, register it as an IP,
     /// and makes the IP as a derivative of the root organization IP.
     /// @param recipient The address of the recipient of the minted organization token.
-    /// @param tokenURI The URI of the minted organization token.
+    /// @param orgIpMetadata OPTIONAL. The desired metadata for the newly minted OrgNFT and registered IP.
     /// @return orgTokenId The ID of the minted organization token.
     /// @return orgIpId The ID of the organization IP.
     function mintOrgNft(
         address recipient,
-        string memory tokenURI
+        WorkflowStructs.IPMetadata calldata orgIpMetadata
     ) external returns (uint256 orgTokenId, address orgIpId);
 
     /// @notice Sets the tokenURI of `tokenId` organization token.

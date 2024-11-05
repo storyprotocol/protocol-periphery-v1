@@ -35,6 +35,7 @@ contract UpdateDefaultOrgStoryNFTTemplate is UpgradeHelper {
         StoryBadgeNFT newDefaultOrgStoryNftTemplate = new StoryBadgeNFT(
             ipAssetRegistryAddr,
             licensingModuleAddr,
+            coreMetadataModuleAddr,
             defaultOrgStoryNftBeaconAddr,
             orgNftAddr,
             pilTemplateAddr,

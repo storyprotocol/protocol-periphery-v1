@@ -28,6 +28,7 @@ contract StoryBadgeNFTTest is BaseTest {
             new StoryBadgeNFT({
                 ipAssetRegistry: address(ipAssetRegistry),
                 licensingModule: address(licensingModule),
+                coreMetadataModule: address(coreMetadataModule),
                 upgradeableBeacon: address(defaultOrgStoryNftBeacon),
                 orgNft: address(orgNft),
                 pilTemplate: address(pilTemplate),
@@ -38,7 +39,13 @@ contract StoryBadgeNFTTest is BaseTest {
         string memory tokenURI = "Test Token URI";
 
         bytes memory storyBadgeNftCustomInitParams = abi.encode(
-            IStoryBadgeNFT.CustomInitParams({ tokenURI: tokenURI, signer: rootOrgStoryNftSigner })
+            IStoryBadgeNFT.CustomInitParams({
+                tokenURI: tokenURI,
+                signer: rootOrgStoryNftSigner,
+                ipMetadataURI: ipMetadataDefault.ipMetadataURI,
+                ipMetadataHash: ipMetadataDefault.ipMetadataHash,
+                nftMetadataHash: ipMetadataDefault.nftMetadataHash
+            })
         );
 
         IStoryNFT.StoryNftInitParams memory storyBadgeNftInitParams = IStoryNFT.StoryNftInitParams({
@@ -76,6 +83,7 @@ contract StoryBadgeNFTTest is BaseTest {
         StoryBadgeNFT testStoryBadgeNft = new StoryBadgeNFT(
             address(ipAssetRegistry),
             address(licensingModule),
+            address(coreMetadataModule),
             address(defaultOrgStoryNftBeacon),
             address(0),
             address(pilTemplate),
@@ -86,6 +94,7 @@ contract StoryBadgeNFTTest is BaseTest {
             new StoryBadgeNFT({
                 ipAssetRegistry: address(ipAssetRegistry),
                 licensingModule: address(licensingModule),
+                coreMetadataModule: address(coreMetadataModule),
                 upgradeableBeacon: address(defaultOrgStoryNftBeacon),
                 orgNft: address(orgNft),
                 pilTemplate: address(pilTemplate),
@@ -98,7 +107,10 @@ contract StoryBadgeNFTTest is BaseTest {
         bytes memory storyBadgeNftCustomInitParams = abi.encode(
             IStoryBadgeNFT.CustomInitParams({
                 tokenURI: tokenURI,
-                signer: address(0) // Should revert
+                signer: address(0), // Should revert
+                ipMetadataURI: ipMetadataDefault.ipMetadataURI,
+                ipMetadataHash: ipMetadataDefault.ipMetadataHash,
+                nftMetadataHash: ipMetadataDefault.nftMetadataHash
             })
         );
 
@@ -137,6 +149,7 @@ contract StoryBadgeNFTTest is BaseTest {
         assertEq(rootOrgStoryNft.ownerOf(tokenId), u.carl);
         assertTrue(ipAssetRegistry.isRegistered(ipId));
         assertEq(rootOrgStoryNft.tokenURI(tokenId), "Test Token URI");
+        assertMetadata(ipId, ipMetadataDefault);
         assertEq(rootOrgStoryNft.totalSupply(), totalSupplyBefore + 1);
         (address licenseTemplateChild, uint256 licenseTermsIdChild) = licenseRegistry.getAttachedLicenseTerms(ipId, 0);
         (address licenseTemplateParent, uint256 licenseTermsIdParent) = licenseRegistry.getAttachedLicenseTerms(
