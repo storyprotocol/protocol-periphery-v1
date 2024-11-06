@@ -11,11 +11,12 @@ import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/Mes
 import { SignatureChecker } from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 
 import { BaseOrgStoryNFT } from "./BaseOrgStoryNFT.sol";
+import { CachableNFT } from "./CachableNFT.sol";
 import { IStoryBadgeNFT } from "../interfaces/story-nft/IStoryBadgeNFT.sol";
 
 /// @title Story Badge NFT
 /// @notice A Story Badge is a soulbound NFT that has an unified token URI for all tokens.
-contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, ERC721Holder {
+contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, CachableNFT, ERC721Holder {
     using MessageHashUtils for bytes32;
 
     /// @notice Story Proof-of-Creativity PILicense Template address.
@@ -97,25 +98,16 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, ERC721Holder {
         if (!SignatureChecker.isValidSignatureNow($.signer, digest, signature))
             revert StoryBadgeNFT__InvalidSignature();
 
-        // Mint the badge and register it as an IP
-        (tokenId, ipId) = _mintAndRegisterIp(
-            address(this),
-            $.tokenURI,
-            $.ipMetadataURI,
-            $.ipMetadataHash,
-            $.nftMetadataHash
-        );
+        // Try to transfer from cache first
+        (tokenId, ipId) = _transferFromCache(recipient);
 
-        address[] memory parentIpIds = new address[](1);
-        uint256[] memory licenseTermsIds = new uint256[](1);
-        parentIpIds[0] = orgIpId();
-        licenseTermsIds[0] = DEFAULT_LICENSE_TERMS_ID;
+        if (ipId == address(0)) {
+            // cache miss or cache mode is disabled, mint directly
+            (tokenId, ipId) = _mintToSelf();
 
-        // Make the badge a derivative of the organization IP
-        _makeDerivative(ipId, parentIpIds, PIL_TEMPLATE, licenseTermsIds, "", 0);
-
-        // Transfer the badge to the recipient
-        _safeTransfer(address(this), recipient, tokenId);
+            // Transfer the badge to the recipient
+            _transfer(address(this), recipient, tokenId);
+        }
 
         emit StoryBadgeNFTMinted(recipient, tokenId, ipId);
     }
@@ -162,6 +154,38 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, ERC721Holder {
     /// @return empty string
     function _baseURI() internal pure override returns (string memory) {
         return "";
+    }
+
+    /// @notice Mints an NFT to the contract itself.
+    /// @return tokenId The token ID of the minted NFT.
+    /// @return ipId The IP ID of the minted NFT.
+    function _mintToSelf() internal override returns (uint256 tokenId, address ipId) {
+        StoryBadgeNFTStorage storage $ = _getStoryBadgeNFTStorage();
+
+        // Mint the badge and register it as an IP
+        (tokenId, ipId) = _mintAndRegisterIp(
+            address(this),
+            $.tokenURI,
+            $.ipMetadataURI,
+            $.ipMetadataHash,
+            $.nftMetadataHash
+        );
+
+        address[] memory parentIpIds = new address[](1);
+        uint256[] memory licenseTermsIds = new uint256[](1);
+        parentIpIds[0] = orgIpId();
+        licenseTermsIds[0] = DEFAULT_LICENSE_TERMS_ID;
+
+        // Make the badge a derivative of the organization IP
+        _makeDerivative(ipId, parentIpIds, PIL_TEMPLATE, licenseTermsIds, "", 0);
+    }
+
+    /// @notice Transfers an NFT from one address to another.
+    /// @param from The address to transfer the NFT from.
+    /// @param to The address to transfer the NFT to.
+    /// @param tokenId The token ID of the NFT to transfer.
+    function _transferFrom(address from, address to, uint256 tokenId) internal override {
+        _transfer(from, to, tokenId);
     }
 
     /// @dev Returns the storage struct of StoryBadgeNFT.

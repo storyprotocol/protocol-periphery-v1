@@ -212,6 +212,34 @@ contract StoryBadgeNFTTest is BaseTest {
         assertEq(rootOrgStoryNft.tokenURI(0), "New Token URI");
     }
 
+    function test_StoryBadgeNFT_cachedMint() public {
+        vm.startPrank(rootOrgStoryNftOwner);
+        rootOrgStoryNft.mintToCache(1);
+        assertEq(rootOrgStoryNft.cacheSize(), 1); // 1 cached
+        rootOrgStoryNft.mintToCache(100);
+        assertEq(rootOrgStoryNft.cacheSize(), 101); // 100 cached + 1 minted
+        rootOrgStoryNft.setCacheMode(true); // enable cache mode
+        vm.stopPrank();
+
+        bytes memory signature = _signAddress(rootOrgStoryNftSignerSk, u.carl);
+        vm.startPrank(u.carl);
+        (uint256 tokenId, ) = rootOrgStoryNft.mint(u.carl, signature);
+        assertEq(rootOrgStoryNft.ownerOf(tokenId), u.carl); // minted from cache
+        vm.stopPrank();
+        assertEq(rootOrgStoryNft.cacheSize(), 100); // cache size is reduced by 1
+
+        vm.startPrank(rootOrgStoryNftOwner);
+        rootOrgStoryNft.setCacheMode(false); // disable cache mode
+        vm.stopPrank();
+
+        signature = _signAddress(rootOrgStoryNftSignerSk, u.bob);
+        vm.startPrank(u.bob);
+        (tokenId, ) = rootOrgStoryNft.mint(u.bob, signature);
+        assertEq(rootOrgStoryNft.ownerOf(tokenId), u.bob); // minted directly
+        vm.stopPrank();
+        assertEq(rootOrgStoryNft.cacheSize(), 100); // cache size is unchanged
+    }
+
     function test_StoryBadgeNFT_revert_setSigner_CallerIsNotOwner() public {
         vm.startPrank(u.carl);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, u.carl));

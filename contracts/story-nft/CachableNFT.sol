@@ -24,11 +24,15 @@ abstract contract CachableNFT is OwnableUpgradeable {
     bytes32 private constant CacheableNFTStorageLocation =
         0xb2c28ba4bb2a3f74a63ac2785b5af0c41313804d8b65acc69c0b2736a57e5f00;
 
+    /// @notice Sets the cache mode.
+    /// @param useCache The new cache mode, true for cache mode, false for passthrough mode.
     function setCacheMode(bool useCache) external onlyOwner {
         CacheableNFTStorage storage $ = _getCacheableNFTStorage();
         $.cacheMode = useCache;
     }
 
+    /// @notice Mints NFTs to the cache.
+    /// @param amount The number of NFTs to mint.
     function mintToCache(uint256 amount) external onlyOwner {
         // mint NFT to cache
         for (uint256 i = 0; i < amount; i++) {
@@ -38,21 +42,37 @@ abstract contract CachableNFT is OwnableUpgradeable {
         }
     }
 
+    /// @notice Returns the number of NFTs in the cache.
+    /// @return The number of NFTs in the cache.
     function cacheSize() external view returns (uint256) {
         CacheableNFTStorage storage $ = _getCacheableNFTStorage();
         return $.cache.length();
     }
 
+    /// @notice Transfers the first NFT from the cache to the recipient.
+    /// @param recipient The recipient of the NFT.
+    /// @return tokenId The token ID of the transferred NFT.
+    /// @return ipId The IP ID of the transferred NFT.
     function _transferFromCache(address recipient) internal returns (uint256 tokenId, address ipId) {
         CacheableNFTStorage storage $ = _getCacheableNFTStorage();
         if (!$.cacheMode || $.cache.length() == 0) {
             return (0, address(0));
         }
         (tokenId, ipId) = $.cache.at(0);
+        $.cache.remove(0);
+
         _transferFrom(address(this), recipient, tokenId);
     }
 
+    /// @notice Mints an NFT to the contract itself.
+    /// @return tokenId The token ID of the minted NFT.
+    /// @return ipId The IP ID of the minted NFT.
     function _mintToSelf() internal virtual returns (uint256 tokenId, address ipId);
+
+    /// @notice Transfers an NFT from one address to another.
+    /// @param from The address to transfer the NFT from.
+    /// @param to The address to transfer the NFT to.
+    /// @param tokenId The token ID of the NFT to transfer.
     function _transferFrom(address from, address to, uint256 tokenId) internal virtual;
 
     /// @dev Returns the storage struct of CacheableNFT.
