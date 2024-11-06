@@ -213,6 +213,12 @@ contract StoryBadgeNFTTest is BaseTest {
     }
 
     function test_StoryBadgeNFT_cachedMint() public {
+        bytes memory signature = _signAddress(rootOrgStoryNftSignerSk, u.alice);
+        vm.startPrank(u.alice);
+        (uint256 tokenId, ) = rootOrgStoryNft.mint(u.alice, signature);
+        assertEq(rootOrgStoryNft.ownerOf(tokenId), u.alice); // minted directly
+        vm.stopPrank();
+
         vm.startPrank(rootOrgStoryNftOwner);
         rootOrgStoryNft.mintToCache(1);
         assertEq(rootOrgStoryNft.cacheSize(), 1); // 1 cached
@@ -221,9 +227,9 @@ contract StoryBadgeNFTTest is BaseTest {
         rootOrgStoryNft.setCacheMode(true); // enable cache mode
         vm.stopPrank();
 
-        bytes memory signature = _signAddress(rootOrgStoryNftSignerSk, u.carl);
+        signature = _signAddress(rootOrgStoryNftSignerSk, u.carl);
         vm.startPrank(u.carl);
-        (uint256 tokenId, ) = rootOrgStoryNft.mint(u.carl, signature);
+        (tokenId, ) = rootOrgStoryNft.mint(u.carl, signature);
         assertEq(rootOrgStoryNft.ownerOf(tokenId), u.carl); // minted from cache
         vm.stopPrank();
         assertEq(rootOrgStoryNft.cacheSize(), 100); // cache size is reduced by 1
