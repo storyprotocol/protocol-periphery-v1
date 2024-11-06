@@ -63,12 +63,6 @@ abstract contract CachableNFT is OwnableUpgradeable {
         return _getCacheableNFTStorage().cache.at(index);
     }
 
-    /// @notice Returns the number of NFTs in the cache.
-    /// @return The number of NFTs in the cache.
-    function getCacheLength() external view returns (uint256) {
-        return _getCacheableNFTStorage().cache.length();
-    }
-
     /// @notice Transfers the first NFT from the cache to the recipient.
     /// @param recipient The recipient of the NFT.
     /// @return tokenId The token ID of the transferred NFT.
