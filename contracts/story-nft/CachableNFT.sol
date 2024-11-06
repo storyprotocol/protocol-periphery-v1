@@ -10,7 +10,7 @@ pragma solidity ^0.8.26;
 // passthrough mode will forward the call to the nft contract
 import { EnumerableMap } from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-abstract contract CachableNFT is OwnableUpgradeable{
+abstract contract CachableNFT is OwnableUpgradeable {
     using EnumerableMap for EnumerableMap.UintToAddressMap;
     /// @dev Storage structure for the CacheableNFT
     /// @custom:storage-location erc7201:story-protocol-periphery.CacheableNFT
@@ -21,7 +21,8 @@ abstract contract CachableNFT is OwnableUpgradeable{
     }
 
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.CacheableNFT")) - 1)) & ~bytes32(uint256(0xff));
-    bytes32 private constant CacheableNFTStorageLocation = 0xb2c28ba4bb2a3f74a63ac2785b5af0c41313804d8b65acc69c0b2736a57e5f00;
+    bytes32 private constant CacheableNFTStorageLocation =
+        0xb2c28ba4bb2a3f74a63ac2785b5af0c41313804d8b65acc69c0b2736a57e5f00;
 
     function setCacheMode(bool useCache) external onlyOwner {
         CacheableNFTStorage storage $ = _getCacheableNFTStorage();
@@ -60,5 +61,4 @@ abstract contract CachableNFT is OwnableUpgradeable{
             $.slot := CacheableNFTStorageLocation
         }
     }
-
 }
