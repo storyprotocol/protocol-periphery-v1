@@ -12,12 +12,21 @@ import { EnumerableMap } from "@openzeppelin/contracts/utils/structs/EnumerableM
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 abstract contract CachableNFT is OwnableUpgradeable {
     using EnumerableMap for EnumerableMap.UintToAddressMap;
+
+    enum CacheMode {
+        Passthrough,
+        Cache,
+        Auto
+    }
+
     /// @dev Storage structure for the CacheableNFT
     /// @custom:storage-location erc7201:story-protocol-periphery.CacheableNFT
     struct CacheableNFTStorage {
         // tokenId => ipId
         EnumerableMap.UintToAddressMap cache;
-        bool cacheMode;
+        bool DEPRECATED_cacheMode;
+        CacheMode mode;
+        uint256 autoCacheBaseFeeThreshold;
     }
 
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.CacheableNFT")) - 1)) & ~bytes32(uint256(0xff));
@@ -25,10 +34,15 @@ abstract contract CachableNFT is OwnableUpgradeable {
         0xb2c28ba4bb2a3f74a63ac2785b5af0c41313804d8b65acc69c0b2736a57e5f00;
 
     /// @notice Sets the cache mode.
-    /// @param useCache The new cache mode, true for cache mode, false for passthrough mode.
-    function setCacheMode(bool useCache) external onlyOwner {
+    /// @param mode The new cache mode.
+    function setCacheMode(CacheMode mode) external onlyOwner {
         CacheableNFTStorage storage $ = _getCacheableNFTStorage();
-        $.cacheMode = useCache;
+        $.mode = mode;
+    }
+
+    function setCacheModeAutoThreshold(uint256 threshold) external onlyOwner {
+        CacheableNFTStorage storage $ = _getCacheableNFTStorage();
+        $.autoCacheBaseFeeThreshold = threshold;
     }
 
     /// @notice Mints NFTs to the cache.
@@ -51,8 +65,8 @@ abstract contract CachableNFT is OwnableUpgradeable {
 
     /// @notice Returns the cache mode.
     /// @return The cache mode, true for cache mode, false for passthrough mode.
-    function getCacheMode() external view returns (bool) {
-        return _getCacheableNFTStorage().cacheMode;
+    function getCacheMode() external view returns (CacheMode) {
+        return _getCacheableNFTStorage().mode;
     }
 
     /// @notice Returns the NFT at the given index in the cache.
@@ -69,9 +83,15 @@ abstract contract CachableNFT is OwnableUpgradeable {
     /// @return ipId The IP ID of the transferred NFT.
     function _transferFromCache(address recipient) internal returns (uint256 tokenId, address ipId) {
         CacheableNFTStorage storage $ = _getCacheableNFTStorage();
-        if (!$.cacheMode || $.cache.length() == 0) {
+        if ($.mode == CacheMode.Passthrough || $.cache.length() == 0) {
             return (0, address(0));
+
+        } else if($.mode == CacheMode.Auto) {
+            if (block.basefee <= $.autoCacheBaseFeeThreshold * 1 gwei) {
+                return (0, address(0));
+            }
         }
+
         (tokenId, ipId) = $.cache.at(0);
         $.cache.remove(tokenId);
 

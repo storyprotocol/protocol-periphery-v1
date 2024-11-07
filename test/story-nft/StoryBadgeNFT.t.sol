@@ -13,6 +13,7 @@ import { IStoryBadgeNFT } from "../../contracts/interfaces/story-nft/IStoryBadge
 import { IOrgStoryNFT } from "../../contracts/interfaces/story-nft/IOrgStoryNFT.sol";
 import { IStoryNFT } from "../../contracts/interfaces/story-nft/IStoryNFT.sol";
 import { StoryBadgeNFT } from "../../contracts/story-nft/StoryBadgeNFT.sol";
+import { CachableNFT } from "../../contracts/story-nft/CachableNFT.sol";
 
 // test
 import { BaseTest } from "../utils/BaseTest.t.sol";
@@ -224,7 +225,7 @@ contract StoryBadgeNFTTest is BaseTest {
         assertEq(rootOrgStoryNft.cacheSize(), 1); // 1 cached
         rootOrgStoryNft.mintToCache(100);
         assertEq(rootOrgStoryNft.cacheSize(), 101); // 100 cached + 1 minted
-        rootOrgStoryNft.setCacheMode(true); // enable cache mode
+        rootOrgStoryNft.setCacheMode(CachableNFT.CacheMode.Cache); // enable cache mode
         vm.stopPrank();
 
         signature = _signAddress(rootOrgStoryNftSignerSk, u.carl);
@@ -235,7 +236,7 @@ contract StoryBadgeNFTTest is BaseTest {
         assertEq(rootOrgStoryNft.cacheSize(), 100); // cache size is reduced by 1
 
         vm.startPrank(rootOrgStoryNftOwner);
-        rootOrgStoryNft.setCacheMode(false); // disable cache mode
+        rootOrgStoryNft.setCacheMode(CachableNFT.CacheMode.Passthrough); // disable cache mode
         vm.stopPrank();
 
         signature = _signAddress(rootOrgStoryNftSignerSk, u.bob);
@@ -244,6 +245,29 @@ contract StoryBadgeNFTTest is BaseTest {
         assertEq(rootOrgStoryNft.ownerOf(tokenId), u.bob); // minted directly
         vm.stopPrank();
         assertEq(rootOrgStoryNft.cacheSize(), 100); // cache size is unchanged
+
+        vm.startPrank(rootOrgStoryNftOwner);
+        rootOrgStoryNft.setCacheMode(CachableNFT.CacheMode.Auto); // disable cache mode
+        rootOrgStoryNft.setCacheModeAutoThreshold(100);
+        vm.stopPrank();
+
+        vm.fee(20 gwei);
+        signature = _signAddress(rootOrgStoryNftSignerSk, u.dan);
+        vm.startPrank(u.dan);
+        (tokenId, ) = rootOrgStoryNft.mint(u.dan, signature);
+        assertEq(rootOrgStoryNft.ownerOf(tokenId), u.dan); // minted directly
+        vm.stopPrank();
+        assertEq(rootOrgStoryNft.cacheSize(), 100); // cache size is unchanged
+
+        vm.fee(200 gwei);
+        address eva = vm.addr(0x123456);
+        signature = _signAddress(rootOrgStoryNftSignerSk, eva);
+        vm.startPrank(eva);
+        (tokenId, ) = rootOrgStoryNft.mint(eva, signature);
+        assertEq(rootOrgStoryNft.ownerOf(tokenId), eva); // minted from cache
+        vm.stopPrank();
+        assertEq(rootOrgStoryNft.cacheSize(), 99); // cache size is unchanged
+
     }
 
     function test_StoryBadgeNFT_revert_setSigner_CallerIsNotOwner() public {
