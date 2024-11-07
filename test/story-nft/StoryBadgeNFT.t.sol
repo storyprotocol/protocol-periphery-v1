@@ -267,7 +267,6 @@ contract StoryBadgeNFTTest is BaseTest {
         assertEq(rootOrgStoryNft.ownerOf(tokenId), eva); // minted from cache
         vm.stopPrank();
         assertEq(rootOrgStoryNft.cacheSize(), 99); // cache size is unchanged
-
     }
 
     function test_StoryBadgeNFT_revert_setSigner_CallerIsNotOwner() public {

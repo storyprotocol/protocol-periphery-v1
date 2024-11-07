@@ -85,8 +85,7 @@ abstract contract CachableNFT is OwnableUpgradeable {
         CacheableNFTStorage storage $ = _getCacheableNFTStorage();
         if ($.mode == CacheMode.Passthrough || $.cache.length() == 0) {
             return (0, address(0));
-
-        } else if($.mode == CacheMode.Auto) {
+        } else if ($.mode == CacheMode.Auto) {
             if (block.basefee <= $.autoCacheBaseFeeThreshold * 1 gwei) {
                 return (0, address(0));
             }
