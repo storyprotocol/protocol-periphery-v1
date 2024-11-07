@@ -3,16 +3,19 @@ pragma solidity ^0.8.26;
 // two mode passthrough and cache
 // passthrough will just forward the call to the nft contract
 
-// cache contrat has two modes
+// cache contrat has three modes
 // 1. cache mode
 // 2. passthrough mode
+// 3. auto mode
 // cache mode will cache the nft data and return it
 // passthrough mode will forward the call to the nft contract
+// auto mode will cache the nft data if the basefee is greater than the threshold
 import { EnumerableMap } from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 abstract contract CachableNFT is OwnableUpgradeable {
     using EnumerableMap for EnumerableMap.UintToAddressMap;
 
+    /// @dev Enum for cache mode.
     enum CacheMode {
         Passthrough,
         Cache,
@@ -40,6 +43,8 @@ abstract contract CachableNFT is OwnableUpgradeable {
         $.mode = mode;
     }
 
+    /// @notice Sets the auto cache base fee threshold.
+    /// @param threshold The new auto cache base fee threshold.
     function setCacheModeAutoThreshold(uint256 threshold) external onlyOwner {
         CacheableNFTStorage storage $ = _getCacheableNFTStorage();
         $.autoCacheBaseFeeThreshold = threshold;
