@@ -88,7 +88,8 @@ contract RoyaltyWorkflowsTest is BaseTest {
         assertEq(claimerBalanceCAfter - claimerBalanceCBefore, amountsClaimed[1]);
         assertEq(
             claimerBalanceAAfter - claimerBalanceABefore,
-            defaultMintingFeeA + defaultMintingFeeA + // 1000 + 1000 from minting fee of childIpA and childIpB
+            defaultMintingFeeA +
+                defaultMintingFeeA + // 1000 + 1000 from minting fee of childIpA and childIpB
                 10 ether + // 10 currency tokens from childIpA transferred to vault
                 10 ether + // 10 currency tokens from childIpB transferred to vault
                 1 ether // 1 currency token from grandChildIp transferred to vault

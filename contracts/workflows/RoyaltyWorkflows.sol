@@ -101,11 +101,8 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
             });
 
             // Gets the total lifetime revenue tokens transferred to a vault from a descendant IP via the policy
-            uint256 totalTokenTransferredToAncestor = IGraphAwareRoyaltyPolicy(royaltyPolicies[i]).getTransferredTokens({
-                ipId: childIpIds[i],
-                ancestorIpId: ancestorIpId,
-                token: currencyTokens[i]
-            });
+            uint256 totalTokenTransferredToAncestor = IGraphAwareRoyaltyPolicy(royaltyPolicies[i])
+                .getTransferredTokens({ ipId: childIpIds[i], ancestorIpId: ancestorIpId, token: currencyTokens[i] });
 
             uint32 ancestorPercentage = IGraphAwareRoyaltyPolicy(royaltyPolicies[i]).getPolicyRoyalty({
                 ipId: childIpIds[i],
@@ -137,7 +134,7 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
     /// @return uniqueCurrencyTokens An array containing only unique currency token addresses.
     function _getUniqueCurrencyTokens(
         address[] calldata currencyTokens
-    ) internal pure returns (address[] memory uniqueCurrencyTokens){
+    ) internal pure returns (address[] memory uniqueCurrencyTokens) {
         uint256 length = currencyTokens.length;
         address[] memory tempUniqueTokenList = new address[](length);
         uint256 uniqueCount = 0;

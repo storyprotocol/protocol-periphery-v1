@@ -99,7 +99,8 @@ contract RoyaltyIntegration is BaseIntegration {
         assertEq(claimerBalanceAfter - claimerBalanceBefore, amountsClaimed[0]);
         assertEq(
             claimerBalanceAfter - claimerBalanceBefore,
-            defaultMintingFeeA + defaultMintingFeeA + // 1000 + 1000 from minting fee of childIpA and childIpB
+            defaultMintingFeeA +
+                defaultMintingFeeA + // 1000 + 1000 from minting fee of childIpA and childIpB
                 10 ether + // 10 currency tokens from childIpA transferred to vault
                 10 ether + // 10 currency tokens from childIpB transferred to vault
                 2 ether + // 2 currency tokens from grandChildIp transferred to vault
