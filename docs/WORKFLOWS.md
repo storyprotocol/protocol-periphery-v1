@@ -46,15 +46,8 @@
 
 ### [Royalty Workflows](../contracts/interfaces/workflows/IRoyaltyWorkflows.sol)
 
-- `transferToVaultAndSnapshotAndClaimByTokenBatch`:
-  - Transfers revenue tokens to ancestor IP’s royalty vault → Takes a snapshot of the royalty vault → Claims all available revenue tokens from the snapshot to the claimer’s wallet
-  - *Use Case*: For IP royalty token holders who want to claim both their direct revenue and royalties from descendant IPs.
-- `transferToVaultAndSnapshotAndClaimBySnapshotBatch`:
-  - Transfers revenue tokens to ancestor IP’s royalty vault → Takes a snapshot of the royalty vault → Claims all available revenue tokens from the new snapshot to the claimer’s wallet → Claims all available revenue tokens from each provided unclaimed snapshot to the claimer’s wallet
-  - *Use Case*: For IP royalty token holders who want to claim both direct revenue and descendant royalties from the latest snapshot and previously taken snapshots.
-- `snapshotAndClaimByTokenBatch`:
-  - Takes a snapshot of the royalty vault → Claims all available revenue tokens from the new snapshot to the claimer’s wallet
-  - *Use Case*: For IP royalty token holders who want to claim the current revenue in their IP’s royalty vault (which may or may not include descendant royalties).
-- `snapshotAndClaimBySnapshotBatch`:
-  - Takes a snapshot of the royalty vault → Claims all available revenue tokens from the new snapshot to the claimer’s wallet → Claims all available revenue tokens from each provided unclaimed snapshot to the claimer’s wallet
-  - *Use Case*: For IP royalty token holders who want to claim the current revenue in their IP’s royalty vault from the latest snapshot and previously taken snapshots.
+- `transferToVaultAndClaimByTokenBatch`:
+  - Transfers specified amounts of royalties from various royalty policies to the royalty vault of the ancestor IP -> Claims all the revenue in each currency token from the ancestor IP's royalty vault to the claimer.
+
+- `claimAllRevenue`:
+  - Transfers all avaiable royalties from various royalty policies to the royalty vault of the ancestor IP -> Claims all the revenue in each currency token from the ancestor IP's royalty vault to the claimer.
