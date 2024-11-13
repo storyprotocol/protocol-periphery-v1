@@ -82,13 +82,11 @@ interface IGroupingWorkflows {
     /// @notice Collect royalties for the entire group and distribute the rewards to each member IP's royalty vault
     /// @param groupIpId The ID of the group IP.
     /// @param currencyTokens The addresses of the currency (revenue) tokens to claim.
-    /// @param groupSnapshotIds The IDs of the snapshots to collect royalties on.
     /// @param memberIpIds The IDs of the member IPs to distribute the rewards to.
     /// @return collectedRoyalties The amounts of royalties collected for each currency token.
     function collectRoyaltiesAndClaimReward(
         address groupIpId,
         address[] calldata currencyTokens,
-        uint256[] calldata groupSnapshotIds,
         address[] calldata memberIpIds
     ) external returns (uint256[] memory collectedRoyalties);
 }
