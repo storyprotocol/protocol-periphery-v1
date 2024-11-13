@@ -42,208 +42,129 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
         __UUPSUpgradeable_init();
     }
 
-    /// @notice Transfers royalties from royalty policy to the ancestor IP's royalty vault, takes a snapshot,
-    /// and claims revenue on that snapshot for each specified currency token.
+    /// @notice Transfers royalties from royalty policy to the ancestor IP's royalty vault, and claims revenue
+    /// for each specified currency token.
     /// @param ancestorIpId The address of the ancestor IP.
     /// @param claimer The address of the claimer of the revenue tokens (must be a royalty token holder).
-    /// @param royaltyClaimDetails The details of the royalty claim from child IPs,
-    /// see {IRoyaltyWorkflows-RoyaltyClaimDetails}.
-    /// @return snapshotId The ID of the snapshot taken.
+    /// @param childIpIds The addresses of the child IPs.
+    /// @param royaltyPolicies The addresses of the royalty policies.
+    /// @param currencyTokens The addresses of the currency (revenue) tokens to claim.
+    /// @param amounts The amounts of currency (revenue) tokens to claim.
     /// @return amountsClaimed The amount of revenue claimed for each currency token.
-    function transferToVaultAndSnapshotAndClaimByTokenBatch(
+    function transferToVaultAndClaimByTokenBatch(
         address ancestorIpId,
         address claimer,
-        RoyaltyClaimDetails[] calldata royaltyClaimDetails
-    ) external returns (uint256 snapshotId, uint256[] memory amountsClaimed) {
+        address[] calldata childIpIds,
+        address[] calldata royaltyPolicies,
+        address[] calldata currencyTokens,
+        uint256[] calldata amounts
+    ) external returns (uint256[] memory amountsClaimed) {
         // Transfers to ancestor's vault an amount of revenue tokens claimable via the given royalty policy
-        for (uint256 i = 0; i < royaltyClaimDetails.length; i++) {
-            IGraphAwareRoyaltyPolicy(royaltyClaimDetails[i].royaltyPolicy).transferToVault({
-                ipId: royaltyClaimDetails[i].childIpId,
+        for (uint256 i = 0; i < childIpIds.length; i++) {
+            IGraphAwareRoyaltyPolicy(royaltyPolicies[i]).transferToVault({
+                ipId: childIpIds[i],
                 ancestorIpId: ancestorIpId,
-                token: royaltyClaimDetails[i].currencyToken,
-                amount: royaltyClaimDetails[i].amount
+                token: currencyTokens[i],
+                amount: amounts[i]
             });
         }
 
         // Gets the ancestor IP's royalty vault
         IIpRoyaltyVault ancestorIpRoyaltyVault = IIpRoyaltyVault(ROYALTY_MODULE.ipRoyaltyVaults(ancestorIpId));
 
-        // Takes a snapshot of the ancestor IP's royalty vault
-        snapshotId = ancestorIpRoyaltyVault.snapshot();
-
-        // Claims revenue for each specified currency token from the latest snapshot
+        // Claims revenue for each specified currency token
         amountsClaimed = ancestorIpRoyaltyVault.claimRevenueOnBehalfByTokenBatch({
-            snapshotId: snapshotId,
-            tokenList: _getCurrencyTokenList(royaltyClaimDetails),
-            claimer: claimer
+            claimer: claimer,
+            tokenList: _getUniqueCurrencyTokens(currencyTokens)
         });
     }
 
-    /// @notice Transfers royalties to the ancestor IP's royalty vault, takes a snapshot, claims revenue for each
-    /// specified currency token both on the new snapshot and on each specified unclaimed snapshots.
+    /// @notice Claims all revenue for each specified currency token.
     /// @param ancestorIpId The address of the ancestor IP.
     /// @param claimer The address of the claimer of the revenue tokens (must be a royalty token holder).
-    /// @param unclaimedSnapshotIds The IDs of unclaimed snapshots to include in the claim.
-    /// @param royaltyClaimDetails The details of the royalty claim from child IPs,
-    /// see {IRoyaltyWorkflows-RoyaltyClaimDetails}.
-    /// @return snapshotId The ID of the snapshot taken.
-    /// @return amountsClaimed The amounts of revenue claimed for each currency token.
-    function transferToVaultAndSnapshotAndClaimBySnapshotBatch(
+    /// @param childIpIds The addresses of the child IPs.
+    /// @param royaltyPolicies The addresses of the royalty policies.
+    /// @param currencyTokens The addresses of the currency (revenue) tokens to claim.
+    /// @return amountsClaimed The amount of revenue claimed for each currency token.
+    function claimAllRevenue(
         address ancestorIpId,
         address claimer,
-        uint256[] calldata unclaimedSnapshotIds,
-        RoyaltyClaimDetails[] calldata royaltyClaimDetails
-    ) external returns (uint256 snapshotId, uint256[] memory amountsClaimed) {
-        // Transfers to ancestor's vault an amount of revenue tokens claimable via the given royalty policy
-        for (uint256 i = 0; i < royaltyClaimDetails.length; i++) {
-            IGraphAwareRoyaltyPolicy(royaltyClaimDetails[i].royaltyPolicy).transferToVault({
-                ipId: royaltyClaimDetails[i].childIpId,
+        address[] calldata childIpIds,
+        address[] calldata royaltyPolicies,
+        address[] calldata currencyTokens
+    ) external returns (uint256[] memory amountsClaimed) {
+        for (uint256 i = 0; i < childIpIds.length; i++) {
+            // Gets the total lifetime revenue tokens received for a given IP asset
+            uint256 totalTokenReceivedByChild = ROYALTY_MODULE.totalRevenueTokensReceived({
+                ipId: childIpIds[i],
+                token: currencyTokens[i]
+            });
+
+            // Gets the total lifetime revenue tokens transferred to a vault from a descendant IP via the policy
+            uint256 totalTokenTransferredToAncestor = IGraphAwareRoyaltyPolicy(royaltyPolicies[i]).getTransferredTokens({
+                ipId: childIpIds[i],
                 ancestorIpId: ancestorIpId,
-                token: royaltyClaimDetails[i].currencyToken,
-                amount: royaltyClaimDetails[i].amount
+                token: currencyTokens[i]
+            });
+
+            uint32 ancestorPercentage = IGraphAwareRoyaltyPolicy(royaltyPolicies[i]).getPolicyRoyalty({
+                ipId: childIpIds[i],
+                ancestorIpId: ancestorIpId
+            });
+
+            // Transfer all available revenue tokens to the ancestor's vault
+            IGraphAwareRoyaltyPolicy(royaltyPolicies[i]).transferToVault({
+                ipId: childIpIds[i],
+                ancestorIpId: ancestorIpId,
+                token: currencyTokens[i],
+                amount: ((totalTokenReceivedByChild * ancestorPercentage) / ROYALTY_MODULE.maxPercent()) -
+                    totalTokenTransferredToAncestor
             });
         }
 
         // Gets the ancestor IP's royalty vault
         IIpRoyaltyVault ancestorIpRoyaltyVault = IIpRoyaltyVault(ROYALTY_MODULE.ipRoyaltyVaults(ancestorIpId));
 
-        // Takes a snapshot of the ancestor IP's royalty vault
-        snapshotId = ancestorIpRoyaltyVault.snapshot();
-
-        address[] memory currencyTokens = _getCurrencyTokenList(royaltyClaimDetails);
-
-        // Claims revenue for each specified currency token from the latest snapshot
+        // Claims revenue for each specified currency token
         amountsClaimed = ancestorIpRoyaltyVault.claimRevenueOnBehalfByTokenBatch({
-            snapshotId: snapshotId,
-            tokenList: currencyTokens,
-            claimer: claimer
+            claimer: claimer,
+            tokenList: _getUniqueCurrencyTokens(currencyTokens)
         });
-
-        // Claims revenue for each specified currency token from the unclaimed snapshots
-        for (uint256 i = 0; i < currencyTokens.length; i++) {
-            try
-                ancestorIpRoyaltyVault.claimRevenueOnBehalfBySnapshotBatch({
-                    snapshotIds: unclaimedSnapshotIds,
-                    token: currencyTokens[i],
-                    claimer: claimer
-                })
-            returns (uint256 claimedAmount) {
-                amountsClaimed[i] += claimedAmount;
-            } catch (bytes memory reason) {
-                // If the error is not IpRoyaltyVault__NoClaimableTokens, revert with the original error
-                if (CoreErrors.IpRoyaltyVault__NoClaimableTokens.selector != bytes4(reason)) {
-                    assembly {
-                        revert(add(reason, 32), mload(reason))
-                    }
-                }
-            }
-        }
     }
 
-    /// @notice Takes a snapshot of the IP's royalty vault and claims revenue on that snapshot for each
-    /// specified currency token.
-    /// @param ipId The address of the IP.
-    /// @param claimer The address of the claimer of the revenue tokens (must be a royalty token holder).
-    /// @param currencyTokens The addresses of the currency (revenue) tokens to claim.
-    /// @return snapshotId The ID of the snapshot taken.
-    /// @return amountsClaimed The amounts of revenue claimed for each currency token.
-    function snapshotAndClaimByTokenBatch(
-        address ipId,
-        address claimer,
+    /// @notice Returns an array of unique currency token addresses, filtering out duplicates.
+    /// @param currencyTokens The addresses of the currency (revenue) tokens to filter.
+    /// @return uniqueCurrencyTokens An array containing only unique currency token addresses.
+    function _getUniqueCurrencyTokens(
         address[] calldata currencyTokens
-    ) external returns (uint256 snapshotId, uint256[] memory amountsClaimed) {
-        // Gets the IP's royalty vault
-        IIpRoyaltyVault ipRoyaltyVault = IIpRoyaltyVault(ROYALTY_MODULE.ipRoyaltyVaults(ipId));
-
-        // Claims revenue for each specified currency token from the latest snapshot
-        snapshotId = ipRoyaltyVault.snapshot();
-        amountsClaimed = ipRoyaltyVault.claimRevenueOnBehalfByTokenBatch({
-            snapshotId: snapshotId,
-            tokenList: currencyTokens,
-            claimer: claimer
-        });
-    }
-
-    /// @notice Takes a snapshot of the IP's royalty vault and claims revenue for each specified currency token
-    /// both on the new snapshot and on each specified unclaimed snapshot.
-    /// @param ipId The address of the IP.
-    /// @param claimer The address of the claimer of the revenue tokens (must be a royalty token holder).
-    /// @param unclaimedSnapshotIds The IDs of unclaimed snapshots to include in the claim.
-    /// @param currencyTokens The addresses of the currency (revenue) tokens to claim.
-    /// @return snapshotId The ID of the snapshot taken.
-    /// @return amountsClaimed The amounts of revenue claimed for each currency token.
-    function snapshotAndClaimBySnapshotBatch(
-        address ipId,
-        address claimer,
-        uint256[] calldata unclaimedSnapshotIds,
-        address[] calldata currencyTokens
-    ) external returns (uint256 snapshotId, uint256[] memory amountsClaimed) {
-        // Gets the IP's royalty vault
-        IIpRoyaltyVault ipRoyaltyVault = IIpRoyaltyVault(ROYALTY_MODULE.ipRoyaltyVaults(ipId));
-
-        // Claims revenue for each specified currency token from the latest snapshot
-        snapshotId = ipRoyaltyVault.snapshot();
-        amountsClaimed = ipRoyaltyVault.claimRevenueOnBehalfByTokenBatch({
-            snapshotId: snapshotId,
-            tokenList: currencyTokens,
-            claimer: claimer
-        });
-
-        // Claims revenue for each specified currency token from the unclaimed snapshots
-        for (uint256 i = 0; i < currencyTokens.length; i++) {
-            try
-                ipRoyaltyVault.claimRevenueOnBehalfBySnapshotBatch({
-                    snapshotIds: unclaimedSnapshotIds,
-                    token: currencyTokens[i],
-                    claimer: claimer
-                })
-            returns (uint256 claimedAmount) {
-                amountsClaimed[i] += claimedAmount;
-            } catch (bytes memory reason) {
-                // If the error is not IpRoyaltyVault__NoClaimableTokens, revert with the original error
-                if (CoreErrors.IpRoyaltyVault__NoClaimableTokens.selector != bytes4(reason)) {
-                    assembly {
-                        revert(add(reason, 32), mload(reason))
-                    }
-                }
-            }
-        }
-    }
-
-    /// @dev Extracts all unique currency token addresses from an array of RoyaltyClaimDetails.
-    /// @param royaltyClaimDetails The details of the royalty claim from child IPs,
-    /// see {IRoyaltyWorkflows-RoyaltyClaimDetails}.
-    /// @return currencyTokenList An array of unique currency token addresses extracted from `royaltyClaimDetails`.
-    function _getCurrencyTokenList(
-        RoyaltyClaimDetails[] calldata royaltyClaimDetails
-    ) private pure returns (address[] memory currencyTokenList) {
-        uint256 length = royaltyClaimDetails.length;
+    ) internal pure returns (address[] memory uniqueCurrencyTokens){
+        uint256 length = currencyTokens.length;
         address[] memory tempUniqueTokenList = new address[](length);
         uint256 uniqueCount = 0;
 
         for (uint256 i = 0; i < length; i++) {
-            address currencyToken = royaltyClaimDetails[i].currencyToken;
+            address currencyToken = currencyTokens[i];
             bool isDuplicate = false;
 
-            // Check if `currencyToken` already in `tempUniqueTokenList`
+            // Check if `currencyToken` already exists in `tempUniqueTokenList`
             for (uint256 j = 0; j < uniqueCount; j++) {
                 if (tempUniqueTokenList[j] == currencyToken) {
-                    // set the `isDuplicate` flag if `currencyToken` already in `tempUniqueTokenList`
                     isDuplicate = true;
                     break;
                 }
             }
 
-            // Add `currencyToken` to `tempUniqueTokenList` if it's not already in `tempUniqueTokenList`
+            // Add `currencyToken` to `tempUniqueTokenList` if it's unique
             if (!isDuplicate) {
                 tempUniqueTokenList[uniqueCount] = currencyToken;
                 uniqueCount++;
             }
         }
 
-        currencyTokenList = new address[](uniqueCount);
+        // Populate `uniqueCurrencyTokens` array with unique tokens
+        uniqueCurrencyTokens = new address[](uniqueCount);
         for (uint256 i = 0; i < uniqueCount; i++) {
-            currencyTokenList[i] = tempUniqueTokenList[i];
+            uniqueCurrencyTokens[i] = tempUniqueTokenList[i];
         }
     }
 

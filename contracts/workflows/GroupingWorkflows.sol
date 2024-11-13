@@ -288,19 +288,18 @@ contract GroupingWorkflows is
     /// @notice Collect royalties for the entire group and distribute the rewards to each member IP's royalty vault
     /// @param groupIpId The ID of the group IP.
     /// @param currencyTokens The addresses of the currency (revenue) tokens to claim.
-    /// @param groupSnapshotIds The IDs of the snapshots to collect royalties on.
     /// @param memberIpIds The IDs of the member IPs to distribute the rewards to.
     /// @return collectedRoyalties The amounts of royalties collected for each currency token.
     function collectRoyaltiesAndClaimReward(
         address groupIpId,
         address[] calldata currencyTokens,
-        uint256[] calldata groupSnapshotIds,
         address[] calldata memberIpIds
     ) external returns (uint256[] memory collectedRoyalties) {
         (address groupLicenseTemplate, uint256 groupLicenseTermsId) = LICENSE_REGISTRY.getAttachedLicenseTerms(
             groupIpId,
             0
         );
+
         for (uint256 i = 0; i < memberIpIds.length; i++) {
             // check if given member IPs already have a royalty vault
             if (ROYALTY_MODULE.ipRoyaltyVaults(memberIpIds[i]) == address(0)) {
@@ -320,7 +319,7 @@ contract GroupingWorkflows is
         collectedRoyalties = new uint256[](currencyTokens.length);
         for (uint256 i = 0; i < currencyTokens.length; i++) {
             if (currencyTokens[i] == address(0)) revert Errors.GroupingWorkflows__ZeroAddressParam();
-            collectedRoyalties[i] = GROUPING_MODULE.collectRoyalties(groupIpId, currencyTokens[i], groupSnapshotIds);
+            collectedRoyalties[i] = GROUPING_MODULE.collectRoyalties(groupIpId, currencyTokens[i]);
             GROUPING_MODULE.claimReward(groupIpId, currencyTokens[i], memberIpIds);
         }
     }
