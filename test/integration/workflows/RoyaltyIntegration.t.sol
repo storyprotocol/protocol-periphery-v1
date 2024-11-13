@@ -38,77 +38,111 @@ contract RoyaltyIntegration is BaseIntegration {
 
     uint256 internal amountLicenseTokensToMint = 1;
 
-    uint256[] internal unclaimedSnapshotIds;
-
-    /// @notice This test can only be run when royalty module's snapshot interval is 0.
     /// @dev To use, run the following command:
     /// forge script test/integration/workflows/RoyaltyIntegration.t.sol:RoyaltyIntegration \
     /// --rpc-url=$TESTNET_URL -vvvv --broadcast --priority-gas-price=1 --legacy
     function run() public override {
         super.run();
         _beginBroadcast();
-        if (IVaultController(royaltyModuleAddr).snapshotInterval() != 0) {
-            console2.log("RoyaltyIntegration did not run: snapshot interval is not zero");
-            return;
-        }
         _setupTest();
-        _test_RoyaltyIntegration_transferToVaultAndSnapshotAndClaimByTokenBatch();
-        _test_RoyaltyIntegration_snapshotAndClaimByTokenBatch();
-        _test_RoyaltyIntegration_transferToVaultAndSnapshotAndClaimBySnapshotBatch();
-        _test_RoyaltyIntegration_snapshotAndClaimBySnapshotBatch();
+        _test_RoyaltyIntegration_transferToVaultAndClaimByTokenBatch();
+        _test_RoyaltyIntegration_claimAllRevenue();
         _endBroadcast();
     }
 
-    function _test_RoyaltyIntegration_transferToVaultAndSnapshotAndClaimByTokenBatch()
+    function _test_RoyaltyIntegration_transferToVaultAndClaimByTokenBatch()
         private
-        logTest("test_RoyaltyIntegration_transferToVaultAndSnapshotAndClaimByTokenBatch")
+        logTest("test_RoyaltyIntegration_transferToVaultAndClaimByTokenBatch")
     {
-        // setup IP graph with no snapshot
-        uint256 numSnapshots = 0;
-        _setupIpGraph(numSnapshots);
+        // setup IP graph
+        _setupIpGraph();
 
-        IRoyaltyWorkflows.RoyaltyClaimDetails[] memory claimDetails = new IRoyaltyWorkflows.RoyaltyClaimDetails[](4);
-        claimDetails[0] = IRoyaltyWorkflows.RoyaltyClaimDetails({
-            childIpId: childIpIdA,
-            royaltyPolicy: royaltyPolicyLRPAddr,
-            currencyToken: address(StoryUSD),
-            amount: (defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent() // 1000 * 10% = 100
+        address[] memory childIpIds = new address[](3);
+        address[] memory royaltyPolicies = new address[](3);
+        address[] memory currencyTokens = new address[](3);
+        uint256[] memory amounts = new uint256[](3);
+
+        childIpIds[0] = childIpIdA;
+        royaltyPolicies[0] = royaltyPolicyLRPAddr;
+        currencyTokens[0] = address(StoryUSD);
+        amounts[0] = 10 ether;
+
+        childIpIds[1] = childIpIdB;
+        royaltyPolicies[1] = royaltyPolicyLRPAddr;
+        currencyTokens[1] = address(StoryUSD);
+        amounts[1] = 10 ether;
+
+        childIpIds[2] = grandChildIpId;
+        royaltyPolicies[2] = royaltyPolicyLRPAddr;
+        currencyTokens[2] = address(StoryUSD);
+        amounts[2] = 2 ether;
+
+        childIpIds[3] = childIpIdC;
+        royaltyPolicies[3] = royaltyPolicyLAPAddr;
+        currencyTokens[3] = address(StoryUSD);
+        amounts[3] = 10 ether;
+
+        uint256 claimerBalanceBefore = StoryUSD.balanceOf(ancestorIpId);
+
+        uint256[] memory amountsClaimed = royaltyWorkflows.transferToVaultAndClaimByTokenBatch({
+            ancestorIpId: ancestorIpId,
+            claimer: ancestorIpId,
+            childIpIds: childIpIds,
+            royaltyPolicies: royaltyPolicies,
+            currencyTokens: currencyTokens,
+            amounts: amounts
         });
 
-        claimDetails[1] = IRoyaltyWorkflows.RoyaltyClaimDetails({
-            childIpId: childIpIdB,
-            royaltyPolicy: royaltyPolicyLRPAddr,
-            currencyToken: address(StoryUSD),
-            amount: (defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent() // 1000 * 10% = 100
+        uint256 claimerBalanceAfter = StoryUSD.balanceOf(ancestorIpId);
+
+        assertEq(amountsClaimed.length, 1); // there is 1 currency token
+        assertEq(claimerBalanceAfter - claimerBalanceBefore, amountsClaimed[0]);
+        assertEq(
+            claimerBalanceAfter - claimerBalanceBefore,
+            defaultMintingFeeA + defaultMintingFeeA + // 1000 + 1000 from minting fee of childIpA and childIpB
+                10 ether + // 10 currency tokens from childIpA transferred to vault
+                10 ether + // 10 currency tokens from childIpB transferred to vault
+                2 ether + // 2 currency tokens from grandChildIp transferred to vault
+                10 ether // 10 currency tokens from childIpC transferred to vault
+        );
+    }
+
+    function _test_RoyaltyIntegration_claimAllRevenue() private logTest("test_RoyaltyIntegration_claimAllRevenue") {
+        // setup IP graph
+        _setupIpGraph();
+
+        address[] memory childIpIds = new address[](3);
+        address[] memory royaltyPolicies = new address[](3);
+        address[] memory currencyTokens = new address[](3);
+
+        childIpIds[0] = childIpIdA;
+        royaltyPolicies[0] = royaltyPolicyLRPAddr;
+        currencyTokens[0] = address(StoryUSD);
+
+        childIpIds[1] = childIpIdB;
+        royaltyPolicies[1] = royaltyPolicyLRPAddr;
+        currencyTokens[1] = address(StoryUSD);
+
+        childIpIds[2] = grandChildIpId;
+        royaltyPolicies[2] = royaltyPolicyLRPAddr;
+        currencyTokens[2] = address(StoryUSD);
+
+        childIpIds[3] = childIpIdC;
+        royaltyPolicies[3] = royaltyPolicyLAPAddr;
+        currencyTokens[3] = address(StoryUSD);
+
+        uint256 claimerBalanceBefore = StoryUSD.balanceOf(ancestorIpId);
+
+        uint256[] memory amountsClaimed = royaltyWorkflows.claimAllRevenue({
+            ancestorIpId: ancestorIpId,
+            claimer: ancestorIpId,
+            childIpIds: childIpIds,
+            royaltyPolicies: royaltyPolicies,
+            currencyTokens: currencyTokens
         });
 
-        claimDetails[2] = IRoyaltyWorkflows.RoyaltyClaimDetails({
-            childIpId: grandChildIpId,
-            royaltyPolicy: royaltyPolicyLRPAddr,
-            currencyToken: address(StoryUSD),
-            amount: (((defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent()) *
-                defaultCommRevShareA) / royaltyModule.maxPercent() // 1000 * 10% * 10% * 2 = 20
-        });
+        uint256 claimerBalanceAfter = StoryUSD.balanceOf(ancestorIpId);
 
-        claimDetails[3] = IRoyaltyWorkflows.RoyaltyClaimDetails({
-            childIpId: childIpIdC,
-            royaltyPolicy: royaltyPolicyLAPAddr,
-            currencyToken: address(StoryUSD),
-            amount: (defaultMintingFeeC * defaultCommRevShareC) / royaltyModule.maxPercent() // 500 * 20% = 100
-        });
-
-        uint256 claimerBalanceBefore = StoryUSD.balanceOf(testSender);
-
-        (uint256 snapshotId, uint256[] memory amountsClaimed) = royaltyWorkflows
-            .transferToVaultAndSnapshotAndClaimByTokenBatch({
-                ancestorIpId: ancestorIpId,
-                claimer: testSender,
-                royaltyClaimDetails: claimDetails
-            });
-
-        uint256 claimerBalanceAfter = StoryUSD.balanceOf(testSender);
-
-        assertEq(snapshotId, numSnapshots + 1);
         assertEq(amountsClaimed.length, 1); // there is 1 currency token
         assertEq(claimerBalanceAfter - claimerBalanceBefore, amountsClaimed[0]);
         assertEq(
@@ -124,138 +158,6 @@ contract RoyaltyIntegration is BaseIntegration {
                 defaultMintingFeeC +
                 (defaultMintingFeeC * defaultCommRevShareC) /
                 royaltyModule.maxPercent() // 500 from from minting fee of childIpC,500 * 20% = 100 royalty from childIpC
-        );
-    }
-
-    function _test_RoyaltyIntegration_transferToVaultAndSnapshotAndClaimBySnapshotBatch()
-        private
-        logTest("test_RoyaltyIntegration_transferToVaultAndSnapshotAndClaimBySnapshotBatch")
-    {
-        // setup IP graph and takes 3 snapshots of ancestor IP's royalty vault
-        uint256 numSnapshots = 3;
-        _setupIpGraph(numSnapshots);
-
-        IRoyaltyWorkflows.RoyaltyClaimDetails[] memory claimDetails = new IRoyaltyWorkflows.RoyaltyClaimDetails[](4);
-        claimDetails[0] = IRoyaltyWorkflows.RoyaltyClaimDetails({
-            childIpId: childIpIdA,
-            royaltyPolicy: royaltyPolicyLRPAddr,
-            currencyToken: address(StoryUSD),
-            amount: (defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent() // 1000 * 10% = 100
-        });
-
-        claimDetails[1] = IRoyaltyWorkflows.RoyaltyClaimDetails({
-            childIpId: childIpIdB,
-            royaltyPolicy: royaltyPolicyLRPAddr,
-            currencyToken: address(StoryUSD),
-            amount: (defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent() // 1000 * 10% = 100
-        });
-
-        claimDetails[2] = IRoyaltyWorkflows.RoyaltyClaimDetails({
-            childIpId: grandChildIpId,
-            royaltyPolicy: royaltyPolicyLRPAddr,
-            currencyToken: address(StoryUSD),
-            amount: (((defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent()) *
-                defaultCommRevShareA) / royaltyModule.maxPercent() // 1000 * 10% * 10% = 10
-        });
-
-        claimDetails[3] = IRoyaltyWorkflows.RoyaltyClaimDetails({
-            childIpId: childIpIdC,
-            royaltyPolicy: royaltyPolicyLAPAddr,
-            currencyToken: address(StoryUSD),
-            amount: (defaultMintingFeeC * defaultCommRevShareC) / royaltyModule.maxPercent() // 500 * 20% = 100
-        });
-
-        uint256 claimerBalanceBefore = StoryUSD.balanceOf(testSender);
-
-        (uint256 snapshotId, uint256[] memory amountsClaimed) = royaltyWorkflows
-            .transferToVaultAndSnapshotAndClaimBySnapshotBatch({
-                ancestorIpId: ancestorIpId,
-                claimer: testSender,
-                unclaimedSnapshotIds: unclaimedSnapshotIds,
-                royaltyClaimDetails: claimDetails
-            });
-
-        uint256 claimerBalanceAfter = StoryUSD.balanceOf(testSender);
-
-        assertEq(snapshotId, numSnapshots + 1);
-        assertEq(amountsClaimed.length, 1); // there is 1 currency token
-        assertEq(claimerBalanceAfter - claimerBalanceBefore, amountsClaimed[0]);
-        assertEq(
-            claimerBalanceAfter - claimerBalanceBefore,
-            defaultMintingFeeA +
-                defaultMintingFeeA + // 1000 + 1000 from minting fee of childIpA and childIpB
-                (defaultMintingFeeA * defaultCommRevShareA) /
-                royaltyModule.maxPercent() + // 1000 * 10% = 100 royalty from childIpA
-                (defaultMintingFeeA * defaultCommRevShareA) /
-                royaltyModule.maxPercent() + // 1000 * 10% = 100 royalty from childIpB
-                (((defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent()) * defaultCommRevShareA) /
-                royaltyModule.maxPercent() + // 1000 * 10% * 10% = 10 royalty from grandChildIp
-                defaultMintingFeeC +
-                (defaultMintingFeeC * defaultCommRevShareC) /
-                royaltyModule.maxPercent() // 500 from from minting fee of childIpC, 500 * 20% = 100 royalty from childIpC
-        );
-    }
-
-    function _test_RoyaltyIntegration_snapshotAndClaimByTokenBatch()
-        private
-        logTest("test_RoyaltyIntegration_snapshotAndClaimByTokenBatch")
-    {
-        // setup IP graph with no snapshot
-        uint256 numSnapshots = 0;
-        _setupIpGraph(numSnapshots);
-
-        address[] memory currencyTokens = new address[](1);
-        currencyTokens[0] = address(StoryUSD);
-
-        uint256 claimerBalanceBefore = StoryUSD.balanceOf(testSender);
-
-        (uint256 snapshotId, uint256[] memory amountsClaimed) = royaltyWorkflows.snapshotAndClaimByTokenBatch({
-            ipId: ancestorIpId,
-            claimer: testSender,
-            currencyTokens: currencyTokens
-        });
-
-        uint256 claimerBalanceAfter = StoryUSD.balanceOf(testSender);
-
-        assertEq(snapshotId, numSnapshots + 1);
-        assertEq(amountsClaimed.length, 1); // there is 1 currency token
-        assertEq(claimerBalanceAfter - claimerBalanceBefore, amountsClaimed[0]);
-        assertEq(
-            claimerBalanceAfter - claimerBalanceBefore,
-            // 1000 + 1000 + 500 from minting fee of childIpA, childIpB, and childIpC
-            defaultMintingFeeA + defaultMintingFeeA + defaultMintingFeeC
-        );
-    }
-
-    function _test_RoyaltyIntegration_snapshotAndClaimBySnapshotBatch()
-        private
-        logTest("test_RoyaltyIntegration_snapshotAndClaimBySnapshotBatch")
-    {
-        // setup IP graph and takes 1 snapshot of ancestor IP's royalty vault
-        uint256 numSnapshots = 1;
-        _setupIpGraph(numSnapshots);
-
-        address[] memory currencyTokens = new address[](1);
-        currencyTokens[0] = address(StoryUSD);
-
-        uint256 claimerBalanceBefore = StoryUSD.balanceOf(testSender);
-
-        (uint256 snapshotId, uint256[] memory amountsClaimed) = royaltyWorkflows.snapshotAndClaimBySnapshotBatch({
-            ipId: ancestorIpId,
-            claimer: testSender,
-            unclaimedSnapshotIds: unclaimedSnapshotIds,
-            currencyTokens: currencyTokens
-        });
-
-        uint256 claimerBalanceAfter = StoryUSD.balanceOf(testSender);
-
-        assertEq(snapshotId, numSnapshots + 1);
-        assertEq(amountsClaimed.length, 1); // there is 1 currency token
-        assertEq(claimerBalanceAfter - claimerBalanceBefore, amountsClaimed[0]);
-        assertEq(
-            claimerBalanceAfter - claimerBalanceBefore,
-            // 1000 + 1000 + 500 from minting fee of childIpA, childIpB, and childIpC
-            defaultMintingFeeA + defaultMintingFeeA + defaultMintingFeeC
         );
     }
 
@@ -282,8 +184,7 @@ contract RoyaltyIntegration is BaseIntegration {
     /// - `childIpB`: It has licenseTermsA attached, has 1 parent `ancestorIp`, and has 1 grandchild `grandChildIp`.
     /// - `childIpC`: It has licenseTermsC attached, has 1 parent `ancestorIp`, and has 1 grandchild `grandChildIp`.
     /// - `grandChildIp`: It has all 3 license terms attached. It has 3 parents and 1 grandparent IPs.
-    /// @param numSnapshots The number of snapshots to take of the ancestor IP's royalty vault.
-    function _setupIpGraph(uint256 numSnapshots) private {
+    function _setupIpGraph() private {
         uint256 ancestorTokenId = spgNftContract.mint(testSender, "", bytes32(0), true);
         uint256 childTokenIdA = spgNftContract.mint(testSender, "", bytes32(0), true);
         uint256 childTokenIdB = spgNftContract.mint(testSender, "", bytes32(0), true);
@@ -302,8 +203,6 @@ contract RoyaltyIntegration is BaseIntegration {
             deadline: 0,
             signature: ""
         });
-
-        unclaimedSnapshotIds = new uint256[](numSnapshots);
 
         // register ancestor IP
         ancestorIpId = ipAssetRegistry.register(block.chainid, address(spgNftContract), ancestorTokenId);
@@ -396,29 +295,6 @@ contract RoyaltyIntegration is BaseIntegration {
             vm.label(childIpIdA, "ChildIpA");
         }
 
-        IpRoyaltyVault ancestorIpRoyaltyVault = IpRoyaltyVault(royaltyModule.ipRoyaltyVaults(ancestorIpId));
-
-        // transfer all ancestor royalties tokens to the claimer of the ancestor IP
-        {
-            bytes memory data = abi.encodeWithSelector(
-                ancestorIpRoyaltyVault.transfer.selector,
-                testSender,
-                ancestorIpRoyaltyVault.totalSupply()
-            );
-
-            IIPAccount(payable(ancestorIpId)).execute({ to: address(ancestorIpRoyaltyVault), value: 0, data: data });
-        }
-
-        // takes a snapshot of the ancestor IP's royalty vault and populates unclaimedSnapshotIds
-        // In this snapshot:
-        // - admin has all the royalty tokens from ancestorIp
-        // - ancestorIp's royalty vault has `defaultMintingFeeA` tokens from alice for registering childIpA
-        // as derivative of ancestorIp under Terms A
-        if (numSnapshots >= 1) {
-            unclaimedSnapshotIds[0] = ancestorIpRoyaltyVault.snapshot();
-            numSnapshots--;
-        }
-
         // register childIpB as derivative of ancestorIp under Terms A
         {
             (bytes memory sigRegister, , ) = _getSetPermissionSigForPeriphery({
@@ -459,16 +335,6 @@ contract RoyaltyIntegration is BaseIntegration {
             vm.label(childIpIdB, "ChildIpB");
         }
 
-        // takes a snapshot of the ancestor IP's royalty vault and populates unclaimedSnapshotIds
-        // In this snapshot:
-        // - admin has all the royalty tokens from ancestorIp
-        // - ancestorIp's royalty vault has `defaultMintingFeeA` tokens from bob for registering childIpB
-        // as derivative of ancestorIp under Terms A
-        if (numSnapshots >= 1) {
-            unclaimedSnapshotIds[1] = IpRoyaltyVault(royaltyModule.ipRoyaltyVaults(ancestorIpId)).snapshot();
-            numSnapshots--;
-        }
-
         /// register childIpC as derivative of ancestorIp under Terms C
         {
             (bytes memory sigRegister, , ) = _getSetPermissionSigForPeriphery({
@@ -507,16 +373,6 @@ contract RoyaltyIntegration is BaseIntegration {
                 })
             });
             vm.label(childIpIdC, "ChildIpC");
-        }
-
-        // takes a snapshot of the ancestor IP's royalty vault and populates unclaimedSnapshotIds
-        // In this snapshot:
-        // - admin has all the royalty tokens from ancestorIp
-        // - ancestorIp's royalty vault has `defaultMintingFeeC` tokens from carl for registering childIpC
-        // as derivative of ancestorIp under Terms C
-        if (numSnapshots >= 1) {
-            unclaimedSnapshotIds[2] = IpRoyaltyVault(royaltyModule.ipRoyaltyVaults(ancestorIpId)).snapshot();
-            numSnapshots--;
         }
 
         // register grandChildIp as derivative for childIp A and B under Terms A

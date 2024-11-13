@@ -3,13 +3,10 @@ pragma solidity 0.8.26;
 
 // external
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
-import { Errors as CoreErrors } from "@storyprotocol/core/lib/Errors.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
-import { IpRoyaltyVault } from "@storyprotocol/core/modules/royalty/policies/IpRoyaltyVault.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 
 // contracts
-import { IRoyaltyWorkflows } from "../../contracts/interfaces/workflows/IRoyaltyWorkflows.sol";
 import { WorkflowStructs } from "../../contracts/lib/WorkflowStructs.sol";
 
 // test
@@ -37,64 +34,108 @@ contract RoyaltyWorkflowsTest is BaseTest {
 
     uint256 internal amountLicenseTokensToMint = 1;
 
-    uint256[] internal unclaimedSnapshotIds;
-
     function setUp() public override {
         super.setUp();
 
         _setupCurrencyTokens();
     }
 
-    function test_RoyaltyWorkflows_transferToVaultAndSnapshotAndClaimByTokenBatch() public {
-        // setup IP graph with no snapshot
-        uint256 numSnapshots = 0;
-        _setupIpGraph(numSnapshots);
+    function test_RoyaltyWorkflows_transferToVaultAndClaimByTokenBatch() public {
+        _setupIpGraph();
 
-        IRoyaltyWorkflows.RoyaltyClaimDetails[] memory claimDetails = new IRoyaltyWorkflows.RoyaltyClaimDetails[](4);
-        claimDetails[0] = IRoyaltyWorkflows.RoyaltyClaimDetails({
-            childIpId: childIpIdA,
-            royaltyPolicy: address(royaltyPolicyLRP),
-            currencyToken: address(mockTokenA),
-            amount: (defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent() // 1000 * 10% = 100
+        address[] memory childIpIds = new address[](4);
+        address[] memory royaltyPolicies = new address[](4);
+        address[] memory currencyTokens = new address[](4);
+        uint256[] memory amounts = new uint256[](4);
+
+        childIpIds[0] = childIpIdA;
+        royaltyPolicies[0] = address(royaltyPolicyLRP);
+        currencyTokens[0] = address(mockTokenA);
+        amounts[0] = 10 ether;
+
+        childIpIds[1] = childIpIdB;
+        royaltyPolicies[1] = address(royaltyPolicyLRP);
+        currencyTokens[1] = address(mockTokenA);
+        amounts[1] = 10 ether;
+
+        childIpIds[2] = grandChildIpId;
+        royaltyPolicies[2] = address(royaltyPolicyLRP);
+        currencyTokens[2] = address(mockTokenA);
+        amounts[2] = 1 ether;
+
+        childIpIds[3] = childIpIdC;
+        royaltyPolicies[3] = address(royaltyPolicyLAP);
+        currencyTokens[3] = address(mockTokenC);
+        amounts[3] = 10 ether;
+
+        uint256 claimerBalanceABefore = mockTokenA.balanceOf(ancestorIpId);
+        uint256 claimerBalanceCBefore = mockTokenC.balanceOf(ancestorIpId);
+
+        uint256[] memory amountsClaimed = royaltyWorkflows.transferToVaultAndClaimByTokenBatch({
+            ancestorIpId: ancestorIpId,
+            claimer: ancestorIpId,
+            childIpIds: childIpIds,
+            royaltyPolicies: royaltyPolicies,
+            currencyTokens: currencyTokens,
+            amounts: amounts
         });
 
-        claimDetails[1] = IRoyaltyWorkflows.RoyaltyClaimDetails({
-            childIpId: childIpIdB,
-            royaltyPolicy: address(royaltyPolicyLRP),
-            currencyToken: address(mockTokenA),
-            amount: (defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent() // 1000 * 10% = 100
+        uint256 claimerBalanceAAfter = mockTokenA.balanceOf(ancestorIpId);
+        uint256 claimerBalanceCAfter = mockTokenC.balanceOf(ancestorIpId);
+
+        assertEq(amountsClaimed.length, 2); // there are 2 currency tokens
+        assertEq(claimerBalanceAAfter - claimerBalanceABefore, amountsClaimed[0]);
+        assertEq(claimerBalanceCAfter - claimerBalanceCBefore, amountsClaimed[1]);
+        assertEq(
+            claimerBalanceAAfter - claimerBalanceABefore,
+            defaultMintingFeeA + defaultMintingFeeA + // 1000 + 1000 from minting fee of childIpA and childIpB
+                10 ether + // 10 currency tokens from childIpA transferred to vault
+                10 ether + // 10 currency tokens from childIpB transferred to vault
+                1 ether // 1 currency token from grandChildIp transferred to vault
+        );
+        assertEq(
+            claimerBalanceCAfter - claimerBalanceCBefore,
+            defaultMintingFeeC + 10 ether // 10 currency tokens from childIpC transferred to vault
+        );
+    }
+
+    function test_RoyaltyWorkflows_claimAllRevenue() public {
+        _setupIpGraph();
+
+        address[] memory childIpIds = new address[](4);
+        address[] memory royaltyPolicies = new address[](4);
+        address[] memory currencyTokens = new address[](4);
+
+        childIpIds[0] = childIpIdA;
+        royaltyPolicies[0] = address(royaltyPolicyLRP);
+        currencyTokens[0] = address(mockTokenA);
+
+        childIpIds[1] = childIpIdB;
+        royaltyPolicies[1] = address(royaltyPolicyLRP);
+        currencyTokens[1] = address(mockTokenA);
+
+        childIpIds[2] = grandChildIpId;
+        royaltyPolicies[2] = address(royaltyPolicyLRP);
+        currencyTokens[2] = address(mockTokenA);
+
+        childIpIds[3] = childIpIdC;
+        royaltyPolicies[3] = address(royaltyPolicyLAP);
+        currencyTokens[3] = address(mockTokenC);
+
+        uint256 claimerBalanceABefore = mockTokenA.balanceOf(ancestorIpId);
+        uint256 claimerBalanceCBefore = mockTokenC.balanceOf(ancestorIpId);
+
+        uint256[] memory amountsClaimed = royaltyWorkflows.claimAllRevenue({
+            ancestorIpId: ancestorIpId,
+            claimer: ancestorIpId,
+            childIpIds: childIpIds,
+            royaltyPolicies: royaltyPolicies,
+            currencyTokens: currencyTokens
         });
 
-        claimDetails[2] = IRoyaltyWorkflows.RoyaltyClaimDetails({
-            childIpId: grandChildIpId,
-            royaltyPolicy: address(royaltyPolicyLRP),
-            currencyToken: address(mockTokenA),
-            amount: (((defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent()) *
-                defaultCommRevShareA) / royaltyModule.maxPercent() // 1000 * 10% * 10% = 10
-            // TODO: should be (1000 * 10% * 10%) * 2 = 20 but MockIPGraph currently only supports single-path calculation
-        });
+        uint256 claimerBalanceAAfter = mockTokenA.balanceOf(ancestorIpId);
+        uint256 claimerBalanceCAfter = mockTokenC.balanceOf(ancestorIpId);
 
-        claimDetails[3] = IRoyaltyWorkflows.RoyaltyClaimDetails({
-            childIpId: childIpIdC,
-            royaltyPolicy: address(royaltyPolicyLAP),
-            currencyToken: address(mockTokenC),
-            amount: (defaultMintingFeeC * defaultCommRevShareC) / royaltyModule.maxPercent() // 500 * 20% = 100
-        });
-
-        uint256 claimerBalanceABefore = mockTokenA.balanceOf(u.admin);
-        uint256 claimerBalanceCBefore = mockTokenC.balanceOf(u.admin);
-
-        (uint256 snapshotId, uint256[] memory amountsClaimed) = royaltyWorkflows
-            .transferToVaultAndSnapshotAndClaimByTokenBatch({
-                ancestorIpId: ancestorIpId,
-                claimer: u.admin,
-                royaltyClaimDetails: claimDetails
-            });
-
-        uint256 claimerBalanceAAfter = mockTokenA.balanceOf(u.admin);
-        uint256 claimerBalanceCAfter = mockTokenC.balanceOf(u.admin);
-
-        assertEq(snapshotId, numSnapshots + 1);
         assertEq(amountsClaimed.length, 2); // there are 2 currency tokens
         assertEq(claimerBalanceAAfter - claimerBalanceABefore, amountsClaimed[0]);
         assertEq(claimerBalanceCAfter - claimerBalanceCBefore, amountsClaimed[1]);
@@ -114,213 +155,6 @@ contract RoyaltyWorkflowsTest is BaseTest {
             claimerBalanceCAfter - claimerBalanceCBefore,
             defaultMintingFeeC + (defaultMintingFeeC * defaultCommRevShareC) / royaltyModule.maxPercent() // 500 from from minting fee of childIpC, 500 * 20% = 100 royalty from childIpC
         );
-    }
-
-    function test_RoyaltyWorkflows_transferToVaultAndSnapshotAndClaimBySnapshotBatch() public {
-        // setup IP graph and takes 3 snapshots of ancestor IP's royalty vault
-        uint256 numSnapshots = 3;
-        _setupIpGraph(numSnapshots);
-
-        IRoyaltyWorkflows.RoyaltyClaimDetails[] memory claimDetails = new IRoyaltyWorkflows.RoyaltyClaimDetails[](4);
-        claimDetails[0] = IRoyaltyWorkflows.RoyaltyClaimDetails({
-            childIpId: childIpIdA,
-            royaltyPolicy: address(royaltyPolicyLRP),
-            currencyToken: address(mockTokenA),
-            amount: (defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent() // 1000 * 10% = 100
-        });
-
-        claimDetails[1] = IRoyaltyWorkflows.RoyaltyClaimDetails({
-            childIpId: childIpIdB,
-            royaltyPolicy: address(royaltyPolicyLRP),
-            currencyToken: address(mockTokenA),
-            amount: (defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent() // 1000 * 10% = 100
-        });
-
-        claimDetails[2] = IRoyaltyWorkflows.RoyaltyClaimDetails({
-            childIpId: grandChildIpId,
-            royaltyPolicy: address(royaltyPolicyLRP),
-            currencyToken: address(mockTokenA),
-            amount: (((defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent()) *
-                defaultCommRevShareA) / royaltyModule.maxPercent() // 1000 * 10% * 10% = 10
-        });
-
-        claimDetails[3] = IRoyaltyWorkflows.RoyaltyClaimDetails({
-            childIpId: childIpIdC,
-            royaltyPolicy: address(royaltyPolicyLAP),
-            currencyToken: address(mockTokenC),
-            amount: (defaultMintingFeeC * defaultCommRevShareC) / royaltyModule.maxPercent() // 500 * 20% = 100
-        });
-
-        uint256 claimerBalanceABefore = mockTokenA.balanceOf(u.admin);
-        uint256 claimerBalanceCBefore = mockTokenC.balanceOf(u.admin);
-
-        (uint256 snapshotId, uint256[] memory amountsClaimed) = royaltyWorkflows
-            .transferToVaultAndSnapshotAndClaimBySnapshotBatch({
-                ancestorIpId: ancestorIpId,
-                claimer: u.admin,
-                unclaimedSnapshotIds: unclaimedSnapshotIds,
-                royaltyClaimDetails: claimDetails
-            });
-
-        uint256 claimerBalanceAAfter = mockTokenA.balanceOf(u.admin);
-        uint256 claimerBalanceCAfter = mockTokenC.balanceOf(u.admin);
-
-        assertEq(snapshotId, numSnapshots + 1);
-        assertEq(amountsClaimed.length, 2); // there are 2 currency tokens
-        assertEq(claimerBalanceAAfter - claimerBalanceABefore, amountsClaimed[0]);
-        assertEq(claimerBalanceCAfter - claimerBalanceCBefore, amountsClaimed[1]);
-        assertEq(
-            claimerBalanceAAfter - claimerBalanceABefore,
-            defaultMintingFeeA +
-                defaultMintingFeeA + // 1000 + 1000 from minting fee of childIpA and childIpB
-                (defaultMintingFeeA * defaultCommRevShareA) /
-                royaltyModule.maxPercent() + // 1000 * 10% = 100 royalty from childIpA
-                (defaultMintingFeeA * defaultCommRevShareA) /
-                royaltyModule.maxPercent() + // 1000 * 10% = 100 royalty from childIpB
-                (((defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent()) * defaultCommRevShareA) /
-                royaltyModule.maxPercent() // 1000 * 10% * 10% = 10 royalty from grandChildIp
-        );
-        assertEq(
-            claimerBalanceCAfter - claimerBalanceCBefore,
-            defaultMintingFeeC + (defaultMintingFeeC * defaultCommRevShareC) / royaltyModule.maxPercent() // 500 from minting fee of childIpC, 500 * 20% = 100 royalty from childIpC
-        );
-    }
-
-    function test_RoyaltyWorkflows_revert_transferToVaultAndSnapshotAndClaimBySnapshotBatch() public {
-        // setup IP graph and takes 3 snapshots of ancestor IP's royalty vault
-        uint256 numSnapshots = 3;
-        _setupIpGraph(numSnapshots);
-
-        IRoyaltyWorkflows.RoyaltyClaimDetails[] memory claimDetails = new IRoyaltyWorkflows.RoyaltyClaimDetails[](4);
-        claimDetails[0] = IRoyaltyWorkflows.RoyaltyClaimDetails({
-            childIpId: childIpIdA,
-            royaltyPolicy: address(royaltyPolicyLRP),
-            currencyToken: address(mockTokenA),
-            amount: (defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent() // 1000 * 10% = 100
-        });
-
-        claimDetails[1] = IRoyaltyWorkflows.RoyaltyClaimDetails({
-            childIpId: childIpIdB,
-            royaltyPolicy: address(royaltyPolicyLRP),
-            currencyToken: address(mockTokenA),
-            amount: (defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent() // 1000 * 10% = 100
-        });
-
-        claimDetails[2] = IRoyaltyWorkflows.RoyaltyClaimDetails({
-            childIpId: grandChildIpId,
-            royaltyPolicy: address(royaltyPolicyLRP),
-            currencyToken: address(mockTokenA),
-            amount: (((defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent()) *
-                defaultCommRevShareA) / royaltyModule.maxPercent() // 1000 * 10% * 10% = 10
-        });
-
-        claimDetails[3] = IRoyaltyWorkflows.RoyaltyClaimDetails({
-            childIpId: childIpIdC,
-            royaltyPolicy: address(royaltyPolicyLAP),
-            currencyToken: address(mockTokenC),
-            amount: (defaultMintingFeeC * defaultCommRevShareC) / royaltyModule.maxPercent() // 500 * 20% = 100
-        });
-
-        address ancestorVault = royaltyModule.ipRoyaltyVaults(ancestorIpId);
-
-        vm.expectRevert(CoreErrors.IpRoyaltyVault__VaultsMustClaimAsSelf.selector);
-        royaltyWorkflows.transferToVaultAndSnapshotAndClaimBySnapshotBatch({
-            ancestorIpId: ancestorIpId,
-            claimer: ancestorVault,
-            unclaimedSnapshotIds: unclaimedSnapshotIds,
-            royaltyClaimDetails: claimDetails
-        });
-    }
-
-    function test_RoyaltyWorkflows_snapshotAndClaimByTokenBatch() public {
-        // setup IP graph with no snapshot
-        uint256 numSnapshots = 0;
-        _setupIpGraph(numSnapshots);
-
-        address[] memory currencyTokens = new address[](2);
-        currencyTokens[0] = address(mockTokenA);
-        currencyTokens[1] = address(mockTokenC);
-
-        uint256 claimerBalanceABefore = mockTokenA.balanceOf(u.admin);
-        uint256 claimerBalanceCBefore = mockTokenC.balanceOf(u.admin);
-
-        (uint256 snapshotId, uint256[] memory amountsClaimed) = royaltyWorkflows.snapshotAndClaimByTokenBatch({
-            ipId: ancestorIpId,
-            claimer: u.admin,
-            currencyTokens: currencyTokens
-        });
-
-        uint256 claimerBalanceAAfter = mockTokenA.balanceOf(u.admin);
-        uint256 claimerBalanceCAfter = mockTokenC.balanceOf(u.admin);
-
-        assertEq(snapshotId, numSnapshots + 1);
-        assertEq(amountsClaimed.length, 2); // there are 2 currency tokens
-        assertEq(claimerBalanceAAfter - claimerBalanceABefore, amountsClaimed[0]);
-        assertEq(claimerBalanceCAfter - claimerBalanceCBefore, amountsClaimed[1]);
-        assertEq(
-            claimerBalanceAAfter - claimerBalanceABefore,
-            defaultMintingFeeA + defaultMintingFeeA // 1000 + 1000 from minting fee of childIpA and childIpB
-        );
-        assertEq(
-            claimerBalanceCAfter - claimerBalanceCBefore,
-            defaultMintingFeeC // 500 from from minting fee of childIpC
-        );
-    }
-
-    function test_RoyaltyWorkflows_snapshotAndClaimBySnapshotBatch() public {
-        // setup IP graph and takes 1 snapshot of ancestor IP's royalty vault
-        uint256 numSnapshots = 1;
-        _setupIpGraph(numSnapshots);
-
-        address[] memory currencyTokens = new address[](2);
-        currencyTokens[0] = address(mockTokenA);
-        currencyTokens[1] = address(mockTokenC);
-
-        uint256 claimerBalanceABefore = mockTokenA.balanceOf(u.admin);
-        uint256 claimerBalanceCBefore = mockTokenC.balanceOf(u.admin);
-
-        (uint256 snapshotId, uint256[] memory amountsClaimed) = royaltyWorkflows.snapshotAndClaimBySnapshotBatch({
-            ipId: ancestorIpId,
-            claimer: u.admin,
-            unclaimedSnapshotIds: unclaimedSnapshotIds,
-            currencyTokens: currencyTokens
-        });
-
-        uint256 claimerBalanceAAfter = mockTokenA.balanceOf(u.admin);
-        uint256 claimerBalanceCAfter = mockTokenC.balanceOf(u.admin);
-
-        assertEq(snapshotId, numSnapshots + 1);
-        assertEq(amountsClaimed.length, 2); // there are 2 currency tokens
-        assertEq(claimerBalanceAAfter - claimerBalanceABefore, amountsClaimed[0]);
-        assertEq(claimerBalanceCAfter - claimerBalanceCBefore, amountsClaimed[1]);
-        assertEq(
-            claimerBalanceAAfter - claimerBalanceABefore,
-            defaultMintingFeeA + defaultMintingFeeA // 1000 + 1000 from minting fee of childIpA and childIpB
-        );
-        assertEq(
-            claimerBalanceCAfter - claimerBalanceCBefore,
-            defaultMintingFeeC // 500 from from minting fee of childIpC
-        );
-    }
-
-    function test_RoyaltyWorkflows_revert_snapshotAndClaimBySnapshotBatch() public {
-        // setup IP graph and takes 1 snapshot of ancestor IP's royalty vault
-        uint256 numSnapshots = 1;
-        _setupIpGraph(numSnapshots);
-
-        address[] memory currencyTokens = new address[](2);
-        currencyTokens[0] = address(mockTokenA);
-        currencyTokens[1] = address(mockTokenC);
-
-        address ancestorVault = royaltyModule.ipRoyaltyVaults(ancestorIpId);
-
-        vm.expectRevert(CoreErrors.IpRoyaltyVault__VaultsMustClaimAsSelf.selector);
-        royaltyWorkflows.snapshotAndClaimBySnapshotBatch({
-            ipId: ancestorIpId,
-            claimer: ancestorVault,
-            unclaimedSnapshotIds: unclaimedSnapshotIds,
-            currencyTokens: currencyTokens
-        });
     }
 
     function _setupCurrencyTokens() private {
@@ -363,8 +197,7 @@ contract RoyaltyWorkflowsTest is BaseTest {
     /// - `childIpB`: It has licenseTermsA attached, has 1 parent `ancestorIp`, and has 1 grandchild `grandChildIp`.
     /// - `childIpC`: It has licenseTermsC attached, has 1 parent `ancestorIp`, and has 1 grandchild `grandChildIp`.
     /// - `grandChildIp`: It has all 3 license terms attached. It has 3 parents and 1 grandparent IPs.
-    /// @param numSnapshots The number of snapshots to take of the ancestor IP's royalty vault.
-    function _setupIpGraph(uint256 numSnapshots) private {
+    function _setupIpGraph() private {
         uint256 ancestorTokenId = mockNft.mint(u.admin);
         uint256 childTokenIdA = mockNft.mint(u.alice);
         uint256 childTokenIdB = mockNft.mint(u.bob);
@@ -383,8 +216,6 @@ contract RoyaltyWorkflowsTest is BaseTest {
             deadline: 0,
             signature: ""
         });
-
-        unclaimedSnapshotIds = new uint256[](numSnapshots);
 
         // register ancestor IP
         ancestorIpId = ipAssetRegistry.register(block.chainid, address(mockNft), ancestorTokenId);
@@ -481,25 +312,6 @@ contract RoyaltyWorkflowsTest is BaseTest {
             vm.label(childIpIdA, "ChildIpA");
         }
 
-        IpRoyaltyVault ancestorIpRoyaltyVault = IpRoyaltyVault(royaltyModule.ipRoyaltyVaults(ancestorIpId));
-
-        // transfer all ancestor royalties tokens to the claimer of the ancestor IP
-        {
-            vm.startPrank(ancestorIpId);
-            ancestorIpRoyaltyVault.transfer(u.admin, ancestorIpRoyaltyVault.totalSupply());
-            vm.stopPrank();
-        }
-
-        // takes a snapshot of the ancestor IP's royalty vault and populates unclaimedSnapshotIds
-        // In this snapshot:
-        // - admin has all the royalty tokens from ancestorIp
-        // - ancestorIp's royalty vault has `defaultMintingFeeA` tokens from alice for registering childIpA
-        // as derivative of ancestorIp under Terms A
-        if (numSnapshots >= 1) {
-            unclaimedSnapshotIds[0] = ancestorIpRoyaltyVault.snapshot();
-            numSnapshots--;
-        }
-
         // register childIpB as derivative of ancestorIp under Terms A
         {
             (bytes memory sigRegisterBob, , ) = _getSetPermissionSigForPeriphery({
@@ -541,16 +353,6 @@ contract RoyaltyWorkflowsTest is BaseTest {
             vm.label(childIpIdB, "ChildIpB");
         }
 
-        // takes a snapshot of the ancestor IP's royalty vault and populates unclaimedSnapshotIds
-        // In this snapshot:
-        // - admin has all the royalty tokens from ancestorIp
-        // - ancestorIp's royalty vault has `defaultMintingFeeA` tokens from bob for registering childIpB
-        // as derivative of ancestorIp under Terms A
-        if (numSnapshots >= 1) {
-            unclaimedSnapshotIds[1] = IpRoyaltyVault(royaltyModule.ipRoyaltyVaults(ancestorIpId)).snapshot();
-            numSnapshots--;
-        }
-
         /// register childIpC as derivative of ancestorIp under Terms C
         {
             (bytes memory sigRegisterCarl, , ) = _getSetPermissionSigForPeriphery({
@@ -590,16 +392,6 @@ contract RoyaltyWorkflowsTest is BaseTest {
             });
             vm.stopPrank();
             vm.label(childIpIdC, "ChildIpC");
-        }
-
-        // takes a snapshot of the ancestor IP's royalty vault and populates unclaimedSnapshotIds
-        // In this snapshot:
-        // - admin has all the royalty tokens from ancestorIp
-        // - ancestorIp's royalty vault has `defaultMintingFeeC` tokens from carl for registering childIpC
-        // as derivative of ancestorIp under Terms C
-        if (numSnapshots >= 1) {
-            unclaimedSnapshotIds[2] = IpRoyaltyVault(royaltyModule.ipRoyaltyVaults(ancestorIpId)).snapshot();
-            numSnapshots--;
         }
 
         // register grandChildIp as derivative for childIp A and B under Terms A

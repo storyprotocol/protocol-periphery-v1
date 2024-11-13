@@ -354,7 +354,6 @@ contract GroupingWorkflowsTest is BaseTest {
             (amount1 * revShare) / royaltyModule.maxPercent()
         );
         vm.stopPrank();
-        uint256 snapshotId1 = IIpRoyaltyVault(royaltyModule.ipRoyaltyVaults(newGroupId)).snapshot();
 
         uint256 amount2 = 10_000 * 10 ** mockToken.decimals(); // 10,000 tokens
         mockToken.mint(ipOwner2, amount2);
@@ -368,18 +367,13 @@ contract GroupingWorkflowsTest is BaseTest {
             (amount2 * revShare) / royaltyModule.maxPercent()
         );
         vm.stopPrank();
-        uint256 snapshotId2 = IIpRoyaltyVault(royaltyModule.ipRoyaltyVaults(newGroupId)).snapshot();
 
-        uint256[] memory snapshotIds = new uint256[](2);
         address[] memory royaltyTokens = new address[](1);
-        snapshotIds[0] = snapshotId1;
-        snapshotIds[1] = snapshotId2;
         royaltyTokens[0] = address(mockToken);
 
         uint256[] memory collectedRoyalties = groupingWorkflows.collectRoyaltiesAndClaimReward(
             newGroupId,
             royaltyTokens,
-            snapshotIds,
             ipIds
         );
 
@@ -407,7 +401,7 @@ contract GroupingWorkflowsTest is BaseTest {
         snapshotIds[0] = 0;
 
         vm.expectRevert(Errors.GroupingWorkflows__ZeroAddressParam.selector);
-        groupingWorkflows.collectRoyaltiesAndClaimReward(groupId, currencyTokens, snapshotIds, ipIds);
+        groupingWorkflows.collectRoyaltiesAndClaimReward(groupId, currencyTokens, ipIds);
     }
 
     // Multicall (mint → Register IP → Attach PIL terms → Add new IP to group IPA)

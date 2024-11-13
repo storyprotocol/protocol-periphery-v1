@@ -7,7 +7,6 @@ import { EvenSplitGroupPool } from "@storyprotocol/core/modules/grouping/EvenSpl
 import { IGroupingModule } from "@storyprotocol/core/interfaces/modules/grouping/IGroupingModule.sol";
 import { IGroupIPAssetRegistry } from "@storyprotocol/core/interfaces/registries/IGroupIPAssetRegistry.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
-import { IIpRoyaltyVault } from "@storyprotocol/core/interfaces/modules/royalty/policies/IIpRoyaltyVault.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 /* solhint-disable max-line-length */
 import { IGraphAwareRoyaltyPolicy } from "@storyprotocol/core/interfaces/modules/royalty/policies/IGraphAwareRoyaltyPolicy.sol";
@@ -267,7 +266,6 @@ contract GroupingIntegration is BaseIntegration {
             address(StoryUSD),
             (amount1 * revShare) / royaltyModule.maxPercent()
         );
-        uint256 snapshotId1 = IIpRoyaltyVault(royaltyModule.ipRoyaltyVaults(newGroupId)).snapshot();
 
         uint256 amount2 = 10_000 * 10 ** StoryUSD.decimals(); // 10,000 tokens
         StoryUSD.mint(testSender, amount2);
@@ -279,18 +277,13 @@ contract GroupingIntegration is BaseIntegration {
             address(StoryUSD),
             (amount2 * revShare) / royaltyModule.maxPercent()
         );
-        uint256 snapshotId2 = IIpRoyaltyVault(royaltyModule.ipRoyaltyVaults(newGroupId)).snapshot();
 
-        uint256[] memory snapshotIds = new uint256[](2);
-        snapshotIds[0] = snapshotId1;
-        snapshotIds[1] = snapshotId2;
         address[] memory royaltyTokens = new address[](1);
         royaltyTokens[0] = address(StoryUSD);
 
         uint256[] memory collectedRoyalties = groupingWorkflows.collectRoyaltiesAndClaimReward(
             newGroupId,
             royaltyTokens,
-            snapshotIds,
             ipIds
         );
 
