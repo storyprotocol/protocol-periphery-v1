@@ -21,7 +21,7 @@ library LicensingHelper {
         address ipId,
         address pilTemplate,
         address licensingModule,
-        PILTerms calldata terms
+        PILTerms memory terms
     ) internal returns (uint256 licenseTermsId) {
         licenseTermsId = IPILicenseTemplate(pilTemplate).registerLicenseTerms(terms);
         attachLicenseTerms(ipId, licensingModule, pilTemplate, licenseTermsId);
@@ -62,7 +62,7 @@ library LicensingHelper {
         address pilTemplate,
         address licensingModule,
         PILTerms calldata terms,
-        WorkflowStructs.SignatureData calldata sigAttach
+        WorkflowStructs.SignatureData memory sigAttach
     ) internal returns (uint256 licenseTermsId) {
         licenseTermsId = IPILicenseTemplate(pilTemplate).registerLicenseTerms(terms);
         attachLicenseTermsWithSig(ipId, licensingModule, pilTemplate, licenseTermsId, sigAttach);
@@ -79,7 +79,7 @@ library LicensingHelper {
         address licensingModule,
         address licenseTemplate,
         uint256 licenseTermsId,
-        WorkflowStructs.SignatureData calldata sigAttach
+        WorkflowStructs.SignatureData memory sigAttach
     ) internal {
         try
             IIPAccount(payable(ipId)).executeWithSig({
