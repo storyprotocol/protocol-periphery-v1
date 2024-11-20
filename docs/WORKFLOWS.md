@@ -13,12 +13,12 @@
 
 ### [License Attachment Workflows](../contracts/interfaces/workflows/ILicenseAttachmentWorkflows.sol)
 
-- `registerPILTermsAndAttach`:
-  - Registers PIL terms → Attaches them to an IP
-- `registerIpAndAttachPILTerms`:
-  - Registers an IP → Registers PIL terms → Attaches them to the IP
 - `mintAndRegisterIpAndAttachPILTerms`:
   - Mints a NFT → Registers it as an IP → Registers PIL terms → Attaches them to the IP
+- `mintAndRegisterIpAndAttachLicenseTerms`:
+  - Mints a NFT → Registers it as an IP → Attaches license terms to the IP
+- `registerIpAndAttachLicenseTerms`:
+  - Registers an IP → Attaches license terms to the IP
 
 ### [Derivative Workflows](../contracts/interfaces/workflows/IDerivativeWorkflows.sol)
 
@@ -50,4 +50,4 @@
   - Transfers specified amounts of royalties from various royalty policies to the royalty vault of the ancestor IP -> Claims all the revenue in each currency token from the ancestor IP's royalty vault to the claimer.
 
 - `claimAllRevenue`:
-  - Transfers all avaiable royalties from various royalty policies to the royalty vault of the ancestor IP -> Claims all the revenue in each currency token from the ancestor IP's royalty vault to the claimer.
+  - Transfers all available royalties from various royalty policies to the royalty vault of the ancestor IP -> Claims all the revenue in each currency token from the ancestor IP's royalty vault to the claimer.
