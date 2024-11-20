@@ -20,7 +20,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
     using Strings for uint256;
 
     ISPGNFT private spgNftContract;
-    PILTerms private commUseTerms;
+    PILTerms private commRemixTerms;
     uint256 private commUseTermsId;
 
     /// @dev To use, run the following command:
@@ -30,48 +30,10 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         super.run();
         _beginBroadcast();
         _setUpTest();
-        _test_LicenseAttachmentIntegration_registerPILTermsAndAttach();
         _test_LicenseAttachmentIntegration_mintAndRegisterIpAndAttachPILTerms();
-        _test_LicenseAttachmentIntegration_registerIpAndAttachPILTerms();
+        _test_LicenseAttachmentIntegration_mintAndRegisterIpAndAttachLicenseTerms();
+        _test_LicenseAttachmentIntegration_registerIpAndAttachLicenseTerms();
         _endBroadcast();
-    }
-
-    function _test_LicenseAttachmentIntegration_registerPILTermsAndAttach()
-        private
-        logTest("test_LicenseAttachmentIntegration_registerPILTermsAndAttach")
-    {
-        StoryUSD.mint(testSender, testMintFee);
-        StoryUSD.approve(address(spgNftContract), testMintFee);
-
-        (address ipId, ) = registrationWorkflows.mintAndRegisterIp({
-            spgNftContract: address(spgNftContract),
-            recipient: testSender,
-            ipMetadata: testIpMetadata,
-            allowDuplicates: true
-        });
-
-        uint256 deadline = block.timestamp + 1000;
-        (bytes memory signature, ) = _getSigForExecuteWithSig({
-            ipId: ipId,
-            to: licensingModuleAddr,
-            deadline: deadline,
-            state: IIPAccount(payable(ipId)).state(),
-            data: abi.encodeWithSelector(
-                ILicensingModule.attachLicenseTerms.selector,
-                ipId,
-                pilTemplateAddr,
-                commUseTermsId
-            ),
-            signerSk: testSenderSk
-        });
-
-        uint256 licenseTermsId = licenseAttachmentWorkflows.registerPILTermsAndAttach({
-            ipId: ipId,
-            terms: commUseTerms,
-            sigAttach: WorkflowStructs.SignatureData({ signer: testSender, deadline: deadline, signature: signature })
-        });
-
-        assertEq(licenseTermsId, commUseTermsId);
     }
 
     function _test_LicenseAttachmentIntegration_mintAndRegisterIpAndAttachPILTerms()
@@ -88,12 +50,12 @@ contract LicenseAttachmentIntegration is BaseIntegration {
                     spgNftContract: address(spgNftContract),
                     recipient: testSender,
                     ipMetadata: testIpMetadata,
-                    terms: commUseTerms,
+                    terms: commRemixTerms,
                     allowDuplicates: true
                 });
             assertTrue(ipAssetRegistry.isRegistered(ipId1));
             assertEq(tokenId1, spgNftContract.totalSupply());
-            assertEq(licenseTermsId1, pilTemplate.getLicenseTermsId(commUseTerms));
+            assertEq(licenseTermsId1, pilTemplate.getLicenseTermsId(commRemixTerms));
             assertEq(spgNftContract.tokenURI(tokenId1), string.concat(testBaseURI, testIpMetadata.nftMetadataURI));
             assertMetadata(ipId1, testIpMetadata);
             (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId1, 0);
@@ -111,12 +73,12 @@ contract LicenseAttachmentIntegration is BaseIntegration {
                     spgNftContract: address(spgNftContract),
                     recipient: testSender,
                     ipMetadata: testIpMetadata,
-                    terms: commUseTerms,
+                    terms: commRemixTerms,
                     allowDuplicates: true
                 });
             assertTrue(ipAssetRegistry.isRegistered(ipId2));
             assertEq(tokenId2, spgNftContract.totalSupply());
-            assertEq(licenseTermsId2, pilTemplate.getLicenseTermsId(commUseTerms));
+            assertEq(licenseTermsId2, pilTemplate.getLicenseTermsId(commRemixTerms));
             assertEq(spgNftContract.tokenURI(tokenId2), string.concat(testBaseURI, testIpMetadata.nftMetadataURI));
             assertMetadata(ipId2, testIpMetadata);
             (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId2, 0);
@@ -125,9 +87,58 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         }
     }
 
-    function _test_LicenseAttachmentIntegration_registerIpAndAttachPILTerms()
+    function _test_LicenseAttachmentIntegration_mintAndRegisterIpAndAttachLicenseTerms()
         private
-        logTest("test_LicenseAttachmentIntegration_registerIpAndAttachPILTerms")
+        logTest("test_LicenseAttachmentIntegration_mintAndRegisterIpAndAttachLicenseTerms")
+    {
+        // IP 1
+        {
+            StoryUSD.mint(testSender, testMintFee);
+            StoryUSD.approve(address(spgNftContract), testMintFee);
+
+            (address ipId1, uint256 tokenId1) = licenseAttachmentWorkflows.mintAndRegisterIpAndAttachLicenseTerms({
+                spgNftContract: address(spgNftContract),
+                recipient: testSender,
+                ipMetadata: testIpMetadata,
+                licenseTemplate: pilTemplateAddr,
+                licenseTermsId: commUseTermsId,
+                allowDuplicates: true
+            });
+            assertTrue(ipAssetRegistry.isRegistered(ipId1));
+            assertEq(tokenId1, spgNftContract.totalSupply());
+            assertEq(spgNftContract.tokenURI(tokenId1), string.concat(testBaseURI, testIpMetadata.nftMetadataURI));
+            assertMetadata(ipId1, testIpMetadata);
+            (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId1, 0);
+            assertEq(licenseTemplate, pilTemplateAddr);
+            assertEq(licenseTermsId, commUseTermsId);
+        }
+
+        // IP 2
+        {
+            StoryUSD.mint(testSender, testMintFee);
+            StoryUSD.approve(address(spgNftContract), testMintFee);
+
+            (address ipId2, uint256 tokenId2) = licenseAttachmentWorkflows.mintAndRegisterIpAndAttachLicenseTerms({
+                spgNftContract: address(spgNftContract),
+                recipient: testSender,
+                ipMetadata: testIpMetadata,
+                licenseTemplate: pilTemplateAddr,
+                licenseTermsId: commUseTermsId,
+                allowDuplicates: true
+            });
+            assertTrue(ipAssetRegistry.isRegistered(ipId2));
+            assertEq(tokenId2, spgNftContract.totalSupply());
+            assertEq(spgNftContract.tokenURI(tokenId2), string.concat(testBaseURI, testIpMetadata.nftMetadataURI));
+            assertMetadata(ipId2, testIpMetadata);
+            (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId2, 0);
+            assertEq(licenseTemplate, pilTemplateAddr);
+            assertEq(licenseTermsId, commUseTermsId);
+        }
+    }
+
+    function _test_LicenseAttachmentIntegration_registerIpAndAttachLicenseTerms()
+        private
+        logTest("test_LicenseAttachmentIntegration_registerIpAndAttachLicenseTerms")
     {
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee);
@@ -171,11 +182,12 @@ contract LicenseAttachmentIntegration is BaseIntegration {
             signerSk: testSenderSk
         });
 
-        (address ipId, uint256 licenseTermsId) = licenseAttachmentWorkflows.registerIpAndAttachPILTerms({
+        address ipId = licenseAttachmentWorkflows.registerIpAndAttachLicenseTerms({
             nftContract: address(spgNftContract),
             tokenId: tokenId,
             ipMetadata: testIpMetadata,
-            terms: commUseTerms,
+            licenseTemplate: pilTemplateAddr,
+            licenseTermsId: commUseTermsId,
             sigMetadata: WorkflowStructs.SignatureData({
                 signer: testSender,
                 deadline: deadline,
@@ -192,7 +204,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
             0
         );
         assertEq(expectedLicenseTemplate, pilTemplateAddr);
-        assertEq(expectedLicenseTermsId, licenseTermsId);
+        assertEq(expectedLicenseTermsId, commUseTermsId);
     }
 
     function _setUpTest() private {
@@ -214,13 +226,17 @@ contract LicenseAttachmentIntegration is BaseIntegration {
             )
         );
 
-        commUseTerms = PILFlavors.commercialUse({
+        commRemixTerms = PILFlavors.commercialRemix({
+            mintingFee: testMintFee,
+            commercialRevShare: 10 * 10 ** 6, // 10%
+            royaltyPolicy: royaltyPolicyLRPAddr,
+            currencyToken: testMintFeeToken
+        });
+
+        commUseTermsId = pilTemplate.registerLicenseTerms(PILFlavors.commercialUse({
             mintingFee: testMintFee,
             currencyToken: testMintFeeToken,
             royaltyPolicy: royaltyPolicyLRPAddr
-        });
-
-        // TODO: this is a hack to get the license terms id, we should refactor this in the next PR
-        commUseTermsId = pilTemplate.registerLicenseTerms(commUseTerms);
+        }));
     }
 }

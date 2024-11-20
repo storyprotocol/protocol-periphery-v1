@@ -3,20 +3,18 @@ pragma solidity 0.8.26;
 /* solhint-disable no-console */
 
 // external
-import { console2 } from "forge-std/console2.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
 import { IPILicenseTemplate } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
-import { IpRoyaltyVault } from "@storyprotocol/core/modules/royalty/policies/IpRoyaltyVault.sol";
-import { IVaultController } from "@storyprotocol/core/interfaces/modules/royalty/policies/IVaultController.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 
 // contracts
 import { ISPGNFT } from "../../../contracts/interfaces/ISPGNFT.sol";
-import { IRoyaltyWorkflows } from "../../../contracts/interfaces/workflows/IRoyaltyWorkflows.sol";
+import { LicensingHelper } from "../../../contracts/lib/LicensingHelper.sol";
 import { WorkflowStructs } from "../../../contracts/lib/WorkflowStructs.sol";
+
 // test
 import { BaseIntegration } from "../BaseIntegration.t.sol";
 
@@ -212,7 +210,8 @@ contract RoyaltyIntegration is BaseIntegration {
         ancestorIpId = ipAssetRegistry.register(block.chainid, address(spgNftContract), ancestorTokenId);
         vm.label(ancestorIpId, "AncestorIp");
 
-        // TODO: this is a hack to get the license terms id, we should refactor this in the next PR
+        uint256 deadline = block.timestamp + 1000;
+
         commRemixTermsIdA = IPILicenseTemplate(pilTemplate).registerLicenseTerms(
             PILFlavors.commercialRemix({
                 mintingFee: defaultMintingFeeA,
@@ -221,8 +220,6 @@ contract RoyaltyIntegration is BaseIntegration {
                 currencyToken: address(StoryUSD)
             })
         );
-
-        uint256 deadline = block.timestamp + 1000;
 
         // get the signature for executing `attachLicenseTerms` function in `LicensingModule` on behalf of the IP owner
         (bytes memory signatureA, ) = _getSigForExecuteWithSig({
@@ -240,18 +237,14 @@ contract RoyaltyIntegration is BaseIntegration {
         });
 
         // register and attach Terms A and C to ancestor IP
-        commRemixTermsIdA = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+        LicensingHelper.attachLicenseTermsWithSig({
             ipId: ancestorIpId,
-            terms: PILFlavors.commercialRemix({
-                mintingFee: defaultMintingFeeA,
-                commercialRevShare: defaultCommRevShareA,
-                royaltyPolicy: royaltyPolicyLRPAddr,
-                currencyToken: address(StoryUSD)
-            }),
+            licensingModule: licensingModuleAddr,
+            licenseTemplate: pilTemplateAddr,
+            licenseTermsId: commRemixTermsIdA,
             sigAttach: WorkflowStructs.SignatureData({ signer: testSender, deadline: deadline, signature: signatureA })
         });
 
-        // TODO: this is a hack to get the license terms id, we should refactor this in the next PR
         commRemixTermsIdC = IPILicenseTemplate(pilTemplate).registerLicenseTerms(
             PILFlavors.commercialRemix({
                 mintingFee: defaultMintingFeeC,
@@ -260,6 +253,7 @@ contract RoyaltyIntegration is BaseIntegration {
                 currencyToken: address(StoryUSD)
             })
         );
+
         // get the signature for executing `attachLicenseTerms` function in `LicensingModule` on behalf of the IP owner
         (bytes memory signatureC, ) = _getSigForExecuteWithSig({
             ipId: ancestorIpId,
@@ -275,14 +269,11 @@ contract RoyaltyIntegration is BaseIntegration {
             signerSk: testSenderSk
         });
 
-        commRemixTermsIdC = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+        LicensingHelper.attachLicenseTermsWithSig({
             ipId: ancestorIpId,
-            terms: PILFlavors.commercialRemix({
-                mintingFee: defaultMintingFeeC,
-                commercialRevShare: defaultCommRevShareC,
-                royaltyPolicy: royaltyPolicyLAPAddr,
-                currencyToken: address(StoryUSD)
-            }),
+            licensingModule: licensingModuleAddr,
+            licenseTemplate: pilTemplateAddr,
+            licenseTermsId: commRemixTermsIdC,
             sigAttach: WorkflowStructs.SignatureData({ signer: testSender, deadline: deadline, signature: signatureC })
         });
 

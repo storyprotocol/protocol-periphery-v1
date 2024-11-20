@@ -10,6 +10,7 @@ import { IPILicenseTemplate } from "@storyprotocol/core/interfaces/modules/licen
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 
 // contracts
+import { LicensingHelper } from "../../contracts/lib/LicensingHelper.sol";
 import { WorkflowStructs } from "../../contracts/lib/WorkflowStructs.sol";
 
 // test
@@ -229,8 +230,7 @@ contract RoyaltyWorkflowsTest is BaseTest {
 
         // get the signature for executing `attachLicenseTerms` function in `LicensingModule` on behalf of the IP owner
         {
-            // TODO: this is a hack to get the license terms id, we should refactor this in the next PR
-            uint256 licenseTermsId = IPILicenseTemplate(pilTemplate).registerLicenseTerms(
+            commRemixTermsIdA = IPILicenseTemplate(pilTemplate).registerLicenseTerms(
                 PILFlavors.commercialRemix({
                     mintingFee: defaultMintingFeeA,
                     commercialRevShare: defaultCommRevShareA,
@@ -247,27 +247,23 @@ contract RoyaltyWorkflowsTest is BaseTest {
                     ILicensingModule.attachLicenseTerms.selector,
                     ancestorIpId,
                     pilTemplate,
-                    licenseTermsId
+                    commRemixTermsIdA
                 ),
                 signerSk: sk.admin
             });
 
             // register and attach Terms A and C to ancestor IP
-            commRemixTermsIdA = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+            LicensingHelper.attachLicenseTermsWithSig({
                 ipId: ancestorIpId,
-                terms: PILFlavors.commercialRemix({
-                    mintingFee: defaultMintingFeeA,
-                    commercialRevShare: defaultCommRevShareA,
-                    royaltyPolicy: address(royaltyPolicyLRP),
-                    currencyToken: address(mockTokenA)
-                }),
+                licensingModule: address(licensingModule),
+                licenseTemplate: address(pilTemplate),
+                licenseTermsId: commRemixTermsIdA,
                 sigAttach: WorkflowStructs.SignatureData({ signer: u.admin, deadline: deadline, signature: signatureA })
             });
         }
 
         {
-            // TODO: this is a hack to get the license terms id, we should refactor this in the next PR
-            uint256 licenseTermsId = IPILicenseTemplate(pilTemplate).registerLicenseTerms(
+            commRemixTermsIdC = IPILicenseTemplate(pilTemplate).registerLicenseTerms(
                 PILFlavors.commercialRemix({
                     mintingFee: defaultMintingFeeC,
                     commercialRevShare: defaultCommRevShareC,
@@ -284,19 +280,16 @@ contract RoyaltyWorkflowsTest is BaseTest {
                     ILicensingModule.attachLicenseTerms.selector,
                     ancestorIpId,
                     pilTemplate,
-                    licenseTermsId
+                    commRemixTermsIdC
                 ),
                 signerSk: sk.admin
             });
 
-            commRemixTermsIdC = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+            LicensingHelper.attachLicenseTermsWithSig({
                 ipId: ancestorIpId,
-                terms: PILFlavors.commercialRemix({
-                    mintingFee: defaultMintingFeeC,
-                    commercialRevShare: defaultCommRevShareC,
-                    royaltyPolicy: address(royaltyPolicyLAP),
-                    currencyToken: address(mockTokenC)
-                }),
+                licensingModule: address(licensingModule),
+                licenseTemplate: address(pilTemplate),
+                licenseTermsId: commRemixTermsIdC,
                 sigAttach: WorkflowStructs.SignatureData({ signer: u.admin, deadline: deadline, signature: signatureC })
             });
         }

@@ -61,7 +61,7 @@ contract DerivativeWorkflowsTest is BaseTest {
         withNonCommercialParentIp
     {
         // First, create an derivative with the same NFT metadata hash but with dedup turned off
-        (address licenseTemplateParent, uint256 licenseTermsIdParent) = licenseRegistry.getAttachedLicenseTerms(
+        (, uint256 licenseTermsIdParent) = licenseRegistry.getAttachedLicenseTerms(
             ipIdParent,
             0
         );
@@ -72,7 +72,7 @@ contract DerivativeWorkflowsTest is BaseTest {
         uint256[] memory licenseTermsIds = new uint256[](1);
         licenseTermsIds[0] = licenseTermsIdParent;
 
-        (address ipIdChild, ) = derivativeWorkflows.mintAndRegisterIpAndMakeDerivative({
+        derivativeWorkflows.mintAndRegisterIpAndMakeDerivative({
             spgNftContract: address(nftContract),
             derivData: WorkflowStructs.MakeDerivative({
                 parentIpIds: parentIpIds,

@@ -11,7 +11,6 @@ import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { ILicenseRegistry } from "@storyprotocol/core/interfaces/registries/ILicenseRegistry.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
 import { IIPAssetRegistry } from "@storyprotocol/core/interfaces/registries/IIPAssetRegistry.sol";
-import { IIpRoyaltyVault } from "@storyprotocol/core/interfaces/modules/royalty/policies/IIpRoyaltyVault.sol";
 import { IGroupingModule } from "@storyprotocol/core/interfaces/modules/grouping/IGroupingModule.sol";
 import { IGroupIPAssetRegistry } from "@storyprotocol/core/interfaces/registries/IGroupIPAssetRegistry.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
@@ -68,7 +67,7 @@ contract GroupingWorkflowsTest is BaseTest {
     function test_GroupingWorkflows_revert_DuplicatedNFTMetadataHash() public {
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory sigAddToGroup, bytes32 expectedState) = _getSigForExecuteWithSig({
+        (bytes memory sigAddToGroup,) = _getSigForExecuteWithSig({
             ipId: groupId,
             to: address(accessController),
             deadline: deadline,
