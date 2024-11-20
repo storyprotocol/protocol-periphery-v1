@@ -1,6 +1,5 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
-/* solhint-disable no-console */
 
 // external
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
@@ -174,13 +173,18 @@ contract RegistrationWorkflowsTest is BaseTest {
 
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory sigMetadata, bytes32 expectedState, ) = _getSetPermissionSigForPeriphery({
+        (bytes memory sigMetadata, bytes32 expectedState) = _getSigForExecuteWithSig({
             ipId: expectedIpId,
-            to: address(registrationWorkflows),
-            module: address(coreMetadataModule),
-            selector: ICoreMetadataModule.setAll.selector,
+            to: address(coreMetadataModule),
             deadline: deadline,
             state: bytes32(0),
+            data: abi.encodeWithSelector(
+                ICoreMetadataModule.setAll.selector,
+                expectedIpId,
+                ipMetadataDefault.ipMetadataURI,
+                ipMetadataDefault.ipMetadataHash,
+                ipMetadataDefault.nftMetadataHash
+            ),
             signerSk: sk.alice
         });
 

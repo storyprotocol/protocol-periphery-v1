@@ -7,8 +7,11 @@ import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC16
 import { MulticallUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
+import { AccessPermission } from "@storyprotocol/core/lib/AccessPermission.sol";
+import { IAccessController } from "@storyprotocol/core/interfaces/access/IAccessController.sol";
 import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
 import { IGroupingModule } from "@storyprotocol/core/interfaces/modules/grouping/IGroupingModule.sol";
+import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
 import { GroupNFT } from "@storyprotocol/core/GroupNFT.sol";
 import { RoyaltyModule } from "@storyprotocol/core/modules/royalty/RoyaltyModule.sol";
@@ -19,7 +22,6 @@ import { IGroupingWorkflows } from "../interfaces/workflows/IGroupingWorkflows.s
 import { ISPGNFT } from "../interfaces/ISPGNFT.sol";
 import { LicensingHelper } from "../lib/LicensingHelper.sol";
 import { MetadataHelper } from "../lib/MetadataHelper.sol";
-import { PermissionHelper } from "../lib/PermissionHelper.sol";
 import { WorkflowStructs } from "../lib/WorkflowStructs.sol";
 
 /// @title Grouping Workflows
@@ -145,24 +147,28 @@ contract GroupingWorkflows is
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 
         // attach license terms to the IP, do nothing if already attached
-        LicensingHelper.attachLicenseTerms(
-            ipId,
-            address(LICENSING_MODULE),
-            address(LICENSE_REGISTRY),
-            licenseTemplate,
-            licenseTermsId
-        );
-
-        PermissionHelper.setPermissionForModule(
-            groupId,
-            address(GROUPING_MODULE),
-            address(ACCESS_CONTROLLER),
-            IGroupingModule.addIp.selector,
-            sigAddToGroup
-        );
+        LicensingHelper.attachLicenseTerms(ipId, address(LICENSING_MODULE), licenseTemplate, licenseTermsId);
 
         address[] memory ipIds = new address[](1);
         ipIds[0] = ipId;
+
+        // set the permission for calling `addIp` function in `GroupingModule` on behalf of the Group IP owner
+        IIPAccount(payable(groupId)).executeWithSig({
+            to: address(ACCESS_CONTROLLER),
+            value: 0,
+            data: abi.encodeWithSelector(
+                IAccessController.setPermission.selector,
+                groupId,
+                address(this),
+                address(GROUPING_MODULE),
+                IGroupingModule.addIp.selector,
+                AccessPermission.ALLOW
+            ),
+            signer: sigAddToGroup.signer,
+            deadline: sigAddToGroup.deadline,
+            signature: sigAddToGroup.signature
+        });
+
         GROUPING_MODULE.addIp(groupId, ipIds);
 
         ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
@@ -176,8 +182,8 @@ contract GroupingWorkflows is
     /// @param licenseTemplate The address of the license template to be attached to the new IP.
     /// @param licenseTermsId The ID of the registered license terms that will be attached to the new IP.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
-    /// @param sigMetadataAndAttach Signature data for setAll (metadata) and attachLicenseTerms to the IP
-    /// via the Core Metadata Module and Licensing Module.
+    /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
+    /// @param sigAttach Signature data for attachLicenseTerms to the IP via the Licensing Module.
     /// @param sigAddToGroup Signature data for addIp to the group IP via the Grouping Module.
     /// @return ipId The ID of the newly registered IP.
     function registerIpAndAttachLicenseAndAddToGroup(
@@ -187,7 +193,8 @@ contract GroupingWorkflows is
         address licenseTemplate,
         uint256 licenseTermsId,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        WorkflowStructs.SignatureData calldata sigMetadataAndAttach,
+        WorkflowStructs.SignatureData calldata sigMetadata,
+        WorkflowStructs.SignatureData calldata sigAttach,
         WorkflowStructs.SignatureData calldata sigAddToGroup
     ) external returns (address ipId) {
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
@@ -199,36 +206,29 @@ contract GroupingWorkflows is
         selectors[0] = ICoreMetadataModule.setAll.selector;
         selectors[1] = ILicensingModule.attachLicenseTerms.selector;
 
-        PermissionHelper.setBatchPermissionForModules(
-            ipId,
-            address(ACCESS_CONTROLLER),
-            modules,
-            selectors,
-            sigMetadataAndAttach
-        );
-
-        MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
+        MetadataHelper.setMetadataWithSig(ipId, address(CORE_METADATA_MODULE), ipMetadata, sigMetadata);
 
         // attach license terms to the IP, do nothing if already attached
-        LicensingHelper.attachLicenseTerms(
+        LicensingHelper.attachLicenseTermsWithSig(
             ipId,
             address(LICENSING_MODULE),
-            address(LICENSE_REGISTRY),
             licenseTemplate,
-            licenseTermsId
-        );
-
-        PermissionHelper.setPermissionForModule(
-            groupId,
-            address(GROUPING_MODULE),
-            address(ACCESS_CONTROLLER),
-            IGroupingModule.addIp.selector,
-            sigAddToGroup
+            licenseTermsId,
+            sigAttach
         );
 
         address[] memory ipIds = new address[](1);
         ipIds[0] = ipId;
-        GROUPING_MODULE.addIp(groupId, ipIds);
+
+        // execute `addIp` function in `GroupingModule` on behalf of the Group IP owner
+        IIPAccount(payable(groupId)).executeWithSig({
+            to: address(GROUPING_MODULE),
+            value: 0,
+            data: abi.encodeWithSelector(IGroupingModule.addIp.selector, groupId, ipIds),
+            signer: sigAddToGroup.signer,
+            deadline: sigAddToGroup.deadline,
+            signature: sigAddToGroup.signature
+        });
     }
 
     /// @notice Register a group IP with a group reward pool and attach license terms to the group IP
@@ -244,13 +244,7 @@ contract GroupingWorkflows is
         groupId = GROUPING_MODULE.registerGroup(groupPool);
 
         // attach license terms to the group IP, do nothing if already attached
-        LicensingHelper.attachLicenseTerms(
-            groupId,
-            address(LICENSING_MODULE),
-            address(LICENSE_REGISTRY),
-            licenseTemplate,
-            licenseTermsId
-        );
+        LicensingHelper.attachLicenseTerms(groupId, address(LICENSING_MODULE), licenseTemplate, licenseTermsId);
 
         GROUP_NFT.safeTransferFrom(address(this), msg.sender, GROUP_NFT.totalSupply() - 1);
     }
@@ -272,13 +266,7 @@ contract GroupingWorkflows is
         groupId = GROUPING_MODULE.registerGroup(groupPool);
 
         // attach license terms to the group IP, do nothing if already attached
-        LicensingHelper.attachLicenseTerms(
-            groupId,
-            address(LICENSING_MODULE),
-            address(LICENSE_REGISTRY),
-            licenseTemplate,
-            licenseTermsId
-        );
+        LicensingHelper.attachLicenseTerms(groupId, address(LICENSING_MODULE), licenseTemplate, licenseTermsId);
 
         GROUPING_MODULE.addIp(groupId, ipIds);
 

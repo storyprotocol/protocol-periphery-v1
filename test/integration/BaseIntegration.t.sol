@@ -134,140 +134,39 @@ contract BaseIntegration is Test, Script, StoryProtocolCoreAddressManager, Story
     /*//////////////////////////////////////////////////////////////////////////
                                       HELPERS
     //////////////////////////////////////////////////////////////////////////*/
-
-    /// @dev Get the permission list for setting metadata and attaching license terms for the IP.
-    /// @param ipId The ID of the IP that the permissions are for.
-    /// @param to The address of the periphery contract to receive the permission.
-    /// @return permissionList The list of permissions for setting metadata and attaching license terms.
-    function _getMetadataAndAttachTermsPermissionList(
-        address ipId,
-        address to
-    ) internal view returns (AccessPermission.Permission[] memory permissionList) {
-        address[] memory modules = new address[](2);
-        bytes4[] memory selectors = new bytes4[](2);
-        permissionList = new AccessPermission.Permission[](2);
-
-        modules[0] = coreMetadataModuleAddr;
-        modules[1] = licensingModuleAddr;
-        selectors[0] = ICoreMetadataModule.setAll.selector;
-        selectors[1] = ILicensingModule.attachLicenseTerms.selector;
-
-        for (uint256 i = 0; i < 2; i++) {
-            permissionList[i] = AccessPermission.Permission({
-                ipAccount: ipId,
-                signer: to,
-                to: modules[i],
-                func: selectors[i],
-                permission: AccessPermission.ALLOW
-            });
-        }
-    }
-
-    /// @dev Get the signature for setting batch permission for the IP by the SPG.
-    /// @param ipId The ID of the IP to set the permissions for.
-    /// @param permissionList A list of permissions to set.
-    /// @param deadline The deadline for the signature.
-    /// @param state IPAccount's internal state
-    /// @param signerSk The secret key of the signer.
-    /// @return signature The signature for setting the batch permission.
-    /// @return expectedState The expected IPAccount's state after setting batch permission.
-    /// @return data The call data for executing the setBatchPermissions function.
-    function _getSetBatchPermissionSigForPeriphery(
-        address ipId,
-        AccessPermission.Permission[] memory permissionList,
-        uint256 deadline,
-        bytes32 state,
-        uint256 signerSk
-    ) internal view returns (bytes memory signature, bytes32 expectedState, bytes memory data) {
-        expectedState = keccak256(
-            abi.encode(
-                state, // ipAccount.state()
-                abi.encodeWithSelector(
-                    IIPAccount.execute.selector,
-                    address(accessControllerAddr),
-                    0, // amount of ether to send
-                    abi.encodeWithSelector(IAccessController.setBatchPermissions.selector, permissionList)
-                )
-            )
-        );
-
-        data = abi.encodeWithSelector(IAccessController.setBatchPermissions.selector, permissionList);
-
-        bytes32 digest = MessageHashUtils.toTypedDataHash(
-            MetaTx.calculateDomainSeparator(ipId),
-            MetaTx.getExecuteStructHash(
-                MetaTx.Execute({
-                    to: address(accessControllerAddr),
-                    value: 0,
-                    data: data,
-                    nonce: expectedState,
-                    deadline: deadline
-                })
-            )
-        );
-
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerSk, digest);
-        signature = abi.encodePacked(r, s, v);
-    }
-
-    /// @dev Get the signature for setting permission for the IP by the SPG.
-    /// @param ipId The ID of the IP.
-    /// @param to The address of the periphery contract to receive the permission.
-    /// @param module The address of the module to set the permission for.
-    /// @param selector The selector of the function to be permitted for execution.
+    /// @dev Get the signature for executing a function on behalf of the IP via {IIPAccount.executeWithSig}.
+    /// @param ipId The ID of the IP whose account will execute the function.
+    /// @param to The address of the contract to execute the function on.
     /// @param deadline The deadline for the signature.
     /// @param state IPAccount's internal nonce
+    /// @param data the call data for the function.
     /// @param signerSk The secret key of the signer.
-    /// @return signature The signature for setting the permission.
-    /// @return expectedState The expected IPAccount's state after setting the permission.
-    /// @return data The call data for executing the setPermission function.
-    function _getSetPermissionSigForPeriphery(
+    /// @return signature The signature for executing the function.
+    /// @return expectedState The expected IPAccount's state after executing the function.
+    function _getSigForExecuteWithSig(
         address ipId,
         address to,
-        address module,
-        bytes4 selector,
         uint256 deadline,
         bytes32 state,
+        bytes memory data,
         uint256 signerSk
-    ) internal view returns (bytes memory signature, bytes32 expectedState, bytes memory data) {
+    ) internal view returns (bytes memory signature, bytes32 expectedState) {
         expectedState = keccak256(
             abi.encode(
                 state, // ipAccount.state()
                 abi.encodeWithSelector(
                     IIPAccount.execute.selector,
-                    address(accessControllerAddr),
-                    0, // amount of ether to send
-                    abi.encodeWithSelector(
-                        IAccessController.setPermission.selector,
-                        ipId,
-                        to,
-                        address(module),
-                        selector,
-                        AccessPermission.ALLOW
-                    )
+                    to, // to
+                    0, // value
+                    data
                 )
             )
-        );
-
-        data = abi.encodeWithSelector(
-            IAccessController.setPermission.selector,
-            ipId,
-            to,
-            address(module),
-            selector,
-            AccessPermission.ALLOW
         );
 
         bytes32 digest = MessageHashUtils.toTypedDataHash(
             MetaTx.calculateDomainSeparator(ipId),
             MetaTx.getExecuteStructHash(
-                MetaTx.Execute({
-                    to: address(accessControllerAddr),
-                    value: 0,
-                    data: data,
-                    nonce: expectedState,
-                    deadline: deadline
-                })
+                MetaTx.Execute({ to: to, value: 0, data: data, nonce: expectedState, deadline: deadline })
             )
         );
 

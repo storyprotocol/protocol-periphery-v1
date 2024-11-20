@@ -10,6 +10,7 @@ import { MulticallUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
+import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { ILicenseTemplate } from "@storyprotocol/core/interfaces/modules/licensing/ILicenseTemplate.sol";
 import { ILicenseToken } from "@storyprotocol/core/interfaces/ILicenseToken.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
@@ -20,7 +21,6 @@ import { Errors } from "../lib/Errors.sol";
 import { IDerivativeWorkflows } from "../interfaces/workflows/IDerivativeWorkflows.sol";
 import { ISPGNFT } from "../interfaces/ISPGNFT.sol";
 import { MetadataHelper } from "../lib/MetadataHelper.sol";
-import { PermissionHelper } from "../lib/PermissionHelper.sol";
 import { WorkflowStructs } from "../lib/WorkflowStructs.sol";
 
 /// @title Derivative Workflows
@@ -136,14 +136,15 @@ contract DerivativeWorkflows is
 
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 
-        _collectMintFeesAndSetApproval(
-            msg.sender,
-            address(ROYALTY_MODULE),
-            address(LICENSING_MODULE),
-            derivData.licenseTemplate,
-            derivData.parentIpIds,
-            derivData.licenseTermsIds
-        );
+        _collectMintFeesAndSetApproval({
+            ipId: ipId,
+            ipOwnerAddress: address(this),
+            payerAddress: msg.sender,
+            licenseTemplate: derivData.licenseTemplate,
+            parentIpIds: derivData.parentIpIds,
+            licenseTermsIds: derivData.licenseTermsIds,
+            sigMintingFee: WorkflowStructs.SignatureData({ signer: address(0), deadline: 0, signature: "" })
+        });
 
         LICENSING_MODULE.registerDerivative({
             childIpId: ipId,
@@ -163,6 +164,7 @@ contract DerivativeWorkflows is
     /// @param derivData The derivative data to be used for registerDerivative.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
+    /// @param sigMintingFee OPTIONAL. Signature data for approving license minting fee for the IP via the currency token.
     /// @param sigRegister Signature data for registerDerivative for the IP via the Licensing Module.
     /// @return ipId The ID of the newly registered IP.
     function registerIpAndMakeDerivative(
@@ -171,41 +173,39 @@ contract DerivativeWorkflows is
         WorkflowStructs.MakeDerivative calldata derivData,
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigMetadata,
+        WorkflowStructs.SignatureData calldata sigMintingFee,
         WorkflowStructs.SignatureData calldata sigRegister
     ) external returns (address ipId) {
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        MetadataHelper.setMetadataWithSig(
-            ipId,
-            address(CORE_METADATA_MODULE),
-            address(ACCESS_CONTROLLER),
-            ipMetadata,
-            sigMetadata
-        );
+        MetadataHelper.setMetadataWithSig(ipId, address(CORE_METADATA_MODULE), ipMetadata, sigMetadata);
 
-        PermissionHelper.setPermissionForModule(
-            ipId,
-            address(LICENSING_MODULE),
-            address(ACCESS_CONTROLLER),
-            ILicensingModule.registerDerivative.selector,
-            sigRegister
-        );
-
-        _collectMintFeesAndSetApproval(
-            msg.sender,
-            address(ROYALTY_MODULE),
-            address(LICENSING_MODULE),
-            derivData.licenseTemplate,
-            derivData.parentIpIds,
-            derivData.licenseTermsIds
-        );
-
-        LICENSING_MODULE.registerDerivative({
-            childIpId: ipId,
+        _collectMintFeesAndSetApproval({
+            ipId: ipId,
+            ipOwnerAddress: msg.sender,
+            payerAddress: msg.sender,
+            licenseTemplate: derivData.licenseTemplate,
             parentIpIds: derivData.parentIpIds,
             licenseTermsIds: derivData.licenseTermsIds,
-            licenseTemplate: derivData.licenseTemplate,
-            royaltyContext: derivData.royaltyContext,
-            maxMintingFee: derivData.maxMintingFee
+            sigMintingFee: sigMintingFee
+        });
+
+        bytes memory data = abi.encodeWithSelector(
+            ILicensingModule.registerDerivative.selector,
+            ipId,
+            derivData.parentIpIds,
+            derivData.licenseTermsIds,
+            derivData.licenseTemplate,
+            derivData.royaltyContext,
+            derivData.maxMintingFee
+        );
+
+        IIPAccount(payable(ipId)).executeWithSig({
+            to: address(LICENSING_MODULE),
+            value: 0,
+            data: data,
+            signer: sigRegister.signer,
+            deadline: sigRegister.deadline,
+            signature: sigRegister.signature
         });
     }
 
@@ -228,8 +228,6 @@ contract DerivativeWorkflows is
         address recipient,
         bool allowDuplicates
     ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId) {
-        _collectLicenseTokens(licenseTokenIds, address(LICENSE_TOKEN));
-
         tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
             to: address(this),
             payer: msg.sender,
@@ -240,6 +238,8 @@ contract DerivativeWorkflows is
 
         ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
+
+        _collectLicenseTokens(address(this), licenseTokenIds, address(LICENSE_TOKEN));
 
         LICENSING_MODULE.registerDerivativeWithLicenseTokens(ipId, licenseTokenIds, royaltyContext);
 
@@ -265,58 +265,64 @@ contract DerivativeWorkflows is
         WorkflowStructs.SignatureData calldata sigMetadata,
         WorkflowStructs.SignatureData calldata sigRegister
     ) external returns (address ipId) {
-        _collectLicenseTokens(licenseTokenIds, address(LICENSE_TOKEN));
-
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        MetadataHelper.setMetadataWithSig(
-            ipId,
-            address(CORE_METADATA_MODULE),
-            address(ACCESS_CONTROLLER),
-            ipMetadata,
-            sigMetadata
-        );
+        MetadataHelper.setMetadataWithSig(ipId, address(CORE_METADATA_MODULE), ipMetadata, sigMetadata);
 
-        PermissionHelper.setPermissionForModule(
-            ipId,
-            address(LICENSING_MODULE),
-            address(ACCESS_CONTROLLER),
-            ILicensingModule.registerDerivativeWithLicenseTokens.selector,
-            sigRegister
-        );
-        LICENSING_MODULE.registerDerivativeWithLicenseTokens(ipId, licenseTokenIds, royaltyContext);
+        _collectLicenseTokens(ipId, licenseTokenIds, address(LICENSE_TOKEN));
+
+        IIPAccount(payable(ipId)).executeWithSig({
+            to: address(LICENSING_MODULE),
+            value: 0,
+            data: abi.encodeWithSelector(
+                ILicensingModule.registerDerivativeWithLicenseTokens.selector,
+                ipId,
+                licenseTokenIds,
+                royaltyContext
+            ),
+            signer: sigRegister.signer,
+            deadline: sigRegister.deadline,
+            signature: sigRegister.signature
+        });
     }
 
-    /// @dev Collects license tokens from the caller. Assumes the periphery contract has permission
-    /// to transfer the license tokens.
+    /// @dev Collects license tokens from the caller and transfers them to the destination address.
+    /// Assumes the periphery contract has permission to transfer the license tokens.
+    /// @param destination The address to transfer the license tokens to.
     /// @param licenseTokenIds The IDs of the license tokens to be collected.
     /// @param licenseToken The address of the license token contract.
-    function _collectLicenseTokens(uint256[] calldata licenseTokenIds, address licenseToken) private {
+    function _collectLicenseTokens(
+        address destination,
+        uint256[] calldata licenseTokenIds,
+        address licenseToken
+    ) private {
         if (licenseTokenIds.length == 0) revert Errors.DerivativeWorkflows__EmptyLicenseTokens();
         for (uint256 i = 0; i < licenseTokenIds.length; i++) {
             address tokenOwner = ILicenseToken(licenseToken).ownerOf(licenseTokenIds[i]);
 
-            if (tokenOwner == address(this)) continue;
+            if (tokenOwner == destination) continue;
             if (tokenOwner != address(msg.sender))
                 revert Errors.DerivativeWorkflows__CallerAndNotTokenOwner(licenseTokenIds[i], msg.sender, tokenOwner);
 
-            ILicenseToken(licenseToken).safeTransferFrom(msg.sender, address(this), licenseTokenIds[i]);
+            ILicenseToken(licenseToken).safeTransferFrom(msg.sender, destination, licenseTokenIds[i]);
         }
     }
 
     /// @dev Collect mint fees for all parent IPs from the payer and set approval for Royalty Module to spend mint fees.
+    /// @param ipId The ID of the IP.
+    /// @param ipOwnerAddress The address of the owner of the IP.
     /// @param payerAddress The address of the payer for the license mint fees.
-    /// @param royaltyModule The address of the Royalty Module.
-    /// @param licensingModule The address of the Licensing Module.
     /// @param licenseTemplate The address of the license template.
     /// @param parentIpIds The IDs of all the parent IPs.
     /// @param licenseTermsIds The IDs of the license terms for each corresponding parent IP.
+    /// @param sigMintingFee OPTIONAL. Signature data for approving license minting fee for the IP via the currency token.
     function _collectMintFeesAndSetApproval(
+        address ipId,
+        address ipOwnerAddress,
         address payerAddress,
-        address royaltyModule,
-        address licensingModule,
         address licenseTemplate,
         address[] calldata parentIpIds,
-        uint256[] calldata licenseTermsIds
+        uint256[] calldata licenseTermsIds,
+        WorkflowStructs.SignatureData memory sigMintingFee
     ) private {
         ILicenseTemplate lct = ILicenseTemplate(licenseTemplate);
         (address royaltyPolicy, , , address mintFeeCurrencyToken) = lct.getRoyaltyPolicy(licenseTermsIds[0]);
@@ -325,18 +331,30 @@ contract DerivativeWorkflows is
             // Get total mint fee for all parent IPs
             uint256 totalMintFee = _aggregateMintFees({
                 payerAddress: payerAddress,
-                licensingModule: licensingModule,
+                licensingModule: address(LICENSING_MODULE),
                 licenseTemplate: licenseTemplate,
                 parentIpIds: parentIpIds,
                 licenseTermsIds: licenseTermsIds
             });
 
             if (totalMintFee != 0) {
-                // Transfer mint fee from payer to this contract
-                IERC20(mintFeeCurrencyToken).safeTransferFrom(payerAddress, address(this), totalMintFee);
-
-                // Approve Royalty Policy to spend mint fee
-                IERC20(mintFeeCurrencyToken).forceApprove(royaltyModule, totalMintFee);
+                // approve royalty module to spend mint fee
+                if (ipOwnerAddress == address(this)) {
+                    // if owner is this contract, we transfer the mint fee to this contract and approve royalty module
+                    IERC20(mintFeeCurrencyToken).transferFrom(payerAddress, address(this), totalMintFee);
+                    IERC20(mintFeeCurrencyToken).forceApprove(address(ROYALTY_MODULE), totalMintFee);
+                } else {
+                    // if owner is not this contract, we need to transfer the minting fee to IP account and use `executeWithSig` to approve royalty module
+                    IERC20(mintFeeCurrencyToken).transferFrom(payerAddress, address(ipId), totalMintFee);
+                    IIPAccount(payable(ipId)).executeWithSig({
+                        to: address(mintFeeCurrencyToken),
+                        value: 0,
+                        data: abi.encodeWithSelector(IERC20.approve.selector, address(ROYALTY_MODULE), totalMintFee),
+                        signer: sigMintingFee.signer,
+                        deadline: sigMintingFee.deadline,
+                        signature: sigMintingFee.signature
+                    });
+                }
             }
         }
     }

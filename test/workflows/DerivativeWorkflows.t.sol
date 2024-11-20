@@ -3,6 +3,7 @@ pragma solidity 0.8.26;
 /* solhint-disable no-console */
 
 // external
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
@@ -242,22 +243,31 @@ contract DerivativeWorkflowsTest is BaseTest {
         licenseTokenIds[0] = startLicenseTokenId;
         licenseToken.approve(address(derivativeWorkflows), startLicenseTokenId);
 
-        (bytes memory sigMetadata, bytes32 expectedState, ) = _getSetPermissionSigForPeriphery({
+        (bytes memory sigMetadata, bytes32 expectedState) = _getSigForExecuteWithSig({
             ipId: ipIdChild,
-            to: address(derivativeWorkflows),
-            module: address(coreMetadataModule),
-            selector: ICoreMetadataModule.setAll.selector,
+            to: address(coreMetadataModule),
             deadline: deadline,
             state: bytes32(0),
+            data: abi.encodeWithSelector(
+                ICoreMetadataModule.setAll.selector,
+                ipIdChild,
+                ipMetadataDefault.ipMetadataURI,
+                ipMetadataDefault.ipMetadataHash,
+                ipMetadataDefault.nftMetadataHash
+            ),
             signerSk: sk.alice
         });
-        (bytes memory sigRegister, , ) = _getSetPermissionSigForPeriphery({
+        (bytes memory sigRegister, ) = _getSigForExecuteWithSig({
             ipId: ipIdChild,
-            to: address(derivativeWorkflows),
-            module: address(licensingModule),
-            selector: ILicensingModule.registerDerivativeWithLicenseTokens.selector,
+            to: address(licensingModule),
             deadline: deadline,
             state: expectedState,
+            data: abi.encodeWithSelector(
+                ILicensingModule.registerDerivativeWithLicenseTokens.selector,
+                ipIdChild,
+                licenseTokenIds,
+                ""
+            ),
             signerSk: sk.alice
         });
 
@@ -408,30 +418,92 @@ contract DerivativeWorkflowsTest is BaseTest {
 
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory sigMetadata, bytes32 expectedState, ) = _getSetPermissionSigForPeriphery({
-            ipId: ipIdChild,
-            to: address(derivativeWorkflows),
-            module: address(coreMetadataModule),
-            selector: ICoreMetadataModule.setAll.selector,
-            deadline: deadline,
-            state: bytes32(0),
-            signerSk: sk.alice
-        });
-        (bytes memory sigRegister, , ) = _getSetPermissionSigForPeriphery({
-            ipId: ipIdChild,
-            to: address(derivativeWorkflows),
-            module: address(licensingModule),
-            selector: ILicensingModule.registerDerivative.selector,
-            deadline: deadline,
-            state: expectedState,
-            signerSk: sk.alice
-        });
-
         address[] memory parentIpIds = new address[](1);
         parentIpIds[0] = ipIdParent;
 
         uint256[] memory licenseTermsIds = new uint256[](1);
         licenseTermsIds[0] = licenseTermsIdParent;
+
+        WorkflowStructs.SignatureData memory sigMetadataData;
+        WorkflowStructs.SignatureData memory sigMintingFeeData;
+        WorkflowStructs.SignatureData memory sigRegisterData;
+
+        {
+            bytes32 expectedState;
+            {
+                bytes memory sigMetadata;
+                (sigMetadata, expectedState) = _getSigForExecuteWithSig({
+                    ipId: ipIdChild,
+                    to: address(coreMetadataModule),
+                    deadline: deadline,
+                    state: bytes32(0),
+                    data: abi.encodeWithSelector(
+                        ICoreMetadataModule.setAll.selector,
+                        ipIdChild,
+                        ipMetadataDefault.ipMetadataURI,
+                        ipMetadataDefault.ipMetadataHash,
+                        ipMetadataDefault.nftMetadataHash
+                    ),
+                    signerSk: sk.alice
+                });
+                sigMetadataData = WorkflowStructs.SignatureData({
+                    signer: u.alice,
+                    deadline: deadline,
+                    signature: sigMetadata
+                });
+            }
+
+            {
+                uint256 totalMintingFee = _getTotalMintingFee(parentIpIds, licenseTermsIds);
+                if (totalMintingFee == 0) {
+                    // If the total minting fee is 0, we don't need to have a signature for approving the minting fee
+                    sigMintingFeeData = WorkflowStructs.SignatureData({
+                        signer: u.alice,
+                        deadline: deadline,
+                        signature: ""
+                    });
+                } else {
+                    bytes memory sigMintingFee;
+                    (sigMintingFee, expectedState) = _getSigForExecuteWithSig({
+                        ipId: ipIdChild,
+                        to: address(mockToken),
+                        deadline: deadline,
+                        state: expectedState,
+                        data: abi.encodeWithSelector(IERC20.approve.selector, address(royaltyModule), totalMintingFee),
+                        signerSk: sk.alice
+                    });
+                    sigMintingFeeData = WorkflowStructs.SignatureData({
+                        signer: u.alice,
+                        deadline: deadline,
+                        signature: sigMintingFee
+                    });
+                }
+            }
+
+            {
+                (bytes memory sigRegister, ) = _getSigForExecuteWithSig({
+                    ipId: ipIdChild,
+                    to: address(licensingModule),
+                    deadline: deadline,
+                    state: expectedState,
+                    data: abi.encodeWithSelector(
+                        ILicensingModule.registerDerivative.selector,
+                        ipIdChild,
+                        parentIpIds,
+                        licenseTermsIds,
+                        address(pilTemplate),
+                        "",
+                        0
+                    ),
+                    signerSk: sk.alice
+                });
+                sigRegisterData = WorkflowStructs.SignatureData({
+                    signer: u.alice,
+                    deadline: deadline,
+                    signature: sigRegister
+                });
+            }
+        }
 
         address ipIdChildActual = derivativeWorkflows.registerIpAndMakeDerivative({
             nftContract: address(nftContract),
@@ -444,8 +516,9 @@ contract DerivativeWorkflowsTest is BaseTest {
                 maxMintingFee: 0
             }),
             ipMetadata: ipMetadataDefault,
-            sigMetadata: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: sigMetadata }),
-            sigRegister: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: sigRegister })
+            sigMetadata: sigMetadataData,
+            sigMintingFee: sigMintingFeeData,
+            sigRegister: sigRegisterData
         });
         assertEq(ipIdChildActual, ipIdChild);
         assertTrue(ipAssetRegistry.isRegistered(ipIdChild));
@@ -465,5 +538,24 @@ contract DerivativeWorkflowsTest is BaseTest {
             expectedParentCount: 1,
             expectedParentIndex: 0
         });
+    }
+
+    function _getTotalMintingFee(
+        address[] memory parentIpIds,
+        uint256[] memory licenseTermsIds
+    ) internal view returns (uint256) {
+        uint256 totalMintingFee;
+        for (uint256 i = 0; i < parentIpIds.length; i++) {
+            (, uint256 mintFee) = ILicensingModule(licensingModule).predictMintingLicenseFee({
+                licensorIpId: parentIpIds[i],
+                licenseTemplate: address(pilTemplate),
+                licenseTermsId: licenseTermsIds[i],
+                amount: 1,
+                receiver: address(this),
+                royaltyContext: ""
+            });
+            totalMintingFee += mintFee;
+        }
+        return totalMintingFee;
     }
 }

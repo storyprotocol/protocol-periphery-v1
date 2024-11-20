@@ -16,7 +16,6 @@ import { ILicenseAttachmentWorkflows } from "../interfaces/workflows/ILicenseAtt
 import { ISPGNFT } from "../interfaces/ISPGNFT.sol";
 import { LicensingHelper } from "../lib/LicensingHelper.sol";
 import { MetadataHelper } from "../lib/MetadataHelper.sol";
-import { PermissionHelper } from "../lib/PermissionHelper.sol";
 import { WorkflowStructs } from "../lib/WorkflowStructs.sol";
 
 /// @title License Attachment Workflows
@@ -99,20 +98,12 @@ contract LicenseAttachmentWorkflows is
         PILTerms calldata terms,
         WorkflowStructs.SignatureData calldata sigAttach
     ) external returns (uint256 licenseTermsId) {
-        PermissionHelper.setPermissionForModule(
-            ipId,
-            address(LICENSING_MODULE),
-            address(ACCESS_CONTROLLER),
-            ILicensingModule.attachLicenseTerms.selector,
-            sigAttach
-        );
-
-        licenseTermsId = LicensingHelper.registerPILTermsAndAttach(
+        licenseTermsId = LicensingHelper.registerPILTermsAndAttachWithSig(
             ipId,
             address(PIL_TEMPLATE),
             address(LICENSING_MODULE),
-            address(LICENSE_REGISTRY),
-            terms
+            terms,
+            sigAttach
         );
     }
 
@@ -149,7 +140,6 @@ contract LicenseAttachmentWorkflows is
             ipId,
             address(PIL_TEMPLATE),
             address(LICENSING_MODULE),
-            address(LICENSE_REGISTRY),
             terms
         );
 
@@ -176,28 +166,14 @@ contract LicenseAttachmentWorkflows is
         WorkflowStructs.SignatureData calldata sigAttach
     ) external returns (address ipId, uint256 licenseTermsId) {
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        MetadataHelper.setMetadataWithSig(
-            ipId,
-            address(CORE_METADATA_MODULE),
-            address(ACCESS_CONTROLLER),
-            ipMetadata,
-            sigMetadata
-        );
+        MetadataHelper.setMetadataWithSig(ipId, address(CORE_METADATA_MODULE), ipMetadata, sigMetadata);
 
-        PermissionHelper.setPermissionForModule(
-            ipId,
-            address(LICENSING_MODULE),
-            address(ACCESS_CONTROLLER),
-            ILicensingModule.attachLicenseTerms.selector,
-            sigAttach
-        );
-
-        licenseTermsId = LicensingHelper.registerPILTermsAndAttach(
+        licenseTermsId = LicensingHelper.registerPILTermsAndAttachWithSig(
             ipId,
             address(PIL_TEMPLATE),
             address(LICENSING_MODULE),
-            address(LICENSE_REGISTRY),
-            terms
+            terms,
+            sigAttach
         );
     }
 

@@ -8,6 +8,7 @@ import { Errors as CoreErrors } from "@storyprotocol/core/lib/Errors.sol";
 import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
+import { IPILicenseTemplate } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 
 // contracts
@@ -82,19 +83,32 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         address payable ipId = ipAsset[1].ipId;
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory signature, , ) = _getSetPermissionSigForPeriphery({
+        // TODO: this is a hack to get the license terms id, we should refactor this in the next PR
+        uint256 licenseTermsId = IPILicenseTemplate(pilTemplate).registerLicenseTerms(
+            PILFlavors.commercialUse({
+                mintingFee: 100,
+                currencyToken: address(mockToken),
+                royaltyPolicy: address(royaltyPolicyLAP)
+            })
+        );
+
+        (bytes memory signature, ) = _getSigForExecuteWithSig({
             ipId: ipId,
-            to: address(licenseAttachmentWorkflows),
-            module: address(licensingModule),
-            selector: ILicensingModule.attachLicenseTerms.selector,
+            to: address(licensingModule),
             deadline: deadline,
             state: IIPAccount(ipId).state(),
+            data: abi.encodeWithSelector(
+                ILicensingModule.attachLicenseTerms.selector,
+                ipId,
+                pilTemplate,
+                licenseTermsId
+            ),
             signerSk: sk.alice
         });
 
         uint256 ltAmt = pilTemplate.totalRegisteredLicenseTerms();
 
-        uint256 licenseTermsId = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+        licenseTermsId = licenseAttachmentWorkflows.registerPILTermsAndAttach({
             ipId: ipId,
             terms: PILFlavors.commercialUse({
                 mintingFee: 100,
@@ -104,7 +118,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             sigAttach: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: signature })
         });
 
-        assertEq(licenseTermsId, ltAmt + 1);
+        assertEq(licenseTermsId, ltAmt);
     }
 
     function test_LicenseAttachmentWorkflows_mintAndRegisterIpAndAttachPILTerms()
@@ -161,23 +175,32 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
 
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory sigMetadata, bytes32 expectedState, ) = _getSetPermissionSigForPeriphery({
+        (bytes memory sigMetadata, bytes32 expectedState) = _getSigForExecuteWithSig({
             ipId: ipId,
-            to: address(licenseAttachmentWorkflows),
-            module: address(coreMetadataModule),
-            selector: ICoreMetadataModule.setAll.selector,
+            to: address(coreMetadataModule),
             deadline: deadline,
             state: bytes32(0),
+            data: abi.encodeWithSelector(
+                ICoreMetadataModule.setAll.selector,
+                ipId,
+                ipMetadataDefault.ipMetadataURI,
+                ipMetadataDefault.ipMetadataHash,
+                ipMetadataDefault.nftMetadataHash
+            ),
             signerSk: sk.alice
         });
 
-        (bytes memory sigAttach, , ) = _getSetPermissionSigForPeriphery({
+        (bytes memory sigAttach, ) = _getSigForExecuteWithSig({
             ipId: ipId,
-            to: address(licenseAttachmentWorkflows),
-            module: address(licensingModule),
-            selector: ILicensingModule.attachLicenseTerms.selector,
+            to: address(licensingModule),
             deadline: deadline,
             state: expectedState,
+            data: abi.encodeWithSelector(
+                ILicensingModule.attachLicenseTerms.selector,
+                ipId,
+                pilTemplate,
+                IPILicenseTemplate(pilTemplate).getLicenseTermsId(PILFlavors.nonCommercialSocialRemixing())
+            ),
             signerSk: sk.alice
         });
 
@@ -199,13 +222,26 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         address payable ipId = ipAsset[1].ipId;
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory signature1, , ) = _getSetPermissionSigForPeriphery({
+        // TODO: this is a hack to get the license terms id, we should refactor this in the next PR
+        uint256 licenseTermsId = IPILicenseTemplate(pilTemplate).registerLicenseTerms(
+            PILFlavors.commercialUse({
+                mintingFee: 100,
+                currencyToken: address(mockToken),
+                royaltyPolicy: address(royaltyPolicyLAP)
+            })
+        );
+
+        (bytes memory signature1, ) = _getSigForExecuteWithSig({
             ipId: ipId,
-            to: address(licenseAttachmentWorkflows),
-            module: address(licensingModule),
-            selector: ILicensingModule.attachLicenseTerms.selector,
+            to: address(licensingModule),
             deadline: deadline,
             state: IIPAccount(ipId).state(),
+            data: abi.encodeWithSelector(
+                ILicensingModule.attachLicenseTerms.selector,
+                ipId,
+                pilTemplate,
+                licenseTermsId
+            ),
             signerSk: sk.alice
         });
 
@@ -219,13 +255,17 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             sigAttach: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: signature1 })
         });
 
-        (bytes memory signature2, , ) = _getSetPermissionSigForPeriphery({
+        (bytes memory signature2, ) = _getSigForExecuteWithSig({
             ipId: ipId,
-            to: address(licenseAttachmentWorkflows),
-            module: address(licensingModule),
-            selector: ILicensingModule.attachLicenseTerms.selector,
+            to: address(licensingModule),
             deadline: deadline,
             state: IIPAccount(ipId).state(),
+            data: abi.encodeWithSelector(
+                ILicensingModule.attachLicenseTerms.selector,
+                ipId,
+                pilTemplate,
+                licenseTermsId1
+            ),
             signerSk: sk.alice
         });
 
@@ -280,13 +320,26 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
 
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory signature, , ) = _getSetPermissionSigForPeriphery({
+        // TODO: this is a hack to get the license terms id, we should refactor this in the next PR
+        uint256 licenseTermsId = IPILicenseTemplate(pilTemplate).registerLicenseTerms(
+            PILFlavors.commercialUse({
+                mintingFee: 100,
+                currencyToken: address(mockToken),
+                royaltyPolicy: address(royaltyPolicyLAP)
+            })
+        );
+
+        (bytes memory signature, ) = _getSigForExecuteWithSig({
             ipId: ipIdChild,
-            to: address(licenseAttachmentWorkflows),
-            module: address(licensingModule),
-            selector: ILicensingModule.attachLicenseTerms.selector,
+            to: address(licensingModule),
             deadline: deadline,
             state: IIPAccount(payable(ipIdChild)).state(),
+            data: abi.encodeWithSelector(
+                ILicensingModule.attachLicenseTerms.selector,
+                ipIdChild,
+                pilTemplate,
+                licenseTermsId
+            ),
             signerSk: sk.alice
         });
 

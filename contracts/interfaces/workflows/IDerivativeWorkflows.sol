@@ -29,6 +29,7 @@ interface IDerivativeWorkflows {
     /// @param derivData The derivative data to be used for registerDerivative.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
+    /// @param sigMintingFee OPTIONAL. Signature data for approving license minting fee for the IP via the currency token.
     /// @param sigRegister Signature data for registerDerivative for the IP via the Licensing Module.
     /// @return ipId The ID of the newly registered IP.
     function registerIpAndMakeDerivative(
@@ -37,6 +38,7 @@ interface IDerivativeWorkflows {
         WorkflowStructs.MakeDerivative calldata derivData,
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigMetadata,
+        WorkflowStructs.SignatureData calldata sigMintingFee,
         WorkflowStructs.SignatureData calldata sigRegister
     ) external returns (address ipId);
 

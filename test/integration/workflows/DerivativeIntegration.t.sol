@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 // external
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
@@ -95,23 +96,49 @@ contract DerivativeIntegration is BaseIntegration {
 
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory sigMetadata, bytes32 sigRegisterState, ) = _getSetPermissionSigForPeriphery({
+        bytes32 expectedState;
+        bytes memory sigMetadata;
+        bytes memory sigMintingFee;
+        bytes memory sigRegister;
+
+        (sigMetadata, expectedState) = _getSigForExecuteWithSig({
             ipId: childIpId,
-            to: derivativeWorkflowsAddr,
-            module: coreMetadataModuleAddr,
-            selector: ICoreMetadataModule.setAll.selector,
+            to: coreMetadataModuleAddr,
             deadline: deadline,
             state: bytes32(0),
+            data: abi.encodeWithSelector(
+                ICoreMetadataModule.setAll.selector,
+                childIpId,
+                testIpMetadata.ipMetadataURI,
+                testIpMetadata.ipMetadataHash,
+                testIpMetadata.nftMetadataHash
+            ),
             signerSk: testSenderSk
         });
 
-        (bytes memory sigRegister, bytes32 expectedState, ) = _getSetPermissionSigForPeriphery({
+        (sigMintingFee, expectedState) = _getSigForExecuteWithSig({
             ipId: childIpId,
-            to: derivativeWorkflowsAddr,
-            module: licensingModuleAddr,
-            selector: ILicensingModule.registerDerivative.selector,
+            to: address(StoryUSD),
             deadline: deadline,
-            state: sigRegisterState,
+            state: expectedState,
+            data: abi.encodeWithSelector(IERC20.approve.selector, address(royaltyModule), testMintFee),
+            signerSk: testSenderSk
+        });
+
+        (sigRegister, ) = _getSigForExecuteWithSig({
+            ipId: childIpId,
+            to: licensingModuleAddr,
+            deadline: deadline,
+            state: expectedState,
+            data: abi.encodeWithSelector(
+                ILicensingModule.registerDerivative.selector,
+                childIpId,
+                parentIpIds,
+                parentLicenseTermIds,
+                parentLicenseTemplate,
+                "",
+                0
+            ),
             signerSk: testSenderSk
         });
 
@@ -132,6 +159,11 @@ contract DerivativeIntegration is BaseIntegration {
                 signer: testSender,
                 deadline: deadline,
                 signature: sigMetadata
+            }),
+            sigMintingFee: WorkflowStructs.SignatureData({
+                signer: testSender,
+                deadline: deadline,
+                signature: sigMintingFee
             }),
             sigRegister: WorkflowStructs.SignatureData({
                 signer: testSender,
@@ -245,22 +277,31 @@ contract DerivativeIntegration is BaseIntegration {
         licenseTokenIds[0] = startLicenseTokenId;
         licenseToken.approve(derivativeWorkflowsAddr, startLicenseTokenId);
 
-        (bytes memory sigMetadata, bytes32 sigRegisterState, ) = _getSetPermissionSigForPeriphery({
+        (bytes memory sigMetadata, bytes32 sigRegisterState) = _getSigForExecuteWithSig({
             ipId: childIpId,
-            to: derivativeWorkflowsAddr,
-            module: coreMetadataModuleAddr,
-            selector: ICoreMetadataModule.setAll.selector,
+            to: coreMetadataModuleAddr,
             deadline: deadline,
             state: bytes32(0),
+            data: abi.encodeWithSelector(
+                ICoreMetadataModule.setAll.selector,
+                childIpId,
+                testIpMetadata.ipMetadataURI,
+                testIpMetadata.ipMetadataHash,
+                testIpMetadata.nftMetadataHash
+            ),
             signerSk: testSenderSk
         });
-        (bytes memory sigRegister, bytes32 expectedState, ) = _getSetPermissionSigForPeriphery({
+        (bytes memory sigRegister, bytes32 expectedState) = _getSigForExecuteWithSig({
             ipId: childIpId,
-            to: derivativeWorkflowsAddr,
-            module: licensingModuleAddr,
-            selector: ILicensingModule.registerDerivativeWithLicenseTokens.selector,
+            to: licensingModuleAddr,
             deadline: deadline,
             state: sigRegisterState,
+            data: abi.encodeWithSelector(
+                ILicensingModule.registerDerivativeWithLicenseTokens.selector,
+                childIpId,
+                licenseTokenIds,
+                ""
+            ),
             signerSk: testSenderSk
         });
 

@@ -21,6 +21,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
 
     ISPGNFT private spgNftContract;
     PILTerms private commUseTerms;
+    uint256 private commUseTermsId;
 
     /// @dev To use, run the following command:
     /// forge script test/integration/workflows/LicenseAttachmentIntegration.t.sol:LicenseAttachmentIntegration \
@@ -50,13 +51,17 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         });
 
         uint256 deadline = block.timestamp + 1000;
-        (bytes memory signature, , ) = _getSetPermissionSigForPeriphery({
+        (bytes memory signature, ) = _getSigForExecuteWithSig({
             ipId: ipId,
-            to: licenseAttachmentWorkflowsAddr,
-            module: licensingModuleAddr,
-            selector: ILicensingModule.attachLicenseTerms.selector,
+            to: licensingModuleAddr,
             deadline: deadline,
             state: IIPAccount(payable(ipId)).state(),
+            data: abi.encodeWithSelector(
+                ILicensingModule.attachLicenseTerms.selector,
+                ipId,
+                pilTemplateAddr,
+                commUseTermsId
+            ),
             signerSk: testSenderSk
         });
 
@@ -66,7 +71,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
             sigAttach: WorkflowStructs.SignatureData({ signer: testSender, deadline: deadline, signature: signature })
         });
 
-        assertEq(licenseTermsId, pilTemplate.getLicenseTermsId(commUseTerms));
+        assertEq(licenseTermsId, commUseTermsId);
     }
 
     function _test_LicenseAttachmentIntegration_mintAndRegisterIpAndAttachPILTerms()
@@ -137,23 +142,32 @@ contract LicenseAttachmentIntegration is BaseIntegration {
 
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory sigMetadata, bytes32 sigAttachState, ) = _getSetPermissionSigForPeriphery({
+        (bytes memory sigMetadata, bytes32 sigAttachState) = _getSigForExecuteWithSig({
             ipId: expectedIpId,
-            to: licenseAttachmentWorkflowsAddr,
-            module: coreMetadataModuleAddr,
-            selector: ICoreMetadataModule.setAll.selector,
+            to: coreMetadataModuleAddr,
             deadline: deadline,
             state: bytes32(0),
+            data: abi.encodeWithSelector(
+                ICoreMetadataModule.setAll.selector,
+                expectedIpId,
+                testIpMetadata.ipMetadataURI,
+                testIpMetadata.ipMetadataHash,
+                testIpMetadata.nftMetadataHash
+            ),
             signerSk: testSenderSk
         });
 
-        (bytes memory sigAttach, bytes32 expectedState, ) = _getSetPermissionSigForPeriphery({
+        (bytes memory sigAttach, bytes32 expectedState) = _getSigForExecuteWithSig({
             ipId: expectedIpId,
-            to: licenseAttachmentWorkflowsAddr,
-            module: licensingModuleAddr,
-            selector: ILicensingModule.attachLicenseTerms.selector,
+            to: licensingModuleAddr,
             deadline: deadline,
             state: sigAttachState,
+            data: abi.encodeWithSelector(
+                ILicensingModule.attachLicenseTerms.selector,
+                expectedIpId,
+                pilTemplateAddr,
+                commUseTermsId
+            ),
             signerSk: testSenderSk
         });
 
@@ -205,5 +219,8 @@ contract LicenseAttachmentIntegration is BaseIntegration {
             currencyToken: testMintFeeToken,
             royaltyPolicy: royaltyPolicyLRPAddr
         });
+
+        // TODO: this is a hack to get the license terms id, we should refactor this in the next PR
+        commUseTermsId = pilTemplate.registerLicenseTerms(commUseTerms);
     }
 }

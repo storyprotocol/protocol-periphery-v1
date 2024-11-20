@@ -38,8 +38,8 @@ interface IGroupingWorkflows {
     /// @param licenseTemplate The address of the license template to be attached to the new IP.
     /// @param licenseTermsId The ID of the registered license terms that will be attached to the new IP.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
-    /// @param sigMetadataAndAttach Signature data for setAll (metadata) and attachLicenseTerms to the IP
-    /// via the Core Metadata Module and Licensing Module.
+    /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata).
+    /// @param sigAttach Signature data for attachLicenseTerms to the IP via the Licensing Module.
     /// @param sigAddToGroup Signature data for addIp to the group IP via the Grouping Module.
     /// @return ipId The ID of the newly registered IP.
     function registerIpAndAttachLicenseAndAddToGroup(
@@ -49,7 +49,8 @@ interface IGroupingWorkflows {
         address licenseTemplate,
         uint256 licenseTermsId,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        WorkflowStructs.SignatureData calldata sigMetadataAndAttach,
+        WorkflowStructs.SignatureData calldata sigMetadata,
+        WorkflowStructs.SignatureData calldata sigAttach,
         WorkflowStructs.SignatureData calldata sigAddToGroup
     ) external returns (address ipId);
 

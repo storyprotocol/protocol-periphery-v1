@@ -4,8 +4,11 @@ pragma solidity 0.8.26;
 
 // external
 import { console2 } from "forge-std/console2.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
+import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
+import { IPILicenseTemplate } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 import { IpRoyaltyVault } from "@storyprotocol/core/modules/royalty/policies/IpRoyaltyVault.sol";
 import { IVaultController } from "@storyprotocol/core/interfaces/modules/royalty/policies/IVaultController.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
@@ -209,16 +212,30 @@ contract RoyaltyIntegration is BaseIntegration {
         ancestorIpId = ipAssetRegistry.register(block.chainid, address(spgNftContract), ancestorTokenId);
         vm.label(ancestorIpId, "AncestorIp");
 
+        // TODO: this is a hack to get the license terms id, we should refactor this in the next PR
+        commRemixTermsIdA = IPILicenseTemplate(pilTemplate).registerLicenseTerms(
+            PILFlavors.commercialRemix({
+                mintingFee: defaultMintingFeeA,
+                commercialRevShare: defaultCommRevShareA,
+                royaltyPolicy: royaltyPolicyLRPAddr,
+                currencyToken: address(StoryUSD)
+            })
+        );
+
         uint256 deadline = block.timestamp + 1000;
 
-        // set permission for licensing module to attach license terms to ancestor IP
-        (bytes memory signatureA, , ) = _getSetPermissionSigForPeriphery({
+        // get the signature for executing `attachLicenseTerms` function in `LicensingModule` on behalf of the IP owner
+        (bytes memory signatureA, ) = _getSigForExecuteWithSig({
             ipId: ancestorIpId,
-            to: licenseAttachmentWorkflowsAddr,
-            module: licensingModuleAddr,
-            selector: licensingModule.attachLicenseTerms.selector,
+            to: licensingModuleAddr,
             deadline: deadline,
             state: IIPAccount(payable(ancestorIpId)).state(),
+            data: abi.encodeWithSelector(
+                ILicensingModule.attachLicenseTerms.selector,
+                ancestorIpId,
+                pilTemplateAddr,
+                commRemixTermsIdA
+            ),
             signerSk: testSenderSk
         });
 
@@ -234,14 +251,27 @@ contract RoyaltyIntegration is BaseIntegration {
             sigAttach: WorkflowStructs.SignatureData({ signer: testSender, deadline: deadline, signature: signatureA })
         });
 
-        // set permission for licensing module to attach license terms to ancestor IP
-        (bytes memory signatureC, , ) = _getSetPermissionSigForPeriphery({
+        // TODO: this is a hack to get the license terms id, we should refactor this in the next PR
+        commRemixTermsIdC = IPILicenseTemplate(pilTemplate).registerLicenseTerms(
+            PILFlavors.commercialRemix({
+                mintingFee: defaultMintingFeeC,
+                commercialRevShare: defaultCommRevShareC,
+                royaltyPolicy: royaltyPolicyLAPAddr,
+                currencyToken: address(StoryUSD)
+            })
+        );
+        // get the signature for executing `attachLicenseTerms` function in `LicensingModule` on behalf of the IP owner
+        (bytes memory signatureC, ) = _getSigForExecuteWithSig({
             ipId: ancestorIpId,
-            to: licenseAttachmentWorkflowsAddr,
-            module: licensingModuleAddr,
-            selector: licensingModule.attachLicenseTerms.selector,
+            to: licensingModuleAddr,
             deadline: deadline,
             state: IIPAccount(payable(ancestorIpId)).state(),
+            data: abi.encodeWithSelector(
+                ILicensingModule.attachLicenseTerms.selector,
+                ancestorIpId,
+                pilTemplateAddr,
+                commRemixTermsIdC
+            ),
             signerSk: testSenderSk
         });
 
@@ -258,23 +288,57 @@ contract RoyaltyIntegration is BaseIntegration {
 
         // register childIpA as derivative of ancestorIp under Terms A
         {
-            (bytes memory sigRegister, , ) = _getSetPermissionSigForPeriphery({
-                ipId: ipAssetRegistry.ipId(block.chainid, address(spgNftContract), childTokenIdA),
-                to: derivativeWorkflowsAddr,
-                module: licensingModuleAddr,
-                selector: licensingModule.registerDerivative.selector,
-                deadline: deadline,
-                state: bytes32(0),
-                signerSk: testSenderSk
-            });
-
             address[] memory parentIpIds = new address[](1);
             uint256[] memory licenseTermsIds = new uint256[](1);
             parentIpIds[0] = ancestorIpId;
             licenseTermsIds[0] = commRemixTermsIdA;
+            childIpIdA = ipAssetRegistry.ipId(block.chainid, address(spgNftContract), childTokenIdA);
+
+            WorkflowStructs.SignatureData memory sigMintingFeeData;
+            WorkflowStructs.SignatureData memory sigRegisterData;
+
+            {
+                (bytes memory sigMintingFee, bytes32 expectedState) = _getSigForExecuteWithSig({
+                    ipId: childIpIdA,
+                    to: address(StoryUSD),
+                    deadline: deadline,
+                    state: bytes32(0),
+                    data: abi.encodeWithSelector(IERC20.approve.selector, royaltyModuleAddr, defaultMintingFeeA),
+                    signerSk: testSenderSk
+                });
+
+                (bytes memory sigRegister, ) = _getSigForExecuteWithSig({
+                    ipId: childIpIdA,
+                    to: licensingModuleAddr,
+                    deadline: deadline,
+                    state: expectedState,
+                    data: abi.encodeWithSelector(
+                        ILicensingModule.registerDerivative.selector,
+                        childIpIdA,
+                        parentIpIds,
+                        licenseTermsIds,
+                        address(pilTemplate),
+                        "",
+                        0
+                    ),
+                    signerSk: testSenderSk
+                });
+
+                sigMintingFeeData = WorkflowStructs.SignatureData({
+                    signer: testSender,
+                    deadline: deadline,
+                    signature: sigMintingFee
+                });
+
+                sigRegisterData = WorkflowStructs.SignatureData({
+                    signer: testSender,
+                    deadline: deadline,
+                    signature: sigRegister
+                });
+            }
 
             StoryUSD.mint(testSender, defaultMintingFeeA);
-            StoryUSD.approve(derivativeWorkflowsAddr, defaultMintingFeeA);
+            StoryUSD.transfer(childIpIdA, defaultMintingFeeA);
             childIpIdA = derivativeWorkflows.registerIpAndMakeDerivative({
                 nftContract: address(spgNftContract),
                 tokenId: childTokenIdA,
@@ -287,31 +351,60 @@ contract RoyaltyIntegration is BaseIntegration {
                 }),
                 ipMetadata: emptyIpMetadata,
                 sigMetadata: emptySigData,
-                sigRegister: WorkflowStructs.SignatureData({
-                    signer: testSender,
-                    deadline: deadline,
-                    signature: sigRegister
-                })
+                sigMintingFee: sigMintingFeeData,
+                sigRegister: sigRegisterData
             });
             vm.label(childIpIdA, "ChildIpA");
         }
 
         // register childIpB as derivative of ancestorIp under Terms A
         {
-            (bytes memory sigRegister, , ) = _getSetPermissionSigForPeriphery({
-                ipId: ipAssetRegistry.ipId(block.chainid, address(spgNftContract), childTokenIdB),
-                to: derivativeWorkflowsAddr,
-                module: licensingModuleAddr,
-                selector: licensingModule.registerDerivative.selector,
-                deadline: deadline,
-                state: bytes32(0),
-                signerSk: testSenderSk
-            });
-
             address[] memory parentIpIds = new address[](1);
             uint256[] memory licenseTermsIds = new uint256[](1);
             parentIpIds[0] = ancestorIpId;
             licenseTermsIds[0] = commRemixTermsIdA;
+
+            childIpIdB = ipAssetRegistry.ipId(block.chainid, address(spgNftContract), childTokenIdB);
+
+            WorkflowStructs.SignatureData memory sigMintingFeeData;
+            WorkflowStructs.SignatureData memory sigRegisterData;
+            {
+                (bytes memory sigMintingFee, bytes32 expectedState) = _getSigForExecuteWithSig({
+                    ipId: childIpIdB,
+                    to: address(StoryUSD),
+                    deadline: deadline,
+                    state: bytes32(0),
+                    data: abi.encodeWithSelector(IERC20.approve.selector, address(royaltyModule), defaultMintingFeeA),
+                    signerSk: testSenderSk
+                });
+                sigMintingFeeData = WorkflowStructs.SignatureData({
+                    signer: testSender,
+                    deadline: deadline,
+                    signature: sigMintingFee
+                });
+
+                (bytes memory sigRegister, ) = _getSigForExecuteWithSig({
+                    ipId: childIpIdB,
+                    to: licensingModuleAddr,
+                    deadline: deadline,
+                    state: expectedState,
+                    data: abi.encodeWithSelector(
+                        ILicensingModule.registerDerivative.selector,
+                        childIpIdB,
+                        parentIpIds,
+                        licenseTermsIds,
+                        address(pilTemplate),
+                        "",
+                        0
+                    ),
+                    signerSk: testSenderSk
+                });
+                sigRegisterData = WorkflowStructs.SignatureData({
+                    signer: testSender,
+                    deadline: deadline,
+                    signature: sigRegister
+                });
+            }
 
             StoryUSD.mint(testSender, defaultMintingFeeA);
             StoryUSD.approve(derivativeWorkflowsAddr, defaultMintingFeeA);
@@ -327,31 +420,60 @@ contract RoyaltyIntegration is BaseIntegration {
                 }),
                 ipMetadata: emptyIpMetadata,
                 sigMetadata: emptySigData,
-                sigRegister: WorkflowStructs.SignatureData({
-                    signer: testSender,
-                    deadline: deadline,
-                    signature: sigRegister
-                })
+                sigMintingFee: sigMintingFeeData,
+                sigRegister: sigRegisterData
             });
             vm.label(childIpIdB, "ChildIpB");
         }
 
         /// register childIpC as derivative of ancestorIp under Terms C
         {
-            (bytes memory sigRegister, , ) = _getSetPermissionSigForPeriphery({
-                ipId: ipAssetRegistry.ipId(block.chainid, address(spgNftContract), childTokenIdC),
-                to: derivativeWorkflowsAddr,
-                module: licensingModuleAddr,
-                selector: licensingModule.registerDerivative.selector,
-                deadline: deadline,
-                state: bytes32(0),
-                signerSk: testSenderSk
-            });
-
             address[] memory parentIpIds = new address[](1);
             uint256[] memory licenseTermsIds = new uint256[](1);
             parentIpIds[0] = ancestorIpId;
             licenseTermsIds[0] = commRemixTermsIdC;
+
+            childIpIdC = ipAssetRegistry.ipId(block.chainid, address(spgNftContract), childTokenIdC);
+
+            WorkflowStructs.SignatureData memory sigMintingFeeData;
+            WorkflowStructs.SignatureData memory sigRegisterData;
+            {
+                (bytes memory sigMintingFee, bytes32 expectedState) = _getSigForExecuteWithSig({
+                    ipId: childIpIdC,
+                    to: address(StoryUSD),
+                    deadline: deadline,
+                    state: bytes32(0),
+                    data: abi.encodeWithSelector(IERC20.approve.selector, address(royaltyModule), defaultMintingFeeC),
+                    signerSk: testSenderSk
+                });
+                sigMintingFeeData = WorkflowStructs.SignatureData({
+                    signer: testSender,
+                    deadline: deadline,
+                    signature: sigMintingFee
+                });
+
+                (bytes memory sigRegister, ) = _getSigForExecuteWithSig({
+                    ipId: childIpIdC,
+                    to: licensingModuleAddr,
+                    deadline: deadline,
+                    state: expectedState,
+                    data: abi.encodeWithSelector(
+                        ILicensingModule.registerDerivative.selector,
+                        childIpIdC,
+                        parentIpIds,
+                        licenseTermsIds,
+                        address(pilTemplate),
+                        "",
+                        0
+                    ),
+                    signerSk: testSenderSk
+                });
+                sigRegisterData = WorkflowStructs.SignatureData({
+                    signer: testSender,
+                    deadline: deadline,
+                    signature: sigRegister
+                });
+            }
 
             StoryUSD.mint(testSender, defaultMintingFeeC);
             StoryUSD.approve(derivativeWorkflowsAddr, defaultMintingFeeC);
@@ -367,33 +489,66 @@ contract RoyaltyIntegration is BaseIntegration {
                 }),
                 ipMetadata: emptyIpMetadata,
                 sigMetadata: emptySigData,
-                sigRegister: WorkflowStructs.SignatureData({
-                    signer: testSender,
-                    deadline: deadline,
-                    signature: sigRegister
-                })
+                sigMintingFee: sigMintingFeeData,
+                sigRegister: sigRegisterData
             });
             vm.label(childIpIdC, "ChildIpC");
         }
 
         // register grandChildIp as derivative for childIp A and B under Terms A
         {
-            (bytes memory sigRegister, , ) = _getSetPermissionSigForPeriphery({
-                ipId: ipAssetRegistry.ipId(block.chainid, address(spgNftContract), grandChildTokenId),
-                to: derivativeWorkflowsAddr,
-                module: address(licensingModule),
-                selector: licensingModule.registerDerivative.selector,
-                deadline: deadline,
-                state: bytes32(0),
-                signerSk: testSenderSk
-            });
-
             address[] memory parentIpIds = new address[](2);
             uint256[] memory licenseTermsIds = new uint256[](2);
             parentIpIds[0] = childIpIdA;
             parentIpIds[1] = childIpIdB;
             for (uint256 i = 0; i < licenseTermsIds.length; i++) {
                 licenseTermsIds[i] = commRemixTermsIdA;
+            }
+
+            grandChildIpId = ipAssetRegistry.ipId(block.chainid, address(spgNftContract), grandChildTokenId);
+
+            WorkflowStructs.SignatureData memory sigMintingFeeData;
+            WorkflowStructs.SignatureData memory sigRegisterData;
+            {
+                (bytes memory sigMintingFee, bytes32 expectedState) = _getSigForExecuteWithSig({
+                    ipId: grandChildIpId,
+                    to: address(StoryUSD),
+                    deadline: deadline,
+                    state: bytes32(0),
+                    data: abi.encodeWithSelector(
+                        IERC20.approve.selector,
+                        address(royaltyModule),
+                        defaultMintingFeeA * parentIpIds.length
+                    ),
+                    signerSk: testSenderSk
+                });
+                sigMintingFeeData = WorkflowStructs.SignatureData({
+                    signer: testSender,
+                    deadline: deadline,
+                    signature: sigMintingFee
+                });
+
+                (bytes memory sigRegister, ) = _getSigForExecuteWithSig({
+                    ipId: grandChildIpId,
+                    to: address(licensingModule),
+                    deadline: deadline,
+                    state: expectedState,
+                    data: abi.encodeWithSelector(
+                        licensingModule.registerDerivative.selector,
+                        grandChildIpId,
+                        parentIpIds,
+                        licenseTermsIds,
+                        address(pilTemplate),
+                        "",
+                        0
+                    ),
+                    signerSk: testSenderSk
+                });
+                sigRegisterData = WorkflowStructs.SignatureData({
+                    signer: testSender,
+                    deadline: deadline,
+                    signature: sigRegister
+                });
             }
 
             StoryUSD.mint(testSender, defaultMintingFeeA * parentIpIds.length);
@@ -410,11 +565,8 @@ contract RoyaltyIntegration is BaseIntegration {
                 }),
                 ipMetadata: emptyIpMetadata,
                 sigMetadata: emptySigData,
-                sigRegister: WorkflowStructs.SignatureData({
-                    signer: testSender,
-                    deadline: deadline,
-                    signature: sigRegister
-                })
+                sigMintingFee: sigMintingFeeData,
+                sigRegister: sigRegisterData
             });
             vm.label(grandChildIpId, "GrandChildIp");
         }
