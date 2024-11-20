@@ -115,7 +115,6 @@ contract LicenseAttachmentWorkflows is
         ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
     }
 
-
     // TODO: add comments
     function mintAndRegisterIpAndAttachLicenseTerms(
         address spgNftContract,
@@ -136,12 +135,7 @@ contract LicenseAttachmentWorkflows is
         ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 
-        LicensingHelper.attachLicenseTerms(
-            ipId,
-            address(LICENSING_MODULE),
-            licenseTemplate,
-            licenseTermsId
-        );
+        LicensingHelper.attachLicenseTerms(ipId, address(LICENSING_MODULE), licenseTemplate, licenseTermsId);
 
         ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
     }

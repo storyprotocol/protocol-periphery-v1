@@ -233,10 +233,12 @@ contract LicenseAttachmentIntegration is BaseIntegration {
             currencyToken: testMintFeeToken
         });
 
-        commUseTermsId = pilTemplate.registerLicenseTerms(PILFlavors.commercialUse({
-            mintingFee: testMintFee,
-            currencyToken: testMintFeeToken,
-            royaltyPolicy: royaltyPolicyLRPAddr
-        }));
+        commUseTermsId = pilTemplate.registerLicenseTerms(
+            PILFlavors.commercialUse({
+                mintingFee: testMintFee,
+                currencyToken: testMintFeeToken,
+                royaltyPolicy: royaltyPolicyLRPAddr
+            })
+        );
     }
 }

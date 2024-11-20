@@ -61,10 +61,7 @@ contract DerivativeWorkflowsTest is BaseTest {
         withNonCommercialParentIp
     {
         // First, create an derivative with the same NFT metadata hash but with dedup turned off
-        (, uint256 licenseTermsIdParent) = licenseRegistry.getAttachedLicenseTerms(
-            ipIdParent,
-            0
-        );
+        (, uint256 licenseTermsIdParent) = licenseRegistry.getAttachedLicenseTerms(ipIdParent, 0);
 
         address[] memory parentIpIds = new address[](1);
         parentIpIds[0] = ipIdParent;

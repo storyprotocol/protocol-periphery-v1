@@ -67,7 +67,7 @@ contract GroupingWorkflowsTest is BaseTest {
     function test_GroupingWorkflows_revert_DuplicatedNFTMetadataHash() public {
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory sigAddToGroup,) = _getSigForExecuteWithSig({
+        (bytes memory sigAddToGroup, ) = _getSigForExecuteWithSig({
             ipId: groupId,
             to: address(accessController),
             deadline: deadline,

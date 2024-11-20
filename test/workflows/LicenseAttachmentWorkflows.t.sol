@@ -318,11 +318,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             licensingModule: address(licensingModule),
             licenseTemplate: address(pilTemplate),
             licenseTermsId: commRemixTermsId,
-            sigAttach: WorkflowStructs.SignatureData({
-                signer: u.alice,
-                deadline: deadline,
-                signature: signature
-            })
+            sigAttach: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: signature })
         });
     }
 }

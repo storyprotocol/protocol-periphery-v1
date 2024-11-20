@@ -314,7 +314,8 @@ contract DerivativeWorkflows is
     /// @param licenseTemplate The address of the license template.
     /// @param parentIpIds The IDs of all the parent IPs.
     /// @param licenseTermsIds The IDs of the license terms for each corresponding parent IP.
-    /// @param sigMintingFee OPTIONAL. Signature data for approving license minting fee for the IP via the currency token.
+    /// @param sigMintingFee OPTIONAL. Signature data for approving license minting fee for the IP
+    ///                      via the currency token.
     function _collectMintFeesAndSetApproval(
         address ipId,
         address ipOwnerAddress,
@@ -344,7 +345,8 @@ contract DerivativeWorkflows is
                     IERC20(mintFeeCurrencyToken).transferFrom(payerAddress, address(this), totalMintFee);
                     IERC20(mintFeeCurrencyToken).forceApprove(address(ROYALTY_MODULE), totalMintFee);
                 } else {
-                    // if owner is not this contract, we need to transfer the minting fee to IP account and use `executeWithSig` to approve royalty module
+                    // if owner is not this contract, we need to transfer the minting fee to IP account and
+                    // use `executeWithSig` to approve royalty module
                     IERC20(mintFeeCurrencyToken).transferFrom(payerAddress, address(ipId), totalMintFee);
                     IIPAccount(payable(ipId)).executeWithSig({
                         to: address(mintFeeCurrencyToken),
