@@ -12,12 +12,12 @@ interface ILicenseAttachmentWorkflows {
     /// @param ipId The ID of the IP.
     /// @param terms The PIL terms to be registered.
     /// @param sigAttach Signature data for attachLicenseTerms to the IP via the Licensing Module.
-    /// @return licenseTermsId The ID of the newly registered PIL terms.
+    /// @return licenseTermsIds The IDs of the newly registered PIL terms.
     function registerPILTermsAndAttach(
         address ipId,
-        PILTerms calldata terms,
+        PILTerms[] calldata terms,
         WorkflowStructs.SignatureData calldata sigAttach
-    ) external returns (uint256 licenseTermsId);
+    ) external returns (uint256[] memory licenseTermsIds);
 
     /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP,
     /// register Programmable IPLicense
@@ -29,13 +29,13 @@ interface ILicenseAttachmentWorkflows {
     /// @param terms The PIL terms to be registered.
     /// @return ipId The ID of the newly registered IP.
     /// @return tokenId The ID of the newly minted NFT.
-    /// @return licenseTermsId The ID of the newly registered PIL terms.
+    /// @return licenseTermsIds The IDs of the newly registered PIL terms.
     function mintAndRegisterIpAndAttachPILTerms(
         address spgNftContract,
         address recipient,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        PILTerms calldata terms
-    ) external returns (address ipId, uint256 tokenId, uint256 licenseTermsId);
+        PILTerms[] calldata terms
+    ) external returns (address ipId, uint256 tokenId, uint256[] memory licenseTermsIds);
 
     /// @notice Register a given NFT as an IP and attach Programmable IP License Terms.
     /// @dev Because IP Account is created in this function, we need to set the permission via signature to allow this
@@ -47,13 +47,13 @@ interface ILicenseAttachmentWorkflows {
     /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
     /// @param sigAttach Signature data for attachLicenseTerms to the IP via the Licensing Module.
     /// @return ipId The ID of the newly registered IP.
-    /// @return licenseTermsId The ID of the newly registered PIL terms.
+    /// @return licenseTermsIds The IDs of the newly registered PIL terms.
     function registerIpAndAttachPILTerms(
         address nftContract,
         uint256 tokenId,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        PILTerms calldata terms,
+        PILTerms[] calldata terms,
         WorkflowStructs.SignatureData calldata sigMetadata,
         WorkflowStructs.SignatureData calldata sigAttach
-    ) external returns (address ipId, uint256 licenseTermsId);
+    ) external returns (address ipId, uint256[] memory licenseTermsIds);
 }

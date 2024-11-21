@@ -14,17 +14,19 @@ library LicensingHelper {
     /// @param licensingModule The address of the Licensing Module.
     /// @param licenseRegistry The address of the License Registry.
     /// @param terms The PIL terms to be registered.
-    /// @return licenseTermsId The ID of the registered PIL terms.
+    /// @return licenseTermsIds The IDs of the registered PIL terms.
     function registerPILTermsAndAttach(
         address ipId,
         address pilTemplate,
         address licensingModule,
         address licenseRegistry,
-        PILTerms calldata terms
-    ) internal returns (uint256 licenseTermsId) {
-        licenseTermsId = IPILicenseTemplate(pilTemplate).registerLicenseTerms(terms);
-
-        attachLicenseTerms(ipId, licensingModule, licenseRegistry, pilTemplate, licenseTermsId);
+        PILTerms[] calldata terms
+    ) internal returns (uint256[] memory licenseTermsIds) {
+        licenseTermsIds = new uint256[](terms.length);
+        for (uint256 i = 0; i < terms.length; i++) {
+            licenseTermsIds[i] = IPILicenseTemplate(pilTemplate).registerLicenseTerms(terms[i]);
+            attachLicenseTerms(ipId, licensingModule, licenseRegistry, pilTemplate, licenseTermsIds[i]);
+        }
     }
 
     /// @dev Attaches license terms to the given IP.

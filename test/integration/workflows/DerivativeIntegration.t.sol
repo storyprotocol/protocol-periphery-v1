@@ -7,6 +7,7 @@ import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/meta
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
+import { IPILicenseTemplate, PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 
 // contracts
 import { ISPGNFT } from "../../../contracts/interfaces/ISPGNFT.sol";
@@ -353,25 +354,28 @@ contract DerivativeIntegration is BaseIntegration {
             )
         );
 
+        PILTerms[] memory commTerms = new PILTerms[](1);
+        commTerms[0] = PILFlavors.commercialUse({
+            mintingFee: testMintFee,
+            currencyToken: testMintFeeToken,
+            royaltyPolicy: royaltyPolicyLRPAddr
+        });
+
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee);
-        (address parentIpId, , uint256 licenseTermsIdParent) = licenseAttachmentWorkflows
+        (address parentIpId, , uint256[] memory licenseTermsIdParent) = licenseAttachmentWorkflows
             .mintAndRegisterIpAndAttachPILTerms({
                 spgNftContract: address(spgNftContract),
                 recipient: testSender,
                 ipMetadata: testIpMetadata,
-                terms: PILFlavors.commercialUse({
-                    mintingFee: testMintFee,
-                    currencyToken: testMintFeeToken,
-                    royaltyPolicy: royaltyPolicyLRPAddr
-                })
+                terms: commTerms
             });
 
         parentIpIds = new address[](1);
         parentIpIds[0] = parentIpId;
 
         parentLicenseTermIds = new uint256[](1);
-        parentLicenseTermIds[0] = licenseTermsIdParent;
+        parentLicenseTermIds[0] = licenseTermsIdParent[0];
         parentLicenseTemplate = pilTemplateAddr;
     }
 

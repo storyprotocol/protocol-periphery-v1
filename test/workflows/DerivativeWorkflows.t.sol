@@ -8,6 +8,7 @@ import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/meta
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
+import { PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 
 // contracts
 import { WorkflowStructs } from "../../contracts/lib/WorkflowStructs.sol";
@@ -25,25 +26,29 @@ contract DerivativeWorkflowsTest is BaseTest {
     }
 
     modifier withNonCommercialParentIp() {
+        PILTerms[] memory terms = new PILTerms[](1);
+        terms[0] = PILFlavors.nonCommercialSocialRemixing();
         (ipIdParent, , ) = licenseAttachmentWorkflows.mintAndRegisterIpAndAttachPILTerms({
             spgNftContract: address(nftContract),
             recipient: caller,
             ipMetadata: ipMetadataDefault,
-            terms: PILFlavors.nonCommercialSocialRemixing()
+            terms: terms
         });
         _;
     }
 
     modifier withCommercialParentIp() {
+        PILTerms[] memory terms = new PILTerms[](1);
+        terms[0] = PILFlavors.commercialUse({
+            mintingFee: 100 * 10 ** mockToken.decimals(),
+            currencyToken: address(mockToken),
+            royaltyPolicy: address(royaltyPolicyLAP)
+        });
         (ipIdParent, , ) = licenseAttachmentWorkflows.mintAndRegisterIpAndAttachPILTerms({
             spgNftContract: address(nftContract),
             recipient: caller,
             ipMetadata: ipMetadataDefault,
-            terms: PILFlavors.commercialUse({
-                mintingFee: 100 * 10 ** mockToken.decimals(),
-                currencyToken: address(mockToken),
-                royaltyPolicy: address(royaltyPolicyLAP)
-            })
+            terms: terms
         });
         _;
     }

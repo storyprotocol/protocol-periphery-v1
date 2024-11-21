@@ -7,6 +7,7 @@ import { Errors as CoreErrors } from "@storyprotocol/core/lib/Errors.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { IpRoyaltyVault } from "@storyprotocol/core/modules/royalty/policies/IpRoyaltyVault.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
+import { PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 
 // contracts
 import { IRoyaltyWorkflows } from "../../contracts/interfaces/workflows/IRoyaltyWorkflows.sol";
@@ -391,6 +392,8 @@ contract RoyaltyWorkflowsTest is BaseTest {
         vm.label(ancestorIpId, "AncestorIp");
 
         uint256 deadline = block.timestamp + 1000;
+        PILTerms[] memory commRemixTerms = new PILTerms[](1);
+        uint256[] memory commRemixTermsIds;
 
         // set permission for licensing module to attach license terms to ancestor IP
         {
@@ -405,16 +408,20 @@ contract RoyaltyWorkflowsTest is BaseTest {
             });
 
             // register and attach Terms A and C to ancestor IP
-            commRemixTermsIdA = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+            commRemixTerms[0] = PILFlavors.commercialRemix({
+                mintingFee: defaultMintingFeeA,
+                commercialRevShare: defaultCommRevShareA,
+                royaltyPolicy: address(royaltyPolicyLRP),
+                currencyToken: address(mockTokenA)
+            });
+
+            commRemixTermsIds = licenseAttachmentWorkflows.registerPILTermsAndAttach({
                 ipId: ancestorIpId,
-                terms: PILFlavors.commercialRemix({
-                    mintingFee: defaultMintingFeeA,
-                    commercialRevShare: defaultCommRevShareA,
-                    royaltyPolicy: address(royaltyPolicyLRP),
-                    currencyToken: address(mockTokenA)
-                }),
+                terms: commRemixTerms,
                 sigAttach: WorkflowStructs.SignatureData({ signer: u.admin, deadline: deadline, signature: signatureA })
             });
+
+            commRemixTermsIdA = commRemixTermsIds[0];
         }
 
         {
@@ -428,16 +435,20 @@ contract RoyaltyWorkflowsTest is BaseTest {
                 signerSk: sk.admin
             });
 
-            commRemixTermsIdC = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+            commRemixTerms[0] = PILFlavors.commercialRemix({
+                mintingFee: defaultMintingFeeC,
+                commercialRevShare: defaultCommRevShareC,
+                royaltyPolicy: address(royaltyPolicyLAP),
+                currencyToken: address(mockTokenC)
+            });
+
+            commRemixTermsIds = licenseAttachmentWorkflows.registerPILTermsAndAttach({
                 ipId: ancestorIpId,
-                terms: PILFlavors.commercialRemix({
-                    mintingFee: defaultMintingFeeC,
-                    commercialRevShare: defaultCommRevShareC,
-                    royaltyPolicy: address(royaltyPolicyLAP),
-                    currencyToken: address(mockTokenC)
-                }),
+                terms: commRemixTerms,
                 sigAttach: WorkflowStructs.SignatureData({ signer: u.admin, deadline: deadline, signature: signatureC })
             });
+
+            commRemixTermsIdC = commRemixTermsIds[0];
         }
 
         // register childIpA as derivative of ancestorIp under Terms A
