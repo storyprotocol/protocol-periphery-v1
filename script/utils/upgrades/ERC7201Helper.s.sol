@@ -12,7 +12,7 @@ import { console2 } from "forge-std/console2.sol";
 /// https://stackoverflow.com/questions/67893318/solidity-how-to-represent-bytes32-as-string
 contract ERC7201HelperScript is Script {
     string constant NAMESPACE = "story-protocol-periphery";
-    string constant CONTRACT_NAME = "RegistrationWorkflows";
+    string constant CONTRACT_NAME = "RoyaltyTokenDistributionWorkflows";
 
     function run() external pure {
         bytes memory erc7201Key = abi.encodePacked(NAMESPACE, ".", CONTRACT_NAME);

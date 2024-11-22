@@ -40,6 +40,7 @@ import { LicenseAttachmentWorkflows } from "../../contracts/workflows/LicenseAtt
 import { OrgNFT } from "../../contracts/story-nft/OrgNFT.sol";
 import { RegistrationWorkflows } from "../../contracts/workflows/RegistrationWorkflows.sol";
 import { RoyaltyWorkflows } from "../../contracts/workflows/RoyaltyWorkflows.sol";
+import { RoyaltyTokenDistributionWorkflows } from "../../contracts/workflows/RoyaltyTokenDistributionWorkflows.sol";
 import { StoryBadgeNFT } from "../../contracts/story-nft/StoryBadgeNFT.sol";
 import { StoryNFTFactory } from "../../contracts/story-nft/StoryNFTFactory.sol";
 
@@ -84,6 +85,7 @@ contract DeployHelper is
     LicenseAttachmentWorkflows internal licenseAttachmentWorkflows;
     RegistrationWorkflows internal registrationWorkflows;
     RoyaltyWorkflows internal royaltyWorkflows;
+    RoyaltyTokenDistributionWorkflows internal royaltyTokenDistributionWorkflows;
 
     // StoryNFT
     StoryNFTFactory internal storyNftFactory;
@@ -374,6 +376,27 @@ contract DeployHelper is
         impl = address(0);
         _postdeploy("RoyaltyWorkflows", address(royaltyWorkflows));
 
+        _predeploy("RoyaltyTokenDistributionWorkflows");
+        impl = address(new RoyaltyTokenDistributionWorkflows(
+            accessControllerAddr,
+            coreMetadataModuleAddr,
+            ipAssetRegistryAddr,
+            licenseRegistryAddr,
+            licensingModuleAddr,
+            pilTemplateAddr,
+            royaltyModuleAddr
+        ));
+        royaltyTokenDistributionWorkflows = RoyaltyTokenDistributionWorkflows(
+            TestProxyHelper.deployUUPSProxy(
+                create3Deployer,
+                _getSalt(type(RoyaltyTokenDistributionWorkflows).name),
+                impl,
+                abi.encodeCall(RoyaltyTokenDistributionWorkflows.initialize, address(protocolAccessManagerAddr))
+            )
+        );
+        impl = address(0);
+        _postdeploy("RoyaltyTokenDistributionWorkflows", address(royaltyTokenDistributionWorkflows));
+
         // SPGNFT contracts
         _predeploy("SPGNFTImpl");
         spgNftImpl = SPGNFT(
@@ -384,7 +407,8 @@ contract DeployHelper is
                         address(derivativeWorkflows),
                         address(groupingWorkflows),
                         address(licenseAttachmentWorkflows),
-                        address(registrationWorkflows)
+                        address(registrationWorkflows),
+                        address(royaltyTokenDistributionWorkflows)
                     )
                 )
             )

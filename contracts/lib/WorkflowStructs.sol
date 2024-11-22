@@ -38,4 +38,12 @@ library WorkflowStructs {
         uint256[] licenseTermsIds;
         bytes royaltyContext;
     }
+
+    /// @notice Struct for royalty shares information for royalty token distribution.
+    /// @param author The address of the author.
+    /// @param percentage The percentage of the royalty share, 100_000_000 represents 100%.
+    struct RoyaltyShare {
+        address author;
+        uint32 percentage;
+    }
 }

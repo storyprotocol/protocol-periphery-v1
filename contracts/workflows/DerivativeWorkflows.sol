@@ -10,7 +10,6 @@ import { MulticallUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-import { ILicenseTemplate } from "@storyprotocol/core/interfaces/modules/licensing/ILicenseTemplate.sol";
 import { ILicenseToken } from "@storyprotocol/core/interfaces/ILicenseToken.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
 import { IRoyaltyModule } from "@storyprotocol/core/interfaces/modules/royalty/IRoyaltyModule.sol";
@@ -19,6 +18,7 @@ import { BaseWorkflow } from "../BaseWorkflow.sol";
 import { Errors } from "../lib/Errors.sol";
 import { IDerivativeWorkflows } from "../interfaces/workflows/IDerivativeWorkflows.sol";
 import { ISPGNFT } from "../interfaces/ISPGNFT.sol";
+import { LicensingHelper } from "../lib/LicensingHelper.sol";
 import { MetadataHelper } from "../lib/MetadataHelper.sol";
 import { PermissionHelper } from "../lib/PermissionHelper.sol";
 import { WorkflowStructs } from "../lib/WorkflowStructs.sol";
@@ -131,7 +131,7 @@ contract DerivativeWorkflows is
 
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 
-        _collectMintFeesAndSetApproval(
+        LicensingHelper.collectMintFeesAndSetApproval(
             msg.sender,
             address(ROYALTY_MODULE),
             address(LICENSING_MODULE),
@@ -184,7 +184,7 @@ contract DerivativeWorkflows is
             sigRegister
         );
 
-        _collectMintFeesAndSetApproval(
+        LicensingHelper.collectMintFeesAndSetApproval(
             msg.sender,
             address(ROYALTY_MODULE),
             address(LICENSING_MODULE),
@@ -288,73 +288,6 @@ contract DerivativeWorkflows is
                 revert Errors.DerivativeWorkflows__CallerAndNotTokenOwner(licenseTokenIds[i], msg.sender, tokenOwner);
 
             ILicenseToken(licenseToken).safeTransferFrom(msg.sender, address(this), licenseTokenIds[i]);
-        }
-    }
-
-    /// @dev Collect mint fees for all parent IPs from the payer and set approval for Royalty Module to spend mint fees.
-    /// @param payerAddress The address of the payer for the license mint fees.
-    /// @param royaltyModule The address of the Royalty Module.
-    /// @param licensingModule The address of the Licensing Module.
-    /// @param licenseTemplate The address of the license template.
-    /// @param parentIpIds The IDs of all the parent IPs.
-    /// @param licenseTermsIds The IDs of the license terms for each corresponding parent IP.
-    function _collectMintFeesAndSetApproval(
-        address payerAddress,
-        address royaltyModule,
-        address licensingModule,
-        address licenseTemplate,
-        address[] calldata parentIpIds,
-        uint256[] calldata licenseTermsIds
-    ) private {
-        ILicenseTemplate lct = ILicenseTemplate(licenseTemplate);
-        (address royaltyPolicy, , , address mintFeeCurrencyToken) = lct.getRoyaltyPolicy(licenseTermsIds[0]);
-
-        if (royaltyPolicy != address(0)) {
-            // Get total mint fee for all parent IPs
-            uint256 totalMintFee = _aggregateMintFees({
-                payerAddress: payerAddress,
-                licensingModule: licensingModule,
-                licenseTemplate: licenseTemplate,
-                parentIpIds: parentIpIds,
-                licenseTermsIds: licenseTermsIds
-            });
-
-            if (totalMintFee != 0) {
-                // Transfer mint fee from payer to this contract
-                IERC20(mintFeeCurrencyToken).safeTransferFrom(payerAddress, address(this), totalMintFee);
-
-                // Approve Royalty Policy to spend mint fee
-                IERC20(mintFeeCurrencyToken).forceApprove(royaltyModule, totalMintFee);
-            }
-        }
-    }
-
-    /// @dev Aggregate license mint fees for all parent IPs.
-    /// @param payerAddress The address of the payer for the license mint fees.
-    /// @param licensingModule The address of the Licensing Module.
-    /// @param licenseTemplate The address of the license template.
-    /// @param parentIpIds The IDs of all the parent IPs.
-    /// @param licenseTermsIds The IDs of the license terms for each corresponding parent IP.
-    /// @return totalMintFee The sum of license mint fees across all parent IPs.
-    function _aggregateMintFees(
-        address payerAddress,
-        address licensingModule,
-        address licenseTemplate,
-        address[] calldata parentIpIds,
-        uint256[] calldata licenseTermsIds
-    ) private view returns (uint256 totalMintFee) {
-        uint256 mintFee;
-
-        for (uint256 i = 0; i < parentIpIds.length; i++) {
-            (, mintFee) = ILicensingModule(licensingModule).predictMintingLicenseFee({
-                licensorIpId: parentIpIds[i],
-                licenseTemplate: licenseTemplate,
-                licenseTermsId: licenseTermsIds[i],
-                amount: 1,
-                receiver: payerAddress,
-                royaltyContext: ""
-            });
-            totalMintFee += mintFee;
         }
     }
 

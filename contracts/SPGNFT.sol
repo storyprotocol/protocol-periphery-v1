@@ -39,16 +39,24 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     bytes32 private constant SPGNFTStorageLocation = 0x66c08f80d8d0ae818983b725b864514cf274647be6eb06de58ff94d1defb6d00;
 
     /// @dev The address of the DerivativeWorkflows contract.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable DERIVATIVE_WORKFLOWS_ADDRESS;
 
     /// @dev The address of the GroupingWorkflows contract.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable GROUPING_WORKFLOWS_ADDRESS;
 
     /// @dev The address of the LicenseAttachmentWorkflows contract.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable LICENSE_ATTACHMENT_WORKFLOWS_ADDRESS;
 
     /// @dev The address of the RegistrationWorkflows contract.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable REGISTRATION_WORKFLOWS_ADDRESS;
+
+    /// @dev The address of the RoyaltyTokenDistributionWorkflows contract.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+    address public immutable ROYALTY_TOKEN_DISTRIBUTION_WORKFLOWS_ADDRESS;
 
     /// @notice Modifier to restrict access to workflow contracts.
     modifier onlyPeriphery() {
@@ -56,7 +64,8 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
             msg.sender != DERIVATIVE_WORKFLOWS_ADDRESS &&
             msg.sender != GROUPING_WORKFLOWS_ADDRESS &&
             msg.sender != LICENSE_ATTACHMENT_WORKFLOWS_ADDRESS &&
-            msg.sender != REGISTRATION_WORKFLOWS_ADDRESS
+            msg.sender != REGISTRATION_WORKFLOWS_ADDRESS &&
+            msg.sender != ROYALTY_TOKEN_DISTRIBUTION_WORKFLOWS_ADDRESS
         ) revert Errors.SPGNFT__CallerNotPeripheryContract();
         _;
     }
@@ -66,19 +75,22 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         address derivativeWorkflows,
         address groupingWorkflows,
         address licenseAttachmentWorkflows,
-        address registrationWorkflows
+        address registrationWorkflows,
+        address royaltyTokenDistributionWorkflows
     ) {
         if (
             derivativeWorkflows == address(0) ||
             groupingWorkflows == address(0) ||
             licenseAttachmentWorkflows == address(0) ||
-            registrationWorkflows == address(0)
+            registrationWorkflows == address(0) ||
+            royaltyTokenDistributionWorkflows == address(0)
         ) revert Errors.SPGNFT__ZeroAddressParam();
 
         DERIVATIVE_WORKFLOWS_ADDRESS = derivativeWorkflows;
         GROUPING_WORKFLOWS_ADDRESS = groupingWorkflows;
         LICENSE_ATTACHMENT_WORKFLOWS_ADDRESS = licenseAttachmentWorkflows;
         REGISTRATION_WORKFLOWS_ADDRESS = registrationWorkflows;
+        ROYALTY_TOKEN_DISTRIBUTION_WORKFLOWS_ADDRESS = royaltyTokenDistributionWorkflows;
 
         _disableInitializers();
     }
@@ -286,6 +298,8 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         _grantRole(SPGNFTLib.MINTER_ROLE, LICENSE_ATTACHMENT_WORKFLOWS_ADDRESS);
         _grantRole(SPGNFTLib.ADMIN_ROLE, REGISTRATION_WORKFLOWS_ADDRESS);
         _grantRole(SPGNFTLib.MINTER_ROLE, REGISTRATION_WORKFLOWS_ADDRESS);
+        _grantRole(SPGNFTLib.ADMIN_ROLE, ROYALTY_TOKEN_DISTRIBUTION_WORKFLOWS_ADDRESS);
+        _grantRole(SPGNFTLib.MINTER_ROLE, ROYALTY_TOKEN_DISTRIBUTION_WORKFLOWS_ADDRESS);
     }
 
     //

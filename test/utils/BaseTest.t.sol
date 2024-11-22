@@ -118,6 +118,7 @@ contract BaseTest is Test, DeployHelper {
         groupingWorkflows.setNftContractBeacon(address(spgNftBeacon));
         licenseAttachmentWorkflows.setNftContractBeacon(address(spgNftBeacon));
         registrationWorkflows.setNftContractBeacon(address(spgNftBeacon));
+        royaltyTokenDistributionWorkflows.setNftContractBeacon(address(spgNftBeacon));
         vm.stopPrank();
     }
 

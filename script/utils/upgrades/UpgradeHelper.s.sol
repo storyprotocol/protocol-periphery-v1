@@ -13,6 +13,7 @@ import { GroupingWorkflows } from "../../../contracts/workflows/GroupingWorkflow
 import { LicenseAttachmentWorkflows } from "../../../contracts/workflows/LicenseAttachmentWorkflows.sol";
 import { RegistrationWorkflows } from "../../../contracts/workflows/RegistrationWorkflows.sol";
 import { RoyaltyWorkflows } from "../../../contracts/workflows/RoyaltyWorkflows.sol";
+import { RoyaltyTokenDistributionWorkflows } from "../../../contracts/workflows/RoyaltyTokenDistributionWorkflows.sol";
 import { SPGNFT } from "../../../contracts/SPGNFT.sol";
 
 // script
@@ -37,6 +38,7 @@ contract UpgradeHelper is
     LicenseAttachmentWorkflows internal licenseAttachmentWorkflows;
     RegistrationWorkflows internal registrationWorkflows;
     RoyaltyWorkflows internal royaltyWorkflows;
+    RoyaltyTokenDistributionWorkflows internal royaltyTokenDistributionWorkflows;
 
     /// @dev SPGNFT contracts
     SPGNFT internal spgNftImpl;
@@ -53,6 +55,7 @@ contract UpgradeHelper is
         licenseAttachmentWorkflows = LicenseAttachmentWorkflows(licenseAttachmentWorkflowsAddr);
         registrationWorkflows = RegistrationWorkflows(registrationWorkflowsAddr);
         royaltyWorkflows = RoyaltyWorkflows(royaltyWorkflowsAddr);
+        royaltyTokenDistributionWorkflows = RoyaltyTokenDistributionWorkflows(royaltyTokenDistributionWorkflowsAddr);
 
         spgNftImpl = SPGNFT(spgNftImplAddr);
         spgNftBeacon = UpgradeableBeacon(spgNftBeaconAddr);
