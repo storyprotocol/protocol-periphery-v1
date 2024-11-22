@@ -200,6 +200,98 @@ contract LicenseAttachmentWorkflows is
         );
     }
 
+    ////////////////////////////////////////////////////////////////////////////
+    //                              DEPRECATED                                //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Register Programmable IP License Terms (if unregistered) and attach it to IP.
+    /// @notice [DEPRECATED]
+    function registerPILTermsAndAttach(
+        address ipId,
+        PILTerms calldata terms,
+        WorkflowStructs.SignatureData calldata sigAttach
+    ) external returns (uint256 licenseTermsId) {
+        PermissionHelper.setPermissionForModule(
+            ipId,
+            address(LICENSING_MODULE),
+            address(ACCESS_CONTROLLER),
+            ILicensingModule.attachLicenseTerms.selector,
+            sigAttach
+        );
+
+        licenseTermsId = LicensingHelper.registerPILTermsAndAttach(
+            ipId,
+            address(PIL_TEMPLATE),
+            address(LICENSING_MODULE),
+            address(LICENSE_REGISTRY),
+            terms
+        );
+    }
+
+    /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP,
+    /// register Programmable IP License Terms (if unregistered), and attach it to the registered IP.
+    /// @notice [DEPRECATED]
+    function mintAndRegisterIpAndAttachPILTerms(
+        address spgNftContract,
+        address recipient,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        PILTerms calldata terms
+    ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId, uint256 licenseTermsId) {
+        tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
+            to: address(this),
+            payer: msg.sender,
+            nftMetadataURI: ipMetadata.nftMetadataURI
+        });
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
+        MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
+
+        licenseTermsId = LicensingHelper.registerPILTermsAndAttach(
+            ipId,
+            address(PIL_TEMPLATE),
+            address(LICENSING_MODULE),
+            address(LICENSE_REGISTRY),
+            terms
+        );
+
+        ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
+    }
+
+    /// @notice Register a given NFT as an IP and attach Programmable IP License Terms.
+    /// @dev [DEPRECATED]
+    function registerIpAndAttachPILTerms(
+        address nftContract,
+        uint256 tokenId,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        PILTerms calldata terms,
+        WorkflowStructs.SignatureData calldata sigMetadata,
+        WorkflowStructs.SignatureData calldata sigAttach
+    ) external returns (address ipId, uint256 licenseTermsId) {
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
+        MetadataHelper.setMetadataWithSig(
+            ipId,
+            address(CORE_METADATA_MODULE),
+            address(ACCESS_CONTROLLER),
+            ipMetadata,
+            sigMetadata
+        );
+
+        PermissionHelper.setPermissionForModule(
+            ipId,
+            address(LICENSING_MODULE),
+            address(ACCESS_CONTROLLER),
+            ILicensingModule.attachLicenseTerms.selector,
+            sigAttach
+        );
+
+        licenseTermsId = LicensingHelper.registerPILTermsAndAttach(
+            ipId,
+            address(PIL_TEMPLATE),
+            address(LICENSING_MODULE),
+            address(LICENSE_REGISTRY),
+            terms
+        );
+    }
+
     //
     // Upgrade
     //

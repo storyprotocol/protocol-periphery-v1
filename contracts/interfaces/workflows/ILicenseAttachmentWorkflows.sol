@@ -56,4 +56,37 @@ interface ILicenseAttachmentWorkflows {
         WorkflowStructs.SignatureData calldata sigMetadata,
         WorkflowStructs.SignatureData calldata sigAttach
     ) external returns (address ipId, uint256[] memory licenseTermsIds);
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                              DEPRECATED                                //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Register Programmable IP License Terms (if unregistered) and attach it to IP.
+    /// @notice [DEPRECATED]
+    function registerPILTermsAndAttach(
+        address ipId,
+        PILTerms calldata terms,
+        WorkflowStructs.SignatureData calldata sigAttach
+    ) external returns (uint256 licenseTermsId);
+
+    /// Mint an NFT from a SPGNFT collection, register it with metadata as an IP,
+    /// register Programmable IPLicense
+    /// @notice [DEPRECATED]
+    function mintAndRegisterIpAndAttachPILTerms(
+        address spgNftContract,
+        address recipient,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        PILTerms calldata terms
+    ) external returns (address ipId, uint256 tokenId, uint256 licenseTermsId);
+
+    /// @notice Register a given NFT as an IP and attach Programmable IP License Terms.
+    /// @notice [DEPRECATED]
+    function registerIpAndAttachPILTerms(
+        address nftContract,
+        uint256 tokenId,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        PILTerms calldata terms,
+        WorkflowStructs.SignatureData calldata sigMetadata,
+        WorkflowStructs.SignatureData calldata sigAttach
+    ) external returns (address ipId, uint256 licenseTermsId);
 }
