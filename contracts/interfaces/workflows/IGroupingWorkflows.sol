@@ -12,9 +12,7 @@ interface IGroupingWorkflows {
     /// @param spgNftContract The address of the SPGNFT collection.
     /// @param groupId The ID of the group IP to add the newly registered IP.
     /// @param recipient The address of the recipient of the minted NFT.
-    /// @param licenseTemplates The addresses of the license templates to be attached to the new IP.
-    /// @param licenseTermsIds The IDs of the registered license terms that will be attached to the new IP.
-    ///        The i th license terms ID must be a valid license terms that was registered in the i th license template.
+    /// @param licenseTermsInfo The information of the license terms that will be attached to the new IP.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
     /// @param sigAddToGroup Signature data for addIp to the group IP via the Grouping Module.
     /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
@@ -24,8 +22,7 @@ interface IGroupingWorkflows {
         address spgNftContract,
         address groupId,
         address recipient,
-        address[] calldata licenseTemplates,
-        uint256[] calldata licenseTermsIds,
+        WorkflowStructs.LicenseTermsInfo[] calldata licenseTermsInfo,
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigAddToGroup,
         bool allowDuplicates
@@ -36,9 +33,7 @@ interface IGroupingWorkflows {
     /// @param nftContract The address of the NFT collection.
     /// @param tokenId The ID of the NFT.
     /// @param groupId The ID of the group IP to add the newly registered IP.
-    /// @param licenseTemplates The addresses of the license templates to be attached to the new IP.
-    /// @param licenseTermsIds The IDs of the registered license terms that will be attached to the new IP.
-    ///        The i th license terms ID must be a valid license terms that was registered in the i th license template.
+    /// @param licenseTermsInfo The information of the license terms that will be attached to the new IP.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata).
     /// @param sigsAttach Signature data for attachLicenseTerms to the IP via the Licensing Module.
@@ -50,8 +45,7 @@ interface IGroupingWorkflows {
         address nftContract,
         uint256 tokenId,
         address groupId,
-        address[] calldata licenseTemplates,
-        uint256[] calldata licenseTermsIds,
+        WorkflowStructs.LicenseTermsInfo[] calldata licenseTermsInfo,
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigMetadata,
         WorkflowStructs.SignatureData[] calldata sigsAttach,
@@ -60,13 +54,11 @@ interface IGroupingWorkflows {
 
     /// @notice Register a group IP with a group reward pool and attach license terms to the group IP
     /// @param groupPool The address of the group reward pool.
-    /// @param licenseTemplate The address of the license template to be attached to the new group IP.
-    /// @param licenseTermsId The ID of the registered license terms that will be attached to the new group IP.
+    /// @param licenseTermsInfo The information of the license terms that will be attached to the new group IP.
     /// @return groupId The ID of the newly registered group IP.
     function registerGroupAndAttachLicense(
         address groupPool,
-        address licenseTemplate,
-        uint256 licenseTermsId
+        WorkflowStructs.LicenseTermsInfo calldata licenseTermsInfo
     ) external returns (address groupId);
 
     /// @notice Register a group IP with a group reward pool, attach license terms to the group IP,
@@ -74,14 +66,12 @@ interface IGroupingWorkflows {
     /// @dev ipIds must be have the same license terms as the group IP.
     /// @param groupPool The address of the group reward pool.
     /// @param ipIds The IDs of the IPs to add to the newly registered group IP.
-    /// @param licenseTemplate The address of the license template to be attached to the new group IP.
-    /// @param licenseTermsId The ID of the registered license terms that will be attached to the new group IP.
+    /// @param licenseTermsInfo The information of the license terms that will be attached to the new group IP.
     /// @return groupId The ID of the newly registered group IP.
     function registerGroupAndAttachLicenseAndAddIps(
         address groupPool,
         address[] calldata ipIds,
-        address licenseTemplate,
-        uint256 licenseTermsId
+        WorkflowStructs.LicenseTermsInfo calldata licenseTermsInfo
     ) external returns (address groupId);
 
     /// @notice Collect royalties for the entire group and distribute the rewards to each member IP's royalty vault
