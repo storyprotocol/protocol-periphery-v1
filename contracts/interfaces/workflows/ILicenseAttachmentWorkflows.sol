@@ -18,14 +18,14 @@ interface ILicenseAttachmentWorkflows {
     /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
     /// @return ipId The ID of the newly registered IP.
     /// @return tokenId The ID of the newly minted NFT.
-    /// @return licenseTermsId The ID of the newly registered PIL terms.
+    /// @return licenseTermsIds The IDs of the newly registered PIL terms.
     function mintAndRegisterIpAndAttachPILTerms(
         address spgNftContract,
         address recipient,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        PILTerms calldata terms,
+        PILTerms[] calldata terms,
         bool allowDuplicates
-    ) external returns (address ipId, uint256 tokenId, uint256 licenseTermsId);
+    ) external returns (address ipId, uint256 tokenId, uint256[] memory licenseTermsIds);
 
     /// @notice Mint an NFT from a SPGNFT collection, register as an IP, attach provided IP metadata,
     /// and attach the provided license terms to the newly registered IP.
@@ -33,9 +33,9 @@ interface ILicenseAttachmentWorkflows {
     /// @param spgNftContract The address of the SPGNFT collection.
     /// @param recipient The address of the recipient of the newly minted NFT.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
-    /// @param licenseTemplate The address of the license template used of the license terms to be attached.
-    /// @param licenseTermsId The ID of the license terms to attach. Must be a valid ID that exists
-    ///        in the specified license template.
+    /// @param licenseTemplates The addresses of the license templates used of the license terms to be attached.
+    /// @param licenseTermsIds The IDs of the license terms to attach. The i th license terms ID must be a valid license
+    ///        terms that was registered in the i th license template.
     /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
     /// @return ipId The ID of the newly registered IP.
     /// @return tokenId The ID of the newly minted NFT.
@@ -43,8 +43,8 @@ interface ILicenseAttachmentWorkflows {
         address spgNftContract,
         address recipient,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        address licenseTemplate,
-        uint256 licenseTermsId,
+        address[] calldata licenseTemplates,
+        uint256[] calldata licenseTermsIds,
         bool allowDuplicates
     ) external returns (address ipId, uint256 tokenId);
 
@@ -55,19 +55,21 @@ interface ILicenseAttachmentWorkflows {
     /// @param nftContract The address of the NFT collection.
     /// @param tokenId The ID of the NFT.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
-    /// @param licenseTemplate The address of the license template used of the license terms to be attached.
-    /// @param licenseTermsId The ID of the license terms to attach. Must be a valid ID that exists
-    ///        in the specified license template.
+    /// @param licenseTemplates The addresses of the license templates used of the license terms to be attached.
+    /// @param licenseTermsIds The IDs of the license terms to attach. The i th license terms ID must be a valid license
+    ///        terms that was registered in the i th license template.
     /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
-    /// @param sigAttach Signature data for attachLicenseTerms to the IP via the Licensing Module.
+    /// @param sigsAttach Signature data for attachLicenseTerms to the IP via the Licensing Module.
+    ///        The i th signature data is for attaching the i th license terms registered in the i th license template
+    ///        to the IP.
     /// @return ipId The ID of the newly registered IP.
     function registerIpAndAttachLicenseTerms(
         address nftContract,
         uint256 tokenId,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        address licenseTemplate,
-        uint256 licenseTermsId,
+        address[] calldata licenseTemplates,
+        uint256[] calldata licenseTermsIds,
         WorkflowStructs.SignatureData calldata sigMetadata,
-        WorkflowStructs.SignatureData calldata sigAttach
+        WorkflowStructs.SignatureData[] calldata sigsAttach
     ) external returns (address ipId);
 }

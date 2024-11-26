@@ -16,15 +16,18 @@ library LicensingHelper {
     /// @param pilTemplate The address of the PIL License Template.
     /// @param licensingModule The address of the Licensing Module.
     /// @param terms The PIL terms to be registered.
-    /// @return licenseTermsId The ID of the registered PIL terms.
+    /// @return licenseTermsIds The IDs of the registered PIL terms.
     function registerPILTermsAndAttach(
         address ipId,
         address pilTemplate,
         address licensingModule,
-        PILTerms memory terms
-    ) internal returns (uint256 licenseTermsId) {
-        licenseTermsId = IPILicenseTemplate(pilTemplate).registerLicenseTerms(terms);
-        attachLicenseTerms(ipId, licensingModule, pilTemplate, licenseTermsId);
+        PILTerms[] memory terms
+    ) internal returns (uint256[] memory licenseTermsIds) {
+        licenseTermsIds = new uint256[](terms.length);
+        for (uint256 i = 0; i < terms.length; i++) {
+            licenseTermsIds[i] = IPILicenseTemplate(pilTemplate).registerLicenseTerms(terms[i]);
+            attachLicenseTerms(ipId, licensingModule, pilTemplate, licenseTermsIds[i]);
+        }
     }
 
     /// @dev Attaches license terms to the given IP.
@@ -48,24 +51,6 @@ library LicensingHelper {
                 }
             }
         }
-    }
-
-    /// @dev Registers PIL License Terms and attaches them to the given IP on behalf of the owner with a signature.
-    /// @param ipId The ID of the IP to which the license terms will be attached.
-    /// @param pilTemplate The address of the PIL License Template.
-    /// @param licensingModule The address of the Licensing Module.
-    /// @param terms The PIL terms to be registered.
-    /// @param sigAttach Signature data for attachLicenseTerms to the IP via the Licensing Module.
-    /// @return licenseTermsId The ID of the registered PIL terms.
-    function registerPILTermsAndAttachWithSig(
-        address ipId,
-        address pilTemplate,
-        address licensingModule,
-        PILTerms calldata terms,
-        WorkflowStructs.SignatureData memory sigAttach
-    ) internal returns (uint256 licenseTermsId) {
-        licenseTermsId = IPILicenseTemplate(pilTemplate).registerLicenseTerms(terms);
-        attachLicenseTermsWithSig(ipId, licensingModule, pilTemplate, licenseTermsId, sigAttach);
     }
 
     /// @dev Attaches license terms to the given IP on behalf of the owner with a signature.

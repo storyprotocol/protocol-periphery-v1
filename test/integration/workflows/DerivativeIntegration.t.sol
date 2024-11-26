@@ -8,6 +8,7 @@ import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/meta
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
+import { PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 
 // contracts
 import { ISPGNFT } from "../../../contracts/interfaces/ISPGNFT.sol";
@@ -413,17 +414,19 @@ contract DerivativeIntegration is BaseIntegration {
 
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee);
-        (address parentIpId, , uint256 licenseTermsIdParent) = licenseAttachmentWorkflows
+        PILTerms[] memory terms = new PILTerms[](1);
+        terms[0] = PILFlavors.commercialRemix({
+            mintingFee: testMintFee,
+            commercialRevShare: 10 * 10 ** 6, // 10%
+            royaltyPolicy: royaltyPolicyLRPAddr,
+            currencyToken: testMintFeeToken
+        });
+        (address parentIpId, , uint256[] memory licenseTermsIdParent) = licenseAttachmentWorkflows
             .mintAndRegisterIpAndAttachPILTerms({
                 spgNftContract: address(spgNftContract),
                 recipient: testSender,
                 ipMetadata: testIpMetadata,
-                terms: PILFlavors.commercialRemix({
-                    mintingFee: testMintFee,
-                    commercialRevShare: 10 * 10 ** 6, // 10%
-                    royaltyPolicy: royaltyPolicyLRPAddr,
-                    currencyToken: testMintFeeToken
-                }),
+                terms: terms,
                 allowDuplicates: true
             });
 
@@ -431,7 +434,7 @@ contract DerivativeIntegration is BaseIntegration {
         parentIpIds[0] = parentIpId;
 
         parentLicenseTermIds = new uint256[](1);
-        parentLicenseTermIds[0] = licenseTermsIdParent;
+        parentLicenseTermIds[0] = licenseTermsIdParent[0];
         parentLicenseTemplate = pilTemplateAddr;
     }
 

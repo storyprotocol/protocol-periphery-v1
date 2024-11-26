@@ -9,6 +9,7 @@ import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/meta
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
+import { PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 
 // contracts
 import { Errors } from "../../contracts/lib/Errors.sol";
@@ -27,27 +28,31 @@ contract DerivativeWorkflowsTest is BaseTest {
     }
 
     modifier withNonCommercialParentIp() {
+        PILTerms[] memory terms = new PILTerms[](1);
+        terms[0] = PILFlavors.nonCommercialSocialRemixing();
         (ipIdParent, , ) = licenseAttachmentWorkflows.mintAndRegisterIpAndAttachPILTerms({
             spgNftContract: address(nftContract),
             recipient: caller,
             ipMetadata: ipMetadataDefault,
-            terms: PILFlavors.nonCommercialSocialRemixing(),
+            terms: terms,
             allowDuplicates: true
         });
         _;
     }
 
     modifier withCommercialParentIp() {
+        PILTerms[] memory terms = new PILTerms[](1);
+        terms[0] = PILFlavors.commercialRemix({
+            mintingFee: 100 * 10 ** mockToken.decimals(),
+            commercialRevShare: 10 * 10 ** 6, // 10%
+            royaltyPolicy: address(royaltyPolicyLAP),
+            currencyToken: address(mockToken)
+        });
         (ipIdParent, , ) = licenseAttachmentWorkflows.mintAndRegisterIpAndAttachPILTerms({
             spgNftContract: address(nftContract),
             recipient: caller,
             ipMetadata: ipMetadataDefault,
-            terms: PILFlavors.commercialRemix({
-                mintingFee: 100 * 10 ** mockToken.decimals(),
-                commercialRevShare: 10 * 10 ** 6, // 10%
-                royaltyPolicy: address(royaltyPolicyLAP),
-                currencyToken: address(mockToken)
-            }),
+            terms: terms,
             allowDuplicates: true
         });
         _;
