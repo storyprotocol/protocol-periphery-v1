@@ -44,7 +44,7 @@ library WorkflowStructs {
     /// @notice Struct for license terms information.
     /// @param licenseTemplate The address of the license template.
     /// @param licenseTermsId The ID of the license terms which was registered in the license template.
-    struct LicenseTermsInfo {
+    struct LicenseInfo {
         address licenseTemplate;
         uint256 licenseTermsId;
     }

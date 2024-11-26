@@ -28,7 +28,7 @@ contract GroupingIntegration is BaseIntegration {
 
     ISPGNFT private spgNftContract;
     address private groupId;
-    WorkflowStructs.LicenseTermsInfo[] private testLicenseTermsInfo;
+    WorkflowStructs.LicenseInfo[] private testLicenseInfo;
     uint32 private revShare;
     uint256 private numIps = 10;
     address[] private ipIds;
@@ -80,7 +80,7 @@ contract GroupingIntegration is BaseIntegration {
             groupId: groupId,
             recipient: testSender,
             ipMetadata: testIpMetadata,
-            licenseTermsInfo: testLicenseTermsInfo,
+            licenseInfo: testLicenseInfo,
             sigAddToGroup: WorkflowStructs.SignatureData({
                 signer: testSender,
                 deadline: deadline,
@@ -94,10 +94,10 @@ contract GroupingIntegration is BaseIntegration {
         assertTrue(IGroupIPAssetRegistry(ipAssetRegistryAddr).containsIp(groupId, ipId));
         assertEq(spgNftContract.tokenURI(tokenId), string.concat(testBaseURI, testIpMetadata.nftMetadataURI));
         assertMetadata(ipId, testIpMetadata);
-        for (uint256 i = 0; i < testLicenseTermsInfo.length; i++) {
+        for (uint256 i = 0; i < testLicenseInfo.length; i++) {
             (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId, i);
-            assertEq(licenseTemplate, testLicenseTermsInfo[i].licenseTemplate);
-            assertEq(licenseTermsId, testLicenseTermsInfo[i].licenseTermsId);
+            assertEq(licenseTemplate, testLicenseInfo[i].licenseTemplate);
+            assertEq(licenseTermsId, testLicenseInfo[i].licenseTermsId);
         }
     }
 
@@ -139,8 +139,8 @@ contract GroupingIntegration is BaseIntegration {
                 ),
                 signerSk: testSenderSk
             });
-            bytes[] memory sigsAttach = new bytes[](testLicenseTermsInfo.length);
-            for (uint256 i = 0; i < testLicenseTermsInfo.length; i++) {
+            bytes[] memory sigsAttach = new bytes[](testLicenseInfo.length);
+            for (uint256 i = 0; i < testLicenseInfo.length; i++) {
                 (sigsAttach[i], expectedState) = _getSigForExecuteWithSig({
                     ipId: expectedIpId,
                     to: licensingModuleAddr,
@@ -149,8 +149,8 @@ contract GroupingIntegration is BaseIntegration {
                     data: abi.encodeWithSelector(
                         ILicensingModule.attachLicenseTerms.selector,
                         expectedIpId,
-                        testLicenseTermsInfo[i].licenseTemplate,
-                        testLicenseTermsInfo[i].licenseTermsId
+                        testLicenseInfo[i].licenseTemplate,
+                        testLicenseInfo[i].licenseTermsId
                     ),
                     signerSk: testSenderSk
                 });
@@ -171,8 +171,8 @@ contract GroupingIntegration is BaseIntegration {
                 deadline: deadline,
                 signature: sigMetadata
             });
-            sigsAttachData = new WorkflowStructs.SignatureData[](testLicenseTermsInfo.length);
-            for (uint256 i = 0; i < testLicenseTermsInfo.length; i++) {
+            sigsAttachData = new WorkflowStructs.SignatureData[](testLicenseInfo.length);
+            for (uint256 i = 0; i < testLicenseInfo.length; i++) {
                 sigsAttachData[i] = WorkflowStructs.SignatureData({
                     signer: testSender,
                     deadline: deadline,
@@ -190,7 +190,7 @@ contract GroupingIntegration is BaseIntegration {
             nftContract: address(spgNftContract),
             tokenId: tokenId,
             groupId: groupId,
-            licenseTermsInfo: testLicenseTermsInfo,
+            licenseInfo: testLicenseInfo,
             ipMetadata: testIpMetadata,
             sigMetadata: sigMetadataData,
             sigsAttach: sigsAttachData,
@@ -203,10 +203,10 @@ contract GroupingIntegration is BaseIntegration {
         assertMetadata(ipId, testIpMetadata);
         address licenseTemplate;
         uint256 licenseTermsId;
-        for (uint256 i = 0; i < testLicenseTermsInfo.length; i++) {
+        for (uint256 i = 0; i < testLicenseInfo.length; i++) {
             (licenseTemplate, licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId, i);
-            assertEq(licenseTemplate, testLicenseTermsInfo[i].licenseTemplate);
-            assertEq(licenseTermsId, testLicenseTermsInfo[i].licenseTermsId);
+            assertEq(licenseTemplate, testLicenseInfo[i].licenseTemplate);
+            assertEq(licenseTermsId, testLicenseInfo[i].licenseTermsId);
         }
     }
 
@@ -216,7 +216,7 @@ contract GroupingIntegration is BaseIntegration {
     {
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicense({
             groupPool: evenSplitGroupPoolAddr,
-            licenseTermsInfo: testLicenseTermsInfo[0]
+            licenseInfo: testLicenseInfo[0]
         });
 
         // check the group IPA is registered
@@ -224,8 +224,8 @@ contract GroupingIntegration is BaseIntegration {
 
         // check the license terms is correctly attached to the group IPA
         (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(newGroupId, 0);
-        assertEq(licenseTemplate, testLicenseTermsInfo[0].licenseTemplate);
-        assertEq(licenseTermsId, testLicenseTermsInfo[0].licenseTermsId);
+        assertEq(licenseTemplate, testLicenseInfo[0].licenseTemplate);
+        assertEq(licenseTermsId, testLicenseInfo[0].licenseTermsId);
     }
 
     function _test_GroupingIntegration_registerGroupAndAttachLicenseAndAddIps()
@@ -235,7 +235,7 @@ contract GroupingIntegration is BaseIntegration {
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
             groupPool: evenSplitGroupPoolAddr,
             ipIds: ipIds,
-            licenseTermsInfo: testLicenseTermsInfo[0]
+            licenseInfo: testLicenseInfo[0]
         });
 
         // check the group IPA is registered
@@ -249,8 +249,8 @@ contract GroupingIntegration is BaseIntegration {
 
         // check the license terms is correctly attached to the group IPA
         (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(newGroupId, 0);
-        assertEq(licenseTemplate, testLicenseTermsInfo[0].licenseTemplate);
-        assertEq(licenseTermsId, testLicenseTermsInfo[0].licenseTermsId);
+        assertEq(licenseTemplate, testLicenseInfo[0].licenseTemplate);
+        assertEq(licenseTermsId, testLicenseInfo[0].licenseTermsId);
     }
 
     function _test_GroupingIntegration_collectRoyaltiesAndClaimReward()
@@ -260,7 +260,7 @@ contract GroupingIntegration is BaseIntegration {
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
             groupPool: evenSplitGroupPoolAddr,
             ipIds: ipIds,
-            licenseTermsInfo: testLicenseTermsInfo[0]
+            licenseInfo: testLicenseInfo[0]
         });
 
         assertEq(IGroupIPAssetRegistry(ipAssetRegistryAddr).totalMembers(newGroupId), numIps);
@@ -269,7 +269,7 @@ contract GroupingIntegration is BaseIntegration {
         address[] memory parentIpIds = new address[](1);
         parentIpIds[0] = newGroupId;
         uint256[] memory licenseTermsIds = new uint256[](1);
-        licenseTermsIds[0] = testLicenseTermsInfo[0].licenseTermsId;
+        licenseTermsIds[0] = testLicenseInfo[0].licenseTermsId;
 
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee);
@@ -278,7 +278,7 @@ contract GroupingIntegration is BaseIntegration {
             derivData: WorkflowStructs.MakeDerivative({
                 parentIpIds: parentIpIds,
                 licenseTermsIds: licenseTermsIds,
-                licenseTemplate: testLicenseTermsInfo[0].licenseTemplate,
+                licenseTemplate: testLicenseInfo[0].licenseTemplate,
                 royaltyContext: "",
                 maxMintingFee: 0
             }),
@@ -294,7 +294,7 @@ contract GroupingIntegration is BaseIntegration {
             derivData: WorkflowStructs.MakeDerivative({
                 parentIpIds: parentIpIds,
                 licenseTermsIds: licenseTermsIds,
-                licenseTemplate: testLicenseTermsInfo[0].licenseTemplate,
+                licenseTemplate: testLicenseInfo[0].licenseTemplate,
                 royaltyContext: "",
                 maxMintingFee: 0
             }),
@@ -381,7 +381,7 @@ contract GroupingIntegration is BaseIntegration {
                 address(spgNftContract),
                 groupId,
                 testSender,
-                testLicenseTermsInfo,
+                testLicenseInfo,
                 testIpMetadata,
                 WorkflowStructs.SignatureData({ signer: testSender, deadline: deadline, signature: sigsAddToGroup[i] })
             );
@@ -404,10 +404,10 @@ contract GroupingIntegration is BaseIntegration {
             assertMetadata(ipId, testIpMetadata);
             address licenseTemplate;
             uint256 licenseTermsId;
-            for (uint256 j = 0; j < testLicenseTermsInfo.length; j++) {
+            for (uint256 j = 0; j < testLicenseInfo.length; j++) {
                 (licenseTemplate, licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId, j);
-                assertEq(licenseTemplate, testLicenseTermsInfo[j].licenseTemplate);
-                assertEq(licenseTermsId, testLicenseTermsInfo[j].licenseTermsId);
+                assertEq(licenseTemplate, testLicenseInfo[j].licenseTemplate);
+                assertEq(licenseTermsId, testLicenseInfo[j].licenseTermsId);
             }
         }
     }
@@ -470,7 +470,7 @@ contract GroupingIntegration is BaseIntegration {
                 });
 
                 // Get the signature for executing `attachLicenseTerms` function in `LicensingModule` on behalf of the IP owner
-                for (uint256 j = 0; j < testLicenseTermsInfo.length; j++) {
+                for (uint256 j = 0; j < testLicenseInfo.length; j++) {
                     (sigAttach, expectedState) = _getSigForExecuteWithSig({
                         ipId: expectedIpIds[i],
                         to: licensingModuleAddr,
@@ -479,8 +479,8 @@ contract GroupingIntegration is BaseIntegration {
                         data: abi.encodeWithSelector(
                             ILicensingModule.attachLicenseTerms.selector,
                             expectedIpIds[i],
-                            testLicenseTermsInfo[j].licenseTemplate,
-                            testLicenseTermsInfo[j].licenseTermsId
+                            testLicenseInfo[j].licenseTemplate,
+                            testLicenseInfo[j].licenseTermsId
                         ),
                         signerSk: testSenderSk
                     });
@@ -523,7 +523,7 @@ contract GroupingIntegration is BaseIntegration {
                 address(spgNftContract),
                 tokenIds[i],
                 groupId,
-                testLicenseTermsInfo,
+                testLicenseInfo,
                 testIpMetadata,
                 sigMetadataData[i],
                 sigAttachData[i],
@@ -542,10 +542,10 @@ contract GroupingIntegration is BaseIntegration {
             assertTrue(ipAssetRegistry.isRegistered(ipId));
             assertTrue(IGroupIPAssetRegistry(ipAssetRegistryAddr).containsIp(groupId, ipId));
             assertMetadata(ipId, testIpMetadata);
-            for (uint256 j = 0; j < testLicenseTermsInfo.length; j++) {
+            for (uint256 j = 0; j < testLicenseInfo.length; j++) {
                 (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId, j);
-                assertEq(licenseTemplate, testLicenseTermsInfo[j].licenseTemplate);
-                assertEq(licenseTermsId, testLicenseTermsInfo[j].licenseTermsId);
+                assertEq(licenseTemplate, testLicenseInfo[j].licenseTemplate);
+                assertEq(licenseTermsId, testLicenseInfo[j].licenseTermsId);
             }
         }
     }
@@ -553,8 +553,8 @@ contract GroupingIntegration is BaseIntegration {
     function _setUpTest() private {
         revShare = 10 * 10 ** 6; // 10%
 
-        testLicenseTermsInfo.push(
-            WorkflowStructs.LicenseTermsInfo({
+        testLicenseInfo.push(
+            WorkflowStructs.LicenseInfo({
                 licenseTemplate: pilTemplateAddr,
                 licenseTermsId: pilTemplate.registerLicenseTerms(
                     // minting fee is set to 0 beacause currently core protocol requires group IP's minting fee to be 0
@@ -568,8 +568,8 @@ contract GroupingIntegration is BaseIntegration {
             })
         );
 
-        testLicenseTermsInfo.push(
-            WorkflowStructs.LicenseTermsInfo({
+        testLicenseInfo.push(
+            WorkflowStructs.LicenseInfo({
                 licenseTemplate: pilTemplateAddr,
                 licenseTermsId: pilTemplate.registerLicenseTerms(
                     // Another license that will not be associated with the group IP
@@ -589,8 +589,8 @@ contract GroupingIntegration is BaseIntegration {
             LicensingHelper.attachLicenseTerms(
                 groupId,
                 licensingModuleAddr,
-                testLicenseTermsInfo[0].licenseTemplate,
-                testLicenseTermsInfo[0].licenseTermsId
+                testLicenseInfo[0].licenseTemplate,
+                testLicenseInfo[0].licenseTermsId
             );
         }
 
@@ -638,12 +638,12 @@ contract GroupingIntegration is BaseIntegration {
 
             // attach license terms to the IPs
             for (uint256 i = 0; i < numIps; i++) {
-                for (uint256 j = 0; j < testLicenseTermsInfo.length; j++) {
+                for (uint256 j = 0; j < testLicenseInfo.length; j++) {
                     LicensingHelper.attachLicenseTerms(
                         ipIds[i],
                         licensingModuleAddr,
-                        testLicenseTermsInfo[j].licenseTemplate,
-                        testLicenseTermsInfo[j].licenseTermsId
+                        testLicenseInfo[j].licenseTemplate,
+                        testLicenseInfo[j].licenseTermsId
                     );
                 }
             }
