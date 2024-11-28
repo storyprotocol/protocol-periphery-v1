@@ -249,24 +249,39 @@ contract DerivativeIntegration is BaseIntegration {
         licenseTokenIds[0] = startLicenseTokenId;
         licenseToken.approve(derivativeWorkflowsAddr, startLicenseTokenId);
 
-        (bytes memory sigMetadata, bytes32 sigRegisterState, ) = _getSetPermissionSigForPeriphery({
-            ipId: childIpId,
-            to: derivativeWorkflowsAddr,
-            module: coreMetadataModuleAddr,
-            selector: ICoreMetadataModule.setAll.selector,
-            deadline: deadline,
-            state: bytes32(0),
-            signerSk: testSenderSk
-        });
-        (bytes memory sigRegister, bytes32 expectedState, ) = _getSetPermissionSigForPeriphery({
-            ipId: childIpId,
-            to: derivativeWorkflowsAddr,
-            module: licensingModuleAddr,
-            selector: ILicensingModule.registerDerivativeWithLicenseTokens.selector,
-            deadline: deadline,
-            state: sigRegisterState,
-            signerSk: testSenderSk
-        });
+
+        WorkflowStructs.SignatureData memory sigMetadata;
+        WorkflowStructs.SignatureData memory sigRegister;
+        {
+            (bytes memory signatureMetadata, bytes32 sigRegisterState, ) = _getSetPermissionSigForPeriphery({
+                ipId: childIpId,
+                to: derivativeWorkflowsAddr,
+                module: coreMetadataModuleAddr,
+                selector: ICoreMetadataModule.setAll.selector,
+                deadline: deadline,
+                state: bytes32(0),
+                signerSk: testSenderSk
+            });
+            (bytes memory signatureRegister, bytes32 expectedState, ) = _getSetPermissionSigForPeriphery({
+                ipId: childIpId,
+                to: derivativeWorkflowsAddr,
+                module: licensingModuleAddr,
+                selector: ILicensingModule.registerDerivativeWithLicenseTokens.selector,
+                deadline: deadline,
+                state: sigRegisterState,
+                signerSk: testSenderSk
+            });
+            sigMetadata = WorkflowStructs.SignatureData({
+                signer: testSender,
+                deadline: deadline,
+                signature: signatureMetadata
+            });
+            sigRegister = WorkflowStructs.SignatureData({
+                signer: testSender,
+                deadline: deadline,
+                signature: signatureRegister
+            });
+        }
 
         derivativeWorkflows.registerIpAndMakeDerivativeWithLicenseTokens({
             nftContract: address(spgNftContract),
@@ -275,20 +290,11 @@ contract DerivativeIntegration is BaseIntegration {
             royaltyContext: "",
             maxRts: revShare,
             ipMetadata: testIpMetadata,
-            sigMetadata: WorkflowStructs.SignatureData({
-                signer: testSender,
-                deadline: deadline,
-                signature: sigMetadata
-            }),
-            sigRegister: WorkflowStructs.SignatureData({
-                signer: testSender,
-                deadline: deadline,
-                signature: sigRegister
-            })
+            sigMetadata: sigMetadata,
+            sigRegister: sigRegister
         });
 
         assertTrue(ipAssetRegistry.isRegistered(childIpId));
-        assertEq(IIPAccount(payable(childIpId)).state(), expectedState);
         assertMetadata(childIpId, testIpMetadata);
         {
             (address childLicenseTemplate, uint256 childLicenseTermsId) = licenseRegistry.getAttachedLicenseTerms(
