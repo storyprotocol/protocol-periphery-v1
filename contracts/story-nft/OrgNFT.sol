@@ -152,7 +152,8 @@ contract OrgNFT is IOrgNFT, ERC721URIStorageUpgradeable, AccessManagedUpgradeabl
             licenseTermsIds: licenseTermsIds,
             licenseTemplate: LICENSE_TEMPLATE,
             royaltyContext: "",
-            maxMintingFee: 0
+            maxMintingFee: 0,
+            maxRts: 0
         });
 
         _safeTransfer(address(this), recipient, orgTokenId);

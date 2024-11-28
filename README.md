@@ -24,8 +24,7 @@ function mintAndRegisterIpAndAttachPILTerms(
   address nftContract,
   address recipient,
   IPMetadata calldata ipMetadata,
-  PILTerms calldata terms,
-  bool allowDuplicates
+  PILTerms calldata terms
 ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId, uint256 licenseTermsId)
 ```
 

@@ -29,7 +29,6 @@ interface IDerivativeWorkflows {
     /// @param derivData The derivative data to be used for registerDerivative.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
-    /// @param sigMintingFee OPTIONAL. Signature data for approving license minting fee for the IP via the currency token.
     /// @param sigRegister Signature data for registerDerivative for the IP via the Licensing Module.
     /// @return ipId The ID of the newly registered IP.
     function registerIpAndMakeDerivative(
@@ -38,7 +37,6 @@ interface IDerivativeWorkflows {
         WorkflowStructs.MakeDerivative calldata derivData,
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigMetadata,
-        WorkflowStructs.SignatureData calldata sigMintingFee,
         WorkflowStructs.SignatureData calldata sigRegister
     ) external returns (address ipId);
 
@@ -48,6 +46,7 @@ interface IDerivativeWorkflows {
     /// @param spgNftContract The address of the SPGNFT collection.
     /// @param licenseTokenIds The IDs of the license tokens to be burned for linking the IP to parent IPs.
     /// @param royaltyContext The context for royalty module, should be empty for Royalty Policy LAP.
+    /// @param maxRts The maximum number of royalty tokens that can be distributed to the external royalty policies.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
     /// @param recipient The address to receive the minted NFT.
     /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
@@ -57,6 +56,7 @@ interface IDerivativeWorkflows {
         address spgNftContract,
         uint256[] calldata licenseTokenIds,
         bytes calldata royaltyContext,
+        uint32 maxRts,
         WorkflowStructs.IPMetadata calldata ipMetadata,
         address recipient,
         bool allowDuplicates
@@ -68,6 +68,7 @@ interface IDerivativeWorkflows {
     /// @param tokenId The ID of the NFT.
     /// @param licenseTokenIds The IDs of the license tokens to be burned for linking the IP to parent IPs.
     /// @param royaltyContext The context for royalty module, should be empty for Royalty Policy LAP.
+    /// @param maxRts The maximum number of royalty tokens that can be distributed to the external royalty policies.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
     /// @param sigRegister Signature data for registerDerivativeWithLicenseTokens for the IP via the Licensing Module.
@@ -77,6 +78,7 @@ interface IDerivativeWorkflows {
         uint256 tokenId,
         uint256[] calldata licenseTokenIds,
         bytes calldata royaltyContext,
+        uint32 maxRts,
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigMetadata,
         WorkflowStructs.SignatureData calldata sigRegister

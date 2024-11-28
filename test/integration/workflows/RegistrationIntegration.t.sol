@@ -97,18 +97,13 @@ contract RegistrationIntegration is BaseIntegration {
         // get signature for setting IP metadata
         uint256 deadline = block.timestamp + 1000;
         address expectedIpId = ipAssetRegistry.ipId(block.chainid, address(spgNftContract), tokenId);
-        (bytes memory sigMetadata, bytes32 expectedState) = _getSigForExecuteWithSig({
+        (bytes memory sigMetadata, bytes32 expectedState, ) = _getSetPermissionSigForPeriphery({
             ipId: expectedIpId,
-            to: coreMetadataModuleAddr,
+            to: registrationWorkflowsAddr,
+            module: coreMetadataModuleAddr,
+            selector: ICoreMetadataModule.setAll.selector,
             deadline: deadline,
             state: bytes32(0),
-            data: abi.encodeWithSelector(
-                ICoreMetadataModule.setAll.selector,
-                expectedIpId,
-                testIpMetadata.ipMetadataURI,
-                testIpMetadata.ipMetadataHash,
-                testIpMetadata.nftMetadataHash
-            ),
             signerSk: testSenderSk
         });
 

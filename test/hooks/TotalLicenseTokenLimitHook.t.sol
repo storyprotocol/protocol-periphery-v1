@@ -49,7 +49,10 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
             mintingFee: 100,
             licensingHook: address(totalLimitHook),
             hookData: "",
-            commercialRevShare: 0
+            commercialRevShare: 0,
+            disabled: false,
+            expectMinimumGroupRewardShare: 0,
+            expectGroupRewardPool: address(0) // not allowed to be added to any group
         });
 
         vm.startPrank(ipOwner1);
@@ -150,7 +153,10 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
             mintingFee: 100,
             licensingHook: address(totalLimitHook),
             hookData: "",
-            commercialRevShare: 0
+            commercialRevShare: 0,
+            disabled: false,
+            expectMinimumGroupRewardShare: 0,
+            expectGroupRewardPool: address(0) // not allowed to be added to any group
         });
 
         vm.startPrank(ipOwner1);
@@ -188,7 +194,10 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
             mintingFee: 100,
             licensingHook: address(totalLimitHook),
             hookData: "",
-            commercialRevShare: 0
+            commercialRevShare: 0,
+            disabled: false,
+            expectMinimumGroupRewardShare: 0,
+            expectGroupRewardPool: address(0) // not allowed to be added to any group
         });
 
         vm.startPrank(ipOwner1);

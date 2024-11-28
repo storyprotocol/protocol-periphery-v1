@@ -123,13 +123,15 @@ abstract contract BaseStoryNFT is IStoryNFT, ERC721URIStorageUpgradeable, Ownabl
     /// @param licenseTermsIds The IDs of the license terms.
     /// @param royaltyContext The royalty context, should be empty for Royalty Policy LAP.
     /// @param maxMintingFee The maximum minting fee that the caller is willing to pay. if set to 0 then no limit.
+    /// @param maxRts The maximum number of royalty tokens that can be distributed to the external royalty policies.
     function _makeDerivative(
         address ipId,
         address[] memory parentIpIds,
         address licenseTemplate,
         uint256[] memory licenseTermsIds,
         bytes memory royaltyContext,
-        uint256 maxMintingFee
+        uint256 maxMintingFee,
+        uint32 maxRts
     ) internal virtual {
         LICENSING_MODULE.registerDerivative({
             childIpId: ipId,
@@ -137,7 +139,8 @@ abstract contract BaseStoryNFT is IStoryNFT, ERC721URIStorageUpgradeable, Ownabl
             licenseTermsIds: licenseTermsIds,
             licenseTemplate: licenseTemplate,
             royaltyContext: royaltyContext,
-            maxMintingFee: maxMintingFee
+            maxMintingFee: maxMintingFee,
+            maxRts: maxRts
         });
     }
 

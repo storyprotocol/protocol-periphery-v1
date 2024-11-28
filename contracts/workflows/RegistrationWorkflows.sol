@@ -142,7 +142,13 @@ contract RegistrationWorkflows is
         WorkflowStructs.SignatureData calldata sigMetadata
     ) external returns (address ipId) {
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        MetadataHelper.setMetadataWithSig(ipId, address(CORE_METADATA_MODULE), ipMetadata, sigMetadata);
+        MetadataHelper.setMetadataWithSig(
+            ipId,
+            address(CORE_METADATA_MODULE),
+            address(ACCESS_CONTROLLER),
+            ipMetadata,
+            sigMetadata
+        );
     }
 
     //

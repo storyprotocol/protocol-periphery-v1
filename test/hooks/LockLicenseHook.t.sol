@@ -31,7 +31,10 @@ contract LockLicenseHookTest is BaseTest {
             mintingFee: 0,
             licensingHook: address(lockLicenseHook),
             hookData: "",
-            commercialRevShare: 0
+            commercialRevShare: 0,
+            disabled: false,
+            expectMinimumGroupRewardShare: 0,
+            expectGroupRewardPool: address(0) // not allowed to be added to any group
         });
         licensingModule.setLicensingConfig(ipId, address(pilTemplate), socialRemixTermsId, licensingConfig);
         vm.stopPrank();
@@ -68,7 +71,10 @@ contract LockLicenseHookTest is BaseTest {
             mintingFee: 0,
             licensingHook: address(lockLicenseHook),
             hookData: "",
-            commercialRevShare: 0
+            commercialRevShare: 0,
+            disabled: false,
+            expectMinimumGroupRewardShare: 0,
+            expectGroupRewardPool: address(0) // not allowed to be added to any group
         });
         licensingModule.setLicensingConfig(ipId, address(pilTemplate), socialRemixTermsId, licensingConfig);
         vm.stopPrank();
@@ -94,7 +100,8 @@ contract LockLicenseHookTest is BaseTest {
             licenseTermsIds: licenseTermsIds,
             licenseTemplate: address(pilTemplate),
             royaltyContext: "",
-            maxMintingFee: 0
+            maxMintingFee: 0,
+            maxRts: 0 // non-commercial remixing does not require royalty tokens
         });
     }
 
@@ -110,7 +117,10 @@ contract LockLicenseHookTest is BaseTest {
             mintingFee: 1000,
             licensingHook: address(lockLicenseHook),
             hookData: "",
-            commercialRevShare: 0
+            commercialRevShare: 0,
+            disabled: false,
+            expectMinimumGroupRewardShare: 0,
+            expectGroupRewardPool: address(0) // not allowed to be added to any group
         });
         licensingModule.setLicensingConfig(ipId, address(pilTemplate), socialRemixTermsId, licensingConfig);
         vm.stopPrank();

@@ -645,7 +645,7 @@ contract DeployHelper is
 
         // royaltyPolicyLRP
         impl = address(0); // Make sure we don't deploy wrong impl
-        impl = address(new RoyaltyPolicyLRP(address(royaltyModule), address(ipGraphACL)));
+        impl = address(new RoyaltyPolicyLRP(address(royaltyModule), address(royaltyPolicyLAP), address(ipGraphACL)));
         royaltyPolicyLRP = RoyaltyPolicyLRP(
             TestProxyHelper.deployUUPSProxy(
                 create3Deployer,

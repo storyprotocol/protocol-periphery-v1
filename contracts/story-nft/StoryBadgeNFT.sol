@@ -177,7 +177,7 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, CachableNFT, ERC721Ho
         licenseTermsIds[0] = DEFAULT_LICENSE_TERMS_ID;
 
         // Make the badge a derivative of the organization IP
-        _makeDerivative(ipId, parentIpIds, PIL_TEMPLATE, licenseTermsIds, "", 0);
+        _makeDerivative(ipId, parentIpIds, PIL_TEMPLATE, licenseTermsIds, "", 0, 0);
     }
 
     /// @notice Transfers an NFT from one address to another.

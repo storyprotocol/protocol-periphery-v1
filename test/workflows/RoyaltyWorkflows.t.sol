@@ -2,15 +2,11 @@
 pragma solidity 0.8.26;
 
 // external
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
-import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
-import { IPILicenseTemplate } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 
 // contracts
-import { LicensingHelper } from "../../contracts/lib/LicensingHelper.sol";
 import { WorkflowStructs } from "../../contracts/lib/WorkflowStructs.sol";
 
 // test
@@ -228,111 +224,73 @@ contract RoyaltyWorkflowsTest is BaseTest {
 
         uint256 deadline = block.timestamp + 1000;
 
-        // get the signature for executing `attachLicenseTerms` function in `LicensingModule` on behalf of the IP owner
+        // set permission for licensing module to attach license terms to ancestor IP
         {
-            commRemixTermsIdA = IPILicenseTemplate(pilTemplate).registerLicenseTerms(
-                PILFlavors.commercialRemix({
-                    mintingFee: defaultMintingFeeA,
-                    commercialRevShare: defaultCommRevShareA,
-                    royaltyPolicy: address(royaltyPolicyLRP),
-                    currencyToken: address(mockTokenA)
-                })
-            );
-            (bytes memory signatureA, ) = _getSigForExecuteWithSig({
+            (bytes memory signatureA, , ) = _getSetPermissionSigForPeriphery({
                 ipId: ancestorIpId,
-                to: address(licensingModule),
+                to: address(licenseAttachmentWorkflows),
+                module: address(licensingModule),
+                selector: licensingModule.attachLicenseTerms.selector,
                 deadline: deadline,
                 state: IIPAccount(payable(ancestorIpId)).state(),
-                data: abi.encodeWithSelector(
-                    ILicensingModule.attachLicenseTerms.selector,
-                    ancestorIpId,
-                    pilTemplate,
-                    commRemixTermsIdA
-                ),
                 signerSk: sk.admin
             });
 
             // register and attach Terms A and C to ancestor IP
-            LicensingHelper.attachLicenseTermsWithSig({
+            commRemixTermsIdA = licenseAttachmentWorkflows.registerPILTermsAndAttach({
                 ipId: ancestorIpId,
-                licensingModule: address(licensingModule),
-                licenseTemplate: address(pilTemplate),
-                licenseTermsId: commRemixTermsIdA,
+                terms: PILFlavors.commercialRemix({
+                    mintingFee: defaultMintingFeeA,
+                    commercialRevShare: defaultCommRevShareA,
+                    royaltyPolicy: address(royaltyPolicyLRP),
+                    currencyToken: address(mockTokenA)
+                }),
                 sigAttach: WorkflowStructs.SignatureData({ signer: u.admin, deadline: deadline, signature: signatureA })
             });
         }
 
         {
-            commRemixTermsIdC = IPILicenseTemplate(pilTemplate).registerLicenseTerms(
-                PILFlavors.commercialRemix({
+            (bytes memory signatureC, , ) = _getSetPermissionSigForPeriphery({
+                ipId: ancestorIpId,
+                to: address(licenseAttachmentWorkflows),
+                module: address(licensingModule),
+                selector: licensingModule.attachLicenseTerms.selector,
+                deadline: deadline,
+                state: IIPAccount(payable(ancestorIpId)).state(),
+                signerSk: sk.admin
+            });
+
+            commRemixTermsIdC = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+                ipId: ancestorIpId,
+                terms: PILFlavors.commercialRemix({
                     mintingFee: defaultMintingFeeC,
                     commercialRevShare: defaultCommRevShareC,
                     royaltyPolicy: address(royaltyPolicyLAP),
                     currencyToken: address(mockTokenC)
-                })
-            );
-            (bytes memory signatureC, ) = _getSigForExecuteWithSig({
-                ipId: ancestorIpId,
-                to: address(licensingModule),
-                deadline: deadline,
-                state: IIPAccount(payable(ancestorIpId)).state(),
-                data: abi.encodeWithSelector(
-                    ILicensingModule.attachLicenseTerms.selector,
-                    ancestorIpId,
-                    pilTemplate,
-                    commRemixTermsIdC
-                ),
-                signerSk: sk.admin
-            });
-
-            LicensingHelper.attachLicenseTermsWithSig({
-                ipId: ancestorIpId,
-                licensingModule: address(licensingModule),
-                licenseTemplate: address(pilTemplate),
-                licenseTermsId: commRemixTermsIdC,
+                }),
                 sigAttach: WorkflowStructs.SignatureData({ signer: u.admin, deadline: deadline, signature: signatureC })
             });
         }
 
         // register childIpA as derivative of ancestorIp under Terms A
         {
+            (bytes memory sigRegisterAlice, , ) = _getSetPermissionSigForPeriphery({
+                ipId: ipAssetRegistry.ipId(block.chainid, address(mockNft), childTokenIdA),
+                to: address(derivativeWorkflows),
+                module: address(licensingModule),
+                selector: licensingModule.registerDerivative.selector,
+                deadline: deadline,
+                state: bytes32(0),
+                signerSk: sk.alice
+            });
+
             address[] memory parentIpIds = new address[](1);
             uint256[] memory licenseTermsIds = new uint256[](1);
             parentIpIds[0] = ancestorIpId;
             licenseTermsIds[0] = commRemixTermsIdA;
 
-            childIpIdA = ipAssetRegistry.ipId(block.chainid, address(mockNft), childTokenIdA);
-
-            (bytes memory sigMintingFee, bytes32 expectedState) = _getSigForExecuteWithSig({
-                ipId: childIpIdA,
-                to: address(mockTokenA),
-                deadline: deadline,
-                state: bytes32(0),
-                data: abi.encodeWithSelector(IERC20.approve.selector, address(royaltyModule), defaultMintingFeeA),
-                signerSk: sk.alice
-            });
-
-            (bytes memory sigRegisterAlice, ) = _getSigForExecuteWithSig({
-                ipId: childIpIdA,
-                to: address(licensingModule),
-                deadline: deadline,
-                state: expectedState,
-                data: abi.encodeWithSelector(
-                    ILicensingModule.registerDerivative.selector,
-                    childIpIdA,
-                    parentIpIds,
-                    licenseTermsIds,
-                    address(pilTemplate),
-                    "",
-                    0
-                ),
-                signerSk: sk.alice
-            });
-
             vm.startPrank(u.alice);
-            // transfer the minting fee to childA IP account
             mockTokenA.approve(address(derivativeWorkflows), defaultMintingFeeA);
-
             childIpIdA = derivativeWorkflows.registerIpAndMakeDerivative({
                 nftContract: address(mockNft),
                 tokenId: childTokenIdA,
@@ -341,15 +299,11 @@ contract RoyaltyWorkflowsTest is BaseTest {
                     licenseTemplate: address(pilTemplate),
                     licenseTermsIds: licenseTermsIds,
                     royaltyContext: "",
-                    maxMintingFee: 0
+                    maxMintingFee: 0,
+                    maxRts: defaultCommRevShareA
                 }),
                 ipMetadata: emptyIpMetadata,
                 sigMetadata: emptySigData,
-                sigMintingFee: WorkflowStructs.SignatureData({
-                    signer: u.alice,
-                    deadline: deadline,
-                    signature: sigMintingFee
-                }),
                 sigRegister: WorkflowStructs.SignatureData({
                     signer: u.alice,
                     deadline: deadline,
@@ -362,43 +316,23 @@ contract RoyaltyWorkflowsTest is BaseTest {
 
         // register childIpB as derivative of ancestorIp under Terms A
         {
+            (bytes memory sigRegisterBob, , ) = _getSetPermissionSigForPeriphery({
+                ipId: ipAssetRegistry.ipId(block.chainid, address(mockNft), childTokenIdB),
+                to: address(derivativeWorkflows),
+                module: address(licensingModule),
+                selector: licensingModule.registerDerivative.selector,
+                deadline: deadline,
+                state: bytes32(0),
+                signerSk: sk.bob
+            });
+
             address[] memory parentIpIds = new address[](1);
             uint256[] memory licenseTermsIds = new uint256[](1);
             parentIpIds[0] = ancestorIpId;
             licenseTermsIds[0] = commRemixTermsIdA;
 
-            childIpIdB = ipAssetRegistry.ipId(block.chainid, address(mockNft), childTokenIdB);
-
-            (bytes memory sigMintingFee, bytes32 expectedState) = _getSigForExecuteWithSig({
-                ipId: childIpIdB,
-                to: address(mockTokenA),
-                deadline: deadline,
-                state: bytes32(0),
-                data: abi.encodeWithSelector(IERC20.approve.selector, address(royaltyModule), defaultMintingFeeA),
-                signerSk: sk.bob
-            });
-
-            (bytes memory sigRegisterBob, ) = _getSigForExecuteWithSig({
-                ipId: childIpIdB,
-                to: address(licensingModule),
-                deadline: deadline,
-                state: expectedState,
-                data: abi.encodeWithSelector(
-                    ILicensingModule.registerDerivative.selector,
-                    childIpIdB,
-                    parentIpIds,
-                    licenseTermsIds,
-                    address(pilTemplate),
-                    "",
-                    0
-                ),
-                signerSk: sk.bob
-            });
-
             vm.startPrank(u.bob);
-            // transfer the minting fee to childB IP account
             mockTokenA.approve(address(derivativeWorkflows), defaultMintingFeeA);
-
             childIpIdB = derivativeWorkflows.registerIpAndMakeDerivative({
                 nftContract: address(mockNft),
                 tokenId: childTokenIdB,
@@ -407,15 +341,11 @@ contract RoyaltyWorkflowsTest is BaseTest {
                     licenseTemplate: address(pilTemplate),
                     licenseTermsIds: licenseTermsIds,
                     royaltyContext: "",
-                    maxMintingFee: 0
+                    maxMintingFee: 0,
+                    maxRts: defaultCommRevShareA
                 }),
                 ipMetadata: emptyIpMetadata,
                 sigMetadata: emptySigData,
-                sigMintingFee: WorkflowStructs.SignatureData({
-                    signer: u.bob,
-                    deadline: deadline,
-                    signature: sigMintingFee
-                }),
                 sigRegister: WorkflowStructs.SignatureData({
                     signer: u.bob,
                     deadline: deadline,
@@ -428,43 +358,23 @@ contract RoyaltyWorkflowsTest is BaseTest {
 
         /// register childIpC as derivative of ancestorIp under Terms C
         {
+            (bytes memory sigRegisterCarl, , ) = _getSetPermissionSigForPeriphery({
+                ipId: ipAssetRegistry.ipId(block.chainid, address(mockNft), childTokenIdC),
+                to: address(derivativeWorkflows),
+                module: address(licensingModule),
+                selector: licensingModule.registerDerivative.selector,
+                deadline: deadline,
+                state: bytes32(0),
+                signerSk: sk.carl
+            });
+
             address[] memory parentIpIds = new address[](1);
             uint256[] memory licenseTermsIds = new uint256[](1);
             parentIpIds[0] = ancestorIpId;
             licenseTermsIds[0] = commRemixTermsIdC;
 
-            childIpIdC = ipAssetRegistry.ipId(block.chainid, address(mockNft), childTokenIdC);
-
-            (bytes memory sigMintingFee, bytes32 expectedState) = _getSigForExecuteWithSig({
-                ipId: childIpIdC,
-                to: address(mockTokenC),
-                deadline: deadline,
-                state: bytes32(0),
-                data: abi.encodeWithSelector(IERC20.approve.selector, address(royaltyModule), defaultMintingFeeC),
-                signerSk: sk.carl
-            });
-
-            (bytes memory sigRegisterCarl, ) = _getSigForExecuteWithSig({
-                ipId: childIpIdC,
-                to: address(licensingModule),
-                deadline: deadline,
-                state: expectedState,
-                data: abi.encodeWithSelector(
-                    ILicensingModule.registerDerivative.selector,
-                    childIpIdC,
-                    parentIpIds,
-                    licenseTermsIds,
-                    address(pilTemplate),
-                    "",
-                    0
-                ),
-                signerSk: sk.carl
-            });
-
             vm.startPrank(u.carl);
-            // transfer the minting fee to childC IP account
             mockTokenC.approve(address(derivativeWorkflows), defaultMintingFeeC);
-
             childIpIdC = derivativeWorkflows.registerIpAndMakeDerivative({
                 nftContract: address(mockNft),
                 tokenId: childTokenIdC,
@@ -473,15 +383,11 @@ contract RoyaltyWorkflowsTest is BaseTest {
                     licenseTemplate: address(pilTemplate),
                     licenseTermsIds: licenseTermsIds,
                     royaltyContext: "",
-                    maxMintingFee: 0
+                    maxMintingFee: 0,
+                    maxRts: defaultCommRevShareC
                 }),
                 ipMetadata: emptyIpMetadata,
                 sigMetadata: emptySigData,
-                sigMintingFee: WorkflowStructs.SignatureData({
-                    signer: u.carl,
-                    deadline: deadline,
-                    signature: sigMintingFee
-                }),
                 sigRegister: WorkflowStructs.SignatureData({
                     signer: u.carl,
                     deadline: deadline,
@@ -494,6 +400,16 @@ contract RoyaltyWorkflowsTest is BaseTest {
 
         // register grandChildIp as derivative for childIp A and B under Terms A
         {
+            (bytes memory sigRegisterDan, , ) = _getSetPermissionSigForPeriphery({
+                ipId: ipAssetRegistry.ipId(block.chainid, address(mockNft), grandChildTokenId),
+                to: address(derivativeWorkflows),
+                module: address(licensingModule),
+                selector: licensingModule.registerDerivative.selector,
+                deadline: deadline,
+                state: bytes32(0),
+                signerSk: sk.dan
+            });
+
             address[] memory parentIpIds = new address[](2);
             uint256[] memory licenseTermsIds = new uint256[](2);
             parentIpIds[0] = childIpIdA;
@@ -502,42 +418,8 @@ contract RoyaltyWorkflowsTest is BaseTest {
                 licenseTermsIds[i] = commRemixTermsIdA;
             }
 
-            grandChildIpId = ipAssetRegistry.ipId(block.chainid, address(mockNft), grandChildTokenId);
-
-            (bytes memory sigMintingFee, bytes32 expectedState) = _getSigForExecuteWithSig({
-                ipId: grandChildIpId,
-                to: address(mockTokenA),
-                deadline: deadline,
-                state: bytes32(0),
-                data: abi.encodeWithSelector(
-                    IERC20.approve.selector,
-                    address(royaltyModule),
-                    defaultMintingFeeA * parentIpIds.length
-                ),
-                signerSk: sk.dan
-            });
-
-            (bytes memory sigRegisterDan, ) = _getSigForExecuteWithSig({
-                ipId: grandChildIpId,
-                to: address(licensingModule),
-                deadline: deadline,
-                state: expectedState,
-                data: abi.encodeWithSelector(
-                    ILicensingModule.registerDerivative.selector,
-                    grandChildIpId,
-                    parentIpIds,
-                    licenseTermsIds,
-                    address(pilTemplate),
-                    "",
-                    0
-                ),
-                signerSk: sk.dan
-            });
-
             vm.startPrank(u.dan);
-            // transfer the minting fee to grandChild IP account
             mockTokenA.approve(address(derivativeWorkflows), defaultMintingFeeA * parentIpIds.length);
-
             grandChildIpId = derivativeWorkflows.registerIpAndMakeDerivative({
                 nftContract: address(mockNft),
                 tokenId: grandChildTokenId,
@@ -546,15 +428,11 @@ contract RoyaltyWorkflowsTest is BaseTest {
                     licenseTemplate: address(pilTemplate),
                     licenseTermsIds: licenseTermsIds,
                     royaltyContext: "",
-                    maxMintingFee: 0
+                    maxMintingFee: 0,
+                    maxRts: uint32(defaultCommRevShareA * parentIpIds.length)
                 }),
                 ipMetadata: emptyIpMetadata,
                 sigMetadata: emptySigData,
-                sigMintingFee: WorkflowStructs.SignatureData({
-                    signer: u.dan,
-                    deadline: deadline,
-                    signature: sigMintingFee
-                }),
                 sigRegister: WorkflowStructs.SignatureData({
                     signer: u.dan,
                     deadline: deadline,
