@@ -279,25 +279,52 @@ contract BaseTest is Test, DeployHelper {
     /*//////////////////////////////////////////////////////////////////////////
                                       HELPERS
     //////////////////////////////////////////////////////////////////////////*/
-
-    /// @dev Get the permission list for setting metadata and attaching license terms for the IP.
+    /// @dev Get the permission list for attaching license terms and setting licensing config for the IP.
     /// @param ipId The ID of the IP that the permissions are for.
     /// @param to The address of the periphery contract to receive the permission.
-    /// @return permissionList The list of permissions for setting metadata and attaching license terms.
-    function _getMetadataAndAttachTermsPermissionList(
+    /// @return permissionList The list of permissions for attaching license terms and setting licensing config.
+    function _getAttachTermsAndConfigPermissionList(
         address ipId,
         address to
     ) internal view returns (AccessPermission.Permission[] memory permissionList) {
         address[] memory modules = new address[](2);
         bytes4[] memory selectors = new bytes4[](2);
         permissionList = new AccessPermission.Permission[](2);
+        modules[0] = licensingModuleAddr;
+        modules[1] = licensingModuleAddr;
+        selectors[0] = ILicensingModule.attachLicenseTerms.selector;
+        selectors[1] = ILicensingModule.setLicensingConfig.selector;
+        for (uint256 i = 0; i < 2; i++) {
+            permissionList[i] = AccessPermission.Permission({
+                ipAccount: ipId,
+                signer: to,
+                to: modules[i],
+                func: selectors[i],
+                permission: AccessPermission.ALLOW
+            });
+        }
+    }
+
+    /// @dev Get the permission list for setting metadata and attaching license terms for the IP.
+    /// @param ipId The ID of the IP that the permissions are for.
+    /// @param to The address of the periphery contract to receive the permission.
+    /// @return permissionList The list of permissions for setting metadata, attaching license terms, and
+    /// setting licensing config.
+    function _getMetadataAndAttachTermsAndConfigPermissionList(
+        address ipId,
+        address to
+    ) internal view returns (AccessPermission.Permission[] memory permissionList) {
+        address[] memory modules = new address[](3);
+        bytes4[] memory selectors = new bytes4[](3);
+        permissionList = new AccessPermission.Permission[](3);
 
         modules[0] = coreMetadataModuleAddr;
         modules[1] = licensingModuleAddr;
+        modules[2] = licensingModuleAddr;
         selectors[0] = ICoreMetadataModule.setAll.selector;
         selectors[1] = ILicensingModule.attachLicenseTerms.selector;
-
-        for (uint256 i = 0; i < 2; i++) {
+        selectors[2] = ILicensingModule.setLicensingConfig.selector;
+        for (uint256 i = 0; i < 3; i++) {
             permissionList[i] = AccessPermission.Permission({
                 ipAccount: ipId,
                 signer: to,

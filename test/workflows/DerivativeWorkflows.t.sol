@@ -7,6 +7,7 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
+import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 
 // contracts
@@ -20,35 +21,71 @@ contract DerivativeWorkflowsTest is BaseTest {
     using Strings for uint256;
 
     address internal ipIdParent;
-
+    WorkflowStructs.PILTermsData[] internal nonCommTermsData;
+    WorkflowStructs.PILTermsData[] internal commTermsData;
     function setUp() public override {
         super.setUp();
+        nonCommTermsData.push(
+            WorkflowStructs.PILTermsData({
+                terms: PILFlavors.nonCommercialSocialRemixing(),
+                licensingConfig: Licensing.LicensingConfig({
+                    isSet: true,
+                    mintingFee: 0,
+                    licensingHook: address(0),
+                    hookData: "",
+                    commercialRevShare: 0,
+                    disabled: false,
+                    expectMinimumGroupRewardShare: 0,
+                    expectGroupRewardPool: address(evenSplitGroupPool)
+                })
+            })
+        );
+
+        commTermsData.push(
+            WorkflowStructs.PILTermsData({
+                terms: PILFlavors.commercialRemix({
+                    mintingFee: 100 * 10 ** mockToken.decimals(),
+                    commercialRevShare: 10 * 10 ** 6, // 10%
+                    royaltyPolicy: address(royaltyPolicyLAP),
+                    currencyToken: address(mockToken)
+                }),
+                licensingConfig: Licensing.LicensingConfig({
+                    isSet: true,
+                    mintingFee: 100 * 10 ** mockToken.decimals(),
+                    licensingHook: address(0),
+                    hookData: "",
+                    commercialRevShare: 10 * 10 ** 6,
+                    disabled: false,
+                    expectMinimumGroupRewardShare: 0,
+                    expectGroupRewardPool: address(evenSplitGroupPool)
+                })
+            })
+        );
     }
 
     modifier withNonCommercialParentIp() {
-        (ipIdParent, , ) = licenseAttachmentWorkflows.mintAndRegisterIpAndAttachPILTerms({
-            spgNftContract: address(nftContract),
-            recipient: caller,
-            ipMetadata: ipMetadataDefault,
-            terms: PILFlavors.nonCommercialSocialRemixing(),
-            allowDuplicates: true
-        });
+        {
+            (ipIdParent, , ) = licenseAttachmentWorkflows.mintAndRegisterIpAndAttachPILTerms({
+                spgNftContract: address(nftContract),
+                recipient: caller,
+                ipMetadata: ipMetadataDefault,
+                pilTermsData: nonCommTermsData,
+                allowDuplicates: true
+            });
+        }
         _;
     }
 
     modifier withCommercialParentIp() {
-        (ipIdParent, , ) = licenseAttachmentWorkflows.mintAndRegisterIpAndAttachPILTerms({
-            spgNftContract: address(nftContract),
-            recipient: caller,
-            ipMetadata: ipMetadataDefault,
-            terms: PILFlavors.commercialRemix({
-                mintingFee: 100 * 10 ** mockToken.decimals(),
-                commercialRevShare: 10 * 10 ** 6, // 10%
-                royaltyPolicy: address(royaltyPolicyLAP),
-                currencyToken: address(mockToken)
-            }),
-            allowDuplicates: true
-        });
+        {
+            (ipIdParent, , ) = licenseAttachmentWorkflows.mintAndRegisterIpAndAttachPILTerms({
+                spgNftContract: address(nftContract),
+                recipient: caller,
+                ipMetadata: ipMetadataDefault,
+                pilTermsData: commTermsData,
+                allowDuplicates: true
+            });
+        }
         _;
     }
 

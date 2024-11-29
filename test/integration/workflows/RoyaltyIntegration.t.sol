@@ -3,16 +3,13 @@ pragma solidity 0.8.26;
 /* solhint-disable no-console */
 
 // external
-import { console2 } from "forge-std/console2.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
-import { IpRoyaltyVault } from "@storyprotocol/core/modules/royalty/policies/IpRoyaltyVault.sol";
-import { IVaultController } from "@storyprotocol/core/interfaces/modules/royalty/policies/IVaultController.sol";
+import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 
 // contracts
 import { ISPGNFT } from "../../../contracts/interfaces/ISPGNFT.sol";
-import { IRoyaltyWorkflows } from "../../../contracts/interfaces/workflows/IRoyaltyWorkflows.sol";
 import { WorkflowStructs } from "../../../contracts/lib/WorkflowStructs.sol";
 // test
 import { BaseIntegration } from "../BaseIntegration.t.sol";
@@ -35,6 +32,8 @@ contract RoyaltyIntegration is BaseIntegration {
     uint256 internal commRemixTermsIdC;
     uint256 internal defaultMintingFeeC = 500 * 10 ** StoryUSD.decimals(); // 500 SUSD
     uint32 internal defaultCommRevShareC = 20 * 10 ** 6; // 20%
+
+    WorkflowStructs.PILTermsData[] internal commTermsData;
 
     uint256 internal amountLicenseTokensToMint = 1;
 
@@ -211,50 +210,70 @@ contract RoyaltyIntegration is BaseIntegration {
 
         uint256 deadline = block.timestamp + 1000;
 
-        // set permission for licensing module to attach license terms to ancestor IP
-        (bytes memory signatureA, , ) = _getSetPermissionSigForPeriphery({
-            ipId: ancestorIpId,
-            to: licenseAttachmentWorkflowsAddr,
-            module: licensingModuleAddr,
-            selector: licensingModule.attachLicenseTerms.selector,
-            deadline: deadline,
-            state: IIPAccount(payable(ancestorIpId)).state(),
-            signerSk: testSenderSk
-        });
+        {
+            commTermsData.push(
+                WorkflowStructs.PILTermsData({
+                    terms: PILFlavors.commercialRemix({
+                        mintingFee: defaultMintingFeeA,
+                        commercialRevShare: defaultCommRevShareA,
+                        royaltyPolicy: royaltyPolicyLRPAddr,
+                        currencyToken: address(StoryUSD)
+                    }),
+                    licensingConfig: Licensing.LicensingConfig({
+                        isSet: true,
+                        mintingFee: defaultMintingFeeA,
+                        licensingHook: address(0),
+                        hookData: "",
+                        commercialRevShare: defaultCommRevShareA,
+                        disabled: false,
+                        expectMinimumGroupRewardShare: 0,
+                        expectGroupRewardPool: evenSplitGroupPoolAddr
+                    })
+                })
+            );
+            commTermsData.push(
+                WorkflowStructs.PILTermsData({
+                    terms: PILFlavors.commercialRemix({
+                        mintingFee: defaultMintingFeeC,
+                        commercialRevShare: defaultCommRevShareC,
+                        royaltyPolicy: royaltyPolicyLAPAddr,
+                        currencyToken: address(StoryUSD)
+                    }),
+                    licensingConfig: Licensing.LicensingConfig({
+                        isSet: true,
+                        mintingFee: defaultMintingFeeC,
+                        licensingHook: address(0),
+                        hookData: "",
+                        commercialRevShare: defaultCommRevShareC,
+                        disabled: false,
+                        expectMinimumGroupRewardShare: 0,
+                        expectGroupRewardPool: evenSplitGroupPoolAddr
+                    })
+                })
+            );
 
-        // register and attach Terms A and C to ancestor IP
-        commRemixTermsIdA = licenseAttachmentWorkflows.registerPILTermsAndAttach({
-            ipId: ancestorIpId,
-            terms: PILFlavors.commercialRemix({
-                mintingFee: defaultMintingFeeA,
-                commercialRevShare: defaultCommRevShareA,
-                royaltyPolicy: royaltyPolicyLRPAddr,
-                currencyToken: address(StoryUSD)
-            }),
-            sigAttach: WorkflowStructs.SignatureData({ signer: testSender, deadline: deadline, signature: signatureA })
-        });
+            // set permission for licensing module to attach license terms to ancestor IP
+            (bytes memory signature, , ) = _getSetBatchPermissionSigForPeriphery({
+                ipId: ancestorIpId,
+                permissionList: _getAttachTermsAndConfigPermissionList(ancestorIpId, licenseAttachmentWorkflowsAddr),
+                deadline: deadline,
+                state: bytes32(0),
+                signerSk: testSenderSk
+            });
 
-        // set permission for licensing module to attach license terms to ancestor IP
-        (bytes memory signatureC, , ) = _getSetPermissionSigForPeriphery({
-            ipId: ancestorIpId,
-            to: licenseAttachmentWorkflowsAddr,
-            module: licensingModuleAddr,
-            selector: licensingModule.attachLicenseTerms.selector,
-            deadline: deadline,
-            state: IIPAccount(payable(ancestorIpId)).state(),
-            signerSk: testSenderSk
-        });
+            uint256[] memory licenseTermsIds = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+                ipId: ancestorIpId,
+                pilTermsData: commTermsData,
+                sigAttachAndConfig: WorkflowStructs.SignatureData({
+                    signer: testSender,
+                    deadline: deadline,
+                    signature: signature
+                })
+            });
 
-        commRemixTermsIdC = licenseAttachmentWorkflows.registerPILTermsAndAttach({
-            ipId: ancestorIpId,
-            terms: PILFlavors.commercialRemix({
-                mintingFee: defaultMintingFeeC,
-                commercialRevShare: defaultCommRevShareC,
-                royaltyPolicy: royaltyPolicyLAPAddr,
-                currencyToken: address(StoryUSD)
-            }),
-            sigAttach: WorkflowStructs.SignatureData({ signer: testSender, deadline: deadline, signature: signatureC })
-        });
+            commRemixTermsIdA = licenseTermsIds[0];
+            commRemixTermsIdC = licenseTermsIds[1];
+        }
 
         // register childIpA as derivative of ancestorIp under Terms A
         {

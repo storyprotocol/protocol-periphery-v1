@@ -7,11 +7,9 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { ILicenseRegistry } from "@storyprotocol/core/interfaces/registries/ILicenseRegistry.sol";
 import { IIPAssetRegistry } from "@storyprotocol/core/interfaces/registries/IIPAssetRegistry.sol";
-import { IIpRoyaltyVault } from "@storyprotocol/core/interfaces/modules/royalty/policies/IIpRoyaltyVault.sol";
 import { IGroupingModule } from "@storyprotocol/core/interfaces/modules/grouping/IGroupingModule.sol";
 import { IGroupIPAssetRegistry } from "@storyprotocol/core/interfaces/registries/IGroupIPAssetRegistry.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
-import { PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
 
 // contracts
@@ -27,9 +25,7 @@ import { BaseTest } from "../utils/BaseTest.t.sol";
 contract GroupingWorkflowsTest is BaseTest {
     using Strings for uint256;
 
-    uint256 internal testLicenseTermsId;
-    PILTerms internal testLicenseTerms;
-    Licensing.LicensingConfig internal testLicensingConfig;
+    WorkflowStructs.LicenseData[] internal testLicensesData;
     uint32 internal revShare;
 
     address internal groupOwner;
@@ -48,24 +44,29 @@ contract GroupingWorkflowsTest is BaseTest {
 
         // register license terms
         revShare = 10 * 10 ** 6; // 10%
-        testLicenseTerms = PILFlavors.commercialRemix({
-            mintingFee: 0,
-            commercialRevShare: revShare,
-            currencyToken: address(mockToken),
-            royaltyPolicy: address(royaltyPolicyLAP)
-        });
-        testLicenseTermsId = pilTemplate.registerLicenseTerms(testLicenseTerms);
-
-        testLicensingConfig = Licensing.LicensingConfig({
-            isSet: true,
-            mintingFee: 0,
-            licensingHook: address(0),
-            hookData: "",
-            commercialRevShare: revShare,
-            disabled: false,
-            expectMinimumGroupRewardShare: 0,
-            expectGroupRewardPool: address(evenSplitGroupPool)
-        });
+        testLicensesData.push(
+            WorkflowStructs.LicenseData({
+                licenseTemplate: address(pilTemplate),
+                licenseTermsId: pilTemplate.registerLicenseTerms(
+                    PILFlavors.commercialRemix({
+                        mintingFee: 0,
+                        commercialRevShare: revShare,
+                        currencyToken: address(mockToken),
+                        royaltyPolicy: address(royaltyPolicyLAP)
+                    })
+                ),
+                licensingConfig: Licensing.LicensingConfig({
+                    isSet: true,
+                    mintingFee: 0,
+                    licensingHook: address(0),
+                    hookData: "",
+                    commercialRevShare: revShare,
+                    disabled: false,
+                    expectMinimumGroupRewardShare: 0,
+                    expectGroupRewardPool: address(evenSplitGroupPool)
+                })
+            })
+        );
 
         // setup a group IPA
         _setupGroup();
@@ -101,8 +102,7 @@ contract GroupingWorkflowsTest is BaseTest {
             groupId: groupId,
             recipient: minter,
             ipMetadata: ipMetadataDefault,
-            licenseTemplate: address(pilTemplate),
-            licenseTermsId: testLicenseTermsId,
+            licensesData: testLicensesData,
             sigAddToGroup: WorkflowStructs.SignatureData({
                 signer: groupOwner,
                 deadline: deadline,
@@ -114,116 +114,112 @@ contract GroupingWorkflowsTest is BaseTest {
     }
 
     // Mint → Register IP → Attach license terms → Add new IP to group IPA
-    // TODO: enable set licensing config during license attachment to make this test work
     function test_GroupingWorkflows_mintAndRegisterIpAndAttachLicenseAndAddToGroup() public {
-        // uint256 deadline = block.timestamp + 1000;
-        // // Get the signature for setting the permission for calling `addIp` function in `GroupingModule`
-        // // from the Group IP owner
-        // (bytes memory sigAddToGroup, bytes32 expectedState, ) = _getSetPermissionSigForPeriphery({
-        //     ipId: groupId,
-        //     to: address(groupingWorkflows),
-        //     module: address(groupingModule),
-        //     selector: IGroupingModule.addIp.selector,
-        //     deadline: deadline,
-        //     state: IIPAccount(payable(groupId)).state(),
-        //     signerSk: groupOwnerSk
-        // });
-        // vm.startPrank(minter);
-        // (address ipId, uint256 tokenId) = groupingWorkflows.mintAndRegisterIpAndAttachLicenseAndAddToGroup({
-        //     spgNftContract: address(spgNftPublic),
-        //     groupId: groupId,
-        //     recipient: minter,
-        //     ipMetadata: ipMetadataDefault,
-        //     licenseTemplate: address(pilTemplate),
-        //     licenseTermsId: testLicenseTermsId,
-        //     sigAddToGroup: WorkflowStructs.SignatureData({
-        //         signer: groupOwner,
-        //         deadline: deadline,
-        //         signature: sigAddToGroup
-        //     }),
-        //     allowDuplicates: true
-        // });
-        // vm.stopPrank();
-        // // check the group IP account state matches the expected state
-        // assertEq(IIPAccount(payable(groupId)).state(), expectedState);
-        // // check the IP is registered
-        // assertTrue(IIPAssetRegistry(ipAssetRegistry).isRegistered(ipId));
-        // // check the IP is added to the group
-        // assertTrue(IGroupIPAssetRegistry(ipAssetRegistry).containsIp(groupId, ipId));
-        // // check the NFT metadata is correctly set
-        // assertEq(spgNftPublic.tokenURI(tokenId), string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
-        // // check the IP metadata is correctly set
-        // assertMetadata(ipId, ipMetadataDefault);
-        // // check the license terms is correctly attached
-        // (address licenseTemplate, uint256 licenseTermsId) = ILicenseRegistry(address(licenseRegistry))
-        //     .getAttachedLicenseTerms(ipId, 0);
-        // assertEq(licenseTemplate, address(pilTemplate));
-        // assertEq(licenseTermsId, testLicenseTermsId);
+        uint256 deadline = block.timestamp + 1000;
+        // Get the signature for setting the permission for calling `addIp` function in `GroupingModule`
+        // from the Group IP owner
+        (bytes memory sigAddToGroup, bytes32 expectedState, ) = _getSetPermissionSigForPeriphery({
+            ipId: groupId,
+            to: address(groupingWorkflows),
+            module: address(groupingModule),
+            selector: IGroupingModule.addIp.selector,
+            deadline: deadline,
+            state: IIPAccount(payable(groupId)).state(),
+            signerSk: groupOwnerSk
+        });
+        vm.startPrank(minter);
+        (address ipId, uint256 tokenId) = groupingWorkflows.mintAndRegisterIpAndAttachLicenseAndAddToGroup({
+            spgNftContract: address(spgNftPublic),
+            groupId: groupId,
+            recipient: minter,
+            ipMetadata: ipMetadataDefault,
+            licensesData: testLicensesData,
+            sigAddToGroup: WorkflowStructs.SignatureData({
+                signer: groupOwner,
+                deadline: deadline,
+                signature: sigAddToGroup
+            }),
+            allowDuplicates: true
+        });
+        vm.stopPrank();
+        // check the group IP account state matches the expected state
+        assertEq(IIPAccount(payable(groupId)).state(), expectedState);
+        // check the IP is registered
+        assertTrue(IIPAssetRegistry(ipAssetRegistry).isRegistered(ipId));
+        // check the IP is added to the group
+        assertTrue(IGroupIPAssetRegistry(ipAssetRegistry).containsIp(groupId, ipId));
+        // check the NFT metadata is correctly set
+        assertEq(spgNftPublic.tokenURI(tokenId), string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
+        // check the IP metadata is correctly set
+        assertMetadata(ipId, ipMetadataDefault);
+        // check the license terms is correctly attached
+        (address licenseTemplate, uint256 licenseTermsId) = ILicenseRegistry(address(licenseRegistry))
+            .getAttachedLicenseTerms(ipId, 0);
+        assertEq(licenseTemplate, address(pilTemplate));
+        assertEq(licenseTermsId, testLicensesData[0].licenseTermsId);
     }
 
     // Register IP → Attach license terms → Add new IP to group IPA
-    // TODO: enable set licensing config during license attachment to make this test work
     function test_GroupingWorkflows_registerIpAndAttachLicenseAndAddToGroup() public {
-        // // mint a NFT from the mock ERC721 contract
-        // vm.startPrank(minter);
-        // uint256 tokenId = MockERC721(mockNft).mint(minter);
-        // vm.stopPrank();
-        // // get the expected IP ID
-        // address expectedIpId = IIPAssetRegistry(ipAssetRegistry).ipId(block.chainid, address(mockNft), tokenId);
-        // uint256 deadline = block.timestamp + 1000;
-        // // Get the signature for setting the permission for calling `setAll` (IP metadata) and `attachLicenseTerms`
-        // // functions in `coreMetadataModule` and `licensingModule` from the IP owner
-        // (bytes memory sigMetadataAndAttach, , ) = _getSetBatchPermissionSigForPeriphery({
-        //     ipId: expectedIpId,
-        //     permissionList: _getMetadataAndAttachTermsPermissionList(expectedIpId, address(groupingWorkflows)),
-        //     deadline: deadline,
-        //     state: bytes32(0),
-        //     signerSk: minterSk
-        // });
-        // // Get the signature for setting the permission for calling `addIp` function in `GroupingModule`
-        // // from the Group IP owner
-        // (bytes memory sigAddToGroup, , ) = _getSetPermissionSigForPeriphery({
-        //     ipId: groupId,
-        //     to: address(groupingWorkflows),
-        //     module: address(groupingModule),
-        //     selector: IGroupingModule.addIp.selector,
-        //     deadline: deadline,
-        //     state: IIPAccount(payable(groupId)).state(),
-        //     signerSk: groupOwnerSk
-        // });
-        // address ipId = groupingWorkflows.registerIpAndAttachLicenseAndAddToGroup({
-        //     nftContract: address(mockNft),
-        //     tokenId: tokenId,
-        //     groupId: groupId,
-        //     licenseTemplate: address(pilTemplate),
-        //     licenseTermsId: testLicenseTermsId,
-        //     ipMetadata: ipMetadataDefault,
-        //     sigMetadataAndAttach: WorkflowStructs.SignatureData({
-        //         signer: minter,
-        //         deadline: deadline,
-        //         signature: sigMetadataAndAttach
-        //     }),
-        //     sigAddToGroup: WorkflowStructs.SignatureData({
-        //         signer: groupOwner,
-        //         deadline: deadline,
-        //         signature: sigAddToGroup
-        //     })
-        // });
-        // // check the IP id matches the expected IP id
-        // assertEq(ipId, expectedIpId);
-        // // check the IP is registered
-        // assertTrue(IIPAssetRegistry(ipAssetRegistry).isRegistered(ipId));
-        // // check the IP is added to the group
-        // assertTrue(IGroupIPAssetRegistry(ipAssetRegistry).containsIp(groupId, ipId));
-        // // check the IP metadata is correctly set
-        // assertMetadata(ipId, ipMetadataDefault);
-        // // check the license terms is correctly attached
-        // (address licenseTemplate, uint256 licenseTermsId) = ILicenseRegistry(licenseRegistry).getAttachedLicenseTerms(
-        //     ipId,
-        //     0
-        // );
-        // assertEq(licenseTemplate, address(pilTemplate));
-        // assertEq(licenseTermsId, testLicenseTermsId);
+        // mint a NFT from the mock ERC721 contract
+        vm.startPrank(minter);
+        uint256 tokenId = MockERC721(mockNft).mint(minter);
+        vm.stopPrank();
+        // get the expected IP ID
+        address expectedIpId = IIPAssetRegistry(ipAssetRegistry).ipId(block.chainid, address(mockNft), tokenId);
+        uint256 deadline = block.timestamp + 1000;
+        // Get the signature for setting the permission for calling `setAll` (IP metadata) and `attachLicenseTerms`
+        // functions in `coreMetadataModule` and `licensingModule` from the IP owner
+        (bytes memory sigMetadataAndAttach, , ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: expectedIpId,
+            permissionList: _getMetadataAndAttachTermsAndConfigPermissionList(expectedIpId, address(groupingWorkflows)),
+            deadline: deadline,
+            state: bytes32(0),
+            signerSk: minterSk
+        });
+        // Get the signature for setting the permission for calling `addIp` function in `GroupingModule`
+        // from the Group IP owner
+        (bytes memory sigAddToGroup, , ) = _getSetPermissionSigForPeriphery({
+            ipId: groupId,
+            to: address(groupingWorkflows),
+            module: address(groupingModule),
+            selector: IGroupingModule.addIp.selector,
+            deadline: deadline,
+            state: IIPAccount(payable(groupId)).state(),
+            signerSk: groupOwnerSk
+        });
+        address ipId = groupingWorkflows.registerIpAndAttachLicenseAndAddToGroup({
+            nftContract: address(mockNft),
+            tokenId: tokenId,
+            groupId: groupId,
+            licensesData: testLicensesData,
+            ipMetadata: ipMetadataDefault,
+            sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
+                signer: minter,
+                deadline: deadline,
+                signature: sigMetadataAndAttach
+            }),
+            sigAddToGroup: WorkflowStructs.SignatureData({
+                signer: groupOwner,
+                deadline: deadline,
+                signature: sigAddToGroup
+            })
+        });
+        // check the IP id matches the expected IP id
+        assertEq(ipId, expectedIpId);
+        // check the IP is registered
+        assertTrue(IIPAssetRegistry(ipAssetRegistry).isRegistered(ipId));
+        // check the IP is added to the group
+        assertTrue(IGroupIPAssetRegistry(ipAssetRegistry).containsIp(groupId, ipId));
+        // check the IP metadata is correctly set
+        assertMetadata(ipId, ipMetadataDefault);
+        // check the license terms is correctly attached
+        (address licenseTemplate, uint256 licenseTermsId) = ILicenseRegistry(licenseRegistry).getAttachedLicenseTerms(
+            ipId,
+            0
+        );
+        assertEq(licenseTemplate, address(pilTemplate));
+        assertEq(licenseTermsId, testLicensesData[0].licenseTermsId);
     }
 
     // Register group IP → Attach license terms to group IPA
@@ -231,8 +227,7 @@ contract GroupingWorkflowsTest is BaseTest {
         vm.startPrank(groupOwner);
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicense({
             groupPool: address(evenSplitGroupPool),
-            licenseTemplate: address(pilTemplate),
-            licenseTermsId: testLicenseTermsId
+            licenseData: testLicensesData[0]
         });
         vm.stopPrank();
 
@@ -245,7 +240,7 @@ contract GroupingWorkflowsTest is BaseTest {
             0
         );
         assertEq(licenseTemplate, address(pilTemplate));
-        assertEq(licenseTermsId, testLicenseTermsId);
+        assertEq(licenseTermsId, testLicensesData[0].licenseTermsId);
     }
 
     // Register group IP → Attach license terms to group IPA → Add existing IPs to the new group IPA
@@ -254,8 +249,7 @@ contract GroupingWorkflowsTest is BaseTest {
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
             groupPool: address(evenSplitGroupPool),
             ipIds: ipIds,
-            licenseTemplate: address(pilTemplate),
-            licenseTermsId: testLicenseTermsId
+            licenseData: testLicensesData[0]
         });
         vm.stopPrank();
 
@@ -274,7 +268,7 @@ contract GroupingWorkflowsTest is BaseTest {
             0
         );
         assertEq(licenseTemplate, address(pilTemplate));
-        assertEq(licenseTermsId, testLicenseTermsId);
+        assertEq(licenseTermsId, testLicensesData[0].licenseTermsId);
     }
 
     // Collect royalties for the entire group and distribute to each member IP's royalty vault
@@ -286,8 +280,7 @@ contract GroupingWorkflowsTest is BaseTest {
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
             groupPool: address(evenSplitGroupPool),
             ipIds: ipIds,
-            licenseTemplate: address(pilTemplate),
-            licenseTermsId: testLicenseTermsId
+            licenseData: testLicensesData[0]
         });
         vm.stopPrank();
 
@@ -297,7 +290,7 @@ contract GroupingWorkflowsTest is BaseTest {
         address[] memory parentIpIds = new address[](1);
         parentIpIds[0] = newGroupId;
         uint256[] memory licenseTermsIds = new uint256[](1);
-        licenseTermsIds[0] = testLicenseTermsId;
+        licenseTermsIds[0] = testLicensesData[0].licenseTermsId;
 
         vm.startPrank(ipOwner1);
         // approve nft minting fee
@@ -309,7 +302,7 @@ contract GroupingWorkflowsTest is BaseTest {
             derivData: WorkflowStructs.MakeDerivative({
                 parentIpIds: parentIpIds,
                 licenseTermsIds: licenseTermsIds,
-                licenseTemplate: address(pilTemplate),
+                licenseTemplate: testLicensesData[0].licenseTemplate,
                 royaltyContext: "",
                 maxMintingFee: 0,
                 maxRts: revShare
@@ -330,7 +323,7 @@ contract GroupingWorkflowsTest is BaseTest {
             derivData: WorkflowStructs.MakeDerivative({
                 parentIpIds: parentIpIds,
                 licenseTermsIds: licenseTermsIds,
-                licenseTemplate: address(pilTemplate),
+                licenseTemplate: testLicensesData[0].licenseTemplate,
                 royaltyContext: "",
                 maxMintingFee: 0,
                 maxRts: revShare
@@ -404,138 +397,137 @@ contract GroupingWorkflowsTest is BaseTest {
     }
 
     // Multicall (mint → Register IP → Attach PIL terms → Add new IP to group IPA)
-    // TODO: enable set licensing config during license attachment to make this test work
     function test_GroupingWorkflows_multicall_mintAndRegisterIpAndAttachLicenseAndAddToGroup() public {
-        // uint256 deadline = block.timestamp + 1000;
-        // // Get the signatures for setting the permission for calling `addIp` function in `GroupingModule`
-        // // from the Group IP owner
-        // bytes[] memory sigsAddToGroup = new bytes[](10);
-        // bytes32 expectedStates = IIPAccount(payable(groupId)).state();
-        // for (uint256 i = 0; i < 10; i++) {
-        //     (sigsAddToGroup[i], expectedStates, ) = _getSetPermissionSigForPeriphery({
-        //         ipId: groupId,
-        //         to: address(groupingWorkflows),
-        //         module: address(groupingModule),
-        //         selector: IGroupingModule.addIp.selector,
-        //         deadline: deadline,
-        //         state: expectedStates,
-        //         signerSk: groupOwnerSk
-        //     });
-        // }
-        // // setup call data for batch calling 10 `mintAndRegisterIpAndAttachLicenseAndAddToGroup`
-        // bytes[] memory data = new bytes[](10);
-        // for (uint256 i = 0; i < 10; i++) {
-        //     data[i] = abi.encodeWithSelector(
-        //         groupingWorkflows.mintAndRegisterIpAndAttachLicenseAndAddToGroup.selector,
-        //         address(spgNftPublic),
-        //         groupId,
-        //         minter,
-        //         pilTemplate,
-        //         testLicenseTermsId,
-        //         ipMetadataDefault,
-        //         WorkflowStructs.SignatureData({ signer: groupOwner, deadline: deadline, signature: sigsAddToGroup[i] }),
-        //         true
-        //     );
-        // }
-        // // batch call `mintAndRegisterIpAndAttachLicenseAndAddToGroup`
-        // vm.startPrank(minter);
-        // bytes[] memory results = groupingWorkflows.multicall(data);
-        // vm.stopPrank();
-        // // check each IP is registered, added to the group, and metadata is set, license terms are attached
-        // address ipId;
-        // uint256 tokenId;
-        // for (uint256 i = 0; i < 10; i++) {
-        //     (ipId, tokenId) = abi.decode(results[i], (address, uint256));
-        //     assertTrue(IIPAssetRegistry(ipAssetRegistry).isRegistered(ipId));
-        //     assertTrue(IGroupIPAssetRegistry(ipAssetRegistry).containsIp(groupId, ipId));
-        //     assertEq(spgNftPublic.tokenURI(tokenId), string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
-        //     assertMetadata(ipId, ipMetadataDefault);
-        //     (address licenseTemplate, uint256 licenseTermsId) = ILicenseRegistry(licenseRegistry)
-        //         .getAttachedLicenseTerms(ipId, 0);
-        //     assertEq(licenseTemplate, address(pilTemplate));
-        //     assertEq(licenseTermsId, testLicenseTermsId);
-        // }
+        uint256 deadline = block.timestamp + 1000;
+        // Get the signatures for setting the permission for calling `addIp` function in `GroupingModule`
+        // from the Group IP owner
+        bytes[] memory sigsAddToGroup = new bytes[](10);
+        bytes32 expectedStates = IIPAccount(payable(groupId)).state();
+        for (uint256 i = 0; i < 10; i++) {
+            (sigsAddToGroup[i], expectedStates, ) = _getSetPermissionSigForPeriphery({
+                ipId: groupId,
+                to: address(groupingWorkflows),
+                module: address(groupingModule),
+                selector: IGroupingModule.addIp.selector,
+                deadline: deadline,
+                state: expectedStates,
+                signerSk: groupOwnerSk
+            });
+        }
+        // setup call data for batch calling 10 `mintAndRegisterIpAndAttachLicenseAndAddToGroup`
+        bytes[] memory data = new bytes[](10);
+        for (uint256 i = 0; i < 10; i++) {
+            data[i] = abi.encodeWithSelector(
+                groupingWorkflows.mintAndRegisterIpAndAttachLicenseAndAddToGroup.selector,
+                address(spgNftPublic),
+                groupId,
+                minter,
+                testLicensesData,
+                ipMetadataDefault,
+                WorkflowStructs.SignatureData({ signer: groupOwner, deadline: deadline, signature: sigsAddToGroup[i] }),
+                true
+            );
+        }
+        // batch call `mintAndRegisterIpAndAttachLicenseAndAddToGroup`
+        vm.startPrank(minter);
+        bytes[] memory results = groupingWorkflows.multicall(data);
+        vm.stopPrank();
+        // check each IP is registered, added to the group, and metadata is set, license terms are attached
+        address ipId;
+        uint256 tokenId;
+        for (uint256 i = 0; i < 10; i++) {
+            (ipId, tokenId) = abi.decode(results[i], (address, uint256));
+            assertTrue(IIPAssetRegistry(ipAssetRegistry).isRegistered(ipId));
+            assertTrue(IGroupIPAssetRegistry(ipAssetRegistry).containsIp(groupId, ipId));
+            assertEq(spgNftPublic.tokenURI(tokenId), string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
+            assertMetadata(ipId, ipMetadataDefault);
+            (address licenseTemplate, uint256 licenseTermsId) = ILicenseRegistry(licenseRegistry)
+                .getAttachedLicenseTerms(ipId, 0);
+            assertEq(licenseTemplate, address(pilTemplate));
+            assertEq(licenseTermsId, testLicensesData[0].licenseTermsId);
+        }
     }
 
     // Multicall (Register IP → Attach PIL terms → Add new IP to group IPA)
-    // TODO: enable set licensing config during license attachment to make this test work
     function test_GroupingWorkflows_multicall_registerIpAndAttachLicenseAndAddToGroup() public {
-        // // mint a NFT from the mock ERC721 contract
-        // uint256[] memory tokenIds = new uint256[](10);
-        // vm.startPrank(minter);
-        // for (uint256 i = 0; i < 10; i++) {
-        //     tokenIds[i] = MockERC721(mockNft).mint(minter);
-        // }
-        // vm.stopPrank();
-        // // get the expected IP ID
-        // address[] memory expectedIpIds = new address[](10);
-        // for (uint256 i = 0; i < 10; i++) {
-        //     expectedIpIds[i] = IIPAssetRegistry(ipAssetRegistry).ipId(block.chainid, address(mockNft), tokenIds[i]);
-        // }
-        // uint256 deadline = block.timestamp + 10000;
-        // // Get the signatures for setting the permission for calling `setAll` (IP metadata) and `attachLicenseTerms`
-        // // functions in `coreMetadataModule` and `licensingModule` from the IP owner
-        // bytes[] memory sigsMetadataAndAttach = new bytes[](10);
-        // for (uint256 i = 0; i < 10; i++) {
-        //     (sigsMetadataAndAttach[i], , ) = _getSetBatchPermissionSigForPeriphery({
-        //         ipId: expectedIpIds[i],
-        //         permissionList: _getMetadataAndAttachTermsPermissionList(expectedIpIds[i], address(groupingWorkflows)),
-        //         deadline: deadline,
-        //         state: bytes32(0),
-        //         signerSk: minterSk
-        //     });
-        // }
-        // // Get the signatures for setting the permission for calling `addIp` function in `GroupingModule`
-        // // from the Group IP owner
-        // bytes[] memory sigsAddToGroup = new bytes[](10);
-        // bytes32 expectedStates = IIPAccount(payable(groupId)).state();
-        // for (uint256 i = 0; i < 10; i++) {
-        //     (sigsAddToGroup[i], expectedStates, ) = _getSetPermissionSigForPeriphery({
-        //         ipId: groupId,
-        //         to: address(groupingWorkflows),
-        //         module: address(groupingModule),
-        //         selector: IGroupingModule.addIp.selector,
-        //         deadline: deadline,
-        //         state: expectedStates,
-        //         signerSk: groupOwnerSk
-        //     });
-        // }
-        // // setup call data for batch calling 10 `registerIpAndAttachLicenseAndAddToGroup`
-        // bytes[] memory data = new bytes[](10);
-        // for (uint256 i = 0; i < 10; i++) {
-        //     data[i] = abi.encodeWithSelector(
-        //         groupingWorkflows.registerIpAndAttachLicenseAndAddToGroup.selector,
-        //         mockNft,
-        //         tokenIds[i],
-        //         groupId,
-        //         pilTemplate,
-        //         testLicenseTermsId,
-        //         ipMetadataDefault,
-        //         WorkflowStructs.SignatureData({
-        //             signer: minter,
-        //             deadline: deadline,
-        //             signature: sigsMetadataAndAttach[i]
-        //         }),
-        //         WorkflowStructs.SignatureData({ signer: groupOwner, deadline: deadline, signature: sigsAddToGroup[i] })
-        //     );
-        // }
-        // // batch call `registerIpAndAttachLicenseAndAddToGroup`
-        // vm.startPrank(minter);
-        // bytes[] memory results = groupingWorkflows.multicall(data);
-        // vm.stopPrank();
-        // // check each IP is registered, added to the group, and metadata is set, license terms are attached
-        // address ipId;
-        // for (uint256 i = 0; i < 10; i++) {
-        //     ipId = abi.decode(results[i], (address));
-        //     assertEq(ipId, expectedIpIds[i]);
-        //     assertTrue(IIPAssetRegistry(ipAssetRegistry).isRegistered(ipId));
-        //     assertTrue(IGroupIPAssetRegistry(ipAssetRegistry).containsIp(groupId, ipId));
-        //     assertMetadata(ipId, ipMetadataDefault);
-        //     (address licenseTemplate, uint256 licenseTermsId) = ILicenseRegistry(licenseRegistry)
-        //         .getAttachedLicenseTerms(ipId, 0);
-        //     assertEq(licenseTemplate, address(pilTemplate));
-        //     assertEq(licenseTermsId, testLicenseTermsId);
-        // }
+        // mint a NFT from the mock ERC721 contract
+        uint256[] memory tokenIds = new uint256[](10);
+        vm.startPrank(minter);
+        for (uint256 i = 0; i < 10; i++) {
+            tokenIds[i] = MockERC721(mockNft).mint(minter);
+        }
+        vm.stopPrank();
+        // get the expected IP ID
+        address[] memory expectedIpIds = new address[](10);
+        for (uint256 i = 0; i < 10; i++) {
+            expectedIpIds[i] = IIPAssetRegistry(ipAssetRegistry).ipId(block.chainid, address(mockNft), tokenIds[i]);
+        }
+        uint256 deadline = block.timestamp + 10000;
+        // Get the signatures for setting the permission for calling `setAll` (IP metadata) and `attachLicenseTerms`
+        // functions in `coreMetadataModule` and `licensingModule` from the IP owner
+        bytes[] memory sigsMetadataAndAttach = new bytes[](10);
+        for (uint256 i = 0; i < 10; i++) {
+            (sigsMetadataAndAttach[i], , ) = _getSetBatchPermissionSigForPeriphery({
+                ipId: expectedIpIds[i],
+                permissionList: _getMetadataAndAttachTermsAndConfigPermissionList(
+                    expectedIpIds[i],
+                    address(groupingWorkflows)
+                ),
+                deadline: deadline,
+                state: bytes32(0),
+                signerSk: minterSk
+            });
+        }
+        // Get the signatures for setting the permission for calling `addIp` function in `GroupingModule`
+        // from the Group IP owner
+        bytes[] memory sigsAddToGroup = new bytes[](10);
+        bytes32 expectedStates = IIPAccount(payable(groupId)).state();
+        for (uint256 i = 0; i < 10; i++) {
+            (sigsAddToGroup[i], expectedStates, ) = _getSetPermissionSigForPeriphery({
+                ipId: groupId,
+                to: address(groupingWorkflows),
+                module: address(groupingModule),
+                selector: IGroupingModule.addIp.selector,
+                deadline: deadline,
+                state: expectedStates,
+                signerSk: groupOwnerSk
+            });
+        }
+        // setup call data for batch calling 10 `registerIpAndAttachLicenseAndAddToGroup`
+        bytes[] memory data = new bytes[](10);
+        for (uint256 i = 0; i < 10; i++) {
+            data[i] = abi.encodeWithSelector(
+                groupingWorkflows.registerIpAndAttachLicenseAndAddToGroup.selector,
+                mockNft,
+                tokenIds[i],
+                groupId,
+                testLicensesData,
+                ipMetadataDefault,
+                WorkflowStructs.SignatureData({
+                    signer: minter,
+                    deadline: deadline,
+                    signature: sigsMetadataAndAttach[i]
+                }),
+                WorkflowStructs.SignatureData({ signer: groupOwner, deadline: deadline, signature: sigsAddToGroup[i] })
+            );
+        }
+        // batch call `registerIpAndAttachLicenseAndAddToGroup`
+        vm.startPrank(minter);
+        bytes[] memory results = groupingWorkflows.multicall(data);
+        vm.stopPrank();
+        // check each IP is registered, added to the group, and metadata is set, license terms are attached
+        address ipId;
+        for (uint256 i = 0; i < 10; i++) {
+            ipId = abi.decode(results[i], (address));
+            assertEq(ipId, expectedIpIds[i]);
+            assertTrue(IIPAssetRegistry(ipAssetRegistry).isRegistered(ipId));
+            assertTrue(IGroupIPAssetRegistry(ipAssetRegistry).containsIp(groupId, ipId));
+            assertMetadata(ipId, ipMetadataDefault);
+            (address licenseTemplate, uint256 licenseTermsId) = ILicenseRegistry(licenseRegistry)
+                .getAttachedLicenseTerms(ipId, 0);
+            assertEq(licenseTemplate, address(pilTemplate));
+            assertEq(licenseTermsId, testLicensesData[0].licenseTermsId);
+        }
     }
 
     // setup a group IPA for testing
@@ -544,12 +536,12 @@ contract GroupingWorkflowsTest is BaseTest {
         vm.startPrank(groupOwner);
         groupId = IGroupingModule(groupingModule).registerGroup(address(evenSplitGroupPool));
         vm.label(groupId, "Group1");
-        LicensingHelper.attachLicenseTerms(
+        LicensingHelper.attachLicenseTermsAndSetConfigs(
             groupId,
             address(licensingModule),
-            address(licenseRegistry),
-            address(pilTemplate),
-            testLicenseTermsId
+            testLicensesData[0].licenseTemplate,
+            testLicensesData[0].licenseTermsId,
+            testLicensesData[0].licensingConfig
         );
         vm.stopPrank();
     }
@@ -588,14 +580,13 @@ contract GroupingWorkflowsTest is BaseTest {
         // attach license terms to the IPs
         vm.startPrank(minter);
         for (uint256 i = 0; i < 10; i++) {
-            LicensingHelper.attachLicenseTerms(
+            LicensingHelper.attachLicenseTermsAndSetConfigs(
                 ipIds[i],
                 address(licensingModule),
-                address(licenseRegistry),
-                address(pilTemplate),
-                testLicenseTermsId
+                testLicensesData[0].licenseTemplate,
+                testLicensesData[0].licenseTermsId,
+                testLicensesData[0].licensingConfig
             );
-            licensingModule.setLicensingConfig(ipIds[i], address(pilTemplate), testLicenseTermsId, testLicensingConfig);
         }
         vm.stopPrank();
     }

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
+import { PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
+
 /// @title Workflow Structs Library
 /// @notice Library for all the structs used in periphery workflows.
 library WorkflowStructs {
@@ -41,5 +44,23 @@ library WorkflowStructs {
         bytes royaltyContext;
         uint256 maxMintingFee;
         uint32 maxRts;
+    }
+
+    /// @notice Struct for license data for license attachment on IP registration.
+    /// @param licenseTemplate The address of the license template to be used for the licensing.
+    /// @param licenseTermsId The ID of the license terms to be used for the licensing.
+    /// @param licensingConfig The licensing configuration for the IP.
+    struct LicenseData {
+        address licenseTemplate;
+        uint256 licenseTermsId;
+        Licensing.LicensingConfig licensingConfig;
+    }
+
+    /// @notice Struct for PIL terms data for PIL registration and attachment on IP registration.
+    /// @param terms The PIL terms to be used for the licensing.
+    /// @param licenseTermsConfig The licensing configuration for the PIL terms.
+    struct PILTermsData {
+        PILTerms terms;
+        Licensing.LicensingConfig licensingConfig;
     }
 }

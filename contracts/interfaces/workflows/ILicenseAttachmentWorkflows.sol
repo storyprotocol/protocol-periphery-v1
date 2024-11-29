@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
-
-import { PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
-
 import { WorkflowStructs } from "../../lib/WorkflowStructs.sol";
 
 /// @title License Attachment Workflows Interface
@@ -10,14 +7,14 @@ import { WorkflowStructs } from "../../lib/WorkflowStructs.sol";
 interface ILicenseAttachmentWorkflows {
     /// @notice Register Programmable IP License Terms (if unregistered) and attach it to IP.
     /// @param ipId The ID of the IP.
-    /// @param terms The PIL terms to be registered.
-    /// @param sigAttach Signature data for attachLicenseTerms to the IP via the Licensing Module.
-    /// @return licenseTermsId The ID of the newly registered PIL terms.
+    /// @param pilTermsData The PIL terms and licensing configuration data to be attached to the IP.
+    /// @param sigAttachAndConfig Signature data for attachLicenseTerms and setLicensingConfig to the IP via the Licensing Module.
+    /// @return licenseTermsIds The IDs of the newly registered PIL terms.
     function registerPILTermsAndAttach(
         address ipId,
-        PILTerms calldata terms,
-        WorkflowStructs.SignatureData calldata sigAttach
-    ) external returns (uint256 licenseTermsId);
+        WorkflowStructs.PILTermsData[] calldata pilTermsData,
+        WorkflowStructs.SignatureData calldata sigAttachAndConfig
+    ) external returns (uint256[] memory licenseTermsIds);
 
     /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP,
     /// register Programmable IPLicense
@@ -26,18 +23,18 @@ interface ILicenseAttachmentWorkflows {
     /// @param spgNftContract The address of the SPGNFT collection.
     /// @param recipient The address of the recipient of the minted NFT.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
-    /// @param terms The PIL terms to be registered.
+    /// @param pilTermsData The PIL terms and licensing configuration data to be attached to the IP.
     /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
     /// @return ipId The ID of the newly registered IP.
     /// @return tokenId The ID of the newly minted NFT.
-    /// @return licenseTermsId The ID of the newly registered PIL terms.
+    /// @return licenseTermsIds The IDs of the newly registered PIL terms.
     function mintAndRegisterIpAndAttachPILTerms(
         address spgNftContract,
         address recipient,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        PILTerms calldata terms,
+        WorkflowStructs.PILTermsData[] calldata pilTermsData,
         bool allowDuplicates
-    ) external returns (address ipId, uint256 tokenId, uint256 licenseTermsId);
+    ) external returns (address ipId, uint256 tokenId, uint256[] memory licenseTermsIds);
 
     /// @notice Register a given NFT as an IP and attach Programmable IP License Terms.
     /// @dev Because IP Account is created in this function, we need to set the permission via signature to allow this
@@ -45,17 +42,16 @@ interface ILicenseAttachmentWorkflows {
     /// @param nftContract The address of the NFT collection.
     /// @param tokenId The ID of the NFT.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
-    /// @param terms The PIL terms to be registered.
-    /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
-    /// @param sigAttach Signature data for attachLicenseTerms to the IP via the Licensing Module.
+    /// @param pilTermsData The PIL terms and licensing configuration data to be attached to the IP.
+    /// @param sigMetadataAndAttachAndConfig Signature data for setAll (metadata), attachLicenseTerms, and
+    /// setLicensingConfig to the IP via the Core Metadata Module and Licensing Module.
     /// @return ipId The ID of the newly registered IP.
-    /// @return licenseTermsId The ID of the newly registered PIL terms.
+    /// @return licenseTermsIds The IDs of the newly registered PIL terms.
     function registerIpAndAttachPILTerms(
         address nftContract,
         uint256 tokenId,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        PILTerms calldata terms,
-        WorkflowStructs.SignatureData calldata sigMetadata,
-        WorkflowStructs.SignatureData calldata sigAttach
-    ) external returns (address ipId, uint256 licenseTermsId);
+        WorkflowStructs.PILTermsData[] calldata pilTermsData,
+        WorkflowStructs.SignatureData calldata sigMetadataAndAttachAndConfig
+    ) external returns (address ipId, uint256[] memory licenseTermsIds);
 }

@@ -3,11 +3,9 @@ pragma solidity 0.8.26;
 
 // external
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
-import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
-import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
+import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
-import { PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 
 // contracts
 import { ISPGNFT } from "../../../contracts/interfaces/ISPGNFT.sol";
@@ -20,7 +18,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
     using Strings for uint256;
 
     ISPGNFT private spgNftContract;
-    PILTerms private commUseTerms;
+    WorkflowStructs.PILTermsData[] private commTermsData;
 
     /// @dev To use, run the following command:
     /// forge script test/integration/workflows/LicenseAttachmentIntegration.t.sol:LicenseAttachmentIntegration \
@@ -50,23 +48,27 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         });
 
         uint256 deadline = block.timestamp + 1000;
-        (bytes memory signature, , ) = _getSetPermissionSigForPeriphery({
+        (bytes memory signature, , ) = _getSetBatchPermissionSigForPeriphery({
             ipId: ipId,
-            to: licenseAttachmentWorkflowsAddr,
-            module: licensingModuleAddr,
-            selector: ILicensingModule.attachLicenseTerms.selector,
+            permissionList: _getAttachTermsAndConfigPermissionList(ipId, licenseAttachmentWorkflowsAddr),
             deadline: deadline,
             state: IIPAccount(payable(ipId)).state(),
             signerSk: testSenderSk
         });
 
-        uint256 licenseTermsId = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+        uint256[] memory licenseTermsIds = licenseAttachmentWorkflows.registerPILTermsAndAttach({
             ipId: ipId,
-            terms: commUseTerms,
-            sigAttach: WorkflowStructs.SignatureData({ signer: testSender, deadline: deadline, signature: signature })
+            pilTermsData: commTermsData,
+            sigAttachAndConfig: WorkflowStructs.SignatureData({
+                signer: testSender,
+                deadline: deadline,
+                signature: signature
+            })
         });
 
-        assertEq(licenseTermsId, pilTemplate.getLicenseTermsId(commUseTerms));
+        for (uint256 i = 0; i < licenseTermsIds.length; i++) {
+            assertEq(licenseTermsIds[i], pilTemplate.getLicenseTermsId(commTermsData[i].terms));
+        }
     }
 
     function _test_LicenseAttachmentIntegration_mintAndRegisterIpAndAttachPILTerms()
@@ -78,22 +80,24 @@ contract LicenseAttachmentIntegration is BaseIntegration {
             StoryUSD.mint(testSender, testMintFee);
             StoryUSD.approve(address(spgNftContract), testMintFee);
 
-            (address ipId1, uint256 tokenId1, uint256 licenseTermsId1) = licenseAttachmentWorkflows
+            (address ipId1, uint256 tokenId1, uint256[] memory licenseTermsIds1) = licenseAttachmentWorkflows
                 .mintAndRegisterIpAndAttachPILTerms({
                     spgNftContract: address(spgNftContract),
                     recipient: testSender,
                     ipMetadata: testIpMetadata,
-                    terms: commUseTerms,
+                    pilTermsData: commTermsData,
                     allowDuplicates: true
                 });
             assertTrue(ipAssetRegistry.isRegistered(ipId1));
             assertEq(tokenId1, spgNftContract.totalSupply());
-            assertEq(licenseTermsId1, pilTemplate.getLicenseTermsId(commUseTerms));
             assertEq(spgNftContract.tokenURI(tokenId1), string.concat(testBaseURI, testIpMetadata.nftMetadataURI));
             assertMetadata(ipId1, testIpMetadata);
-            (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId1, 0);
-            assertEq(licenseTemplate, pilTemplateAddr);
-            assertEq(licenseTermsId, licenseTermsId1);
+            for (uint256 i = 0; i < licenseTermsIds1.length; i++) {
+                (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId1, i);
+                assertEq(licenseTemplate, pilTemplateAddr);
+                assertEq(licenseTermsId, licenseTermsIds1[i]);
+                assertEq(licenseTermsId, pilTemplate.getLicenseTermsId(commTermsData[i].terms));
+            }
         }
 
         // IP 2
@@ -101,22 +105,24 @@ contract LicenseAttachmentIntegration is BaseIntegration {
             StoryUSD.mint(testSender, testMintFee);
             StoryUSD.approve(address(spgNftContract), testMintFee);
 
-            (address ipId2, uint256 tokenId2, uint256 licenseTermsId2) = licenseAttachmentWorkflows
+            (address ipId2, uint256 tokenId2, uint256[] memory licenseTermsIds2) = licenseAttachmentWorkflows
                 .mintAndRegisterIpAndAttachPILTerms({
                     spgNftContract: address(spgNftContract),
                     recipient: testSender,
                     ipMetadata: testIpMetadata,
-                    terms: commUseTerms,
+                    pilTermsData: commTermsData,
                     allowDuplicates: true
                 });
             assertTrue(ipAssetRegistry.isRegistered(ipId2));
             assertEq(tokenId2, spgNftContract.totalSupply());
-            assertEq(licenseTermsId2, pilTemplate.getLicenseTermsId(commUseTerms));
             assertEq(spgNftContract.tokenURI(tokenId2), string.concat(testBaseURI, testIpMetadata.nftMetadataURI));
             assertMetadata(ipId2, testIpMetadata);
-            (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId2, 0);
-            assertEq(licenseTemplate, pilTemplateAddr);
-            assertEq(licenseTermsId, licenseTermsId2);
+            for (uint256 i = 0; i < licenseTermsIds2.length; i++) {
+                (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId2, i);
+                assertEq(licenseTemplate, pilTemplateAddr);
+                assertEq(licenseTermsIds2[i], licenseTermsId);
+                assertEq(licenseTermsId, pilTemplate.getLicenseTermsId(commTermsData[i].terms));
+            }
         }
     }
 
@@ -137,48 +143,41 @@ contract LicenseAttachmentIntegration is BaseIntegration {
 
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory sigMetadata, bytes32 sigAttachState, ) = _getSetPermissionSigForPeriphery({
+        (bytes memory sigMetadataAndAttachAndConfig, bytes32 expectedState, ) = _getSetBatchPermissionSigForPeriphery({
             ipId: expectedIpId,
-            to: licenseAttachmentWorkflowsAddr,
-            module: coreMetadataModuleAddr,
-            selector: ICoreMetadataModule.setAll.selector,
+            permissionList: _getMetadataAndAttachTermsAndConfigPermissionList(
+                expectedIpId,
+                licenseAttachmentWorkflowsAddr
+            ),
             deadline: deadline,
             state: bytes32(0),
             signerSk: testSenderSk
         });
 
-        (bytes memory sigAttach, bytes32 expectedState, ) = _getSetPermissionSigForPeriphery({
-            ipId: expectedIpId,
-            to: licenseAttachmentWorkflowsAddr,
-            module: licensingModuleAddr,
-            selector: ILicensingModule.attachLicenseTerms.selector,
-            deadline: deadline,
-            state: sigAttachState,
-            signerSk: testSenderSk
-        });
-
-        (address ipId, uint256 licenseTermsId) = licenseAttachmentWorkflows.registerIpAndAttachPILTerms({
+        (address ipId, uint256[] memory licenseTermsIds) = licenseAttachmentWorkflows.registerIpAndAttachPILTerms({
             nftContract: address(spgNftContract),
             tokenId: tokenId,
             ipMetadata: testIpMetadata,
-            terms: commUseTerms,
-            sigMetadata: WorkflowStructs.SignatureData({
+            pilTermsData: commTermsData,
+            sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
                 signer: testSender,
                 deadline: deadline,
-                signature: sigMetadata
-            }),
-            sigAttach: WorkflowStructs.SignatureData({ signer: testSender, deadline: deadline, signature: sigAttach })
+                signature: sigMetadataAndAttachAndConfig
+            })
         });
 
         assertEq(ipId, expectedIpId);
         assertTrue(ipAssetRegistry.isRegistered(ipId));
         assertEq(IIPAccount(payable(ipId)).state(), expectedState);
-        (address expectedLicenseTemplate, uint256 expectedLicenseTermsId) = licenseRegistry.getAttachedLicenseTerms(
-            expectedIpId,
-            0
-        );
-        assertEq(expectedLicenseTemplate, pilTemplateAddr);
-        assertEq(expectedLicenseTermsId, licenseTermsId);
+        for (uint256 i = 0; i < licenseTermsIds.length; i++) {
+            (address expectedLicenseTemplate, uint256 expectedLicenseTermsId) = licenseRegistry.getAttachedLicenseTerms(
+                expectedIpId,
+                i
+            );
+            assertEq(expectedLicenseTemplate, pilTemplateAddr);
+            assertEq(licenseTermsIds[i], expectedLicenseTermsId);
+            assertEq(expectedLicenseTermsId, pilTemplate.getLicenseTermsId(commTermsData[i].terms));
+        }
     }
 
     function _setUpTest() private {
@@ -200,10 +199,86 @@ contract LicenseAttachmentIntegration is BaseIntegration {
             )
         );
 
-        commUseTerms = PILFlavors.commercialUse({
-            mintingFee: testMintFee,
-            currencyToken: testMintFeeToken,
-            royaltyPolicy: royaltyPolicyLRPAddr
-        });
+        commTermsData.push(
+            WorkflowStructs.PILTermsData({
+                terms: PILFlavors.commercialUse({
+                    mintingFee: testMintFee,
+                    currencyToken: testMintFeeToken,
+                    royaltyPolicy: royaltyPolicyLRPAddr
+                }),
+                licensingConfig: Licensing.LicensingConfig({
+                    isSet: true,
+                    mintingFee: testMintFee,
+                    licensingHook: address(0),
+                    hookData: "",
+                    commercialRevShare: 0,
+                    disabled: false,
+                    expectMinimumGroupRewardShare: 0,
+                    expectGroupRewardPool: evenSplitGroupPoolAddr
+                })
+            })
+        );
+
+        commTermsData.push(
+            WorkflowStructs.PILTermsData({
+                terms: PILFlavors.commercialUse({
+                    mintingFee: testMintFee,
+                    currencyToken: testMintFeeToken,
+                    royaltyPolicy: royaltyPolicyLAPAddr
+                }),
+                licensingConfig: Licensing.LicensingConfig({
+                    isSet: false,
+                    mintingFee: testMintFee,
+                    licensingHook: address(0),
+                    hookData: "",
+                    commercialRevShare: 0,
+                    disabled: false,
+                    expectMinimumGroupRewardShare: 0,
+                    expectGroupRewardPool: evenSplitGroupPoolAddr
+                })
+            })
+        );
+
+        commTermsData.push(
+            WorkflowStructs.PILTermsData({
+                terms: PILFlavors.commercialRemix({
+                    mintingFee: testMintFee,
+                    commercialRevShare: 5_000_000, // 5%
+                    royaltyPolicy: royaltyPolicyLRPAddr,
+                    currencyToken: testMintFeeToken
+                }),
+                licensingConfig: Licensing.LicensingConfig({
+                    isSet: true,
+                    mintingFee: testMintFee,
+                    licensingHook: address(0),
+                    hookData: "",
+                    commercialRevShare: 5_000_000, // 5%
+                    disabled: false,
+                    expectMinimumGroupRewardShare: 0,
+                    expectGroupRewardPool: evenSplitGroupPoolAddr
+                })
+            })
+        );
+
+        commTermsData.push(
+            WorkflowStructs.PILTermsData({
+                terms: PILFlavors.commercialRemix({
+                    mintingFee: testMintFee,
+                    commercialRevShare: 8_000_000, // 8%
+                    royaltyPolicy: royaltyPolicyLAPAddr,
+                    currencyToken: testMintFeeToken
+                }),
+                licensingConfig: Licensing.LicensingConfig({
+                    isSet: true,
+                    mintingFee: testMintFee,
+                    licensingHook: address(0),
+                    hookData: "",
+                    commercialRevShare: 8_000_000, // 8%
+                    disabled: false,
+                    expectMinimumGroupRewardShare: 0,
+                    expectGroupRewardPool: evenSplitGroupPoolAddr
+                })
+            })
+        );
     }
 }

@@ -7,6 +7,7 @@ import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/meta
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
+import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
 
 // contracts
 import { ISPGNFT } from "../../../contracts/interfaces/ISPGNFT.sol";
@@ -22,6 +23,7 @@ contract DerivativeIntegration is BaseIntegration {
     address[] private parentIpIds;
     uint256[] private parentLicenseTermIds;
     address private parentLicenseTemplate;
+    WorkflowStructs.PILTermsData[] internal pilTermsData;
     uint32 private revShare;
 
     /// @dev To use, run the following command:
@@ -249,7 +251,6 @@ contract DerivativeIntegration is BaseIntegration {
         licenseTokenIds[0] = startLicenseTokenId;
         licenseToken.approve(derivativeWorkflowsAddr, startLicenseTokenId);
 
-
         WorkflowStructs.SignatureData memory sigMetadata;
         WorkflowStructs.SignatureData memory sigRegister;
         {
@@ -384,27 +385,41 @@ contract DerivativeIntegration is BaseIntegration {
 
         revShare = 10 * 10 ** 6; // 10%
 
-        StoryUSD.mint(testSender, testMintFee);
-        StoryUSD.approve(address(spgNftContract), testMintFee);
-        (address parentIpId, , uint256 licenseTermsIdParent) = licenseAttachmentWorkflows
-            .mintAndRegisterIpAndAttachPILTerms({
-                spgNftContract: address(spgNftContract),
-                recipient: testSender,
-                ipMetadata: testIpMetadata,
+        pilTermsData.push(
+            WorkflowStructs.PILTermsData({
                 terms: PILFlavors.commercialRemix({
                     mintingFee: testMintFee,
                     commercialRevShare: revShare,
                     royaltyPolicy: royaltyPolicyLRPAddr,
                     currencyToken: testMintFeeToken
                 }),
-                allowDuplicates: true
-            });
+                licensingConfig: Licensing.LicensingConfig({
+                    isSet: true,
+                    mintingFee: testMintFee,
+                    licensingHook: address(0),
+                    hookData: "",
+                    commercialRevShare: revShare,
+                    disabled: false,
+                    expectMinimumGroupRewardShare: 0,
+                    expectGroupRewardPool: evenSplitGroupPoolAddr
+                })
+            })
+        );
+
+        StoryUSD.mint(testSender, testMintFee);
+        StoryUSD.approve(address(spgNftContract), testMintFee);
+        address parentIpId;
+        (parentIpId, , parentLicenseTermIds) = licenseAttachmentWorkflows.mintAndRegisterIpAndAttachPILTerms({
+            spgNftContract: address(spgNftContract),
+            recipient: testSender,
+            ipMetadata: testIpMetadata,
+            pilTermsData: pilTermsData,
+            allowDuplicates: true
+        });
 
         parentIpIds = new address[](1);
         parentIpIds[0] = parentIpId;
 
-        parentLicenseTermIds = new uint256[](1);
-        parentLicenseTermIds[0] = licenseTermsIdParent;
         parentLicenseTemplate = pilTemplateAddr;
     }
 
