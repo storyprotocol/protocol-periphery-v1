@@ -28,11 +28,11 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
 
     mapping(uint256 index => IPAsset) internal ipAsset;
 
-    WorkflowStructs.PILTermsData[] internal commTermsData;
+    WorkflowStructs.LicenseTermsData[] internal commTermsData;
 
     function setUp() public override {
         super.setUp();
-        _setUpPILTermsData();
+        _setUpLicenseTermsData();
     }
 
     modifier withIp(address owner) {
@@ -60,7 +60,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             spgNftContract: address(nftContract),
             recipient: caller,
             ipMetadata: ipMetadataDefault,
-            pilTermsData: commTermsData,
+            licenseTermsData: commTermsData,
             allowDuplicates: true
         });
 
@@ -76,7 +76,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             spgNftContract: address(nftContract),
             recipient: caller,
             ipMetadata: ipMetadataDefault,
-            pilTermsData: commTermsData,
+            licenseTermsData: commTermsData,
             allowDuplicates: false
         });
     }
@@ -97,7 +97,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
 
         uint256[] memory licenseTermsIds = licenseAttachmentWorkflows.registerPILTermsAndAttach({
             ipId: ipId,
-            pilTermsData: commTermsData,
+            licenseTermsData: commTermsData,
             sigAttachAndConfig: WorkflowStructs.SignatureData({
                 signer: u.alice,
                 deadline: deadline,
@@ -118,7 +118,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
                 spgNftContract: address(nftContract),
                 recipient: caller,
                 ipMetadata: ipMetadataEmpty,
-                pilTermsData: commTermsData,
+                licenseTermsData: commTermsData,
                 allowDuplicates: true
             });
         assertTrue(ipAssetRegistry.isRegistered(ipId1));
@@ -132,7 +132,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
                 spgNftContract: address(nftContract),
                 recipient: caller,
                 ipMetadata: ipMetadataDefault,
-                pilTermsData: commTermsData,
+                licenseTermsData: commTermsData,
                 allowDuplicates: true
             });
         assertTrue(ipAssetRegistry.isRegistered(ipId2));
@@ -173,7 +173,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             nftContract: address(nftContract),
             tokenId: tokenId,
             ipMetadata: ipMetadataDefault,
-            pilTermsData: commTermsData,
+            licenseTermsData: commTermsData,
             sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
                 signer: u.alice,
                 deadline: deadline,
@@ -204,7 +204,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
 
         uint256[] memory licenseTermsIds1 = licenseAttachmentWorkflows.registerPILTermsAndAttach({
             ipId: ipId,
-            pilTermsData: commTermsData,
+            licenseTermsData: commTermsData,
             sigAttachAndConfig: WorkflowStructs.SignatureData({
                 signer: u.alice,
                 deadline: deadline,
@@ -223,7 +223,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         // attach the same license terms to the IP again, but it shouldn't revert
         uint256[] memory licenseTermsIds2 = licenseAttachmentWorkflows.registerPILTermsAndAttach({
             ipId: ipId,
-            pilTermsData: commTermsData,
+            licenseTermsData: commTermsData,
             sigAttachAndConfig: WorkflowStructs.SignatureData({
                 signer: u.alice,
                 deadline: deadline,
@@ -247,7 +247,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
                 spgNftContract: address(nftContract),
                 recipient: caller,
                 ipMetadata: ipMetadataDefault,
-                pilTermsData: commTermsData,
+                licenseTermsData: commTermsData,
                 allowDuplicates: true
             });
 
@@ -288,7 +288,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         vm.expectRevert(CoreErrors.LicensingModule__DerivativesCannotAddLicenseTerms.selector);
         licenseAttachmentWorkflows.registerPILTermsAndAttach({
             ipId: ipIdChild,
-            pilTermsData: commTermsData,
+            licenseTermsData: commTermsData,
             sigAttachAndConfig: WorkflowStructs.SignatureData({
                 signer: u.alice,
                 deadline: deadline,
@@ -306,11 +306,11 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         }
     }
 
-    function _setUpPILTermsData() internal {
+    function _setUpLicenseTermsData() internal {
         uint256 testMintFee = 100 * 10 ** mockToken.decimals();
 
         commTermsData.push(
-            WorkflowStructs.PILTermsData({
+            WorkflowStructs.LicenseTermsData({
                 terms: PILFlavors.commercialUse({
                     mintingFee: testMintFee,
                     currencyToken: address(mockToken),
@@ -330,7 +330,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         );
 
         commTermsData.push(
-            WorkflowStructs.PILTermsData({
+            WorkflowStructs.LicenseTermsData({
                 terms: PILFlavors.commercialUse({
                     mintingFee: testMintFee,
                     currencyToken: address(mockToken),
@@ -350,7 +350,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         );
 
         commTermsData.push(
-            WorkflowStructs.PILTermsData({
+            WorkflowStructs.LicenseTermsData({
                 terms: PILFlavors.commercialRemix({
                     mintingFee: testMintFee,
                     commercialRevShare: 5_000_000, // 5%
@@ -371,7 +371,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         );
 
         commTermsData.push(
-            WorkflowStructs.PILTermsData({
+            WorkflowStructs.LicenseTermsData({
                 terms: PILFlavors.commercialRemix({
                     mintingFee: testMintFee,
                     commercialRevShare: 8_000_000, // 8%

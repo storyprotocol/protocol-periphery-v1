@@ -18,7 +18,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
     using Strings for uint256;
 
     ISPGNFT private spgNftContract;
-    WorkflowStructs.PILTermsData[] private commTermsData;
+    WorkflowStructs.LicenseTermsData[] private commTermsData;
 
     /// @dev To use, run the following command:
     /// forge script test/integration/workflows/LicenseAttachmentIntegration.t.sol:LicenseAttachmentIntegration \
@@ -58,7 +58,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
 
         uint256[] memory licenseTermsIds = licenseAttachmentWorkflows.registerPILTermsAndAttach({
             ipId: ipId,
-            pilTermsData: commTermsData,
+            licenseTermsData: commTermsData,
             sigAttachAndConfig: WorkflowStructs.SignatureData({
                 signer: testSender,
                 deadline: deadline,
@@ -85,7 +85,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
                     spgNftContract: address(spgNftContract),
                     recipient: testSender,
                     ipMetadata: testIpMetadata,
-                    pilTermsData: commTermsData,
+                    licenseTermsData: commTermsData,
                     allowDuplicates: true
                 });
             assertTrue(ipAssetRegistry.isRegistered(ipId1));
@@ -110,7 +110,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
                     spgNftContract: address(spgNftContract),
                     recipient: testSender,
                     ipMetadata: testIpMetadata,
-                    pilTermsData: commTermsData,
+                    licenseTermsData: commTermsData,
                     allowDuplicates: true
                 });
             assertTrue(ipAssetRegistry.isRegistered(ipId2));
@@ -158,7 +158,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
             nftContract: address(spgNftContract),
             tokenId: tokenId,
             ipMetadata: testIpMetadata,
-            pilTermsData: commTermsData,
+            licenseTermsData: commTermsData,
             sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
                 signer: testSender,
                 deadline: deadline,
@@ -200,7 +200,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         );
 
         commTermsData.push(
-            WorkflowStructs.PILTermsData({
+            WorkflowStructs.LicenseTermsData({
                 terms: PILFlavors.commercialUse({
                     mintingFee: testMintFee,
                     currencyToken: testMintFeeToken,
@@ -220,7 +220,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         );
 
         commTermsData.push(
-            WorkflowStructs.PILTermsData({
+            WorkflowStructs.LicenseTermsData({
                 terms: PILFlavors.commercialUse({
                     mintingFee: testMintFee,
                     currencyToken: testMintFeeToken,
@@ -240,7 +240,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         );
 
         commTermsData.push(
-            WorkflowStructs.PILTermsData({
+            WorkflowStructs.LicenseTermsData({
                 terms: PILFlavors.commercialRemix({
                     mintingFee: testMintFee,
                     commercialRevShare: 5_000_000, // 5%
@@ -261,7 +261,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         );
 
         commTermsData.push(
-            WorkflowStructs.PILTermsData({
+            WorkflowStructs.LicenseTermsData({
                 terms: PILFlavors.commercialRemix({
                     mintingFee: testMintFee,
                     commercialRevShare: 8_000_000, // 8%

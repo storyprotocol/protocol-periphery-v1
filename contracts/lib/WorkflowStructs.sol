@@ -59,7 +59,7 @@ library WorkflowStructs {
     /// @notice Struct for PIL terms data for PIL registration and attachment on IP registration.
     /// @param terms The PIL terms to be used for the licensing.
     /// @param licenseTermsConfig The licensing configuration for the PIL terms.
-    struct PILTermsData {
+    struct LicenseTermsData {
         PILTerms terms;
         Licensing.LicensingConfig licensingConfig;
     }

@@ -32,7 +32,7 @@ contract RoyaltyWorkflowsTest is BaseTest {
     uint256 internal defaultMintingFeeC = 500 ether;
     uint32 internal defaultCommRevShareC = 20 * 10 ** 6; // 20%
 
-    WorkflowStructs.PILTermsData[] internal commTermsData;
+    WorkflowStructs.LicenseTermsData[] internal commTermsData;
 
     uint256 internal amountLicenseTokensToMint = 1;
 
@@ -229,7 +229,7 @@ contract RoyaltyWorkflowsTest is BaseTest {
         // set permission for licensing module to attach license terms to ancestor IP
         {
             commTermsData.push(
-                WorkflowStructs.PILTermsData({
+                WorkflowStructs.LicenseTermsData({
                     terms: PILFlavors.commercialRemix({
                         mintingFee: defaultMintingFeeA,
                         commercialRevShare: defaultCommRevShareA,
@@ -249,7 +249,7 @@ contract RoyaltyWorkflowsTest is BaseTest {
                 })
             );
             commTermsData.push(
-                WorkflowStructs.PILTermsData({
+                WorkflowStructs.LicenseTermsData({
                     terms: PILFlavors.commercialRemix({
                         mintingFee: defaultMintingFeeC,
                         commercialRevShare: defaultCommRevShareC,
@@ -283,7 +283,7 @@ contract RoyaltyWorkflowsTest is BaseTest {
             // register and attach Terms A and C to ancestor IP
             uint256[] memory licenseTermsIds = licenseAttachmentWorkflows.registerPILTermsAndAttach({
                 ipId: ancestorIpId,
-                pilTermsData: commTermsData,
+                licenseTermsData: commTermsData,
                 sigAttachAndConfig: WorkflowStructs.SignatureData({
                     signer: u.admin,
                     deadline: deadline,

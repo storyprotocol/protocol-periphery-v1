@@ -23,7 +23,7 @@ contract DerivativeIntegration is BaseIntegration {
     address[] private parentIpIds;
     uint256[] private parentLicenseTermIds;
     address private parentLicenseTemplate;
-    WorkflowStructs.PILTermsData[] internal pilTermsData;
+    WorkflowStructs.LicenseTermsData[] internal licenseTermsData;
     uint32 private revShare;
 
     /// @dev To use, run the following command:
@@ -385,8 +385,8 @@ contract DerivativeIntegration is BaseIntegration {
 
         revShare = 10 * 10 ** 6; // 10%
 
-        pilTermsData.push(
-            WorkflowStructs.PILTermsData({
+        licenseTermsData.push(
+            WorkflowStructs.LicenseTermsData({
                 terms: PILFlavors.commercialRemix({
                     mintingFee: testMintFee,
                     commercialRevShare: revShare,
@@ -413,7 +413,7 @@ contract DerivativeIntegration is BaseIntegration {
             spgNftContract: address(spgNftContract),
             recipient: testSender,
             ipMetadata: testIpMetadata,
-            pilTermsData: pilTermsData,
+            licenseTermsData: licenseTermsData,
             allowDuplicates: true
         });
 

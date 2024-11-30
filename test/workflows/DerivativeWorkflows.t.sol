@@ -21,12 +21,12 @@ contract DerivativeWorkflowsTest is BaseTest {
     using Strings for uint256;
 
     address internal ipIdParent;
-    WorkflowStructs.PILTermsData[] internal nonCommTermsData;
-    WorkflowStructs.PILTermsData[] internal commTermsData;
+    WorkflowStructs.LicenseTermsData[] internal nonCommTermsData;
+    WorkflowStructs.LicenseTermsData[] internal commTermsData;
     function setUp() public override {
         super.setUp();
         nonCommTermsData.push(
-            WorkflowStructs.PILTermsData({
+            WorkflowStructs.LicenseTermsData({
                 terms: PILFlavors.nonCommercialSocialRemixing(),
                 licensingConfig: Licensing.LicensingConfig({
                     isSet: true,
@@ -42,7 +42,7 @@ contract DerivativeWorkflowsTest is BaseTest {
         );
 
         commTermsData.push(
-            WorkflowStructs.PILTermsData({
+            WorkflowStructs.LicenseTermsData({
                 terms: PILFlavors.commercialRemix({
                     mintingFee: 100 * 10 ** mockToken.decimals(),
                     commercialRevShare: 10 * 10 ** 6, // 10%
@@ -69,7 +69,7 @@ contract DerivativeWorkflowsTest is BaseTest {
                 spgNftContract: address(nftContract),
                 recipient: caller,
                 ipMetadata: ipMetadataDefault,
-                pilTermsData: nonCommTermsData,
+                licenseTermsData: nonCommTermsData,
                 allowDuplicates: true
             });
         }
@@ -82,7 +82,7 @@ contract DerivativeWorkflowsTest is BaseTest {
                 spgNftContract: address(nftContract),
                 recipient: caller,
                 ipMetadata: ipMetadataDefault,
-                pilTermsData: commTermsData,
+                licenseTermsData: commTermsData,
                 allowDuplicates: true
             });
         }

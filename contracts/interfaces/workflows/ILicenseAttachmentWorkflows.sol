@@ -7,12 +7,12 @@ import { WorkflowStructs } from "../../lib/WorkflowStructs.sol";
 interface ILicenseAttachmentWorkflows {
     /// @notice Register Programmable IP License Terms (if unregistered) and attach it to IP.
     /// @param ipId The ID of the IP.
-    /// @param pilTermsData The PIL terms and licensing configuration data to be attached to the IP.
+    /// @param licenseTermsData The PIL terms and licensing configuration data to be attached to the IP.
     /// @param sigAttachAndConfig Signature data for attachLicenseTerms and setLicensingConfig to the IP via the Licensing Module.
     /// @return licenseTermsIds The IDs of the newly registered PIL terms.
     function registerPILTermsAndAttach(
         address ipId,
-        WorkflowStructs.PILTermsData[] calldata pilTermsData,
+        WorkflowStructs.LicenseTermsData[] calldata licenseTermsData,
         WorkflowStructs.SignatureData calldata sigAttachAndConfig
     ) external returns (uint256[] memory licenseTermsIds);
 
@@ -23,7 +23,7 @@ interface ILicenseAttachmentWorkflows {
     /// @param spgNftContract The address of the SPGNFT collection.
     /// @param recipient The address of the recipient of the minted NFT.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
-    /// @param pilTermsData The PIL terms and licensing configuration data to be attached to the IP.
+    /// @param licenseTermsData The PIL terms and licensing configuration data to be attached to the IP.
     /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
     /// @return ipId The ID of the newly registered IP.
     /// @return tokenId The ID of the newly minted NFT.
@@ -32,7 +32,7 @@ interface ILicenseAttachmentWorkflows {
         address spgNftContract,
         address recipient,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        WorkflowStructs.PILTermsData[] calldata pilTermsData,
+        WorkflowStructs.LicenseTermsData[] calldata licenseTermsData,
         bool allowDuplicates
     ) external returns (address ipId, uint256 tokenId, uint256[] memory licenseTermsIds);
 
@@ -42,7 +42,7 @@ interface ILicenseAttachmentWorkflows {
     /// @param nftContract The address of the NFT collection.
     /// @param tokenId The ID of the NFT.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
-    /// @param pilTermsData The PIL terms and licensing configuration data to be attached to the IP.
+    /// @param licenseTermsData The PIL terms and licensing configuration data to be attached to the IP.
     /// @param sigMetadataAndAttachAndConfig Signature data for setAll (metadata), attachLicenseTerms, and
     /// setLicensingConfig to the IP via the Core Metadata Module and Licensing Module.
     /// @return ipId The ID of the newly registered IP.
@@ -51,7 +51,7 @@ interface ILicenseAttachmentWorkflows {
         address nftContract,
         uint256 tokenId,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        WorkflowStructs.PILTermsData[] calldata pilTermsData,
+        WorkflowStructs.LicenseTermsData[] calldata licenseTermsData,
         WorkflowStructs.SignatureData calldata sigMetadataAndAttachAndConfig
     ) external returns (address ipId, uint256[] memory licenseTermsIds);
 }

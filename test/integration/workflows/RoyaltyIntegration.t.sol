@@ -33,7 +33,7 @@ contract RoyaltyIntegration is BaseIntegration {
     uint256 internal defaultMintingFeeC = 500 * 10 ** StoryUSD.decimals(); // 500 SUSD
     uint32 internal defaultCommRevShareC = 20 * 10 ** 6; // 20%
 
-    WorkflowStructs.PILTermsData[] internal commTermsData;
+    WorkflowStructs.LicenseTermsData[] internal commTermsData;
 
     uint256 internal amountLicenseTokensToMint = 1;
 
@@ -212,7 +212,7 @@ contract RoyaltyIntegration is BaseIntegration {
 
         {
             commTermsData.push(
-                WorkflowStructs.PILTermsData({
+                WorkflowStructs.LicenseTermsData({
                     terms: PILFlavors.commercialRemix({
                         mintingFee: defaultMintingFeeA,
                         commercialRevShare: defaultCommRevShareA,
@@ -232,7 +232,7 @@ contract RoyaltyIntegration is BaseIntegration {
                 })
             );
             commTermsData.push(
-                WorkflowStructs.PILTermsData({
+                WorkflowStructs.LicenseTermsData({
                     terms: PILFlavors.commercialRemix({
                         mintingFee: defaultMintingFeeC,
                         commercialRevShare: defaultCommRevShareC,
@@ -263,7 +263,7 @@ contract RoyaltyIntegration is BaseIntegration {
 
             uint256[] memory licenseTermsIds = licenseAttachmentWorkflows.registerPILTermsAndAttach({
                 ipId: ancestorIpId,
-                pilTermsData: commTermsData,
+                licenseTermsData: commTermsData,
                 sigAttachAndConfig: WorkflowStructs.SignatureData({
                     signer: testSender,
                     deadline: deadline,

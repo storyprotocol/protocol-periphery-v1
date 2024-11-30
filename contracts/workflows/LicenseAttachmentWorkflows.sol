@@ -91,12 +91,12 @@ contract LicenseAttachmentWorkflows is
 
     /// @notice Register Programmable IP License Terms (if unregistered) and attach it to IP.
     /// @param ipId The ID of the IP.
-    /// @param pilTermsData The PIL terms and licensing configuration data to be attached to the IP.
+    /// @param licenseTermsData The PIL terms and licensing configuration data to be attached to the IP.
     /// @param sigAttachAndConfig Signature data for attachLicenseTerms and setLicensingConfig to the IP via the Licensing Module.
     /// @return licenseTermsIds The IDs of the newly registered PIL terms.
     function registerPILTermsAndAttach(
         address ipId,
-        WorkflowStructs.PILTermsData[] calldata pilTermsData,
+        WorkflowStructs.LicenseTermsData[] calldata licenseTermsData,
         WorkflowStructs.SignatureData calldata sigAttachAndConfig
     ) external returns (uint256[] memory licenseTermsIds) {
         address[] memory modules = new address[](2);
@@ -113,7 +113,7 @@ contract LicenseAttachmentWorkflows is
             sigData: sigAttachAndConfig
         });
 
-        licenseTermsIds = _registerMultiplePILTermsAndAttachAndSetConfigs(ipId, pilTermsData);
+        licenseTermsIds = _registerMultiplePILTermsAndAttachAndSetConfigs(ipId, licenseTermsData);
     }
 
     /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP,
@@ -122,7 +122,7 @@ contract LicenseAttachmentWorkflows is
     /// @param spgNftContract The address of the SPGNFT collection.
     /// @param recipient The address of the recipient of the minted NFT.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
-    /// @param pilTermsData The PIL terms and licensing configuration data to be attached to the IP.
+    /// @param licenseTermsData The PIL terms and licensing configuration data to be attached to the IP.
     /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
     /// @return ipId The ID of the newly registered IP.
     /// @return tokenId The ID of the newly minted NFT.
@@ -131,7 +131,7 @@ contract LicenseAttachmentWorkflows is
         address spgNftContract,
         address recipient,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        WorkflowStructs.PILTermsData[] calldata pilTermsData,
+        WorkflowStructs.LicenseTermsData[] calldata licenseTermsData,
         bool allowDuplicates
     )
         external
@@ -149,7 +149,7 @@ contract LicenseAttachmentWorkflows is
         ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 
-        licenseTermsIds = _registerMultiplePILTermsAndAttachAndSetConfigs(ipId, pilTermsData);
+        licenseTermsIds = _registerMultiplePILTermsAndAttachAndSetConfigs(ipId, licenseTermsData);
 
         ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
     }
@@ -160,7 +160,7 @@ contract LicenseAttachmentWorkflows is
     /// @param nftContract The address of the NFT collection.
     /// @param tokenId The ID of the NFT.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
-    /// @param pilTermsData The PIL terms and licensing configuration data to be attached to the IP.
+    /// @param licenseTermsData The PIL terms and licensing configuration data to be attached to the IP.
     /// @param sigMetadataAndAttachAndConfig Signature data for setAll (metadata), attachLicenseTerms, and
     /// setLicensingConfig to the IP via the Core Metadata Module and Licensing Module.
     /// @return ipId The ID of the newly registered IP.
@@ -169,7 +169,7 @@ contract LicenseAttachmentWorkflows is
         address nftContract,
         uint256 tokenId,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        WorkflowStructs.PILTermsData[] calldata pilTermsData,
+        WorkflowStructs.LicenseTermsData[] calldata licenseTermsData,
         WorkflowStructs.SignatureData calldata sigMetadataAndAttachAndConfig
     ) external returns (address ipId, uint256[] memory licenseTermsIds) {
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
@@ -192,24 +192,24 @@ contract LicenseAttachmentWorkflows is
 
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 
-        licenseTermsIds = _registerMultiplePILTermsAndAttachAndSetConfigs(ipId, pilTermsData);
+        licenseTermsIds = _registerMultiplePILTermsAndAttachAndSetConfigs(ipId, licenseTermsData);
     }
 
     /// @notice Registers multiple PIL terms and attaches them to the given IP and sets their licensing configurations.
     /// @param ipId The ID of the IP.
-    /// @param pilTermsData The PIL terms and licensing configuration data to be attached to the IP.
+    /// @param licenseTermsData The PIL terms and licensing configuration data to be attached to the IP.
     /// @return licenseTermsIds The IDs of the newly registered PIL terms.
     function _registerMultiplePILTermsAndAttachAndSetConfigs(
         address ipId,
-        WorkflowStructs.PILTermsData[] calldata pilTermsData
+        WorkflowStructs.LicenseTermsData[] calldata licenseTermsData
     ) private returns (uint256[] memory licenseTermsIds) {
-        licenseTermsIds = new uint256[](pilTermsData.length);
-        for (uint256 i; i < pilTermsData.length; i++) {
+        licenseTermsIds = new uint256[](licenseTermsData.length);
+        for (uint256 i; i < licenseTermsData.length; i++) {
             licenseTermsIds[i] = LicensingHelper.registerPILTermsAndAttachAndSetConfigs(
                 ipId,
                 address(PIL_TEMPLATE),
                 address(LICENSING_MODULE),
-                pilTermsData[i]
+                licenseTermsData[i]
             );
         }
     }

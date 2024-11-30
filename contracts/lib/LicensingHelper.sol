@@ -15,21 +15,21 @@ library LicensingHelper {
     /// @param ipId The ID of the IP.
     /// @param pilTemplate The address of the PIL License Template.
     /// @param licensingModule The address of the Licensing Module.
-    /// @param pilTermsData The PIL terms and licensing configuration data to be attached to the IP.
+    /// @param licenseTermsData The PIL terms and licensing configuration data to be attached to the IP.
     /// @return licenseTermsId The ID of the registered PIL terms.
     function registerPILTermsAndAttachAndSetConfigs(
         address ipId,
         address pilTemplate,
         address licensingModule,
-        WorkflowStructs.PILTermsData memory pilTermsData
+        WorkflowStructs.LicenseTermsData memory licenseTermsData
     ) internal returns (uint256 licenseTermsId) {
-        licenseTermsId = IPILicenseTemplate(pilTemplate).registerLicenseTerms(pilTermsData.terms);
+        licenseTermsId = IPILicenseTemplate(pilTemplate).registerLicenseTerms(licenseTermsData.terms);
         attachLicenseTermsAndSetConfigs(
             ipId,
             licensingModule,
             pilTemplate,
             licenseTermsId,
-            pilTermsData.licensingConfig
+            licenseTermsData.licensingConfig
         );
     }
 
