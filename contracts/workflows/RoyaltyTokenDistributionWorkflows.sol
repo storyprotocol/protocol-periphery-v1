@@ -314,9 +314,7 @@ contract RoyaltyTokenDistributionWorkflows is
     /// @dev Deploys a royalty vault for the IP.
     /// @param ipId The ID of the IP.
     /// @return ipRoyaltyVault The address of the deployed royalty vault.
-    function _deployRoyaltyVault(
-        address ipId
-    ) internal returns (address ipRoyaltyVault) {
+    function _deployRoyaltyVault(address ipId) internal returns (address ipRoyaltyVault) {
         if (ROYALTY_MODULE.ipRoyaltyVaults(ipId) == address(0)) {
             // attach a temporary commercial license to the IP for the royalty vault deployment
             uint256 licenseTermsId = LicensingHelper.registerPILTermsAndAttach({

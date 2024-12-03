@@ -41,7 +41,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     bytes32 private constant SPGNFTStorageLocation = 0x66c08f80d8d0ae818983b725b864514cf274647be6eb06de58ff94d1defb6d00;
 
     /// @dev The address of the DerivativeWorkflows contract.
-       /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable DERIVATIVE_WORKFLOWS_ADDRESS;
 
     /// @dev The address of the GroupingWorkflows contract.

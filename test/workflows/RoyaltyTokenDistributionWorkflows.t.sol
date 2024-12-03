@@ -130,7 +130,6 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
             });
         vm.stopPrank();
 
-
         (bytes memory signatureApproveRoyaltyTokens, ) = _getSigForExecuteWithSig({
             ipId: ipId,
             to: ipRoyaltyVault,
@@ -352,10 +351,7 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
     }
 
     function _assertAttachedLicenseTerms(address ipId, uint256 licenseTermsId) private {
-        (address licenseTemplate, uint256 licenseTermsIdAttached) = licenseRegistry.getAttachedLicenseTerms(
-            ipId,
-            0
-        );
+        (address licenseTemplate, uint256 licenseTermsIdAttached) = licenseRegistry.getAttachedLicenseTerms(ipId, 0);
         assertEq(licenseTermsId, licenseTermsIdAttached);
         assertEq(licenseTemplate, address(pilTemplate));
         assertEq(licenseTermsIdAttached, pilTemplate.getLicenseTermsId(commRemixTermsData.terms));
