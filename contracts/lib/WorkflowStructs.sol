@@ -63,4 +63,12 @@ library WorkflowStructs {
         PILTerms terms;
         Licensing.LicensingConfig licensingConfig;
     }
+
+    /// @notice Struct for royalty shares information for royalty token distribution.
+    /// @param recipient The address of the recipient of the royalty shares.
+    /// @param percentage The percentage of the royalty share, 100_000_000 represents 100%.
+    struct RoyaltyShare {
+        address recipient;
+        uint32 percentage;
+    }
 }

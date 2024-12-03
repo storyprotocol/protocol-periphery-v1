@@ -22,6 +22,7 @@ contract StoryProtocolCoreAddressManager is Script {
     address internal royaltyPolicyLAPAddr;
     address internal royaltyPolicyLRPAddr;
     address internal evenSplitGroupPoolAddr;
+    address internal wipAddr;
 
     function _readStoryProtocolCoreAddresses() internal {
         string memory root = vm.projectRoot();
@@ -51,5 +52,6 @@ contract StoryProtocolCoreAddressManager is Script {
         royaltyPolicyLAPAddr = json.readAddress(".main.RoyaltyPolicyLAP");
         royaltyPolicyLRPAddr = json.readAddress(".main.RoyaltyPolicyLRP");
         evenSplitGroupPoolAddr = json.readAddress(".main.EvenSplitGroupPool");
+        wipAddr = json.readAddress(".main.WIP");
     }
 }

@@ -47,7 +47,8 @@ contract SPGNFTTest is BaseTest {
                 address(derivativeWorkflows),
                 address(groupingWorkflows),
                 address(licenseAttachmentWorkflows),
-                address(registrationWorkflows)
+                address(registrationWorkflows),
+                address(royaltyTokenDistributionWorkflows)
             )
         );
         address NFT_CONTRACT_BEACON = address(new UpgradeableBeacon(testSpgNftImpl, deployer));
@@ -88,7 +89,8 @@ contract SPGNFTTest is BaseTest {
                 address(derivativeWorkflows),
                 address(groupingWorkflows),
                 address(licenseAttachmentWorkflows),
-                address(registrationWorkflows)
+                address(registrationWorkflows),
+                address(royaltyTokenDistributionWorkflows)
             )
         );
         address NFT_CONTRACT_BEACON = address(new UpgradeableBeacon(testSpgNftImpl, deployer));

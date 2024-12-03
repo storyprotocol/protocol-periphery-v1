@@ -119,6 +119,7 @@ contract BaseTest is Test, DeployHelper {
         groupingWorkflows.setNftContractBeacon(address(spgNftBeacon));
         licenseAttachmentWorkflows.setNftContractBeacon(address(spgNftBeacon));
         registrationWorkflows.setNftContractBeacon(address(spgNftBeacon));
+        royaltyTokenDistributionWorkflows.setNftContractBeacon(address(spgNftBeacon));
         vm.stopPrank();
     }
 
@@ -279,6 +280,32 @@ contract BaseTest is Test, DeployHelper {
     /*//////////////////////////////////////////////////////////////////////////
                                       HELPERS
     //////////////////////////////////////////////////////////////////////////*/
+    /// @dev Get the permission list for setting metadata and registering a derivative for the IP.
+    /// @param ipId The ID of the IP that the permissions are for.
+    /// @param to The address of the periphery contract to receive the permission.
+    /// @return permissionList The list of permissions for setting metadata and registering a derivative.
+    function _getMetadataAndDerivativeRegistrationPermissionList(
+        address ipId,
+        address to
+    ) internal view returns (AccessPermission.Permission[] memory permissionList) {
+        address[] memory modules = new address[](2);
+        bytes4[] memory selectors = new bytes4[](2);
+        permissionList = new AccessPermission.Permission[](2);
+        modules[0] = coreMetadataModuleAddr;
+        modules[1] = licensingModuleAddr;
+        selectors[0] = ICoreMetadataModule.setAll.selector;
+        selectors[1] = ILicensingModule.registerDerivative.selector;
+        for (uint256 i = 0; i < 2; i++) {
+            permissionList[i] = AccessPermission.Permission({
+                ipAccount: ipId,
+                signer: to,
+                to: modules[i],
+                func: selectors[i],
+                permission: AccessPermission.ALLOW
+            });
+        }
+    }
+
     /// @dev Get the permission list for attaching license terms and setting licensing config for the IP.
     /// @param ipId The ID of the IP that the permissions are for.
     /// @param to The address of the periphery contract to receive the permission.

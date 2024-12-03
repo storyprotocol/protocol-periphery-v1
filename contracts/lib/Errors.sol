@@ -44,8 +44,23 @@ library Errors {
     ////////////////////////////////////////////////////////////////////////////
     //                              Royalty Workflows                         //
     ////////////////////////////////////////////////////////////////////////////
-    /// @notice Zero address provided as a param to the GroupingWorkflows.
+    /// @notice Zero address provided as a param to the RoyaltyWorkflows.
     error RoyaltyWorkflows__ZeroAddressParam();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                   Royalty Token Distribution Workflows                 //
+    ////////////////////////////////////////////////////////////////////////////
+    /// @notice Zero address provided as a param to the RoyaltyTokenDistributionWorkflows.
+    error RoyaltyTokenDistributionWorkflows__ZeroAddressParam();
+
+    /// @notice Total percentage exceed the current balance of the IP account.
+    error RoyaltyTokenDistributionWorkflows__TotalSharesExceedsIPAccountBalance(
+        uint32 totalShares,
+        uint32 ipAccountBalance
+    );
+
+    /// @notice Royalty vault not deployed.
+    error RoyaltyTokenDistributionWorkflows__RoyaltyVaultNotDeployed();
 
     ////////////////////////////////////////////////////////////////////////////
     //                               SPGNFT                                   //

@@ -13,6 +13,7 @@ import { GroupingWorkflows } from "../../../contracts/workflows/GroupingWorkflow
 import { LicenseAttachmentWorkflows } from "../../../contracts/workflows/LicenseAttachmentWorkflows.sol";
 import { RegistrationWorkflows } from "../../../contracts/workflows/RegistrationWorkflows.sol";
 import { RoyaltyWorkflows } from "../../../contracts/workflows/RoyaltyWorkflows.sol";
+import { RoyaltyTokenDistributionWorkflows } from "../../../contracts/workflows/RoyaltyTokenDistributionWorkflows.sol";
 import { SPGNFT } from "../../../contracts/SPGNFT.sol";
 
 // script
@@ -37,6 +38,7 @@ contract UpgradeHelper is
     LicenseAttachmentWorkflows internal licenseAttachmentWorkflows;
     RegistrationWorkflows internal registrationWorkflows;
     RoyaltyWorkflows internal royaltyWorkflows;
+    RoyaltyTokenDistributionWorkflows internal royaltyTokenDistributionWorkflows;
 
     /// @dev SPGNFT contracts
     SPGNFT internal spgNftImpl;
@@ -53,6 +55,9 @@ contract UpgradeHelper is
         licenseAttachmentWorkflows = LicenseAttachmentWorkflows(licenseAttachmentWorkflowsAddr);
         registrationWorkflows = RegistrationWorkflows(registrationWorkflowsAddr);
         royaltyWorkflows = RoyaltyWorkflows(royaltyWorkflowsAddr);
+        royaltyTokenDistributionWorkflows = RoyaltyTokenDistributionWorkflows(
+            royaltyTokenDistributionWorkflowsAddr
+        );
 
         spgNftImpl = SPGNFT(spgNftImplAddr);
         spgNftBeacon = UpgradeableBeacon(spgNftBeaconAddr);
@@ -68,31 +73,33 @@ contract UpgradeHelper is
     }
 
     function _writeAllAddresses() internal {
-        string[] memory contractKeys = new string[](11);
+        string[] memory contractKeys = new string[](12);
         contractKeys[0] = "DerivativeWorkflows";
         contractKeys[1] = "GroupingWorkflows";
         contractKeys[2] = "LicenseAttachmentWorkflows";
         contractKeys[3] = "RegistrationWorkflows";
         contractKeys[4] = "RoyaltyWorkflows";
-        contractKeys[5] = "SPGNFTBeacon";
-        contractKeys[6] = "SPGNFTImpl";
-        contractKeys[7] = "DefaultOrgStoryNFTTemplate";
-        contractKeys[8] = "DefaultOrgStoryNFTBeacon";
-        contractKeys[9] = "OrgNFT";
-        contractKeys[10] = "OrgStoryNFTFactory";
+        contractKeys[5] = "RoyaltyTokenDistributionWorkflows";
+        contractKeys[6] = "SPGNFTBeacon";
+        contractKeys[7] = "SPGNFTImpl";
+        contractKeys[8] = "DefaultOrgStoryNFTTemplate";
+        contractKeys[9] = "DefaultOrgStoryNFTBeacon";
+        contractKeys[10] = "OrgNFT";
+        contractKeys[11] = "OrgStoryNFTFactory";
 
-        address[] memory addresses = new address[](11);
+        address[] memory addresses = new address[](12);
         addresses[0] = derivativeWorkflowsAddr;
         addresses[1] = groupingWorkflowsAddr;
         addresses[2] = licenseAttachmentWorkflowsAddr;
         addresses[3] = registrationWorkflowsAddr;
         addresses[4] = royaltyWorkflowsAddr;
-        addresses[5] = spgNftBeaconAddr;
-        addresses[6] = spgNftImplAddr;
-        addresses[7] = defaultOrgStoryNftTemplateAddr;
-        addresses[8] = defaultOrgStoryNftBeaconAddr;
-        addresses[9] = orgNftAddr;
-        addresses[10] = orgStoryNftFactoryAddr;
+        addresses[5] = royaltyTokenDistributionWorkflowsAddr;
+        addresses[6] = spgNftBeaconAddr;
+        addresses[7] = spgNftImplAddr;
+        addresses[8] = defaultOrgStoryNftTemplateAddr;
+        addresses[9] = defaultOrgStoryNftBeaconAddr;
+        addresses[10] = orgNftAddr;
+        addresses[11] = orgStoryNftFactoryAddr;
 
         for (uint256 i = 0; i < contractKeys.length; i++) {
             _writeAddress(contractKeys[i], addresses[i]);

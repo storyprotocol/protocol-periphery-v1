@@ -36,7 +36,8 @@ contract UpgradeSPGNFT is UpgradeHelper {
             address(derivativeWorkflows),
             address(groupingWorkflows),
             address(licenseAttachmentWorkflows),
-            address(registrationWorkflows)
+            address(registrationWorkflows),
+            address(royaltyTokenDistributionWorkflows)
         );
         spgNftImplAddr = address(spgNftImpl);
         console2.log("SPGNFTImpl deployed to: ", spgNftImplAddr);

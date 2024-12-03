@@ -303,6 +303,22 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             assertEq(licenseTemplate, address(pilTemplate));
             assertEq(licenseTermsId, licenseTermsIds[i]);
             assertEq(pilTemplate.getLicenseTermsId(commTermsData[i].terms), licenseTermsIds[i]);
+            Licensing.LicensingConfig memory licensingConfig = licenseRegistry.getLicensingConfig(
+                ipId,
+                licenseTemplate,
+                licenseTermsId
+            );
+            assertEq(licensingConfig.isSet, commTermsData[i].licensingConfig.isSet);
+            assertEq(licensingConfig.mintingFee, commTermsData[i].licensingConfig.mintingFee);
+            assertEq(licensingConfig.licensingHook, commTermsData[i].licensingConfig.licensingHook);
+            assertEq(licensingConfig.hookData, commTermsData[i].licensingConfig.hookData);
+            assertEq(licensingConfig.commercialRevShare, commTermsData[i].licensingConfig.commercialRevShare);
+            assertEq(licensingConfig.disabled, commTermsData[i].licensingConfig.disabled);
+            assertEq(licensingConfig.expectGroupRewardPool, commTermsData[i].licensingConfig.expectGroupRewardPool);
+            assertEq(
+                licensingConfig.expectMinimumGroupRewardShare,
+                commTermsData[i].licensingConfig.expectMinimumGroupRewardShare
+            );
         }
     }
 
@@ -337,7 +353,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
                     royaltyPolicy: address(royaltyPolicyLRP)
                 }),
                 licensingConfig: Licensing.LicensingConfig({
-                    isSet: false,
+                    isSet: true,
                     mintingFee: testMintFee,
                     licensingHook: address(0),
                     hookData: "",
