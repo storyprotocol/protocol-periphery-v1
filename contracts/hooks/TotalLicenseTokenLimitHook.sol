@@ -12,8 +12,12 @@ import { ILicenseTemplate } from "@storyprotocol/core/interfaces/modules/licensi
 contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingHook {
     string public constant override name = "TotalLicenseTokenLimitHook";
 
+    /// @notice The address of the License Registry.
     ILicenseRegistry public immutable LICENSE_REGISTRY;
+
+    /// @notice The address of the License Token.
     ILicenseToken public immutable LICENSE_TOKEN;
+
     // keccak256(licensorIpId, licenseTemplate, licenseTermsId) => totalLicenseTokenLimit
     mapping(bytes32 => uint256) public totalLicenseTokenLimit;
 

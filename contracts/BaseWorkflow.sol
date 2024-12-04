@@ -16,23 +16,30 @@ import { Errors } from "./lib/Errors.sol";
 /// @notice The base contract for all Story Protocol Periphery workflows.
 abstract contract BaseWorkflow {
     /// @notice The address of the Access Controller.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IAccessController public immutable ACCESS_CONTROLLER;
 
     /// @notice The address of the Core Metadata Module.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     ICoreMetadataModule public immutable CORE_METADATA_MODULE;
 
     /// @notice The address of the IP Asset Registry.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IIPAssetRegistry public immutable IP_ASSET_REGISTRY;
 
     /// @notice The address of the Licensing Module.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     ILicensingModule public immutable LICENSING_MODULE;
 
     /// @notice The address of the License Registry.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     ILicenseRegistry public immutable LICENSE_REGISTRY;
 
     /// @notice The address of the PIL License Template.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IPILicenseTemplate public immutable PIL_TEMPLATE;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
         address accessController,
         address coreMetadataModule,

@@ -48,9 +48,11 @@ contract DerivativeWorkflows is
         0xd52de5238bdb22c2473ee7a9de2482cc2f392e6aae2d3cca6798fa8abd456f00;
 
     /// @notice The address of the Royalty Module.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IRoyaltyModule public immutable ROYALTY_MODULE;
 
     /// @notice The address of the License Token.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     ILicenseToken public immutable LICENSE_TOKEN;
 
     /// @custom:oz-upgrades-unsafe-allow constructor

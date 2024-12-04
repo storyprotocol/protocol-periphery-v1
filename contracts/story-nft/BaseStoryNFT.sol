@@ -45,6 +45,7 @@ abstract contract BaseStoryNFT is IStoryNFT, ERC721URIStorageUpgradeable, Ownabl
     bytes32 private constant BaseStoryNFTStorageLocation =
         0x81ed94d7560ff7bef5060a232718049e514c358c346e3254b876807a753c0e00;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address ipAssetRegistry, address licensingModule, address coreMetadataModule) {
         if (ipAssetRegistry == address(0) || licensingModule == address(0) || coreMetadataModule == address(0))
             revert StoryNFT__ZeroAddressParam();

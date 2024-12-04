@@ -30,6 +30,7 @@ abstract contract BaseOrgStoryNFT is IOrgStoryNFT, BaseStoryNFT {
     bytes32 private constant BaseOrgStoryNFTStorageLocation =
         0x52eea8b3c549d1bd8b986d98314c387ab153ca0f32b6949d51f32dbd11b07900;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
         address ipAssetRegistry,
         address licensingModule,
