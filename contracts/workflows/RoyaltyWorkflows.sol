@@ -23,6 +23,7 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
     using ERC165Checker for address;
 
     /// @notice The address of the Royalty Module.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IRoyaltyModule public immutable ROYALTY_MODULE;
 
     /// @custom:oz-upgrades-unsafe-allow constructor

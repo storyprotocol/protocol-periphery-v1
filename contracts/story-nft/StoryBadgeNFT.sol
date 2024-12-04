@@ -48,6 +48,7 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, CachableNFT, ERC721Ho
     bytes32 private constant StoryBadgeNFTStorageLocation =
         0x00c5d7dc46f601fb1120e8b9ebb4fdf899cffbfddad19ced3e4dad5853224400;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
         address ipAssetRegistry,
         address licensingModule,

@@ -47,12 +47,15 @@ contract GroupingWorkflows is
         0xa8ddbb5f662015e2b3d6b4c61921979ad3d3d1d19e338b1c4ba6a196b10c6400;
 
     /// @notice The address of the Grouping Module.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IGroupingModule public immutable GROUPING_MODULE;
 
     /// @notice The address of the Group NFT contract.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     GroupNFT public immutable GROUP_NFT;
 
     /// @notice The address of the Royalty Module.
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     RoyaltyModule public immutable ROYALTY_MODULE;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
