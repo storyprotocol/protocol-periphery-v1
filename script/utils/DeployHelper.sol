@@ -902,20 +902,20 @@ contract DeployHelper is
     }
 
     /// @dev Get the deterministic deployed address of a contract with CREATE3
-    function _getDeployedAddress(string memory name) private view returns (address) {
+    function _getDeployedAddress(string memory name) internal view returns (address) {
         return create3Deployer.getDeployed(_getSalt(name));
     }
 
     /// @dev Load the implementation address from the proxy contract
-    function _loadProxyImpl(address proxy) private view returns (address) {
+    function _loadProxyImpl(address proxy) internal view returns (address) {
         return address(uint160(uint256(vm.load(proxy, IMPLEMENTATION_SLOT))));
     }
 
-    function _predeploy(string memory contractKey) private view {
+    function _predeploy(string memory contractKey) internal view {
         if (writeDeploys) console2.log(string.concat("Deploying ", contractKey, "..."));
     }
 
-    function _postdeploy(string memory contractKey, address newAddress) private {
+    function _postdeploy(string memory contractKey, address newAddress) internal {
         if (writeDeploys) {
             _writeAddress(contractKey, newAddress);
             console2.log(string.concat(contractKey, " deployed to:"), newAddress);
