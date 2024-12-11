@@ -714,7 +714,7 @@ contract DeployHelper is
 
         // licenseToken
         impl = address(0); // Make sure we don't deploy wrong impl
-        impl = address(new LicenseToken(address(licensingModule), address(disputeModule)));
+        impl = address(new LicenseToken(address(licensingModule), address(disputeModule), address(licenseRegistry)));
         licenseToken = LicenseToken(
             TestProxyHelper.deployUUPSProxy(
                 create3Deployer,
@@ -821,7 +821,8 @@ contract DeployHelper is
                 address(licenseRegistry),
                 address(licenseToken),
                 address(groupNFT),
-                address(royaltyModule)
+                address(royaltyModule),
+                address(disputeModule)
             )
         );
         groupingModule = GroupingModule(
