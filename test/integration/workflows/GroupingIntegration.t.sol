@@ -261,23 +261,13 @@ contract GroupingIntegration is BaseIntegration {
         StoryUSD.mint(testSender, amount1);
         StoryUSD.approve(address(royaltyModule), amount1);
         royaltyModule.payRoyaltyOnBehalf(ipId1, testSender, address(StoryUSD), amount1);
-        IGraphAwareRoyaltyPolicy(royaltyPolicyLAPAddr).transferToVault(
-            ipId1,
-            newGroupId,
-            address(StoryUSD),
-            (amount1 * revShare) / royaltyModule.maxPercent()
-        );
+        IGraphAwareRoyaltyPolicy(royaltyPolicyLAPAddr).transferToVault(ipId1, newGroupId, address(StoryUSD));
 
         uint256 amount2 = 10_000 * 10 ** StoryUSD.decimals(); // 10,000 tokens
         StoryUSD.mint(testSender, amount2);
         StoryUSD.approve(address(royaltyModule), amount2);
         royaltyModule.payRoyaltyOnBehalf(ipId2, testSender, address(StoryUSD), amount2);
-        IGraphAwareRoyaltyPolicy(royaltyPolicyLAPAddr).transferToVault(
-            ipId2,
-            newGroupId,
-            address(StoryUSD),
-            (amount2 * revShare) / royaltyModule.maxPercent()
-        );
+        IGraphAwareRoyaltyPolicy(royaltyPolicyLAPAddr).transferToVault(ipId2, newGroupId, address(StoryUSD));
 
         address[] memory royaltyTokens = new address[](1);
         royaltyTokens[0] = address(StoryUSD);

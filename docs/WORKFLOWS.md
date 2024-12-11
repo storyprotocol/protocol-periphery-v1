@@ -46,8 +46,5 @@
 
 ### [Royalty Workflows](../contracts/interfaces/workflows/IRoyaltyWorkflows.sol)
 
-- `transferToVaultAndClaimByTokenBatch`:
-  - Transfers specified amounts of royalties from various royalty policies to the royalty vault of the ancestor IP -> Claims all the revenue in each currency token from the ancestor IP's royalty vault to the claimer.
-
 - `claimAllRevenue`:
   - Transfers all avaiable royalties from various royalty policies to the royalty vault of the ancestor IP -> Claims all the revenue in each currency token from the ancestor IP's royalty vault to the claimer.

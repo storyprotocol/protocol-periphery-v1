@@ -339,12 +339,7 @@ contract GroupingWorkflowsTest is BaseTest {
         vm.startPrank(ipOwner1);
         mockToken.approve(address(royaltyModule), amount1);
         royaltyModule.payRoyaltyOnBehalf(ipId1, ipOwner1, address(mockToken), amount1);
-        royaltyPolicyLAP.transferToVault(
-            ipId1,
-            newGroupId,
-            address(mockToken),
-            (amount1 * revShare) / royaltyModule.maxPercent()
-        );
+        royaltyPolicyLAP.transferToVault(ipId1, newGroupId, address(mockToken));
         vm.stopPrank();
 
         uint256 amount2 = 10_000 * 10 ** mockToken.decimals(); // 10,000 tokens
@@ -352,12 +347,7 @@ contract GroupingWorkflowsTest is BaseTest {
         vm.startPrank(ipOwner2);
         mockToken.approve(address(royaltyModule), amount2);
         royaltyModule.payRoyaltyOnBehalf(ipId2, ipOwner2, address(mockToken), amount2);
-        royaltyPolicyLAP.transferToVault(
-            ipId2,
-            newGroupId,
-            address(mockToken),
-            (amount2 * revShare) / royaltyModule.maxPercent()
-        );
+        royaltyPolicyLAP.transferToVault(ipId2, newGroupId, address(mockToken));
         vm.stopPrank();
 
         address[] memory royaltyTokens = new address[](1);

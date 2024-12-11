@@ -42,48 +42,6 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
         __UUPSUpgradeable_init();
     }
 
-    /// @notice Transfers specified amounts of royalties from various royalty policies to the royalty
-    ///         vault of an ancestor IP, and claims all the revenue for each currency token from the
-    ///         ancestor IP's royalty vault to the claimer.
-    /// @param ancestorIpId The address of the ancestor IP from which the revenue is being claimed.
-    /// @param claimer The address of the claimer of the currency (revenue) tokens.
-    /// @param childIpIds The addresses of the child IPs from which royalties are derived.
-    /// @param royaltyPolicies The addresses of the royalty policies, where royaltyPolicies[i] governs
-    ///        the royalty flow for childIpIds[i].
-    /// @param currencyTokens The addresses of the currency tokens in which royalties will be claimed,
-    ///        where currencyTokens[i] is the token used for royalties from childIpIds[i].
-    /// @param amounts The amounts to transfer and claim, where amounts[i] represents the amount of
-    ///        royalties in currencyTokens[i] to transfer from childIpIds[i]'s royaltyPolicies[i] to the ancestor's
-    ///        royalty vault.
-    /// @return amountsClaimed The amounts of successfully claimed revenue for each specified currency token.
-    function transferToVaultAndClaimByTokenBatch(
-        address ancestorIpId,
-        address claimer,
-        address[] calldata childIpIds,
-        address[] calldata royaltyPolicies,
-        address[] calldata currencyTokens,
-        uint256[] calldata amounts
-    ) external returns (uint256[] memory amountsClaimed) {
-        // Transfers to ancestor's vault an amount of revenue tokens claimable via the given royalty policy
-        for (uint256 i = 0; i < childIpIds.length; i++) {
-            IGraphAwareRoyaltyPolicy(royaltyPolicies[i]).transferToVault({
-                ipId: childIpIds[i],
-                ancestorIpId: ancestorIpId,
-                token: currencyTokens[i],
-                amount: amounts[i]
-            });
-        }
-
-        // Gets the ancestor IP's royalty vault
-        IIpRoyaltyVault ancestorIpRoyaltyVault = IIpRoyaltyVault(ROYALTY_MODULE.ipRoyaltyVaults(ancestorIpId));
-
-        // Claims revenue for each specified currency token
-        amountsClaimed = ancestorIpRoyaltyVault.claimRevenueOnBehalfByTokenBatch({
-            claimer: claimer,
-            tokenList: _getUniqueCurrencyTokens(currencyTokens)
-        });
-    }
-
     /// @notice Transfers all avaiable royalties from various royalty policies to the royalty
     ///         vault of an ancestor IP, and claims all the revenue for each currency token
     ///         from the ancestor IP's royalty vault to the claimer.
@@ -103,28 +61,11 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
         address[] calldata currencyTokens
     ) external returns (uint256[] memory amountsClaimed) {
         for (uint256 i = 0; i < childIpIds.length; i++) {
-            // Gets the total lifetime revenue tokens received for a given IP asset
-            uint256 totalTokenReceivedByChild = ROYALTY_MODULE.totalRevenueTokensReceived({
-                ipId: childIpIds[i],
-                token: currencyTokens[i]
-            });
-
-            // Gets the total lifetime revenue tokens transferred to a vault from a descendant IP via the policy
-            uint256 totalTokenTransferredToAncestor = IGraphAwareRoyaltyPolicy(royaltyPolicies[i])
-                .getTransferredTokens({ ipId: childIpIds[i], ancestorIpId: ancestorIpId, token: currencyTokens[i] });
-
-            uint32 ancestorPercentage = IGraphAwareRoyaltyPolicy(royaltyPolicies[i]).getPolicyRoyalty({
-                ipId: childIpIds[i],
-                ancestorIpId: ancestorIpId
-            });
-
             // Transfer all available revenue tokens to the ancestor's vault
             IGraphAwareRoyaltyPolicy(royaltyPolicies[i]).transferToVault({
                 ipId: childIpIds[i],
                 ancestorIpId: ancestorIpId,
-                token: currencyTokens[i],
-                amount: ((totalTokenReceivedByChild * ancestorPercentage) / ROYALTY_MODULE.maxPercent()) -
-                    totalTokenTransferredToAncestor
+                token: currencyTokens[i]
             });
         }
 

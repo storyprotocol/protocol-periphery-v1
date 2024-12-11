@@ -44,67 +44,8 @@ contract RoyaltyIntegration is BaseIntegration {
         super.run();
         _beginBroadcast();
         _setupTest();
-        _test_RoyaltyIntegration_transferToVaultAndClaimByTokenBatch();
         _test_RoyaltyIntegration_claimAllRevenue();
         _endBroadcast();
-    }
-
-    function _test_RoyaltyIntegration_transferToVaultAndClaimByTokenBatch()
-        private
-        logTest("test_RoyaltyIntegration_transferToVaultAndClaimByTokenBatch")
-    {
-        // setup IP graph
-        _setupIpGraph();
-
-        address[] memory childIpIds = new address[](3);
-        address[] memory royaltyPolicies = new address[](3);
-        address[] memory currencyTokens = new address[](3);
-        uint256[] memory amounts = new uint256[](3);
-
-        childIpIds[0] = childIpIdA;
-        royaltyPolicies[0] = royaltyPolicyLRPAddr;
-        currencyTokens[0] = address(StoryUSD);
-        amounts[0] = 10 ether;
-
-        childIpIds[1] = childIpIdB;
-        royaltyPolicies[1] = royaltyPolicyLRPAddr;
-        currencyTokens[1] = address(StoryUSD);
-        amounts[1] = 10 ether;
-
-        childIpIds[2] = grandChildIpId;
-        royaltyPolicies[2] = royaltyPolicyLRPAddr;
-        currencyTokens[2] = address(StoryUSD);
-        amounts[2] = 2 ether;
-
-        childIpIds[3] = childIpIdC;
-        royaltyPolicies[3] = royaltyPolicyLAPAddr;
-        currencyTokens[3] = address(StoryUSD);
-        amounts[3] = 10 ether;
-
-        uint256 claimerBalanceBefore = StoryUSD.balanceOf(ancestorIpId);
-
-        uint256[] memory amountsClaimed = royaltyWorkflows.transferToVaultAndClaimByTokenBatch({
-            ancestorIpId: ancestorIpId,
-            claimer: ancestorIpId,
-            childIpIds: childIpIds,
-            royaltyPolicies: royaltyPolicies,
-            currencyTokens: currencyTokens,
-            amounts: amounts
-        });
-
-        uint256 claimerBalanceAfter = StoryUSD.balanceOf(ancestorIpId);
-
-        assertEq(amountsClaimed.length, 1); // there is 1 currency token
-        assertEq(claimerBalanceAfter - claimerBalanceBefore, amountsClaimed[0]);
-        assertEq(
-            claimerBalanceAfter - claimerBalanceBefore,
-            defaultMintingFeeA +
-                defaultMintingFeeA + // 1000 + 1000 from minting fee of childIpA and childIpB
-                10 ether + // 10 currency tokens from childIpA transferred to vault
-                10 ether + // 10 currency tokens from childIpB transferred to vault
-                2 ether + // 2 currency tokens from grandChildIp transferred to vault
-                10 ether // 10 currency tokens from childIpC transferred to vault
-        );
     }
 
     function _test_RoyaltyIntegration_claimAllRevenue() private logTest("test_RoyaltyIntegration_claimAllRevenue") {

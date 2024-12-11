@@ -42,66 +42,6 @@ contract RoyaltyWorkflowsTest is BaseTest {
         _setupCurrencyTokens();
     }
 
-    function test_RoyaltyWorkflows_transferToVaultAndClaimByTokenBatch() public {
-        _setupIpGraph();
-
-        address[] memory childIpIds = new address[](4);
-        address[] memory royaltyPolicies = new address[](4);
-        address[] memory currencyTokens = new address[](4);
-        uint256[] memory amounts = new uint256[](4);
-
-        childIpIds[0] = childIpIdA;
-        royaltyPolicies[0] = address(royaltyPolicyLRP);
-        currencyTokens[0] = address(mockTokenA);
-        amounts[0] = 10 ether;
-
-        childIpIds[1] = childIpIdB;
-        royaltyPolicies[1] = address(royaltyPolicyLRP);
-        currencyTokens[1] = address(mockTokenA);
-        amounts[1] = 10 ether;
-
-        childIpIds[2] = grandChildIpId;
-        royaltyPolicies[2] = address(royaltyPolicyLRP);
-        currencyTokens[2] = address(mockTokenA);
-        amounts[2] = 1 ether;
-
-        childIpIds[3] = childIpIdC;
-        royaltyPolicies[3] = address(royaltyPolicyLAP);
-        currencyTokens[3] = address(mockTokenC);
-        amounts[3] = 10 ether;
-
-        uint256 claimerBalanceABefore = mockTokenA.balanceOf(ancestorIpId);
-        uint256 claimerBalanceCBefore = mockTokenC.balanceOf(ancestorIpId);
-
-        uint256[] memory amountsClaimed = royaltyWorkflows.transferToVaultAndClaimByTokenBatch({
-            ancestorIpId: ancestorIpId,
-            claimer: ancestorIpId,
-            childIpIds: childIpIds,
-            royaltyPolicies: royaltyPolicies,
-            currencyTokens: currencyTokens,
-            amounts: amounts
-        });
-
-        uint256 claimerBalanceAAfter = mockTokenA.balanceOf(ancestorIpId);
-        uint256 claimerBalanceCAfter = mockTokenC.balanceOf(ancestorIpId);
-
-        assertEq(amountsClaimed.length, 2); // there are 2 currency tokens
-        assertEq(claimerBalanceAAfter - claimerBalanceABefore, amountsClaimed[0]);
-        assertEq(claimerBalanceCAfter - claimerBalanceCBefore, amountsClaimed[1]);
-        assertEq(
-            claimerBalanceAAfter - claimerBalanceABefore,
-            defaultMintingFeeA +
-                defaultMintingFeeA + // 1000 + 1000 from minting fee of childIpA and childIpB
-                10 ether + // 10 currency tokens from childIpA transferred to vault
-                10 ether + // 10 currency tokens from childIpB transferred to vault
-                1 ether // 1 currency token from grandChildIp transferred to vault
-        );
-        assertEq(
-            claimerBalanceCAfter - claimerBalanceCBefore,
-            defaultMintingFeeC + 10 ether // 10 currency tokens from childIpC transferred to vault
-        );
-    }
-
     function test_RoyaltyWorkflows_claimAllRevenue() public {
         _setupIpGraph();
 
