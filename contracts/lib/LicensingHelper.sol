@@ -25,7 +25,7 @@ library LicensingHelper {
         address pilTemplate,
         address licensingModule,
         address licenseRegistry,
-        PILTerms[] calldata terms
+        PILTerms[] memory terms
     ) internal returns (uint256[] memory licenseTermsIds) {
         licenseTermsIds = new uint256[](terms.length);
         for (uint256 i = 0; i < terms.length; i++) {
@@ -51,7 +51,7 @@ library LicensingHelper {
         address pilTemplate,
         address licensingModule,
         address licenseRegistry,
-        PILTerms calldata terms
+        PILTerms memory terms
     ) internal returns (uint256 licenseTermsId) {
         licenseTermsId = IPILicenseTemplate(pilTemplate).registerLicenseTerms(terms);
         attachLicenseTerms(ipId, licensingModule, licenseRegistry, pilTemplate, licenseTermsId);

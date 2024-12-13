@@ -14,18 +14,18 @@ interface IRoyaltyTokenDistributionWorkflows {
     /// @param spgNftContract The address of the SPG NFT contract.
     /// @param recipient The address to receive the NFT.
     /// @param ipMetadata The metadata for the IP.
-    /// @param terms The PIL terms to attach to the IP (must be a commercial license).
+    /// @param terms The PIL terms to attach to the IP (the license terms at index 0 must be a commercial license).
     /// @param royaltyShares Authors of the IP and their shares of the royalty tokens, see {WorkflowStructs.RoyaltyShare}.
     /// @return ipId The ID of the registered IP.
     /// @return tokenId The ID of the minted NFT.
-    /// @return licenseTermsId The ID of the attached PIL terms.
+    /// @return licenseTermsIds The IDs of the attached PIL terms.
     function mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens(
         address spgNftContract,
         address recipient,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        PILTerms calldata terms,
+        PILTerms[] calldata terms,
         WorkflowStructs.RoyaltyShare[] calldata royaltyShares
-    ) external returns (address ipId, uint256 tokenId, uint256 licenseTermsId);
+    ) external returns (address ipId, uint256 tokenId, uint256[] memory licenseTermsIds);
 
     /// @notice Mint an NFT and register the IP, make a derivative, and distribute royalty tokens.
     /// @dev In order to successfully distribute royalty tokens, the license terms attached to the IP must be
@@ -51,20 +51,20 @@ interface IRoyaltyTokenDistributionWorkflows {
     /// @param nftContract The address of the NFT contract.
     /// @param tokenId The ID of the NFT.
     /// @param ipMetadata The metadata for the IP.
-    /// @param terms The PIL terms to attach to the IP (must be a commercial license).
+    /// @param terms The PIL terms to attach to the IP (the license terms at index 0 must be a commercial license).
     /// @param sigMetadata The signature data for the IP metadata.
     /// @param sigAttach The signature data for attaching the PIL terms.
     /// @return ipId The ID of the registered IP.
-    /// @return licenseTermsId The ID of the attached PIL terms.
+    /// @return licenseTermsIds The IDs of the attached PIL terms.
     /// @return ipRoyaltyVault The address of the deployed royalty vault.
     function registerIpAndAttachPILTermsAndDeployRoyaltyVault(
         address nftContract,
         uint256 tokenId,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        PILTerms calldata terms,
+        PILTerms[] calldata terms,
         WorkflowStructs.SignatureData calldata sigMetadata,
         WorkflowStructs.SignatureData calldata sigAttach
-    ) external returns (address ipId, uint256 licenseTermsId, address ipRoyaltyVault);
+    ) external returns (address ipId, uint256[] memory licenseTermsIds, address ipRoyaltyVault);
 
     /// @notice Register an IP, make a derivative, and deploy a royalty vault.
     /// @dev In order to successfully deploy a royalty vault, the license terms attached to the IP must be

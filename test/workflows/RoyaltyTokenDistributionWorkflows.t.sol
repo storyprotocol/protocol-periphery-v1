@@ -27,7 +27,7 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
     uint256 private nftMintingFee;
     uint256 private licenseMintingFee;
 
-    PILTerms private commRemixTerms;
+    PILTerms[] private commRemixTerms;
 
     WorkflowStructs.RoyaltyShare[] private royaltyShares;
     WorkflowStructs.MakeDerivative private derivativeData;
@@ -45,7 +45,7 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
         mockToken.approve(address(spgNftPublic), nftMintingFee);
         mockToken.approve(address(royaltyTokenDistributionWorkflows), licenseMintingFee);
 
-        (address ipId, uint256 tokenId, uint256 licenseTermsId) = royaltyTokenDistributionWorkflows
+        (address ipId, uint256 tokenId, uint256[] memory licenseTermsIds) = royaltyTokenDistributionWorkflows
             .mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens({
                 spgNftContract: address(spgNftPublic),
                 recipient: u.alice,
@@ -59,13 +59,16 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
         assertEq(tokenId, 2);
         assertEq(spgNftPublic.tokenURI(tokenId), string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
         assertMetadata(ipId, ipMetadataDefault);
-        assertEq(licenseTermsId, pilTemplate.getLicenseTermsId(commRemixTerms));
+        assertEq(licenseTermsIds[0], pilTemplate.getLicenseTermsId(commRemixTerms[0]));
         (address licenseTemplateAttached, uint256 licenseTermsIdAttached) = licenseRegistry.getAttachedLicenseTerms(
             ipId,
             0
         );
         assertEq(licenseTemplateAttached, address(pilTemplate));
-        assertEq(licenseTermsIdAttached, pilTemplate.getLicenseTermsId(commRemixTerms));
+        assertEq(licenseTermsIdAttached, pilTemplate.getLicenseTermsId(commRemixTerms[0]));
+        (licenseTemplateAttached, licenseTermsIdAttached) = licenseRegistry.getAttachedLicenseTerms(ipId, 1);
+        assertEq(licenseTemplateAttached, address(pilTemplate));
+        assertEq(licenseTermsIdAttached, pilTemplate.getLicenseTermsId(commRemixTerms[1]));
         _assertRoyaltyTokenDistribution(ipId);
     }
 
@@ -156,7 +159,7 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
         vm.startPrank(u.alice);
         mockToken.mint(u.alice, licenseMintingFee);
         mockToken.approve(address(royaltyTokenDistributionWorkflows), licenseMintingFee);
-        (address ipId, uint256 licenseTermsId, address ipRoyaltyVault) = royaltyTokenDistributionWorkflows
+        (address ipId, uint256[] memory licenseTermsIds, address ipRoyaltyVault) = royaltyTokenDistributionWorkflows
             .registerIpAndAttachPILTermsAndDeployRoyaltyVault({
                 nftContract: address(mockNft),
                 tokenId: tokenId,
@@ -199,13 +202,16 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
 
         assertTrue(ipAssetRegistry.isRegistered(ipId));
         assertMetadata(ipId, ipMetadataDefault);
-        assertEq(licenseTermsId, pilTemplate.getLicenseTermsId(commRemixTerms));
+        assertEq(licenseTermsIds[0], pilTemplate.getLicenseTermsId(commRemixTerms[0]));
         (address licenseTemplateAttached, uint256 licenseTermsIdAttached) = licenseRegistry.getAttachedLicenseTerms(
             ipId,
             0
         );
         assertEq(licenseTemplateAttached, address(pilTemplate));
-        assertEq(licenseTermsIdAttached, pilTemplate.getLicenseTermsId(commRemixTerms));
+        assertEq(licenseTermsIdAttached, pilTemplate.getLicenseTermsId(commRemixTerms[0]));
+        (licenseTemplateAttached, licenseTermsIdAttached) = licenseRegistry.getAttachedLicenseTerms(ipId, 1);
+        assertEq(licenseTemplateAttached, address(pilTemplate));
+        assertEq(licenseTermsIdAttached, pilTemplate.getLicenseTermsId(commRemixTerms[1]));
         _assertRoyaltyTokenDistribution(ipId);
     }
 
@@ -347,12 +353,14 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
         mockToken.mint(u.alice, licenseMintingFee);
         mockToken.approve(address(spgNftPublic), licenseMintingFee);
 
+        PILTerms[] memory terms = new PILTerms[](1);
+        terms[0] = PILFlavors.nonCommercialSocialRemixing();
         vm.expectRevert(Errors.RoyaltyTokenDistributionWorkflows__RoyaltyVaultNotDeployed.selector);
         royaltyTokenDistributionWorkflows.mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens({
             spgNftContract: address(spgNftPublic),
             recipient: u.alice,
             ipMetadata: ipMetadataDefault,
-            terms: PILFlavors.nonCommercialSocialRemixing(),
+            terms: terms,
             royaltyShares: royaltyShares
         });
         vm.stopPrank();
@@ -364,12 +372,23 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
 
         uint32 testCommRevShare = 5 * 10 ** 6; // 5%
 
-        commRemixTerms = PILFlavors.commercialRemix({
-            mintingFee: licenseMintingFee,
-            commercialRevShare: testCommRevShare,
-            royaltyPolicy: address(royaltyPolicyLAP),
-            currencyToken: address(mockToken)
-        });
+        commRemixTerms.push(
+            PILFlavors.commercialRemix({
+                mintingFee: licenseMintingFee,
+                commercialRevShare: testCommRevShare,
+                royaltyPolicy: address(royaltyPolicyLAP),
+                currencyToken: address(mockToken)
+            })
+        );
+
+        commRemixTerms.push(
+            PILFlavors.commercialRemix({
+                mintingFee: licenseMintingFee,
+                commercialRevShare: testCommRevShare,
+                royaltyPolicy: address(royaltyPolicyLRP),
+                currencyToken: address(mockToken)
+            })
+        );
 
         PILTerms[] memory commRemixTermsParent = new PILTerms[](1);
         commRemixTermsParent[0] = PILFlavors.commercialRemix({
