@@ -30,5 +30,5 @@ contract TokenizerModule is BaseModule, AccessControlled {
 
     function whitelistTokenTemplate(address tokenTemplate, bool allowed) external {}
 
-    function tokenize(address ipId, address tokenTemplate, bytes initData) external verifyPermission(ipId) {}
+    function tokenize(address ipId, address tokenTemplate, bytes calldata initData) external verifyPermission(ipId) {}
 }
