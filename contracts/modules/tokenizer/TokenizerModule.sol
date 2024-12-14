@@ -3,8 +3,6 @@ pragma solidity 0.8.26;
 
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
-import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
-import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 import { BaseModule } from "@storyprotocol/core/modules/BaseModule.sol";
 import { AccessControlled } from "@storyprotocol/core/access/AccessControlled.sol";
@@ -32,9 +30,5 @@ contract TokenizerModule is BaseModule, AccessControlled {
 
     function whitelistTokenTemplate(address tokenTemplate, bool allowed) external {}
 
-    function tokenize(
-        address ipId,
-        address tokenTemplate,
-        bytes initData
-    ) external verifyPermission(ipId) {}
+    function tokenize(address ipId, address tokenTemplate, bytes initData) external verifyPermission(ipId) {}
 }
