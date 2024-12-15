@@ -8,9 +8,10 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
 import { BaseModule } from "@storyprotocol/core/modules/BaseModule.sol";
-import { AccessControlled } from "@storyprotocol/core/access/AccessControlled.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
+import { AccessControlled } from "@storyprotocol/core/access/AccessControlled.sol";
 import { IPAccountStorageOps } from "@storyprotocol/core/lib/IPAccountStorageOps.sol";
+import { ILicenseRegistry } from "@storyprotocol/core/interfaces/registries/ILicenseRegistry.sol";
 import { IDisputeModule } from "@storyprotocol/core/interfaces/modules/dispute/IDisputeModule.sol";
 import { ProtocolPausableUpgradeable } from "@storyprotocol/core/pause/ProtocolPausableUpgradeable.sol";
 
@@ -49,7 +50,9 @@ contract TokenizerModule is
     bytes32 private constant TokenizerModuleStorageLocation =
         0xef271c298b3e9574aa43cf546463b750863573b31e3d16f477ffc6f522452800;
 
-    bytes32 public constant EXPIRATION_TIME = "EXPIRATION_TIME";
+    /// @notice Returns the protocol-wide license registry
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+    ILicenseRegistry public immutable LICENSE_REGISTRY;
 
     /// @notice Returns the protocol-wide dispute module
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
@@ -59,10 +62,13 @@ contract TokenizerModule is
     constructor(
         address accessController,
         address ipAssetRegistry,
+        address licenseRegistry,
         address disputeModule
     ) AccessControlled(accessController, ipAssetRegistry) {
+        if (licenseRegistry == address(0)) revert Errors.TokenizerModule__ZeroLicenseRegistry();
         if (disputeModule == address(0)) revert Errors.TokenizerModule__ZeroDisputeModule();
 
+        LICENSE_REGISTRY = ILicenseRegistry(licenseRegistry);
         DISPUTE_MODULE = IDisputeModule(disputeModule);
     }
 
@@ -92,7 +98,7 @@ contract TokenizerModule is
     ) external verifyPermission(ipId) nonReentrant returns (address token) {
         if (DISPUTE_MODULE.isIpTagged(ipId)) revert Errors.TokenizerModule__DisputedIpId(ipId);
         if (!IP_ASSET_REGISTRY.isRegistered(ipId)) revert Errors.TokenizerModule__IpNotRegistered(ipId);
-        if (_isExpiredNow(ipId)) revert Errors.TokenizerModule__IpExpired(ipId);
+        if (LICENSE_REGISTRY.isExpiredNow(ipId)) revert Errors.TokenizerModule__IpExpired(ipId);
 
         TokenizerModuleStorage storage $ = _getTokenizerModuleStorage();
         address existingToken = $.fractionalizedTokens[ipId];
@@ -126,19 +132,6 @@ contract TokenizerModule is
     function isWhitelistedTokenTemplate(address tokenTemplate) external view returns (bool allowed) {
         TokenizerModuleStorage storage $ = _getTokenizerModuleStorage();
         return $.isWhitelistedTokenTemplate[tokenTemplate];
-    }
-
-    /// @dev Check if an IP is expired now
-    /// @param ipId The address of the IP
-    function _isExpiredNow(address ipId) internal view returns (bool) {
-        uint256 expireTime = _getExpireTime(ipId);
-        return expireTime != 0 && expireTime < block.timestamp;
-    }
-
-    /// @dev Get the expiration time of an IP
-    /// @param ipId The address of the IP
-    function _getExpireTime(address ipId) internal view returns (uint256) {
-        return IIPAccount(payable(ipId)).getUint256(EXPIRATION_TIME);
     }
 
     /// @dev Returns the name of the module

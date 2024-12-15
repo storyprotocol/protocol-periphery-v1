@@ -96,6 +96,8 @@ library Errors {
     ////////////////////////////////////////////////////////////////////////////
     //                               TokenizerModule                         //
     ////////////////////////////////////////////////////////////////////////////
+    /// @notice Zero license registry provided.
+    error TokenizerModule__ZeroLicenseRegistry();
 
     /// @notice Zero dispute module provided.
     error TokenizerModule__ZeroDisputeModule();
