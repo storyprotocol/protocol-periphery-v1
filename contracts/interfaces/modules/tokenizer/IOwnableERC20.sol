@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 /// @title Ownable ERC20 Interface
 /// @notice Interface for the Ownable ERC20 token
@@ -29,8 +30,4 @@ interface IOwnableERC20 is IERC20 {
 
     /// @notice Returns the upgradable beacon
     function upgradableBeacon() external view returns (address);
-
-    /// @notice Returns whether the contract supports an interface
-    /// @param interfaceId The interface ID
-    function supportsInterface(bytes4 interfaceId) external view returns (bool);
 }

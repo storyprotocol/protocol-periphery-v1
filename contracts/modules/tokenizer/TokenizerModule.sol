@@ -2,9 +2,10 @@
 pragma solidity 0.8.26;
 
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
-import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import { BeaconProxy } from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
+import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
 import { BaseModule } from "@storyprotocol/core/modules/BaseModule.sol";
 import { AccessControlled } from "@storyprotocol/core/access/AccessControlled.sol";
@@ -27,6 +28,7 @@ contract TokenizerModule is
     BaseModule,
     AccessControlled,
     ProtocolPausableUpgradeable,
+    ReentrancyGuardUpgradeable,
     UUPSUpgradeable
 {
     using Strings for *;
@@ -35,9 +37,11 @@ contract TokenizerModule is
 
     /// @dev Storage structure for the TokenizerModule
     /// @param isWhitelistedTokenTemplate Mapping of token templates to their whitelisting status
+    /// @param fractionalizedTokens Mapping of IP IDs to their fractionalized tokens
     /// @custom:storage-location erc7201:story-protocol-periphery.TokenizerModule
     struct TokenizerModuleStorage {
         mapping(address => bool) isWhitelistedTokenTemplate;
+        mapping(address ipId => address token) fractionalizedTokens;
     }
 
     /// solhint-disable-next-line max-line-length
@@ -76,7 +80,7 @@ contract TokenizerModule is
         emit TokenTemplateWhitelisted(tokenTemplate, allowed);
     }
 
-    /// @notice Tokenizes an IP
+    /// @notice Tokenizes (fractionalizes) an IP
     /// @param ipId The address of the IP
     /// @param tokenTemplate The address of the token template
     /// @param initData The initialization data for the token
@@ -85,12 +89,14 @@ contract TokenizerModule is
         address ipId,
         address tokenTemplate,
         bytes calldata initData
-    ) external verifyPermission(ipId) returns (address token) {
+    ) external verifyPermission(ipId) nonReentrant returns (address token) {
         if (DISPUTE_MODULE.isIpTagged(ipId)) revert Errors.TokenizerModule__DisputedIpId(ipId);
         if (!IP_ASSET_REGISTRY.isRegistered(ipId)) revert Errors.TokenizerModule__IpNotRegistered(ipId);
         if (_isExpiredNow(ipId)) revert Errors.TokenizerModule__IpExpired(ipId);
 
         TokenizerModuleStorage storage $ = _getTokenizerModuleStorage();
+        address existingToken = $.fractionalizedTokens[ipId];
+        if (existingToken != address(0)) revert Errors.TokenizerModule__IpAlreadyTokenized(ipId, existingToken);
         if (!$.isWhitelistedTokenTemplate[tokenTemplate])
             revert Errors.TokenizerModule__TokenTemplateNotWhitelisted(tokenTemplate);
 
@@ -101,7 +107,25 @@ contract TokenizerModule is
             )
         );
 
+        $.fractionalizedTokens[ipId] = token;
+
         emit IPTokenized(ipId, token);
+    }
+
+    /// @notice Returns the fractionalized token for an IP
+    /// @param ipId The address of the IP
+    /// @return token The address of the token (0 address if IP has not been tokenized)
+    function getFractionalizedToken(address ipId) external view returns (address token) {
+        TokenizerModuleStorage storage $ = _getTokenizerModuleStorage();
+        return $.fractionalizedTokens[ipId];
+    }
+
+    /// @notice Checks if a token template is whitelisted
+    /// @param tokenTemplate The address of the token template
+    /// @return allowed The whitelisting status (true if whitelisted, false if not)
+    function isWhitelistedTokenTemplate(address tokenTemplate) external view returns (bool allowed) {
+        TokenizerModuleStorage storage $ = _getTokenizerModuleStorage();
+        return $.isWhitelistedTokenTemplate[tokenTemplate];
     }
 
     /// @dev Check if an IP is expired now

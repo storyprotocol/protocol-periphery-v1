@@ -27,4 +27,14 @@ interface ITokenizerModule is IModule {
     /// @param initData The initialization data for the token
     /// @return token The address of the newly created token
     function tokenize(address ipId, address tokenTemplate, bytes calldata initData) external returns (address token);
+
+    /// @notice Returns the fractionalized token for an IP
+    /// @param ipId The address of the IP
+    /// @return token The address of the token
+    function getFractionalizedToken(address ipId) external view returns (address token);
+
+    /// @notice Checks if a token template is whitelisted
+    /// @param tokenTemplate The address of the token template
+    /// @return allowed The whitelisting status (true if whitelisted, false if not)
+    function isWhitelistedTokenTemplate(address tokenTemplate) external view returns (bool allowed);
 }
