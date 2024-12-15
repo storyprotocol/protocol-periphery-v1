@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.26;
+
+import { IModule } from "@storyprotocol/core/interfaces/modules/base/IModule.sol";
+
+/// @title Tokenizer Module Interface
+/// @notice Interface for the Tokenizer Module
+interface ITokenizerModule is IModule {
+    /// @notice Event emitted when a token template is whitelisted
+    /// @param tokenTemplate The address of the token template
+    /// @param allowed The whitelisting status
+    event TokenTemplateWhitelisted(address tokenTemplate, bool allowed);
+
+    /// @notice Event emitted when an IP is tokenized
+    /// @param ipId The address of the IP
+    /// @param token The address of the token
+    event IPTokenized(address ipId, address token);
+
+    /// @notice Whitelists a token template
+    /// @param tokenTemplate The address of the token template
+    /// @param allowed The whitelisting status
+    function whitelistTokenTemplate(address tokenTemplate, bool allowed) external;
+
+    /// @notice Tokenizes an IP
+    /// @param ipId The address of the IP
+    /// @param tokenTemplate The address of the token template
+    /// @param initData The initialization data for the token
+    /// @return token The address of the newly created token
+    function tokenize(address ipId, address tokenTemplate, bytes calldata initData) external returns (address token);
+}

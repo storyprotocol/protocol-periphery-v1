@@ -92,4 +92,29 @@ library Errors {
     /// @param tokenId The ID of the original NFT that was first minted with this metadata hash.
     /// @param nftMetadataHash The hash of the NFT metadata that caused the duplication error.
     error SPGNFT__DuplicatedNFTMetadataHash(address spgNftContract, uint256 tokenId, bytes32 nftMetadataHash);
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                               TokenizerModule                         //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Zero dispute module provided.
+    error TokenizerModule__ZeroDisputeModule();
+
+    /// @notice Zero token template provided.
+    error TokenizerModule__ZeroTokenTemplate();
+
+    /// @notice Token template is not supported.
+    error TokenizerModule__UnsupportedERC20(address tokenTemplate);
+
+    /// @notice IP is disputed.
+    error TokenizerModule__DisputedIpId(address ipId);
+
+    /// @notice Token template is not whitelisted.
+    error TokenizerModule__TokenTemplateNotWhitelisted(address tokenTemplate);
+
+    /// @notice IP is not registered.
+    error TokenizerModule__IpNotRegistered(address ipId);
+
+    /// @notice IP is expired.
+    error TokenizerModule__IpExpired(address ipId);
 }
