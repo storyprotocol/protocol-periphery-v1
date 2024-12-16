@@ -21,6 +21,9 @@ library Errors {
     /// @notice Zero address provided as a param to the LicenseAttachmentWorkflows.
     error LicenseAttachmentWorkflows__ZeroAddressParam();
 
+    /// @notice License terms data list is empty.
+    error LicenseAttachmentWorkflows__NoLicenseTermsData();
+
     ////////////////////////////////////////////////////////////////////////////
     //                         DerivativeWorkflows                            //
     ////////////////////////////////////////////////////////////////////////////
@@ -40,6 +43,9 @@ library Errors {
 
     /// @notice Zero address provided as a param to the GroupingWorkflows.
     error GroupingWorkflows__ZeroAddressParam();
+
+    /// @notice License data list is empty.
+    error GroupingWorkflows__NoLicenseData();
 
     ////////////////////////////////////////////////////////////////////////////
     //                              Royalty Workflows                         //

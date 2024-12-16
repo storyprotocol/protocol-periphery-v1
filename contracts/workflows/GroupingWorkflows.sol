@@ -136,6 +136,8 @@ contract GroupingWorkflows is
         WorkflowStructs.SignatureData calldata sigAddToGroup,
         bool allowDuplicates
     ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId) {
+        if (licensesData.length == 0) revert Errors.GroupingWorkflows__NoLicenseData();
+
         tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
             to: address(this),
             payer: msg.sender,
@@ -184,6 +186,8 @@ contract GroupingWorkflows is
         WorkflowStructs.SignatureData calldata sigMetadataAndAttachAndConfig,
         WorkflowStructs.SignatureData calldata sigAddToGroup
     ) external returns (address ipId) {
+        if (licensesData.length == 0) revert Errors.GroupingWorkflows__NoLicenseData();
+
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
         address[] memory modules = new address[](3);

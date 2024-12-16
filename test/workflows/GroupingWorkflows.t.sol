@@ -540,6 +540,42 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
         }
     }
 
+    function test_GroupingWorkflows_revert_NoLicenseData() public {
+        vm.expectRevert(Errors.GroupingWorkflows__NoLicenseData.selector);
+        groupingWorkflows.mintAndRegisterIpAndAttachLicenseAndAddToGroup({
+            spgNftContract: address(spgNftPublic),
+            groupId: groupId,
+            recipient: minter,
+            ipMetadata: ipMetadataDefault,
+            licensesData: new WorkflowStructs.LicenseData[](0),
+            sigAddToGroup: WorkflowStructs.SignatureData({
+                signer: groupOwner,
+                deadline: block.timestamp + 1000,
+                signature: new bytes(0)
+            }),
+            allowDuplicates: true
+        });
+
+        vm.expectRevert(Errors.GroupingWorkflows__NoLicenseData.selector);
+        groupingWorkflows.registerIpAndAttachLicenseAndAddToGroup({
+            nftContract: address(mockNft),
+            tokenId: 0,
+            groupId: groupId,
+            licensesData: new WorkflowStructs.LicenseData[](0),
+            ipMetadata: ipMetadataDefault,
+            sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
+                signer: minter,
+                deadline: block.timestamp + 1000,
+                signature: new bytes(0)
+            }),
+            sigAddToGroup: WorkflowStructs.SignatureData({
+                signer: groupOwner,
+                deadline: block.timestamp + 1000,
+                signature: new bytes(0)
+            })
+        });
+    }
+
     // setup a group IPA for testing
     function _setupGroup() internal {
         // register a group and attach default PIL terms to it
