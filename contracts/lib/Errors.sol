@@ -92,4 +92,47 @@ library Errors {
     /// @param tokenId The ID of the original NFT that was first minted with this metadata hash.
     /// @param nftMetadataHash The hash of the NFT metadata that caused the duplication error.
     error SPGNFT__DuplicatedNFTMetadataHash(address spgNftContract, uint256 tokenId, bytes32 nftMetadataHash);
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                               OwnableERC20                             //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Zero ip id provided.
+    error OwnableERC20__ZeroIpId();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                               TokenizerModule                         //
+    ////////////////////////////////////////////////////////////////////////////
+    /// @notice Zero license registry provided.
+    error TokenizerModule__ZeroLicenseRegistry();
+
+    /// @notice Zero dispute module provided.
+    error TokenizerModule__ZeroDisputeModule();
+
+    /// @notice Zero token template provided.
+    error TokenizerModule__ZeroTokenTemplate();
+
+    /// @notice Zero protocol access manager provided.
+    error TokenizerModule__ZeroProtocolAccessManager();
+
+    /// @notice Token template is not supported.
+    /// @param tokenTemplate The address of the token template that is not supported
+    error TokenizerModule__UnsupportedOwnableERC20(address tokenTemplate);
+
+    /// @notice IP is disputed.
+    /// @param ipId The address of the disputed IP
+    error TokenizerModule__DisputedIpId(address ipId);
+
+    /// @notice Token template is not whitelisted.
+    /// @param tokenTemplate The address of the token template
+    error TokenizerModule__TokenTemplateNotWhitelisted(address tokenTemplate);
+
+    /// @notice IP is expired.
+    /// @param ipId The address of the expired IP
+    error TokenizerModule__IpExpired(address ipId);
+
+    /// @notice IP is already tokenized.
+    /// @param ipId The address of the already tokenized IP
+    /// @param token The address of the fractionalized token for the IP
+    error TokenizerModule__IpAlreadyTokenized(address ipId, address token);
 }

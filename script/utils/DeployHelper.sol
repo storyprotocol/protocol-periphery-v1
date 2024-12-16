@@ -43,6 +43,8 @@ import { RoyaltyWorkflows } from "../../contracts/workflows/RoyaltyWorkflows.sol
 import { RoyaltyTokenDistributionWorkflows } from "../../contracts/workflows/RoyaltyTokenDistributionWorkflows.sol";
 import { StoryBadgeNFT } from "../../contracts/story-nft/StoryBadgeNFT.sol";
 import { OrgStoryNFTFactory } from "../../contracts/story-nft/OrgStoryNFTFactory.sol";
+import { OwnableERC20 } from "../../contracts/modules/tokenizer/OwnableERC20.sol";
+import { TokenizerModule } from "../../contracts/modules/tokenizer/TokenizerModule.sol";
 
 // script
 import { BroadcastManager } from "./BroadcastManager.s.sol";
@@ -93,6 +95,11 @@ contract DeployHelper is
     OrgNFT internal orgNft;
     address internal defaultOrgStoryNftTemplate;
     address internal defaultOrgStoryNftBeacon;
+
+    // Tokenizer Module
+    TokenizerModule internal tokenizerModule;
+    address internal ownableERC20Template;
+    address internal ownableERC20Beacon;
 
     // DeployHelper variable
     bool internal writeDeploys;
@@ -152,14 +159,14 @@ contract DeployHelper is
             deployer = mockDeployer;
             _deployMockCoreContracts();
             _configureMockCoreContracts();
-            _deployWorkflowContracts();
-            _configureWorkflowContracts();
+            _deployPeripheryContracts();
+            _configurePeripheryContracts();
         } else {
             // production deployment
             _readStoryProtocolCoreAddresses(); // StoryProtocolCoreAddressManager.s.sol
             _beginBroadcast(); // BroadcastManager.s.sol
-            _deployWorkflowContracts();
-            _configureWorkflowContracts();
+            _deployPeripheryContracts();
+            _configurePeripheryContracts();
 
             // Check deployment configuration.
             if (spgNftBeacon.owner() != address(registrationWorkflows))
@@ -293,7 +300,7 @@ contract DeployHelper is
         }
     }
 
-    function _deployWorkflowContracts() private {
+    function _deployPeripheryContracts() private {
         address impl = address(0);
 
         // Periphery workflow contracts
@@ -452,12 +459,53 @@ contract DeployHelper is
             )
         );
         _postdeploy("SPGNFTBeacon", address(spgNftBeacon));
+
+        // Tokenizer Module
+        _predeploy("TokenizerModule");
+        impl = address(new TokenizerModule(address(accessController), address(ipAssetRegistry), address(licenseRegistry), address(disputeModule)));
+        tokenizerModule = TokenizerModule(
+            TestProxyHelper.deployUUPSProxy(
+                create3Deployer,
+                _getSalt(type(TokenizerModule).name),
+                impl,
+                abi.encodeCall(TokenizerModule.initialize, address(protocolAccessManager))
+            )
+        );
+        impl = address(0);
+        _postdeploy("TokenizerModule", address(tokenizerModule));
+
+        // OwnableERC20 template
+        _predeploy("OwnableERC20Template");
+        ownableERC20Template = address(new OwnableERC20(
+            _getDeployedAddress("OwnableERC20Beacon")
+        ));
+        _postdeploy("OwnableERC20Template", ownableERC20Template);
+
+        // Upgradeable Beacon for OwnableERC20Template
+        _predeploy("OwnableERC20Beacon");
+        ownableERC20Beacon = address(UpgradeableBeacon(
+            create3Deployer.deploy(
+                _getSalt("OwnableERC20Beacon"),
+                abi.encodePacked(type(UpgradeableBeacon).creationCode, abi.encode(ownableERC20Template, deployer))
+            )
+        ));
+        _postdeploy("OwnableERC20Beacon", address(ownableERC20Beacon));
+
+        require(
+            UpgradeableBeacon(ownableERC20Beacon).implementation() == address(ownableERC20Template),
+            "DeployHelper: Invalid beacon implementation"
+        );
+        require(
+            OwnableERC20(ownableERC20Template).upgradableBeacon() == address(ownableERC20Beacon),
+            "DeployHelper: Invalid beacon address in template"
+        );
     }
 
-    function _configureWorkflowContracts() private {
+    function _configurePeripheryContracts() private {
        // Transfer ownership of beacon proxy to RegistrationWorkflows
        spgNftBeacon.transferOwnership(address(registrationWorkflows));
-
+       tokenizerModule.whitelistTokenTemplate(address(ownableERC20Template), true);
+       moduleRegistry.registerModule("TOKENIZER_MODULE", address(tokenizerModule));
        // more configurations may be added here
     }
 

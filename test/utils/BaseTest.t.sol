@@ -11,6 +11,7 @@ import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/meta
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
 import { MetaTx } from "@storyprotocol/core/lib/MetaTx.sol";
+import { MockArbitrationPolicy } from "@storyprotocol/test/mocks/dispute/MockArbitrationPolicy.sol";
 import { MockIPGraph } from "@storyprotocol/test/mocks/MockIPGraph.sol";
 
 // contracts
@@ -120,6 +121,7 @@ contract BaseTest is Test, DeployHelper {
         licenseAttachmentWorkflows.setNftContractBeacon(address(spgNftBeacon));
         registrationWorkflows.setNftContractBeacon(address(spgNftBeacon));
         royaltyTokenDistributionWorkflows.setNftContractBeacon(address(spgNftBeacon));
+
         vm.stopPrank();
     }
 
@@ -168,9 +170,18 @@ contract BaseTest is Test, DeployHelper {
         );
         vm.stopPrank();
 
+        vm.startPrank(u.admin);
         // whitelist mockToken as a royalty token
-        vm.prank(u.admin);
         royaltyModule.whitelistRoyaltyToken(address(mockToken), true);
+
+        // whitelist mockArbitrationPolicy as an arbitration policy
+        address mockArbitrationPolicy = address(
+            new MockArbitrationPolicy(address(disputeModule), address(mockToken), 0)
+        );
+        disputeModule.whitelistArbitrationPolicy(mockArbitrationPolicy, true);
+        disputeModule.setBaseArbitrationPolicy(mockArbitrationPolicy);
+        disputeModule.setArbitrationRelayer(mockArbitrationPolicy, address(u.admin));
+        vm.stopPrank();
     }
 
     function _setupIPMetadata() internal {
