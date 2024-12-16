@@ -55,7 +55,8 @@ contract LockLicenseHookTest is BaseTest {
             amount: 1,
             receiver: u.bob,
             royaltyContext: "",
-            maxMintingFee: 0
+            maxMintingFee: 0,
+            maxRevenueShare: 0
         });
     }
 
@@ -101,7 +102,8 @@ contract LockLicenseHookTest is BaseTest {
             licenseTemplate: address(pilTemplate),
             royaltyContext: "",
             maxMintingFee: 0,
-            maxRts: 0 // non-commercial remixing does not require royalty tokens
+            maxRts: 0, // non-commercial remixing does not require royalty tokens
+            maxRevenueShare: 0
         });
     }
 

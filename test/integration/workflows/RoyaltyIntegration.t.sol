@@ -244,7 +244,8 @@ contract RoyaltyIntegration is BaseIntegration {
                     licenseTermsIds: licenseTermsIds,
                     royaltyContext: "",
                     maxMintingFee: 0,
-                    maxRts: defaultCommRevShareA
+                    maxRts: defaultCommRevShareA,
+                    maxRevenueShare: 0
                 }),
                 ipMetadata: emptyIpMetadata,
                 sigMetadata: emptySigData,
@@ -285,7 +286,8 @@ contract RoyaltyIntegration is BaseIntegration {
                     licenseTermsIds: licenseTermsIds,
                     royaltyContext: "",
                     maxMintingFee: 0,
-                    maxRts: defaultCommRevShareA
+                    maxRts: defaultCommRevShareA,
+                    maxRevenueShare: 0
                 }),
                 ipMetadata: emptyIpMetadata,
                 sigMetadata: emptySigData,
@@ -326,7 +328,8 @@ contract RoyaltyIntegration is BaseIntegration {
                     licenseTermsIds: licenseTermsIds,
                     royaltyContext: "",
                     maxMintingFee: 0,
-                    maxRts: defaultCommRevShareC
+                    maxRts: defaultCommRevShareC,
+                    maxRevenueShare: 0
                 }),
                 ipMetadata: emptyIpMetadata,
                 sigMetadata: emptySigData,
@@ -370,7 +373,8 @@ contract RoyaltyIntegration is BaseIntegration {
                     licenseTermsIds: licenseTermsIds,
                     royaltyContext: "",
                     maxMintingFee: 0,
-                    maxRts: uint32(defaultCommRevShareA * parentIpIds.length)
+                    maxRts: uint32(defaultCommRevShareA * parentIpIds.length),
+                    maxRevenueShare: 0
                 }),
                 ipMetadata: emptyIpMetadata,
                 sigMetadata: emptySigData,
@@ -396,7 +400,8 @@ contract RoyaltyIntegration is BaseIntegration {
                 amount: amountLicenseTokensToMint,
                 receiver: testSender,
                 royaltyContext: "",
-                maxMintingFee: 0
+                maxMintingFee: 0,
+                maxRevenueShare: 0
             });
 
             // mint `amountLicenseTokensToMint` childIpC's license tokens
@@ -407,7 +412,8 @@ contract RoyaltyIntegration is BaseIntegration {
                 amount: amountLicenseTokensToMint,
                 receiver: testSender,
                 royaltyContext: "",
-                maxMintingFee: 0
+                maxMintingFee: 0,
+                maxRevenueShare: 0
             });
         }
     }

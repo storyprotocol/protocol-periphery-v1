@@ -339,7 +339,8 @@ contract RoyaltyTokenDistributionWorkflows is
                 amount: 1,
                 receiver: msg.sender,
                 royaltyContext: "",
-                maxMintingFee: 0
+                maxMintingFee: 0,
+                maxRevenueShare: 0
             });
 
             // set the licensing configuration to disable the temporary license

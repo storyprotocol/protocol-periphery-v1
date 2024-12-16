@@ -118,7 +118,8 @@ contract DerivativeWorkflowsTest is BaseTest {
                 licenseTermsIds: licenseTermsIds,
                 royaltyContext: "",
                 maxMintingFee: 0,
-                maxRts: revShare
+                maxRts: revShare,
+                maxRevenueShare: 0
             }),
             ipMetadata: ipMetadataDefault,
             recipient: caller,
@@ -142,7 +143,8 @@ contract DerivativeWorkflowsTest is BaseTest {
                 licenseTermsIds: licenseTermsIds,
                 royaltyContext: "",
                 maxMintingFee: 0,
-                maxRts: revShare
+                maxRts: revShare,
+                maxRevenueShare: 0
             }),
             ipMetadata: ipMetadataDefault,
             recipient: caller,
@@ -211,7 +213,8 @@ contract DerivativeWorkflowsTest is BaseTest {
             amount: 1,
             receiver: caller,
             royaltyContext: "",
-            maxMintingFee: 0
+            maxMintingFee: 0,
+            maxRevenueShare: 0
         });
 
         // Need so that derivative workflows can transfer the license tokens
@@ -281,7 +284,8 @@ contract DerivativeWorkflowsTest is BaseTest {
             amount: 1,
             receiver: caller,
             royaltyContext: "",
-            maxMintingFee: 0
+            maxMintingFee: 0,
+            maxRevenueShare: 0
         });
 
         uint256[] memory licenseTokenIds = new uint256[](1);
@@ -380,7 +384,8 @@ contract DerivativeWorkflowsTest is BaseTest {
                     licenseTermsIds: licenseTermsIds,
                     royaltyContext: "",
                     maxMintingFee: 0,
-                    maxRts: revShare
+                    maxRts: revShare,
+                    maxRevenueShare: 0
                 }),
                 ipMetadataDefault,
                 caller,
@@ -434,7 +439,8 @@ contract DerivativeWorkflowsTest is BaseTest {
                 licenseTermsIds: licenseTermsIds,
                 royaltyContext: "",
                 maxMintingFee: 0,
-                maxRts: revShare
+                maxRts: revShare,
+                maxRevenueShare: 0
             }),
             ipMetadata: ipMetadataDefault,
             recipient: caller,
@@ -512,7 +518,8 @@ contract DerivativeWorkflowsTest is BaseTest {
                 licenseTermsIds: licenseTermsIds,
                 royaltyContext: "",
                 maxMintingFee: 0,
-                maxRts: revShare
+                maxRts: revShare,
+                maxRevenueShare: 0
             }),
             ipMetadata: ipMetadataDefault,
             sigMetadata: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: sigMetadata }),

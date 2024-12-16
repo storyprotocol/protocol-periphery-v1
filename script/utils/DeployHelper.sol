@@ -592,6 +592,7 @@ contract DeployHelper is
         impl = address(0); // Make sure we don't deploy wrong impl
         impl = address(
             new LicenseRegistry(
+                address(ipAssetRegistry),
                 _getDeployedAddress(type(LicensingModule).name),
                 _getDeployedAddress(type(DisputeModule).name),
                 address(ipGraphACL)

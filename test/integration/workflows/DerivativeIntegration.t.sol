@@ -56,7 +56,8 @@ contract DerivativeIntegration is BaseIntegration {
                 licenseTermsIds: parentLicenseTermIds,
                 royaltyContext: "",
                 maxMintingFee: 0,
-                maxRts: revShare
+                maxRts: revShare,
+                maxRevenueShare: 0
             }),
             ipMetadata: testIpMetadata,
             recipient: testSender,
@@ -130,7 +131,8 @@ contract DerivativeIntegration is BaseIntegration {
                 licenseTermsIds: parentLicenseTermIds,
                 royaltyContext: "",
                 maxMintingFee: 0,
-                maxRts: revShare
+                maxRts: revShare,
+                maxRevenueShare: 0
             }),
             ipMetadata: testIpMetadata,
             sigMetadata: WorkflowStructs.SignatureData({
@@ -177,7 +179,8 @@ contract DerivativeIntegration is BaseIntegration {
             amount: 1,
             receiver: testSender,
             royaltyContext: "",
-            maxMintingFee: 0
+            maxMintingFee: 0,
+            maxRevenueShare: 0
         });
 
         // Need so that derivative workflows can transfer the license tokens
@@ -244,7 +247,8 @@ contract DerivativeIntegration is BaseIntegration {
             amount: 1,
             receiver: testSender,
             royaltyContext: "",
-            maxMintingFee: 0
+            maxMintingFee: 0,
+            maxRevenueShare: 0
         });
 
         uint256[] memory licenseTokenIds = new uint256[](1);
@@ -329,7 +333,8 @@ contract DerivativeIntegration is BaseIntegration {
                     licenseTermsIds: parentLicenseTermIds,
                     royaltyContext: "",
                     maxMintingFee: 0,
-                    maxRts: revShare
+                    maxRts: revShare,
+                    maxRevenueShare: 0
                 }),
                 testIpMetadata,
                 testSender

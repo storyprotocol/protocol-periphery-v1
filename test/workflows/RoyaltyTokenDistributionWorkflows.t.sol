@@ -318,7 +318,8 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
             licenseTermsIds: licenseTermsIdsParent,
             royaltyContext: "",
             maxMintingFee: 0,
-            maxRts: testCommRevShare
+            maxRts: testCommRevShare,
+            maxRevenueShare: 0
         });
 
         royaltyShares.push(

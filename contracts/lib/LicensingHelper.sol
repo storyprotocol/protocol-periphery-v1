@@ -123,7 +123,8 @@ library LicensingHelper {
             licenseTemplate: derivData.licenseTemplate,
             royaltyContext: derivData.royaltyContext,
             maxMintingFee: derivData.maxMintingFee,
-            maxRts: derivData.maxRts
+            maxRts: derivData.maxRts,
+            maxRevenueShare: derivData.maxRevenueShare
         });
     }
 
