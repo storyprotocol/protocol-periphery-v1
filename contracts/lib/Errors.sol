@@ -94,6 +94,13 @@ library Errors {
     error SPGNFT__DuplicatedNFTMetadataHash(address spgNftContract, uint256 tokenId, bytes32 nftMetadataHash);
 
     ////////////////////////////////////////////////////////////////////////////
+    //                               OwnableERC20                             //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Zero ip id provided.
+    error OwnableERC20__ZeroIpId();
+
+    ////////////////////////////////////////////////////////////////////////////
     //                               TokenizerModule                         //
     ////////////////////////////////////////////////////////////////////////////
     /// @notice Zero license registry provided.
@@ -105,9 +112,12 @@ library Errors {
     /// @notice Zero token template provided.
     error TokenizerModule__ZeroTokenTemplate();
 
+    /// @notice Zero protocol access manager provided.
+    error TokenizerModule__ZeroProtocolAccessManager();
+
     /// @notice Token template is not supported.
     /// @param tokenTemplate The address of the token template that is not supported
-    error TokenizerModule__UnsupportedERC20(address tokenTemplate);
+    error TokenizerModule__UnsupportedOwnableERC20(address tokenTemplate);
 
     /// @notice IP is disputed.
     /// @param ipId The address of the disputed IP
@@ -116,10 +126,6 @@ library Errors {
     /// @notice Token template is not whitelisted.
     /// @param tokenTemplate The address of the token template
     error TokenizerModule__TokenTemplateNotWhitelisted(address tokenTemplate);
-
-    /// @notice IP is not registered.
-    /// @param ipId The address of the IP
-    error TokenizerModule__IpNotRegistered(address ipId);
 
     /// @notice IP is expired.
     /// @param ipId The address of the expired IP

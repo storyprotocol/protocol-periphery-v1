@@ -6,7 +6,7 @@ import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol
 
 /// @title Ownable ERC20 Interface
 /// @notice Interface for the Ownable ERC20 token
-interface IOwnableERC20 is IERC20 {
+interface IOwnableERC20 is IERC20, IERC165 {
     /// @notice Struct for the initialization data
     /// @param name The name of the token
     /// @param symbol The symbol of the token
@@ -21,7 +21,7 @@ interface IOwnableERC20 is IERC20 {
 
     /// @notice Initializes the token
     /// @param initData The initialization data
-    function initialize(bytes memory initData) external;
+    function initialize(address ipId, bytes memory initData) external;
 
     /// @notice Mints tokens
     /// @param to The address to mint tokens to
@@ -30,4 +30,7 @@ interface IOwnableERC20 is IERC20 {
 
     /// @notice Returns the upgradable beacon
     function upgradableBeacon() external view returns (address);
+
+    /// @notice Returns the ip id to whom this fractionalized token belongs to
+    function ipId() external view returns (address);
 }

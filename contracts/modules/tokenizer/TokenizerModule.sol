@@ -70,6 +70,17 @@ contract TokenizerModule is
 
         LICENSE_REGISTRY = ILicenseRegistry(licenseRegistry);
         DISPUTE_MODULE = IDisputeModule(disputeModule);
+        _disableInitializers();
+    }
+
+    /// @notice Initializes the TokenizerModule
+    /// @param protocolAccessManager The address of the protocol access manager
+    function initialize(address protocolAccessManager) external initializer {
+        if (protocolAccessManager == address(0)) revert Errors.TokenizerModule__ZeroProtocolAccessManager();
+
+        __ReentrancyGuard_init();
+        __UUPSUpgradeable_init();
+        __ProtocolPausable_init(protocolAccessManager);
     }
 
     /// @notice Whitelists a token template
@@ -78,7 +89,7 @@ contract TokenizerModule is
     function whitelistTokenTemplate(address tokenTemplate, bool allowed) external restricted {
         if (tokenTemplate == address(0)) revert Errors.TokenizerModule__ZeroTokenTemplate();
         if (!tokenTemplate.supportsInterface(type(IOwnableERC20).interfaceId))
-            revert Errors.TokenizerModule__UnsupportedERC20(tokenTemplate);
+            revert Errors.TokenizerModule__UnsupportedOwnableERC20(tokenTemplate);
 
         TokenizerModuleStorage storage $ = _getTokenizerModuleStorage();
         $.isWhitelistedTokenTemplate[tokenTemplate] = allowed;
@@ -97,7 +108,6 @@ contract TokenizerModule is
         bytes calldata initData
     ) external verifyPermission(ipId) nonReentrant returns (address token) {
         if (DISPUTE_MODULE.isIpTagged(ipId)) revert Errors.TokenizerModule__DisputedIpId(ipId);
-        if (!IP_ASSET_REGISTRY.isRegistered(ipId)) revert Errors.TokenizerModule__IpNotRegistered(ipId);
         if (LICENSE_REGISTRY.isExpiredNow(ipId)) revert Errors.TokenizerModule__IpExpired(ipId);
 
         TokenizerModuleStorage storage $ = _getTokenizerModuleStorage();
@@ -109,7 +119,7 @@ contract TokenizerModule is
         token = address(
             new BeaconProxy(
                 IOwnableERC20(tokenTemplate).upgradableBeacon(),
-                abi.encodeWithSelector(IOwnableERC20.initialize.selector, initData)
+                abi.encodeWithSelector(IOwnableERC20.initialize.selector, ipId, initData)
             )
         );
 
@@ -122,16 +132,14 @@ contract TokenizerModule is
     /// @param ipId The address of the IP
     /// @return token The address of the token (0 address if IP has not been tokenized)
     function getFractionalizedToken(address ipId) external view returns (address token) {
-        TokenizerModuleStorage storage $ = _getTokenizerModuleStorage();
-        return $.fractionalizedTokens[ipId];
+        return _getTokenizerModuleStorage().fractionalizedTokens[ipId];
     }
 
     /// @notice Checks if a token template is whitelisted
     /// @param tokenTemplate The address of the token template
     /// @return allowed The whitelisting status (true if whitelisted, false if not)
     function isWhitelistedTokenTemplate(address tokenTemplate) external view returns (bool allowed) {
-        TokenizerModuleStorage storage $ = _getTokenizerModuleStorage();
-        return $.isWhitelistedTokenTemplate[tokenTemplate];
+        return _getTokenizerModuleStorage().isWhitelistedTokenTemplate[tokenTemplate];
     }
 
     /// @dev Returns the name of the module
