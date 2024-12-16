@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.26;
 
 import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
@@ -143,6 +143,9 @@ contract TokenizerModuleTest is BaseTest {
     }
 
     function test_TokenizerModule_revert_tokenize_DisputedIpId() public {
+        vm.prank(u.admin);
+        disputeModule.whitelistDisputeTag("PLAGIARISM", true);
+
         mockToken.mint(address(this), 1 * 10 ** mockToken.decimals());
         mockToken.approve(address(spgNftPublic), 1 * 10 ** mockToken.decimals());
         (address ipId, ) = registrationWorkflows.mintAndRegisterIp({

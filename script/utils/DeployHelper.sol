@@ -942,8 +942,6 @@ contract DeployHelper is
 
         // add evenSplitGroupPool to whitelist of group pools
         groupingModule.whitelistGroupRewardPool(address(evenSplitGroupPool), true);
-
-        disputeModule.whitelistDisputeTag("PLAGIARISM", true);
     }
 
     /// @dev get the salt for the contract deployment with CREATE3
