@@ -3,6 +3,7 @@ pragma solidity 0.8.26;
 /* solhint-disable no-console */
 
 // external
+import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { ILicenseRegistry } from "@storyprotocol/core/interfaces/registries/ILicenseRegistry.sol";
@@ -11,7 +12,6 @@ import { IGroupingModule } from "@storyprotocol/core/interfaces/modules/grouping
 import { IGroupIPAssetRegistry } from "@storyprotocol/core/interfaces/registries/IGroupIPAssetRegistry.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
-
 // contracts
 import { Errors } from "../../contracts/lib/Errors.sol";
 import { LicensingHelper } from "../../contracts/lib/LicensingHelper.sol";
@@ -22,10 +22,11 @@ import { MockERC20 } from "../mocks/MockERC20.sol";
 import { MockERC721 } from "../mocks/MockERC721.sol";
 import { BaseTest } from "../utils/BaseTest.t.sol";
 
-contract GroupingWorkflowsTest is BaseTest {
+contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
     using Strings for uint256;
 
     WorkflowStructs.LicenseData[] internal testLicensesData;
+    WorkflowStructs.LicenseData[] internal testGroupLicenseData;
     uint32 internal revShare;
 
     address internal groupOwner;
@@ -64,6 +65,23 @@ contract GroupingWorkflowsTest is BaseTest {
                     disabled: false,
                     expectMinimumGroupRewardShare: 0,
                     expectGroupRewardPool: address(evenSplitGroupPool)
+                })
+            })
+        );
+
+        testGroupLicenseData.push(
+            WorkflowStructs.LicenseData({
+                licenseTemplate: testLicensesData[0].licenseTemplate,
+                licenseTermsId: testLicensesData[0].licenseTermsId,
+                licensingConfig: Licensing.LicensingConfig({
+                    isSet: true,
+                    mintingFee: 0,
+                    licensingHook: address(0),
+                    hookData: "",
+                    commercialRevShare: revShare,
+                    disabled: false,
+                    expectMinimumGroupRewardShare: 0,
+                    expectGroupRewardPool: address(0)
                 })
             })
         );
@@ -227,7 +245,7 @@ contract GroupingWorkflowsTest is BaseTest {
         vm.startPrank(groupOwner);
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicense({
             groupPool: address(evenSplitGroupPool),
-            licenseData: testLicensesData[0]
+            licenseData: testGroupLicenseData[0]
         });
         vm.stopPrank();
 
@@ -240,7 +258,7 @@ contract GroupingWorkflowsTest is BaseTest {
             0
         );
         assertEq(licenseTemplate, address(pilTemplate));
-        assertEq(licenseTermsId, testLicensesData[0].licenseTermsId);
+        assertEq(licenseTermsId, testGroupLicenseData[0].licenseTermsId);
     }
 
     // Register group IP → Attach license terms to group IPA → Add existing IPs to the new group IPA
@@ -249,7 +267,7 @@ contract GroupingWorkflowsTest is BaseTest {
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
             groupPool: address(evenSplitGroupPool),
             ipIds: ipIds,
-            licenseData: testLicensesData[0]
+            licenseData: testGroupLicenseData[0]
         });
         vm.stopPrank();
 
@@ -268,7 +286,7 @@ contract GroupingWorkflowsTest is BaseTest {
             0
         );
         assertEq(licenseTemplate, address(pilTemplate));
-        assertEq(licenseTermsId, testLicensesData[0].licenseTermsId);
+        assertEq(licenseTermsId, testGroupLicenseData[0].licenseTermsId);
     }
 
     // Collect royalties for the entire group and distribute to each member IP's royalty vault
@@ -280,7 +298,7 @@ contract GroupingWorkflowsTest is BaseTest {
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
             groupPool: address(evenSplitGroupPool),
             ipIds: ipIds,
-            licenseData: testLicensesData[0]
+            licenseData: testGroupLicenseData[0]
         });
         vm.stopPrank();
 
@@ -290,7 +308,7 @@ contract GroupingWorkflowsTest is BaseTest {
         address[] memory parentIpIds = new address[](1);
         parentIpIds[0] = newGroupId;
         uint256[] memory licenseTermsIds = new uint256[](1);
-        licenseTermsIds[0] = testLicensesData[0].licenseTermsId;
+        licenseTermsIds[0] = testGroupLicenseData[0].licenseTermsId;
 
         vm.startPrank(ipOwner1);
         // approve nft minting fee
@@ -302,10 +320,11 @@ contract GroupingWorkflowsTest is BaseTest {
             derivData: WorkflowStructs.MakeDerivative({
                 parentIpIds: parentIpIds,
                 licenseTermsIds: licenseTermsIds,
-                licenseTemplate: testLicensesData[0].licenseTemplate,
+                licenseTemplate: testGroupLicenseData[0].licenseTemplate,
                 royaltyContext: "",
                 maxMintingFee: 0,
-                maxRts: revShare
+                maxRts: revShare,
+                maxRevenueShare: 0
             }),
             ipMetadata: ipMetadataDefault,
             recipient: ipOwner1,
@@ -323,10 +342,11 @@ contract GroupingWorkflowsTest is BaseTest {
             derivData: WorkflowStructs.MakeDerivative({
                 parentIpIds: parentIpIds,
                 licenseTermsIds: licenseTermsIds,
-                licenseTemplate: testLicensesData[0].licenseTemplate,
+                licenseTemplate: testGroupLicenseData[0].licenseTemplate,
                 royaltyContext: "",
                 maxMintingFee: 0,
-                maxRts: revShare
+                maxRts: revShare,
+                maxRevenueShare: 0
             }),
             ipMetadata: ipMetadataDefault,
             recipient: ipOwner2,
@@ -529,9 +549,9 @@ contract GroupingWorkflowsTest is BaseTest {
         LicensingHelper.attachLicenseTermsAndSetConfigs(
             groupId,
             address(licensingModule),
-            testLicensesData[0].licenseTemplate,
-            testLicensesData[0].licenseTermsId,
-            testLicensesData[0].licensingConfig
+            testGroupLicenseData[0].licenseTemplate,
+            testGroupLicenseData[0].licenseTermsId,
+            testGroupLicenseData[0].licensingConfig
         );
         vm.stopPrank();
     }

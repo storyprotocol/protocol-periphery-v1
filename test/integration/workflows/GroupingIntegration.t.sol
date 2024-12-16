@@ -233,7 +233,8 @@ contract GroupingIntegration is BaseIntegration {
                 licenseTemplate: testLicensesData[0].licenseTemplate,
                 royaltyContext: "",
                 maxMintingFee: 0,
-                maxRts: revShare
+                maxRts: revShare,
+                maxRevenueShare: 0
             }),
             ipMetadata: testIpMetadata,
             recipient: testSender,
@@ -250,7 +251,8 @@ contract GroupingIntegration is BaseIntegration {
                 licenseTemplate: testLicensesData[0].licenseTemplate,
                 royaltyContext: "",
                 maxMintingFee: 0,
-                maxRts: revShare
+                maxRts: revShare,
+                maxRevenueShare: 0
             }),
             ipMetadata: testIpMetadata,
             recipient: testSender,

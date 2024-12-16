@@ -266,7 +266,8 @@ contract TokenizerModuleTest is BaseTest {
                 licenseTermsIds: licenseIds,
                 royaltyContext: "",
                 maxMintingFee: 0,
-                maxRts: 0
+                maxRts: 0,
+                maxRevenueShare: 0
             }),
             recipient: u.alice,
             ipMetadata: ipMetadataDefault,

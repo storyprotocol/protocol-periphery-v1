@@ -79,7 +79,8 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
             amount: 10,
             receiver: u.alice,
             royaltyContext: "",
-            maxMintingFee: 0
+            maxMintingFee: 0,
+            maxRevenueShare: 0
         });
         licensingModule.mintLicenseTokens({
             licensorIpId: ipId2,
@@ -88,7 +89,8 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
             amount: 20,
             receiver: u.alice,
             royaltyContext: "",
-            maxMintingFee: 0
+            maxMintingFee: 0,
+            maxRevenueShare: 0
         });
         licensingModule.mintLicenseTokens({
             licensorIpId: ipId3,
@@ -97,7 +99,8 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
             amount: 10,
             receiver: u.alice,
             royaltyContext: "",
-            maxMintingFee: 0
+            maxMintingFee: 0,
+            maxRevenueShare: 0
         });
 
         vm.expectRevert(
@@ -115,7 +118,8 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
             amount: 5,
             receiver: u.alice,
             royaltyContext: "",
-            maxMintingFee: 0
+            maxMintingFee: 0,
+            maxRevenueShare: 0
         });
 
         vm.expectRevert(
@@ -133,7 +137,8 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
             amount: 5,
             receiver: u.alice,
             royaltyContext: "",
-            maxMintingFee: 0
+            maxMintingFee: 0,
+            maxRevenueShare: 0
         });
     }
 
@@ -212,7 +217,8 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
             amount: 10,
             receiver: u.alice,
             royaltyContext: "",
-            maxMintingFee: 0
+            maxMintingFee: 0,
+            maxRevenueShare: 0
         });
 
         vm.expectRevert(

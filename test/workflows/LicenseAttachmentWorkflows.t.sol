@@ -267,7 +267,8 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
                 licenseTermsIds: licenseTermsIds,
                 royaltyContext: "",
                 maxMintingFee: 0,
-                maxRts: 0 // non-commercial remixing does not require royalty tokens
+                maxRts: 0, // non-commercial remixing does not require royalty tokens
+                maxRevenueShare: 0
             }),
             ipMetadata: ipMetadataDefault,
             recipient: caller,
