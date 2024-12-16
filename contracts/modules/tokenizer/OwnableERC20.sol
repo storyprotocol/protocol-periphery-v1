@@ -21,7 +21,8 @@ contract OwnableERC20 is IOwnableERC20, ERC20CappedUpgradeable, OwnableUpgradeab
 
     // solhint-disable-next-line max-line-length
     // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.OwnableERC20")) - 1)) & ~bytes32(uint256(0xff));
-    bytes32 private constant OwnableERC20StorageLocation = 0xc4b74d5382372ff8ada6effed0295109822b72fe030fc4cd981ca0e25adfab00;
+    bytes32 private constant OwnableERC20StorageLocation =
+        0xc4b74d5382372ff8ada6effed0295109822b72fe030fc4cd981ca0e25adfab00;
 
     /// @notice The upgradable beacon of this contract
     address public immutable UPGRADABLE_BEACON;
@@ -75,5 +76,4 @@ contract OwnableERC20 is IOwnableERC20, ERC20CappedUpgradeable, OwnableUpgradeab
             $.slot := OwnableERC20StorageLocation
         }
     }
-
 }

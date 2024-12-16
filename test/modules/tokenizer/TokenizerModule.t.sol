@@ -46,11 +46,17 @@ contract TokenizerModuleTest is BaseTest {
 
     function test_TokenizerModule_revert_whitelistTokenTemplate_UnsupportedERC20() public {
         vm.startPrank(u.admin);
-        vm.expectRevert(abi.encodeWithSelector(Errors.TokenizerModule__UnsupportedOwnableERC20.selector, address(spgNftImpl)));
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.TokenizerModule__UnsupportedOwnableERC20.selector, address(spgNftImpl))
+        );
         tokenizerModule.whitelistTokenTemplate(address(spgNftImpl), true);
-        vm.expectRevert(abi.encodeWithSelector(Errors.TokenizerModule__UnsupportedOwnableERC20.selector, address(mockToken)));
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.TokenizerModule__UnsupportedOwnableERC20.selector, address(mockToken))
+        );
         tokenizerModule.whitelistTokenTemplate(address(mockToken), true);
-        vm.expectRevert(abi.encodeWithSelector(Errors.TokenizerModule__UnsupportedOwnableERC20.selector, address(mockNft)));
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.TokenizerModule__UnsupportedOwnableERC20.selector, address(mockNft))
+        );
         tokenizerModule.whitelistTokenTemplate(address(mockNft), true);
         vm.stopPrank();
     }
@@ -80,36 +86,38 @@ contract TokenizerModuleTest is BaseTest {
             allowDuplicates: true
         });
 
-
         vm.prank(u.alice);
         vm.expectEmit(true, false, false, false);
         emit ITokenizerModule.IPTokenized(ipId1, address(0));
-        OwnableERC20 token1 = OwnableERC20(tokenizerModule.tokenize(ipId1, address(ownableERC20Template), abi.encode(IOwnableERC20.InitData({
-            cap: 1000,
-            name: "Test1",
-            symbol: "T1",
-            initialOwner: u.alice
-        }))));
+        OwnableERC20 token1 = OwnableERC20(
+            tokenizerModule.tokenize(
+                ipId1,
+                address(ownableERC20Template),
+                abi.encode(IOwnableERC20.InitData({ cap: 1000, name: "Test1", symbol: "T1", initialOwner: u.alice }))
+            )
+        );
 
         vm.prank(u.bob);
         vm.expectEmit(true, false, false, false);
         emit ITokenizerModule.IPTokenized(ipId2, address(0));
-        OwnableERC20 token2 = OwnableERC20(tokenizerModule.tokenize(ipId2, address(ownableERC20Template), abi.encode(IOwnableERC20.InitData({
-            cap: 1000000,
-            name: "Test2",
-            symbol: "T2",
-            initialOwner: u.bob
-        }))));
+        OwnableERC20 token2 = OwnableERC20(
+            tokenizerModule.tokenize(
+                ipId2,
+                address(ownableERC20Template),
+                abi.encode(IOwnableERC20.InitData({ cap: 1000000, name: "Test2", symbol: "T2", initialOwner: u.bob }))
+            )
+        );
 
         vm.prank(u.carl);
         vm.expectEmit(true, false, false, false);
         emit ITokenizerModule.IPTokenized(ipId3, address(0));
-        OwnableERC20 token3 = OwnableERC20(tokenizerModule.tokenize(ipId3, address(ownableERC20Template), abi.encode(IOwnableERC20.InitData({
-            cap: 99999,
-            name: "Test3",
-            symbol: "T3",
-            initialOwner: u.carl
-        }))));
+        OwnableERC20 token3 = OwnableERC20(
+            tokenizerModule.tokenize(
+                ipId3,
+                address(ownableERC20Template),
+                abi.encode(IOwnableERC20.InitData({ cap: 99999, name: "Test3", symbol: "T3", initialOwner: u.carl }))
+            )
+        );
 
         assertEq(tokenizerModule.getFractionalizedToken(ipId1), address(token1));
         assertEq(tokenizerModule.getFractionalizedToken(ipId2), address(token2));
@@ -156,24 +164,22 @@ contract TokenizerModuleTest is BaseTest {
 
         vm.prank(u.alice);
         vm.expectRevert(abi.encodeWithSelector(Errors.TokenizerModule__DisputedIpId.selector, ipId));
-        tokenizerModule.tokenize(ipId, address(ownableERC20Template), abi.encode(IOwnableERC20.InitData({
-            cap: 1000,
-            name: "Test1",
-            symbol: "T1",
-            initialOwner: u.alice
-        })));
+        tokenizerModule.tokenize(
+            ipId,
+            address(ownableERC20Template),
+            abi.encode(IOwnableERC20.InitData({ cap: 1000, name: "Test1", symbol: "T1", initialOwner: u.alice }))
+        );
     }
 
     function test_TokenizerModule_revert_tokenize_IpNotRegistered() public {
         address ipId = ipAssetRegistry.ipId(block.chainid, address(spgNftPublic), 1);
         vm.prank(u.alice);
         vm.expectRevert(abi.encodeWithSelector(CoreErrors.AccessControlled__NotIpAccount.selector, ipId));
-        tokenizerModule.tokenize(ipId, address(ownableERC20Template), abi.encode(IOwnableERC20.InitData({
-            cap: 1000,
-            name: "Test1",
-            symbol: "T1",
-            initialOwner: u.alice
-        })));
+        tokenizerModule.tokenize(
+            ipId,
+            address(ownableERC20Template),
+            abi.encode(IOwnableERC20.InitData({ cap: 1000, name: "Test1", symbol: "T1", initialOwner: u.alice }))
+        );
     }
 
     function test_TokenizerModule_revert_tokenize_callerNotIpOwner() public {
@@ -187,19 +193,20 @@ contract TokenizerModuleTest is BaseTest {
         });
 
         vm.prank(u.bob);
-        vm.expectRevert(abi.encodeWithSelector(
-            CoreErrors.AccessController__PermissionDenied.selector,
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                CoreErrors.AccessController__PermissionDenied.selector,
+                ipId,
+                u.bob,
+                address(tokenizerModule),
+                tokenizerModule.tokenize.selector
+            )
+        );
+        tokenizerModule.tokenize(
             ipId,
-            u.bob,
-            address(tokenizerModule),
-            tokenizerModule.tokenize.selector
-        ));
-        tokenizerModule.tokenize(ipId, address(ownableERC20Template), abi.encode(IOwnableERC20.InitData({
-            cap: 1000,
-            name: "Test1",
-            symbol: "T1",
-            initialOwner: u.bob
-        })));
+            address(ownableERC20Template),
+            abi.encode(IOwnableERC20.InitData({ cap: 1000, name: "Test1", symbol: "T1", initialOwner: u.bob }))
+        );
     }
 
     function test_TokenizerModule_revert_tokenize_IpExpired() public {
@@ -266,12 +273,11 @@ contract TokenizerModuleTest is BaseTest {
         vm.warp(11 days);
         vm.prank(u.alice);
         vm.expectRevert(abi.encodeWithSelector(Errors.TokenizerModule__IpExpired.selector, ipId2));
-        tokenizerModule.tokenize(ipId2, address(ownableERC20Template), abi.encode(IOwnableERC20.InitData({
-            cap: 1000,
-            name: "Test1",
-            symbol: "T1",
-            initialOwner: u.alice
-        })));
+        tokenizerModule.tokenize(
+            ipId2,
+            address(ownableERC20Template),
+            abi.encode(IOwnableERC20.InitData({ cap: 1000, name: "Test1", symbol: "T1", initialOwner: u.alice }))
+        );
     }
 
     function test_TokenizerModule_revert_tokenize_IpAlreadyTokenized() public {
@@ -285,20 +291,18 @@ contract TokenizerModuleTest is BaseTest {
         });
 
         vm.prank(u.alice);
-        address token = tokenizerModule.tokenize(ipId, address(ownableERC20Template), abi.encode(IOwnableERC20.InitData({
-            cap: 1000,
-            name: "Test1",
-            symbol: "T1",
-            initialOwner: u.alice
-        })));
+        address token = tokenizerModule.tokenize(
+            ipId,
+            address(ownableERC20Template),
+            abi.encode(IOwnableERC20.InitData({ cap: 1000, name: "Test1", symbol: "T1", initialOwner: u.alice }))
+        );
 
         vm.prank(u.alice);
         vm.expectRevert(abi.encodeWithSelector(Errors.TokenizerModule__IpAlreadyTokenized.selector, ipId, token));
-        tokenizerModule.tokenize(ipId, address(ownableERC20Template), abi.encode(IOwnableERC20.InitData({
-            cap: 1000,
-            name: "Test1",
-            symbol: "T1",
-            initialOwner: u.alice
-        })));
+        tokenizerModule.tokenize(
+            ipId,
+            address(ownableERC20Template),
+            abi.encode(IOwnableERC20.InitData({ cap: 1000, name: "Test1", symbol: "T1", initialOwner: u.alice }))
+        );
     }
 }

@@ -24,12 +24,8 @@ contract OwnableERC20Test is BaseTest {
                     abi.encodeWithSelector(
                         IOwnableERC20.initialize.selector,
                         address(0x111),
-                        abi.encode(IOwnableERC20.InitData({
-                                cap: 1000,
-                                name: "Test",
-                                symbol: "TEST",
-                                initialOwner: u.admin
-                            })
+                        abi.encode(
+                            IOwnableERC20.InitData({ cap: 1000, name: "Test", symbol: "TEST", initialOwner: u.admin })
                         )
                     )
                 )
