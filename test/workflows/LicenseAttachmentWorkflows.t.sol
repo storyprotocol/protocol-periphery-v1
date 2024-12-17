@@ -236,7 +236,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         }
     }
 
-    function test_revert_registerPILTermsAndAttach_DerivativesCannotAddLicenseTerms()
+    function test_LicenseAttachmentWorkflows_registerPILTermsAndAttach_revert_DerivativesCannotAddLicenseTerms()
         public
         withCollection
         whenCallerHasMinterRole
@@ -294,6 +294,41 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
                 signer: u.alice,
                 deadline: deadline,
                 signature: signature
+            })
+        });
+    }
+
+    function test_LicenseAttachmentWorkflows_revert_NoLicenseData() public {
+        vm.expectRevert(Errors.LicenseAttachmentWorkflows__NoLicenseTermsData.selector);
+        licenseAttachmentWorkflows.registerPILTermsAndAttach({
+            ipId: ipAsset[1].ipId,
+            licenseTermsData: new WorkflowStructs.LicenseTermsData[](0),
+            sigAttachAndConfig: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: block.timestamp + 1000,
+                signature: new bytes(0)
+            })
+        });
+
+        vm.expectRevert(Errors.LicenseAttachmentWorkflows__NoLicenseTermsData.selector);
+        licenseAttachmentWorkflows.mintAndRegisterIpAndAttachPILTerms({
+            spgNftContract: address(spgNftPublic),
+            recipient: u.alice,
+            ipMetadata: ipMetadataDefault,
+            licenseTermsData: new WorkflowStructs.LicenseTermsData[](0),
+            allowDuplicates: true
+        });
+
+        vm.expectRevert(Errors.LicenseAttachmentWorkflows__NoLicenseTermsData.selector);
+        licenseAttachmentWorkflows.registerIpAndAttachPILTerms({
+            nftContract: address(nftContract),
+            tokenId: 0,
+            ipMetadata: ipMetadataDefault,
+            licenseTermsData: new WorkflowStructs.LicenseTermsData[](0),
+            sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: block.timestamp + 1000,
+                signature: new bytes(0)
             })
         });
     }

@@ -99,6 +99,8 @@ contract LicenseAttachmentWorkflows is
         WorkflowStructs.LicenseTermsData[] calldata licenseTermsData,
         WorkflowStructs.SignatureData calldata sigAttachAndConfig
     ) external returns (uint256[] memory licenseTermsIds) {
+        if (licenseTermsData.length == 0) revert Errors.LicenseAttachmentWorkflows__NoLicenseTermsData();
+
         address[] memory modules = new address[](2);
         bytes4[] memory selectors = new bytes4[](2);
         modules[0] = address(LICENSING_MODULE);
@@ -138,6 +140,8 @@ contract LicenseAttachmentWorkflows is
         onlyMintAuthorized(spgNftContract)
         returns (address ipId, uint256 tokenId, uint256[] memory licenseTermsIds)
     {
+        if (licenseTermsData.length == 0) revert Errors.LicenseAttachmentWorkflows__NoLicenseTermsData();
+
         tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
             to: address(this),
             payer: msg.sender,
@@ -172,6 +176,8 @@ contract LicenseAttachmentWorkflows is
         WorkflowStructs.LicenseTermsData[] calldata licenseTermsData,
         WorkflowStructs.SignatureData calldata sigMetadataAndAttachAndConfig
     ) external returns (address ipId, uint256[] memory licenseTermsIds) {
+        if (licenseTermsData.length == 0) revert Errors.LicenseAttachmentWorkflows__NoLicenseTermsData();
+
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
         address[] memory modules = new address[](3);
