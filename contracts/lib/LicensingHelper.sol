@@ -142,7 +142,7 @@ library LicensingHelper {
         address licenseTemplate,
         address[] calldata parentIpIds,
         uint256[] calldata licenseTermsIds
-    ) private {
+    ) internal {
         ILicenseTemplate lct = ILicenseTemplate(licenseTemplate);
         (address royaltyPolicy, , , address mintFeeCurrencyToken) = lct.getRoyaltyPolicy(licenseTermsIds[0]);
 

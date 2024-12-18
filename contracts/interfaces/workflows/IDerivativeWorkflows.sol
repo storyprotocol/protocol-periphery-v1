@@ -83,4 +83,50 @@ interface IDerivativeWorkflows {
         WorkflowStructs.SignatureData calldata sigMetadata,
         WorkflowStructs.SignatureData calldata sigRegister
     ) external returns (address ipId);
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                   DEPRECATED, WILL BE REMOVED IN V1.4                  //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Mint an NFT from a SPGNFT collection and register it as a derivative IP without license tokens.
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function mintAndRegisterIpAndMakeDerivative(
+        address spgNftContract,
+        WorkflowStructs.MakeDerivativeDEPR calldata derivData,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        address recipient
+    ) external returns (address ipId, uint256 tokenId);
+
+    /// @notice Register the given NFT as a derivative IP with metadata without license tokens.
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function registerIpAndMakeDerivative(
+        address nftContract,
+        uint256 tokenId,
+        WorkflowStructs.MakeDerivativeDEPR calldata derivData,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        WorkflowStructs.SignatureData calldata sigMetadata,
+        WorkflowStructs.SignatureData calldata sigRegister
+    ) external returns (address ipId);
+
+    /// @notice Mint an NFT from a SPGNFT collection and register it as a derivative IP using license tokens.
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function mintAndRegisterIpAndMakeDerivativeWithLicenseTokens(
+        address spgNftContract,
+        uint256[] calldata licenseTokenIds,
+        bytes calldata royaltyContext,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        address recipient
+    ) external returns (address ipId, uint256 tokenId);
+
+    /// @notice Register the given NFT as a derivative IP using license tokens.
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function registerIpAndMakeDerivativeWithLicenseTokens(
+        address nftContract,
+        uint256 tokenId,
+        uint256[] calldata licenseTokenIds,
+        bytes calldata royaltyContext,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        WorkflowStructs.SignatureData calldata sigMetadata,
+        WorkflowStructs.SignatureData calldata sigRegister
+    ) external returns (address ipId);
 }

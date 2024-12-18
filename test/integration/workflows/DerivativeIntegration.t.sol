@@ -325,7 +325,11 @@ contract DerivativeIntegration is BaseIntegration {
         bytes[] memory data = new bytes[](numCalls);
         for (uint256 i = 0; i < numCalls; i++) {
             data[i] = abi.encodeWithSelector(
-                derivativeWorkflows.mintAndRegisterIpAndMakeDerivative.selector,
+                bytes4(
+                    keccak256(
+                        "mintAndRegisterIpAndMakeDerivative(address,(address[],address,uint256[],bytes,uint256,uint32,uint32),(string,bytes32,string,bytes32),address,bool)"
+                    )
+                ),
                 address(spgNftContract),
                 WorkflowStructs.MakeDerivative({
                     parentIpIds: parentIpIds,
@@ -337,7 +341,8 @@ contract DerivativeIntegration is BaseIntegration {
                     maxRevenueShare: 0
                 }),
                 testIpMetadata,
-                testSender
+                testSender,
+                true
             );
         }
 
