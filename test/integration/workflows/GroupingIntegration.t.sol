@@ -518,7 +518,7 @@ contract GroupingIntegration is BaseIntegration {
             bytes[] memory data = new bytes[](numIps);
             for (uint256 i = 0; i < numIps; i++) {
                 data[i] = abi.encodeWithSelector(
-                    registrationWorkflows.mintAndRegisterIp.selector,
+                    bytes4(keccak256("mintAndRegisterIp(address,address,(string,bytes32,string,bytes32),bool)")),
                     address(spgNftContract),
                     testSender,
                     testIpMetadata

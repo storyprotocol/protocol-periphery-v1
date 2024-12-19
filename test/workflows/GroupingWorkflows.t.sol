@@ -612,7 +612,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
         bytes[] memory data = new bytes[](10);
         for (uint256 i = 0; i < 10; i++) {
             data[i] = abi.encodeWithSelector(
-                registrationWorkflows.mintAndRegisterIp.selector,
+                bytes4(keccak256("mintAndRegisterIp(address,address,(string,bytes32,string,bytes32),bool)")),
                 address(spgNftPublic),
                 minter,
                 ipMetadataDefault,
