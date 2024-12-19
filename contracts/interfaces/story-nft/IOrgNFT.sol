@@ -7,7 +7,7 @@ import { WorkflowStructs } from "../../lib/WorkflowStructs.sol";
 /// @title Organization NFT Interface
 /// @notice Each organization token represents a Story ecosystem project.
 ///         The root organization token represents Story.
-///         Each organization token register as a IP on Story and is a derivative of the root organization IP.
+///         Each organization token register as an IP on Story and is a derivative of the root organization IP.
 interface IOrgNFT is IERC721Metadata {
     ////////////////////////////////////////////////////////////////////////////
     //                              Errors                                     //
