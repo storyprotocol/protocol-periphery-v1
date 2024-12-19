@@ -35,7 +35,7 @@ interface IOrgNFT is IERC721Metadata {
     ////////////////////////////////////////////////////////////////////////////
     //                              Events                                    //
     ////////////////////////////////////////////////////////////////////////////
-    /// @notice Emitted when a organization token minted.
+    /// @notice Emitted when an organization token minted.
     /// @param recipient The address of the recipient of the organization token.
     /// @param orgNft The address of the organization NFT.
     /// @param tokenId The ID of the minted organization token.
@@ -55,7 +55,7 @@ interface IOrgNFT is IERC721Metadata {
         WorkflowStructs.IPMetadata calldata orgIpMetadata
     ) external returns (uint256 rootOrgTokenId, address rootOrgIpId);
 
-    /// @notice Mints a organization token, register it as an IP,
+    /// @notice Mints an organization token, register it as an IP,
     /// and makes the IP as a derivative of the root organization IP.
     /// @param recipient The address of the recipient of the minted organization token.
     /// @param orgIpMetadata OPTIONAL. The desired metadata for the newly minted OrgNFT and registered IP.
