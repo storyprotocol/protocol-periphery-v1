@@ -19,7 +19,7 @@ import { WorkflowStructs } from "../lib/WorkflowStructs.sol";
 /// @title Organization NFT
 /// @notice Each organization token represents a Story ecosystem project.
 ///         The root organization token represents Story.
-///         Each organization token register as a IP on Story and is a derivative of the root organization IP.
+///         Each organization token register as an IP on Story and is a derivative of the root organization IP.
 contract OrgNFT is IOrgNFT, ERC721URIStorageUpgradeable, AccessManagedUpgradeable, UUPSUpgradeable, ERC721Holder {
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
 
@@ -123,7 +123,7 @@ contract OrgNFT is IOrgNFT, ERC721URIStorageUpgradeable, AccessManagedUpgradeabl
         _safeTransfer(address(this), recipient, rootOrgTokenId);
     }
 
-    /// @notice Mints a organization token, register it as an IP,
+    /// @notice Mints an organization token, register it as an IP,
     /// and makes the IP as a derivative of the root organization IP.
     /// @dev This function is only callable by the OrgStoryNFTFactory contract.
     /// @param recipient The address of the recipient of the minted organization token.
@@ -168,7 +168,7 @@ contract OrgNFT is IOrgNFT, ERC721URIStorageUpgradeable, AccessManagedUpgradeabl
         _setTokenURI(tokenId, tokenURI_);
     }
 
-    /// @notice Mints a organization token and register it as an IP.
+    /// @notice Mints an organization token and register it as an IP.
     /// @param recipient The address of the recipient of the minted organization token.
     /// @param orgIpMetadata OPTIONAL. The desired metadata for the newly minted OrgNFT and registered IP.
     /// @return orgTokenId The ID of the minted organization token.
