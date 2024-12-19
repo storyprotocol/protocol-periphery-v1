@@ -81,4 +81,64 @@ interface IGroupingWorkflows {
         address[] calldata currencyTokens,
         address[] calldata memberIpIds
     ) external returns (uint256[] memory collectedRoyalties);
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                   DEPRECATED, WILL BE REMOVED IN V1.4                  //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP,
+    /// attach license terms to the registered IP, and add it to a group IP.
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function mintAndRegisterIpAndAttachLicenseAndAddToGroup(
+        address spgNftContract,
+        address groupId,
+        address recipient,
+        address licenseTemplate,
+        uint256 licenseTermsId,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        WorkflowStructs.SignatureData calldata sigAddToGroup
+    ) external returns (address ipId, uint256 tokenId);
+
+    /// @notice Register an NFT as IP with metadata, attach license terms to the registered IP,
+    /// and add it to a group IP.
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    /// @dev UPDATE REQUIRED: The sigMetadataAndAttachAndConfig permission signature data must be updated and include permissions for
+    /// metadata setting, license attachment, and licensing configuration permissions
+    function registerIpAndAttachLicenseAndAddToGroup(
+        address nftContract,
+        uint256 tokenId,
+        address groupId,
+        address licenseTemplate,
+        uint256 licenseTermsId,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        WorkflowStructs.SignatureData calldata sigMetadataAndAttachAndConfig,
+        WorkflowStructs.SignatureData calldata sigAddToGroup
+    ) external returns (address ipId);
+
+    /// @notice Register a group IP with a group reward pool and attach license terms to the group IP
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function registerGroupAndAttachLicense(
+        address groupPool,
+        address licenseTemplate,
+        uint256 licenseTermsId
+    ) external returns (address groupId);
+
+    /// @notice Register a group IP with a group reward pool, attach license terms to the group IP,
+    /// and add individual IPs to the group IP.
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function registerGroupAndAttachLicenseAndAddIps(
+        address groupPool,
+        address[] calldata ipIds,
+        address licenseTemplate,
+        uint256 licenseTermsId
+    ) external returns (address groupId);
+
+    /// @notice Collect royalties for the entire group and distribute the rewards to each member IP's royalty vault
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function collectRoyaltiesAndClaimReward(
+        address groupIpId,
+        address[] calldata currencyTokens,
+        uint256[] calldata groupSnapshotIds,
+        address[] calldata memberIpIds
+    ) external returns (uint256[] memory collectedRoyalties);
 }

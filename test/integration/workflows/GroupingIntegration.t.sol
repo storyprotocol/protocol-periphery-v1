@@ -318,7 +318,11 @@ contract GroupingIntegration is BaseIntegration {
         bytes[] memory data = new bytes[](numCalls);
         for (uint256 i = 0; i < numCalls; i++) {
             data[i] = abi.encodeWithSelector(
-                groupingWorkflows.mintAndRegisterIpAndAttachLicenseAndAddToGroup.selector,
+                bytes4(
+                    keccak256(
+                        "mintAndRegisterIpAndAttachLicenseAndAddToGroup(address,address,address,(address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))[],(string,bytes32,string,bytes32),(address,uint256,bytes),bool)"
+                    )
+                ),
                 address(spgNftContract),
                 groupId,
                 testSender,
@@ -414,7 +418,11 @@ contract GroupingIntegration is BaseIntegration {
         bytes[] memory data = new bytes[](numCalls);
         for (uint256 i = 0; i < numCalls; i++) {
             data[i] = abi.encodeWithSelector(
-                groupingWorkflows.registerIpAndAttachLicenseAndAddToGroup.selector,
+                bytes4(
+                    keccak256(
+                        "registerIpAndAttachLicenseAndAddToGroup(address,uint256,address,(address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))[],(string,bytes32,string,bytes32),(address,uint256,bytes),(address,uint256,bytes))"
+                    )
+                ),
                 address(spgNftContract),
                 tokenIds[i],
                 groupId,
