@@ -14,7 +14,7 @@ interface IERC5192 {
     /// @param tokenId The identifier for a token.
     event Unlocked(uint256 tokenId);
 
-    /// @notice Returns the locking status of an Soulbound Token
+    /// @notice Returns the locking status of a Soulbound Token
     /// @dev SBTs assigned to zero address are considered invalid, and queries
     /// about them do throw.
     /// @param tokenId The identifier for an SBT.
