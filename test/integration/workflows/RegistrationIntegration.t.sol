@@ -182,7 +182,7 @@ contract RegistrationIntegration is BaseIntegration {
         bytes[] memory data = new bytes[](totalIps);
         for (uint256 i = 0; i < totalIps; i++) {
             data[i] = abi.encodeWithSelector(
-                registrationWorkflows.mintAndRegisterIp.selector,
+                bytes4(keccak256("mintAndRegisterIp(address,address,(string,bytes32,string,bytes32),bool)")),
                 address(spgNftContract),
                 testSender,
                 testIpMetadata
