@@ -104,16 +104,6 @@ interface IRoyaltyTokenDistributionWorkflows {
         WorkflowStructs.RoyaltyShare[] calldata royaltyShares
     ) external returns (address ipId, uint256 tokenId, uint256[] memory licenseTermsIds);
 
-    /// @notice Mint an NFT and register the IP, make a derivative, and distribute royalty tokens.
-    /// @dev THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens(
-        address spgNftContract,
-        address recipient,
-        WorkflowStructs.IPMetadata calldata ipMetadata,
-        WorkflowStructs.MakeDerivativeDEPR calldata derivData,
-        WorkflowStructs.RoyaltyShare[] calldata royaltyShares
-    ) external returns (address ipId, uint256 tokenId);
-
     /// @notice Register an IP, attach PIL terms, and deploy a royalty vault.
     /// @dev THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
     function registerIpAndAttachPILTermsAndDeployRoyaltyVault(
@@ -125,23 +115,4 @@ interface IRoyaltyTokenDistributionWorkflows {
         WorkflowStructs.SignatureData calldata sigAttach
     ) external returns (address ipId, uint256[] memory licenseTermsIds, address ipRoyaltyVault);
 
-    /// @notice Register an IP, make a derivative, and deploy a royalty vault.
-    /// @dev THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function registerIpAndMakeDerivativeAndDeployRoyaltyVault(
-        address nftContract,
-        uint256 tokenId,
-        WorkflowStructs.IPMetadata calldata ipMetadata,
-        WorkflowStructs.MakeDerivativeDEPR calldata derivData,
-        WorkflowStructs.SignatureData calldata sigMetadata,
-        WorkflowStructs.SignatureData calldata sigRegister
-    ) external returns (address ipId, address ipRoyaltyVault);
-
-    /// @notice Distribute royalty tokens to the authors of the IP.
-    /// @dev THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function distributeRoyaltyTokens(
-        address ipId,
-        address ipRoyaltyVault,
-        WorkflowStructs.RoyaltyShare[] calldata royaltyShares,
-        WorkflowStructs.SignatureData calldata sigApproveRoyaltyTokens
-    ) external;
 }
