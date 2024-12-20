@@ -236,11 +236,14 @@ contract RoyaltyWorkflowsTest is BaseTest {
 
         // register childIpA as derivative of ancestorIp under Terms A
         {
-            (bytes memory sigRegisterAlice, , ) = _getSetPermissionSigForPeriphery({
-                ipId: ipAssetRegistry.ipId(block.chainid, address(mockNft), childTokenIdA),
-                to: address(derivativeWorkflows),
-                module: address(licensingModule),
-                selector: licensingModule.registerDerivative.selector,
+            address childIpId = ipAssetRegistry.ipId(block.chainid, address(mockNft), childTokenIdA);
+            (bytes memory signatureMetadataAndRegister, , ) = _getSetBatchPermissionSigForPeriphery({
+                ipId: childIpId,
+                permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
+                    childIpId,
+                    address(derivativeWorkflows),
+                    false
+                ),
                 deadline: deadline,
                 state: bytes32(0),
                 signerSk: sk.alice
@@ -266,11 +269,10 @@ contract RoyaltyWorkflowsTest is BaseTest {
                     maxRevenueShare: 0
                 }),
                 ipMetadata: emptyIpMetadata,
-                sigMetadata: emptySigData,
-                sigRegister: WorkflowStructs.SignatureData({
+                sigMetadataAndRegister: WorkflowStructs.SignatureData({
                     signer: u.alice,
                     deadline: deadline,
-                    signature: sigRegisterAlice
+                    signature: signatureMetadataAndRegister
                 })
             });
             vm.stopPrank();
@@ -279,11 +281,14 @@ contract RoyaltyWorkflowsTest is BaseTest {
 
         // register childIpB as derivative of ancestorIp under Terms A
         {
-            (bytes memory sigRegisterBob, , ) = _getSetPermissionSigForPeriphery({
-                ipId: ipAssetRegistry.ipId(block.chainid, address(mockNft), childTokenIdB),
-                to: address(derivativeWorkflows),
-                module: address(licensingModule),
-                selector: licensingModule.registerDerivative.selector,
+            address childIpId = ipAssetRegistry.ipId(block.chainid, address(mockNft), childTokenIdB);
+            (bytes memory signatureMetadataAndRegister, , ) = _getSetBatchPermissionSigForPeriphery({
+                ipId: childIpId,
+                permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
+                    childIpId,
+                    address(derivativeWorkflows),
+                    false
+                ),
                 deadline: deadline,
                 state: bytes32(0),
                 signerSk: sk.bob
@@ -309,11 +314,10 @@ contract RoyaltyWorkflowsTest is BaseTest {
                     maxRevenueShare: 0
                 }),
                 ipMetadata: emptyIpMetadata,
-                sigMetadata: emptySigData,
-                sigRegister: WorkflowStructs.SignatureData({
+                sigMetadataAndRegister: WorkflowStructs.SignatureData({
                     signer: u.bob,
                     deadline: deadline,
-                    signature: sigRegisterBob
+                    signature: signatureMetadataAndRegister
                 })
             });
             vm.stopPrank();
@@ -322,11 +326,14 @@ contract RoyaltyWorkflowsTest is BaseTest {
 
         /// register childIpC as derivative of ancestorIp under Terms C
         {
-            (bytes memory sigRegisterCarl, , ) = _getSetPermissionSigForPeriphery({
-                ipId: ipAssetRegistry.ipId(block.chainid, address(mockNft), childTokenIdC),
-                to: address(derivativeWorkflows),
-                module: address(licensingModule),
-                selector: licensingModule.registerDerivative.selector,
+            address childIpId = ipAssetRegistry.ipId(block.chainid, address(mockNft), childTokenIdC);
+            (bytes memory signatureMetadataAndRegister, , ) = _getSetBatchPermissionSigForPeriphery({
+                ipId: childIpId,
+                permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
+                    childIpId,
+                    address(derivativeWorkflows),
+                    false
+                ),
                 deadline: deadline,
                 state: bytes32(0),
                 signerSk: sk.carl
@@ -352,11 +359,10 @@ contract RoyaltyWorkflowsTest is BaseTest {
                     maxRevenueShare: 0
                 }),
                 ipMetadata: emptyIpMetadata,
-                sigMetadata: emptySigData,
-                sigRegister: WorkflowStructs.SignatureData({
+                sigMetadataAndRegister: WorkflowStructs.SignatureData({
                     signer: u.carl,
                     deadline: deadline,
-                    signature: sigRegisterCarl
+                    signature: signatureMetadataAndRegister
                 })
             });
             vm.stopPrank();
@@ -365,11 +371,14 @@ contract RoyaltyWorkflowsTest is BaseTest {
 
         // register grandChildIp as derivative for childIp A and B under Terms A
         {
-            (bytes memory sigRegisterDan, , ) = _getSetPermissionSigForPeriphery({
-                ipId: ipAssetRegistry.ipId(block.chainid, address(mockNft), grandChildTokenId),
-                to: address(derivativeWorkflows),
-                module: address(licensingModule),
-                selector: licensingModule.registerDerivative.selector,
+            address childIpId = ipAssetRegistry.ipId(block.chainid, address(mockNft), grandChildTokenId);
+            (bytes memory signatureMetadataAndRegister, , ) = _getSetBatchPermissionSigForPeriphery({
+                ipId: childIpId,
+                permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
+                    childIpId,
+                    address(derivativeWorkflows),
+                    false
+                ),
                 deadline: deadline,
                 state: bytes32(0),
                 signerSk: sk.dan
@@ -398,11 +407,10 @@ contract RoyaltyWorkflowsTest is BaseTest {
                     maxRevenueShare: 0
                 }),
                 ipMetadata: emptyIpMetadata,
-                sigMetadata: emptySigData,
-                sigRegister: WorkflowStructs.SignatureData({
+                sigMetadataAndRegister: WorkflowStructs.SignatureData({
                     signer: u.dan,
                     deadline: deadline,
-                    signature: sigRegisterDan
+                    signature: signatureMetadataAndRegister
                 })
             });
             vm.stopPrank();

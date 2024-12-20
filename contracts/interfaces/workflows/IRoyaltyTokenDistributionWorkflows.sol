@@ -114,5 +114,4 @@ interface IRoyaltyTokenDistributionWorkflows {
         WorkflowStructs.SignatureData calldata sigMetadata,
         WorkflowStructs.SignatureData calldata sigAttach
     ) external returns (address ipId, uint256[] memory licenseTermsIds, address ipRoyaltyVault);
-
 }

@@ -293,38 +293,17 @@ contract DerivativeWorkflowsTest is BaseTest {
         licenseTokenIds[0] = startLicenseTokenId;
         licenseToken.approve(address(derivativeWorkflows), startLicenseTokenId);
 
-        WorkflowStructs.SignatureData memory sigMetadata;
-        WorkflowStructs.SignatureData memory sigRegister;
-        {
-            (bytes memory signatureMetadata, bytes32 expectedState, ) = _getSetPermissionSigForPeriphery({
-                ipId: ipIdChild,
-                to: address(derivativeWorkflows),
-                module: address(coreMetadataModule),
-                selector: ICoreMetadataModule.setAll.selector,
-                deadline: deadline,
-                state: bytes32(0),
-                signerSk: sk.alice
-            });
-            (bytes memory signatureRegister, , ) = _getSetPermissionSigForPeriphery({
-                ipId: ipIdChild,
-                to: address(derivativeWorkflows),
-                module: address(licensingModule),
-                selector: ILicensingModule.registerDerivativeWithLicenseTokens.selector,
-                deadline: deadline,
-                state: expectedState,
-                signerSk: sk.alice
-            });
-            sigMetadata = WorkflowStructs.SignatureData({
-                signer: u.alice,
-                deadline: deadline,
-                signature: signatureMetadata
-            });
-            sigRegister = WorkflowStructs.SignatureData({
-                signer: u.alice,
-                deadline: deadline,
-                signature: signatureRegister
-            });
-        }
+        (bytes memory signatureMetadataAndRegister, , ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: ipIdChild,
+            permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
+                ipIdChild,
+                address(derivativeWorkflows),
+                true
+            ),
+            deadline: deadline,
+            state: bytes32(0),
+            signerSk: sk.alice
+        });
 
         address ipIdChildActual = derivativeWorkflows.registerIpAndMakeDerivativeWithLicenseTokens({
             nftContract: address(nftContract),
@@ -333,8 +312,11 @@ contract DerivativeWorkflowsTest is BaseTest {
             royaltyContext: "",
             maxRts: revShare,
             ipMetadata: ipMetadataDefault,
-            sigMetadata: sigMetadata,
-            sigRegister: sigRegister
+            sigMetadataAndRegister: WorkflowStructs.SignatureData({
+                signer: caller,
+                deadline: deadline,
+                signature: signatureMetadataAndRegister
+            })
         });
         assertEq(ipIdChildActual, ipIdChild);
         assertTrue(ipAssetRegistry.isRegistered(ipIdChild));
@@ -489,22 +471,15 @@ contract DerivativeWorkflowsTest is BaseTest {
 
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory sigMetadata, bytes32 expectedState, ) = _getSetPermissionSigForPeriphery({
+        (bytes memory signatureMetadataAndRegister, bytes32 expectedState, ) = _getSetBatchPermissionSigForPeriphery({
             ipId: ipIdChild,
-            to: address(derivativeWorkflows),
-            module: address(coreMetadataModule),
-            selector: ICoreMetadataModule.setAll.selector,
+            permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
+                ipIdChild,
+                address(derivativeWorkflows),
+                false
+            ),
             deadline: deadline,
             state: bytes32(0),
-            signerSk: sk.alice
-        });
-        (bytes memory sigRegister, , ) = _getSetPermissionSigForPeriphery({
-            ipId: ipIdChild,
-            to: address(derivativeWorkflows),
-            module: address(licensingModule),
-            selector: ILicensingModule.registerDerivative.selector,
-            deadline: deadline,
-            state: expectedState,
             signerSk: sk.alice
         });
 
@@ -527,8 +502,11 @@ contract DerivativeWorkflowsTest is BaseTest {
                 maxRevenueShare: 0
             }),
             ipMetadata: ipMetadataDefault,
-            sigMetadata: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: sigMetadata }),
-            sigRegister: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: sigRegister })
+            sigMetadataAndRegister: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: deadline,
+                signature: signatureMetadataAndRegister
+            })
         });
         assertEq(ipIdChildActual, ipIdChild);
         assertTrue(ipAssetRegistry.isRegistered(ipIdChild));

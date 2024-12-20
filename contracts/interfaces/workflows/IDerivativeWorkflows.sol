@@ -28,16 +28,15 @@ interface IDerivativeWorkflows {
     /// @param tokenId The ID of the NFT.
     /// @param derivData The derivative data to be used for registerDerivative.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
-    /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
-    /// @param sigRegister Signature data for registerDerivative for the IP via the Licensing Module.
+    /// @param sigMetadataAndRegister OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module
+    /// and registerDerivative for the IP via the Licensing Module.
     /// @return ipId The ID of the newly registered IP.
     function registerIpAndMakeDerivative(
         address nftContract,
         uint256 tokenId,
         WorkflowStructs.MakeDerivative calldata derivData,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        WorkflowStructs.SignatureData calldata sigMetadata,
-        WorkflowStructs.SignatureData calldata sigRegister
+        WorkflowStructs.SignatureData calldata sigMetadataAndRegister
     ) external returns (address ipId);
 
     /// @notice Mint an NFT from a SPGNFT collection and register it as a derivative IP using license tokens.
@@ -70,8 +69,8 @@ interface IDerivativeWorkflows {
     /// @param royaltyContext The context for royalty module, should be empty for Royalty Policy LAP.
     /// @param maxRts The maximum number of royalty tokens that can be distributed to the external royalty policies.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
-    /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
-    /// @param sigRegister Signature data for registerDerivativeWithLicenseTokens for the IP via the Licensing Module.
+    /// @param sigMetadataAndRegister Signature data for setAll (metadata) for the IP via the Core Metadata Module
+    /// and registerDerivativeWithLicenseTokens for the IP via the Licensing Module.
     /// @return ipId The ID of the newly registered IP.
     function registerIpAndMakeDerivativeWithLicenseTokens(
         address nftContract,
@@ -80,8 +79,7 @@ interface IDerivativeWorkflows {
         bytes calldata royaltyContext,
         uint32 maxRts,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        WorkflowStructs.SignatureData calldata sigMetadata,
-        WorkflowStructs.SignatureData calldata sigRegister
+        WorkflowStructs.SignatureData calldata sigMetadataAndRegister
     ) external returns (address ipId);
 
     ////////////////////////////////////////////////////////////////////////////

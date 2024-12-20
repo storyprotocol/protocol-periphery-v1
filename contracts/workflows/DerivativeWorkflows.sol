@@ -9,6 +9,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { MulticallUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
+import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
 import { ILicenseToken } from "@storyprotocol/core/interfaces/ILicenseToken.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
 import { IRoyaltyModule } from "@storyprotocol/core/interfaces/modules/royalty/IRoyaltyModule.sol";
@@ -151,33 +152,33 @@ contract DerivativeWorkflows is
     /// @param tokenId The ID of the NFT.
     /// @param derivData The derivative data to be used for registerDerivative.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
-    /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
-    /// @param sigRegister Signature data for registerDerivative for the IP via the Licensing Module.
+    /// @param sigMetadataAndRegister OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata
+    /// Module and registerDerivative for the IP via the Licensing Module.
     /// @return ipId The ID of the newly registered IP.
     function registerIpAndMakeDerivative(
         address nftContract,
         uint256 tokenId,
         WorkflowStructs.MakeDerivative calldata derivData,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        WorkflowStructs.SignatureData calldata sigMetadata,
-        WorkflowStructs.SignatureData calldata sigRegister
+        WorkflowStructs.SignatureData calldata sigMetadataAndRegister
     ) external returns (address ipId) {
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        MetadataHelper.setMetadataWithSig(
-            ipId,
-            address(CORE_METADATA_MODULE),
-            address(ACCESS_CONTROLLER),
-            ipMetadata,
-            sigMetadata
-        );
 
-        PermissionHelper.setPermissionForModule(
-            ipId,
-            address(LICENSING_MODULE),
-            address(ACCESS_CONTROLLER),
-            ILicensingModule.registerDerivative.selector,
-            sigRegister
-        );
+        address[] memory modules = new address[](2);
+        bytes4[] memory selectors = new bytes4[](2);
+        modules[0] = address(CORE_METADATA_MODULE);
+        modules[1] = address(LICENSING_MODULE);
+        selectors[0] = ICoreMetadataModule.setAll.selector;
+        selectors[1] = ILicensingModule.registerDerivative.selector;
+        PermissionHelper.setBatchPermissionForModules({
+            ipId: ipId,
+            accessController: address(ACCESS_CONTROLLER),
+            modules: modules,
+            selectors: selectors,
+            sigData: sigMetadataAndRegister
+        });
+
+        MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 
         LicensingHelper.collectMintFeesAndMakeDerivative(
             ipId,
@@ -233,8 +234,8 @@ contract DerivativeWorkflows is
     /// @param royaltyContext The context for royalty module, should be empty for Royalty Policy LAP.
     /// @param maxRts The maximum number of royalty tokens that can be distributed to the external royalty policies.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
-    /// @param sigMetadata OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module.
-    /// @param sigRegister Signature data for registerDerivativeWithLicenseTokens for the IP via the Licensing Module.
+    /// @param sigMetadataAndRegister Signature data for setAll (metadata) for the IP via the Core Metadata Module
+    /// and registerDerivativeWithLicenseTokens for the IP via the Licensing Module.
     /// @return ipId The ID of the newly registered IP.
     function registerIpAndMakeDerivativeWithLicenseTokens(
         address nftContract,
@@ -243,27 +244,26 @@ contract DerivativeWorkflows is
         bytes calldata royaltyContext,
         uint32 maxRts,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        WorkflowStructs.SignatureData calldata sigMetadata,
-        WorkflowStructs.SignatureData calldata sigRegister
+        WorkflowStructs.SignatureData calldata sigMetadataAndRegister
     ) external returns (address ipId) {
         _collectLicenseTokens(licenseTokenIds, address(LICENSE_TOKEN));
-
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
-        MetadataHelper.setMetadataWithSig(
-            ipId,
-            address(CORE_METADATA_MODULE),
-            address(ACCESS_CONTROLLER),
-            ipMetadata,
-            sigMetadata
-        );
 
-        PermissionHelper.setPermissionForModule(
-            ipId,
-            address(LICENSING_MODULE),
-            address(ACCESS_CONTROLLER),
-            ILicensingModule.registerDerivativeWithLicenseTokens.selector,
-            sigRegister
-        );
+        address[] memory modules = new address[](2);
+        bytes4[] memory selectors = new bytes4[](2);
+        modules[0] = address(CORE_METADATA_MODULE);
+        modules[1] = address(LICENSING_MODULE);
+        selectors[0] = ICoreMetadataModule.setAll.selector;
+        selectors[1] = ILicensingModule.registerDerivativeWithLicenseTokens.selector;
+        PermissionHelper.setBatchPermissionForModules({
+            ipId: ipId,
+            accessController: address(ACCESS_CONTROLLER),
+            modules: modules,
+            selectors: selectors,
+            sigData: sigMetadataAndRegister
+        });
+
+        MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
         LICENSING_MODULE.registerDerivativeWithLicenseTokens(ipId, licenseTokenIds, royaltyContext, maxRts);
     }
 
