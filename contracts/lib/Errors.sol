@@ -141,4 +141,10 @@ library Errors {
     /// @param ipId The address of the already tokenized IP
     /// @param token The address of the fractionalized token for the IP
     error TokenizerModule__IpAlreadyTokenized(address ipId, address token);
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                   DEPRECATED, WILL BE REMOVED IN V1.4                  //
+    ////////////////////////////////////////////////////////////////////////////
+
+    error RoyaltyTokenDistributionWorkflows__TotalPercentagesExceeds100Percent();
 }
