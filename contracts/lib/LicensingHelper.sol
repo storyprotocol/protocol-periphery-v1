@@ -140,8 +140,8 @@ library LicensingHelper {
         address royaltyModule,
         address licensingModule,
         address licenseTemplate,
-        address[] calldata parentIpIds,
-        uint256[] calldata licenseTermsIds
+        address[] memory parentIpIds,
+        uint256[] memory licenseTermsIds
     ) internal {
         ILicenseTemplate lct = ILicenseTemplate(licenseTemplate);
         (address royaltyPolicy, , , address mintFeeCurrencyToken) = lct.getRoyaltyPolicy(licenseTermsIds[0]);
@@ -177,8 +177,8 @@ library LicensingHelper {
         address payerAddress,
         address licensingModule,
         address licenseTemplate,
-        address[] calldata parentIpIds,
-        uint256[] calldata licenseTermsIds
+        address[] memory parentIpIds,
+        uint256[] memory licenseTermsIds
     ) private view returns (uint256 totalMintFee) {
         uint256 mintFee;
 

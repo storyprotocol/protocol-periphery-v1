@@ -14,6 +14,7 @@ import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensi
 import { IRoyaltyModule } from "@storyprotocol/core/interfaces/modules/royalty/IRoyaltyModule.sol";
 import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
+import { PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 
 import { BaseWorkflow } from "../BaseWorkflow.sol";
 import { Errors } from "../lib/Errors.sol";
@@ -448,4 +449,295 @@ contract RoyaltyTokenDistributionWorkflows is
     /// @dev Hook to authorize the upgrade according to UUPSUpgradeable
     /// @param newImplementation The address of the new implementation
     function _authorizeUpgrade(address newImplementation) internal override restricted {}
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                   DEPRECATED, WILL BE REMOVED IN V1.4                  //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Mint an NFT and register the IP, attach PIL terms, and distribute royalty tokens.
+    /// @dev THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens(
+        address spgNftContract,
+        address recipient,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        PILTerms[] calldata terms,
+        WorkflowStructs.RoyaltyShare[] calldata royaltyShares
+    )
+        external
+        onlyMintAuthorized(spgNftContract)
+        returns (address ipId, uint256 tokenId, uint256[] memory licenseTermsIds)
+    {
+        tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
+            to: address(this),
+            payer: msg.sender,
+            nftMetadataURI: ipMetadata.nftMetadataURI,
+            nftMetadataHash: "",
+            allowDuplicates: true
+        });
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
+        MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
+
+        licenseTermsIds = _registerMultiplePILTermsAndAttach(ipId, terms);
+
+        _distributeRoyaltyTokensDEPR(
+            ipId,
+            _deployRoyaltyVaultDEPR(ipId, address(PIL_TEMPLATE), licenseTermsIds[0]),
+            royaltyShares,
+            WorkflowStructs.SignatureData(address(0), 0, "") // no signature required.
+        );
+
+        ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
+    }
+
+    /// @notice Mint an NFT and register the IP, make a derivative, and distribute royalty tokens.
+    /// @dev THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens(
+        address spgNftContract,
+        address recipient,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        WorkflowStructs.MakeDerivativeDEPR calldata derivData,
+        WorkflowStructs.RoyaltyShare[] calldata royaltyShares
+    ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId) {
+        tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
+            to: address(this),
+            payer: msg.sender,
+            nftMetadataURI: ipMetadata.nftMetadataURI,
+            nftMetadataHash: "",
+            allowDuplicates: true
+        });
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
+
+        MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
+
+        LicensingHelper.collectMintFeesAndSetApproval(
+            msg.sender,
+            address(ROYALTY_MODULE),
+            address(LICENSING_MODULE),
+            derivData.licenseTemplate,
+            derivData.parentIpIds,
+            derivData.licenseTermsIds
+        );
+
+        LICENSING_MODULE.registerDerivative({
+            childIpId: ipId,
+            parentIpIds: derivData.parentIpIds,
+            licenseTermsIds: derivData.licenseTermsIds,
+            licenseTemplate: derivData.licenseTemplate,
+            royaltyContext: derivData.royaltyContext,
+            maxMintingFee: 0, // no limit
+            maxRts: ROYALTY_MODULE.maxPercent(), // no limit
+            maxRevenueShare: ROYALTY_MODULE.maxPercent() // no limit
+        });
+
+        _distributeRoyaltyTokensDEPR(
+            ipId,
+            _deployRoyaltyVaultDEPR(ipId, derivData.licenseTemplate, derivData.licenseTermsIds[0]),
+            royaltyShares,
+            WorkflowStructs.SignatureData(address(0), 0, "") // no signature required.
+        );
+
+        ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
+    }
+
+    /// @notice Register an IP, attach PIL terms, and deploy a royalty vault.
+    /// @dev THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function registerIpAndAttachPILTermsAndDeployRoyaltyVault(
+        address nftContract,
+        uint256 tokenId,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        PILTerms[] calldata terms,
+        WorkflowStructs.SignatureData calldata sigMetadata,
+        WorkflowStructs.SignatureData calldata sigAttach
+    ) external returns (address ipId, uint256[] memory licenseTermsIds, address ipRoyaltyVault) {
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
+        MetadataHelper.setMetadataWithSig(
+            ipId,
+            address(CORE_METADATA_MODULE),
+            address(ACCESS_CONTROLLER),
+            ipMetadata,
+            sigMetadata
+        );
+
+        PermissionHelper.setPermissionForModule(
+            ipId,
+            address(LICENSING_MODULE),
+            address(ACCESS_CONTROLLER),
+            ILicensingModule.attachLicenseTerms.selector,
+            sigAttach
+        );
+
+        licenseTermsIds = _registerMultiplePILTermsAndAttach(ipId, terms);
+
+        ipRoyaltyVault = _deployRoyaltyVaultDEPR(ipId, address(PIL_TEMPLATE), licenseTermsIds[0]);
+    }
+
+    /// @notice Register an IP, make a derivative, and deploy a royalty vault.
+    /// @dev THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function registerIpAndMakeDerivativeAndDeployRoyaltyVault(
+        address nftContract,
+        uint256 tokenId,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        WorkflowStructs.MakeDerivativeDEPR calldata derivData,
+        WorkflowStructs.SignatureData calldata sigMetadata,
+        WorkflowStructs.SignatureData calldata sigRegister
+    ) external returns (address ipId, address ipRoyaltyVault) {
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
+        MetadataHelper.setMetadataWithSig(
+            ipId,
+            address(CORE_METADATA_MODULE),
+            address(ACCESS_CONTROLLER),
+            ipMetadata,
+            sigMetadata
+        );
+
+        PermissionHelper.setPermissionForModule(
+            ipId,
+            address(LICENSING_MODULE),
+            address(ACCESS_CONTROLLER),
+            ILicensingModule.registerDerivative.selector,
+            sigRegister
+        );
+
+        LicensingHelper.collectMintFeesAndSetApproval(
+            msg.sender,
+            address(ROYALTY_MODULE),
+            address(LICENSING_MODULE),
+            derivData.licenseTemplate,
+            derivData.parentIpIds,
+            derivData.licenseTermsIds
+        );
+
+        LICENSING_MODULE.registerDerivative({
+            childIpId: ipId,
+            parentIpIds: derivData.parentIpIds,
+            licenseTermsIds: derivData.licenseTermsIds,
+            licenseTemplate: derivData.licenseTemplate,
+            royaltyContext: derivData.royaltyContext,
+            maxMintingFee: 0, // no limit
+            maxRts: ROYALTY_MODULE.maxPercent(), // no limit
+            maxRevenueShare: ROYALTY_MODULE.maxPercent() // no limit
+        });
+
+        ipRoyaltyVault = _deployRoyaltyVaultDEPR(ipId, derivData.licenseTemplate, derivData.licenseTermsIds[0]);
+    }
+
+    /// @notice Distribute royalty tokens to the authors of the IP.
+    /// @dev THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function distributeRoyaltyTokens(
+        address ipId,
+        address ipRoyaltyVault,
+        WorkflowStructs.RoyaltyShare[] calldata royaltyShares,
+        WorkflowStructs.SignatureData calldata sigApproveRoyaltyTokens
+    ) external {
+        _distributeRoyaltyTokensDEPR(ipId, ipRoyaltyVault, royaltyShares, sigApproveRoyaltyTokens);
+    }
+
+    /// @dev Distributes royalty tokens to the authors of the IP.
+    /// @dev THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function _distributeRoyaltyTokensDEPR(
+        address ipId,
+        address ipRoyaltyVault,
+        WorkflowStructs.RoyaltyShare[] memory royaltyShares,
+        WorkflowStructs.SignatureData memory sigApproveRoyaltyTokens
+    ) internal {
+        if (ipRoyaltyVault == address(0)) revert Errors.RoyaltyTokenDistributionWorkflows__RoyaltyVaultNotDeployed();
+
+        uint32 totalPercentages = _validateRoyaltySharesDEPR(royaltyShares);
+
+        if (sigApproveRoyaltyTokens.signature.length > 0) {
+            IIPAccount(payable(ipId)).executeWithSig({
+                to: ipRoyaltyVault,
+                value: 0,
+                data: abi.encodeWithSelector(IERC20.approve.selector, address(this), uint256(totalPercentages)),
+                signer: sigApproveRoyaltyTokens.signer,
+                deadline: sigApproveRoyaltyTokens.deadline,
+                signature: sigApproveRoyaltyTokens.signature
+            });
+        } else {
+            IIPAccount(payable(ipId)).execute({
+                to: ipRoyaltyVault,
+                value: 0,
+                data: abi.encodeWithSelector(IERC20.approve.selector, address(this), uint256(totalPercentages))
+            });
+        }
+
+        // distribute the royalty tokens
+        for (uint256 i; i < royaltyShares.length; i++) {
+            IERC20(ipRoyaltyVault).transferFrom({
+                from: ipId,
+                to: royaltyShares[i].recipient,
+                value: royaltyShares[i].percentage
+            });
+        }
+    }
+
+    /// @dev Validates the royalty shares.
+    /// @dev THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function _validateRoyaltySharesDEPR(
+        WorkflowStructs.RoyaltyShare[] memory royaltyShares
+    ) internal returns (uint32 totalPercentages) {
+        for (uint256 i; i < royaltyShares.length; i++) {
+            totalPercentages += royaltyShares[i].percentage;
+            if (totalPercentages > 100_000_000)
+                revert Errors.RoyaltyTokenDistributionWorkflows__TotalPercentagesExceeds100Percent();
+        }
+
+        return totalPercentages;
+    }
+
+    /// @dev Deploys a royalty vault for the IP.
+    /// @dev THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function _deployRoyaltyVaultDEPR(
+        address ipId,
+        address licenseTemplate,
+        uint256 licenseTermsId
+    ) internal returns (address ipRoyaltyVault) {
+        // if no royalty vault, mint a license token to trigger the vault deployment
+        if (ROYALTY_MODULE.ipRoyaltyVaults(ipId) == address(0)) {
+            address[] memory parentIpIds = new address[](1);
+            uint256[] memory licenseTermsIds = new uint256[](1);
+            parentIpIds[0] = ipId;
+            licenseTermsIds[0] = licenseTermsId;
+
+            LicensingHelper.collectMintFeesAndSetApproval({
+                payerAddress: msg.sender,
+                royaltyModule: address(ROYALTY_MODULE),
+                licensingModule: address(LICENSING_MODULE),
+                licenseTemplate: licenseTemplate,
+                parentIpIds: parentIpIds,
+                licenseTermsIds: licenseTermsIds
+            });
+
+            LICENSING_MODULE.mintLicenseTokens({
+                licensorIpId: ipId,
+                licenseTemplate: licenseTemplate,
+                licenseTermsId: licenseTermsId,
+                amount: 1,
+                receiver: msg.sender,
+                royaltyContext: "",
+                maxMintingFee: 0,
+                maxRevenueShare: 0
+            });
+        }
+
+        ipRoyaltyVault = ROYALTY_MODULE.ipRoyaltyVaults(ipId);
+        if (ipRoyaltyVault == address(0)) revert Errors.RoyaltyTokenDistributionWorkflows__RoyaltyVaultNotDeployed();
+    }
+
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function _registerMultiplePILTermsAndAttach(
+        address ipId,
+        PILTerms[] calldata terms
+    ) private returns (uint256[] memory licenseTermsIds) {
+        licenseTermsIds = new uint256[](terms.length);
+        uint256 length = terms.length;
+        for (uint256 i; i < length; i++) {
+            licenseTermsIds[i] = LicensingHelper.registerPILTermsAndAttach(
+                ipId,
+                address(PIL_TEMPLATE),
+                address(LICENSING_MODULE),
+                terms[i]
+            );
+        }
+    }
 }
