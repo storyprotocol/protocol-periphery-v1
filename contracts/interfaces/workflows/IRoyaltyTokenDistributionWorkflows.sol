@@ -17,15 +17,15 @@ interface IRoyaltyTokenDistributionWorkflows {
     /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
     /// @return ipId The ID of the registered IP.
     /// @return tokenId The ID of the minted NFT.
-    /// @return licenseTermsId The ID of the attached PIL terms.
+    /// @return licenseTermsIds The IDs of the attached PIL terms.
     function mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens(
         address spgNftContract,
         address recipient,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        WorkflowStructs.LicenseTermsData calldata licenseTermsData,
+        WorkflowStructs.LicenseTermsData[] calldata licenseTermsData,
         WorkflowStructs.RoyaltyShare[] calldata royaltyShares,
         bool allowDuplicates
-    ) external returns (address ipId, uint256 tokenId, uint256 licenseTermsId);
+    ) external returns (address ipId, uint256 tokenId, uint256[] memory licenseTermsIds);
 
     /// @notice Mint an NFT and register the IP, make a derivative, and distribute royalty tokens.
     /// @param spgNftContract The address of the SPG NFT contract.
@@ -53,15 +53,15 @@ interface IRoyaltyTokenDistributionWorkflows {
     /// @param sigMetadataAndAttachAndConfig Signature data for setAll (metadata), attachLicenseTerms, and
     /// setLicensingConfig to the IP via the Core Metadata Module and Licensing Module.
     /// @return ipId The ID of the registered IP.
-    /// @return licenseTermsId The ID of the attached PIL terms.
+    /// @return licenseTermsIds The IDs of the attached PIL terms.
     /// @return ipRoyaltyVault The address of the deployed royalty vault.
     function registerIpAndAttachPILTermsAndDeployRoyaltyVault(
         address nftContract,
         uint256 tokenId,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        WorkflowStructs.LicenseTermsData calldata licenseTermsData,
+        WorkflowStructs.LicenseTermsData[] calldata licenseTermsData,
         WorkflowStructs.SignatureData calldata sigMetadataAndAttachAndConfig
-    ) external returns (address ipId, uint256 licenseTermsId, address ipRoyaltyVault);
+    ) external returns (address ipId, uint256[] memory licenseTermsIds, address ipRoyaltyVault);
 
     /// @notice Register an IP, make a derivative, and deploy a royalty vault.
     /// @param nftContract The address of the NFT contract.
@@ -114,5 +114,4 @@ interface IRoyaltyTokenDistributionWorkflows {
         WorkflowStructs.SignatureData calldata sigMetadata,
         WorkflowStructs.SignatureData calldata sigAttach
     ) external returns (address ipId, uint256[] memory licenseTermsIds, address ipRoyaltyVault);
-
 }
