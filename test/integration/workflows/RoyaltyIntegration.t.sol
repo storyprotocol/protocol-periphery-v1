@@ -218,11 +218,14 @@ contract RoyaltyIntegration is BaseIntegration {
 
         // register childIpA as derivative of ancestorIp under Terms A
         {
-            (bytes memory sigRegister, , ) = _getSetPermissionSigForPeriphery({
-                ipId: ipAssetRegistry.ipId(block.chainid, address(spgNftContract), childTokenIdA),
-                to: derivativeWorkflowsAddr,
-                module: licensingModuleAddr,
-                selector: licensingModule.registerDerivative.selector,
+            address childIpId = ipAssetRegistry.ipId(block.chainid, address(spgNftContract), childTokenIdA);
+            (bytes memory signatureMetadataAndRegister, , ) = _getSetBatchPermissionSigForPeriphery({
+                ipId: childIpId,
+                permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
+                    childIpId,
+                    address(derivativeWorkflows),
+                    false
+                ),
                 deadline: deadline,
                 state: bytes32(0),
                 signerSk: testSenderSk
@@ -248,11 +251,10 @@ contract RoyaltyIntegration is BaseIntegration {
                     maxRevenueShare: 0
                 }),
                 ipMetadata: emptyIpMetadata,
-                sigMetadata: emptySigData,
-                sigRegister: WorkflowStructs.SignatureData({
+                sigMetadataAndRegister: WorkflowStructs.SignatureData({
                     signer: testSender,
                     deadline: deadline,
-                    signature: sigRegister
+                    signature: signatureMetadataAndRegister
                 })
             });
             vm.label(childIpIdA, "ChildIpA");
@@ -260,11 +262,14 @@ contract RoyaltyIntegration is BaseIntegration {
 
         // register childIpB as derivative of ancestorIp under Terms A
         {
-            (bytes memory sigRegister, , ) = _getSetPermissionSigForPeriphery({
-                ipId: ipAssetRegistry.ipId(block.chainid, address(spgNftContract), childTokenIdB),
-                to: derivativeWorkflowsAddr,
-                module: licensingModuleAddr,
-                selector: licensingModule.registerDerivative.selector,
+            address childIpId = ipAssetRegistry.ipId(block.chainid, address(spgNftContract), childTokenIdB);
+            (bytes memory signatureMetadataAndRegister, , ) = _getSetBatchPermissionSigForPeriphery({
+                ipId: childIpId,
+                permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
+                    childIpId,
+                    address(derivativeWorkflows),
+                    false
+                ),
                 deadline: deadline,
                 state: bytes32(0),
                 signerSk: testSenderSk
@@ -290,11 +295,10 @@ contract RoyaltyIntegration is BaseIntegration {
                     maxRevenueShare: 0
                 }),
                 ipMetadata: emptyIpMetadata,
-                sigMetadata: emptySigData,
-                sigRegister: WorkflowStructs.SignatureData({
+                sigMetadataAndRegister: WorkflowStructs.SignatureData({
                     signer: testSender,
                     deadline: deadline,
-                    signature: sigRegister
+                    signature: signatureMetadataAndRegister
                 })
             });
             vm.label(childIpIdB, "ChildIpB");
@@ -302,11 +306,14 @@ contract RoyaltyIntegration is BaseIntegration {
 
         /// register childIpC as derivative of ancestorIp under Terms C
         {
-            (bytes memory sigRegister, , ) = _getSetPermissionSigForPeriphery({
-                ipId: ipAssetRegistry.ipId(block.chainid, address(spgNftContract), childTokenIdC),
-                to: derivativeWorkflowsAddr,
-                module: licensingModuleAddr,
-                selector: licensingModule.registerDerivative.selector,
+            address childIpId = ipAssetRegistry.ipId(block.chainid, address(spgNftContract), childTokenIdC);
+            (bytes memory signatureMetadataAndRegister, , ) = _getSetBatchPermissionSigForPeriphery({
+                ipId: childIpId,
+                permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
+                    childIpId,
+                    address(derivativeWorkflows),
+                    false
+                ),
                 deadline: deadline,
                 state: bytes32(0),
                 signerSk: testSenderSk
@@ -332,11 +339,10 @@ contract RoyaltyIntegration is BaseIntegration {
                     maxRevenueShare: 0
                 }),
                 ipMetadata: emptyIpMetadata,
-                sigMetadata: emptySigData,
-                sigRegister: WorkflowStructs.SignatureData({
+                sigMetadataAndRegister: WorkflowStructs.SignatureData({
                     signer: testSender,
                     deadline: deadline,
-                    signature: sigRegister
+                    signature: signatureMetadataAndRegister
                 })
             });
             vm.label(childIpIdC, "ChildIpC");
@@ -344,11 +350,14 @@ contract RoyaltyIntegration is BaseIntegration {
 
         // register grandChildIp as derivative for childIp A and B under Terms A
         {
-            (bytes memory sigRegister, , ) = _getSetPermissionSigForPeriphery({
-                ipId: ipAssetRegistry.ipId(block.chainid, address(spgNftContract), grandChildTokenId),
-                to: derivativeWorkflowsAddr,
-                module: address(licensingModule),
-                selector: licensingModule.registerDerivative.selector,
+            address childIpId = ipAssetRegistry.ipId(block.chainid, address(spgNftContract), grandChildTokenId);
+            (bytes memory signatureMetadataAndRegister, , ) = _getSetBatchPermissionSigForPeriphery({
+                ipId: childIpId,
+                permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
+                    childIpId,
+                    address(derivativeWorkflows),
+                    false
+                ),
                 deadline: deadline,
                 state: bytes32(0),
                 signerSk: testSenderSk
@@ -377,11 +386,10 @@ contract RoyaltyIntegration is BaseIntegration {
                     maxRevenueShare: 0
                 }),
                 ipMetadata: emptyIpMetadata,
-                sigMetadata: emptySigData,
-                sigRegister: WorkflowStructs.SignatureData({
+                sigMetadataAndRegister: WorkflowStructs.SignatureData({
                     signer: testSender,
                     deadline: deadline,
-                    signature: sigRegister
+                    signature: signatureMetadataAndRegister
                 })
             });
             vm.label(grandChildIpId, "GrandChildIp");

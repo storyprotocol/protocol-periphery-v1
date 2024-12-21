@@ -181,7 +181,8 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
             ipId: expectedIpId,
             permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
                 expectedIpId,
-                address(royaltyTokenDistributionWorkflows)
+                address(royaltyTokenDistributionWorkflows),
+                false
             ),
             deadline: deadline,
             state: bytes32(0),

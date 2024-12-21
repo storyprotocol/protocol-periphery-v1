@@ -297,7 +297,8 @@ contract BaseTest is Test, DeployHelper {
     /// @return permissionList The list of permissions for setting metadata and registering a derivative.
     function _getMetadataAndDerivativeRegistrationPermissionList(
         address ipId,
-        address to
+        address to,
+        bool withLicenseToken
     ) internal view returns (AccessPermission.Permission[] memory permissionList) {
         address[] memory modules = new address[](2);
         bytes4[] memory selectors = new bytes4[](2);
@@ -305,7 +306,11 @@ contract BaseTest is Test, DeployHelper {
         modules[0] = coreMetadataModuleAddr;
         modules[1] = licensingModuleAddr;
         selectors[0] = ICoreMetadataModule.setAll.selector;
-        selectors[1] = ILicensingModule.registerDerivative.selector;
+        if (withLicenseToken) {
+            selectors[1] = ILicensingModule.registerDerivativeWithLicenseTokens.selector;
+        } else {
+            selectors[1] = ILicensingModule.registerDerivative.selector;
+        }
         for (uint256 i = 0; i < 2; i++) {
             permissionList[i] = AccessPermission.Permission({
                 ipAccount: ipId,
