@@ -116,7 +116,12 @@ contract LicenseAttachmentWorkflows is
             sigData: sigAttachAndConfig
         });
 
-        licenseTermsIds = _registerMultiplePILTermsAndAttachAndSetConfigs(ipId, licenseTermsData);
+        licenseTermsIds = LicensingHelper.registerMultiplePILTermsAndAttachAndSetConfigs({
+            ipId: ipId,
+            pilTemplate: address(PIL_TEMPLATE),
+            licensingModule: address(LICENSING_MODULE),
+            licenseTermsData: licenseTermsData
+        });
     }
 
     /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP,
@@ -154,7 +159,12 @@ contract LicenseAttachmentWorkflows is
         ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 
-        licenseTermsIds = _registerMultiplePILTermsAndAttachAndSetConfigs(ipId, licenseTermsData);
+        licenseTermsIds = LicensingHelper.registerMultiplePILTermsAndAttachAndSetConfigs({
+            ipId: ipId,
+            pilTemplate: address(PIL_TEMPLATE),
+            licensingModule: address(LICENSING_MODULE),
+            licenseTermsData: licenseTermsData
+        });
 
         ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
     }
@@ -199,26 +209,12 @@ contract LicenseAttachmentWorkflows is
 
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 
-        licenseTermsIds = _registerMultiplePILTermsAndAttachAndSetConfigs(ipId, licenseTermsData);
-    }
-
-    /// @notice Registers multiple PIL terms and attaches them to the given IP and sets their licensing configurations.
-    /// @param ipId The ID of the IP.
-    /// @param licenseTermsData The PIL terms and licensing configuration data to be attached to the IP.
-    /// @return licenseTermsIds The IDs of the newly registered PIL terms.
-    function _registerMultiplePILTermsAndAttachAndSetConfigs(
-        address ipId,
-        WorkflowStructs.LicenseTermsData[] calldata licenseTermsData
-    ) private returns (uint256[] memory licenseTermsIds) {
-        licenseTermsIds = new uint256[](licenseTermsData.length);
-        for (uint256 i; i < licenseTermsData.length; i++) {
-            licenseTermsIds[i] = LicensingHelper.registerPILTermsAndAttachAndSetConfigs(
-                ipId,
-                address(PIL_TEMPLATE),
-                address(LICENSING_MODULE),
-                licenseTermsData[i]
-            );
-        }
+        licenseTermsIds = LicensingHelper.registerMultiplePILTermsAndAttachAndSetConfigs({
+            ipId: ipId,
+            pilTemplate: address(PIL_TEMPLATE),
+            licensingModule: address(LICENSING_MODULE),
+            licenseTermsData: licenseTermsData
+        });
     }
 
     //

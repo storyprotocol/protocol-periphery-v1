@@ -17,6 +17,27 @@ import { WorkflowStructs } from "./WorkflowStructs.sol";
 library LicensingHelper {
     using SafeERC20 for IERC20;
 
+    /// @notice Registers multiple PIL terms and attaches them to the given IP and sets their licensing configurations.
+    /// @param ipId The ID of the IP.
+    /// @param licenseTermsData The PIL terms and licensing configuration data to be attached to the IP.
+    /// @return licenseTermsIds The IDs of the newly registered PIL terms.
+    function registerMultiplePILTermsAndAttachAndSetConfigs(
+        address ipId,
+        address pilTemplate,
+        address licensingModule,
+        WorkflowStructs.LicenseTermsData[] calldata licenseTermsData
+    ) internal returns (uint256[] memory licenseTermsIds) {
+        licenseTermsIds = new uint256[](licenseTermsData.length);
+        for (uint256 i; i < licenseTermsData.length; i++) {
+            licenseTermsIds[i] = LicensingHelper.registerPILTermsAndAttachAndSetConfigs(
+                ipId,
+                pilTemplate,
+                licensingModule,
+                licenseTermsData[i]
+            );
+        }
+    }
+
     /// @dev Registers PIL License Terms and attaches them to the given IP.
     /// @param ipId The ID of the IP.
     /// @param pilTemplate The address of the PIL License Template.

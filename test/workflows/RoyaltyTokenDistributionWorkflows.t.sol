@@ -10,8 +10,6 @@ import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
 import { MetaTx } from "@storyprotocol/core/lib/MetaTx.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 import { PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
-import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
-import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
 
 // contracts
 import { Errors } from "../../contracts/lib/Errors.sol";
@@ -27,7 +25,7 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
     uint256 private nftMintingFee;
     uint256 private licenseMintingFee;
 
-    WorkflowStructs.LicenseTermsData private commRemixTermsData;
+    WorkflowStructs.LicenseTermsData[] private commRemixTermsData;
     WorkflowStructs.RoyaltyShare[] private royaltyShares;
     WorkflowStructs.MakeDerivative private derivativeData;
 
@@ -49,7 +47,7 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
         mockToken.mint(u.alice, nftMintingFee);
         mockToken.approve(address(spgNftPublic), nftMintingFee);
 
-        (address ipId, uint256 tokenId, uint256 licenseTermsId) = royaltyTokenDistributionWorkflows
+        (address ipId, uint256 tokenId, uint256[] memory licenseTermsIds) = royaltyTokenDistributionWorkflows
             .mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens({
                 spgNftContract: address(spgNftPublic),
                 recipient: u.alice,
@@ -64,7 +62,7 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
         assertEq(tokenId, 3);
         assertEq(spgNftPublic.tokenURI(tokenId), string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
         assertMetadata(ipId, ipMetadataDefault);
-        _assertAttachedLicenseTerms(ipId, licenseTermsId);
+        _assertAttachedLicenseTerms(ipId, licenseTermsIds);
         _assertRoyaltyTokenDistribution(ipId);
     }
 
@@ -125,7 +123,7 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
 
         // register IP, attach PIL terms, and deploy royalty vault
         vm.startPrank(u.alice);
-        (address ipId, uint256 licenseTermsId, address ipRoyaltyVault) = royaltyTokenDistributionWorkflows
+        (address ipId, uint256[] memory licenseTermsIds, address ipRoyaltyVault) = royaltyTokenDistributionWorkflows
             .registerIpAndAttachPILTermsAndDeployRoyaltyVault({
                 nftContract: address(mockNft),
                 tokenId: tokenId,
@@ -167,7 +165,7 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
 
         assertTrue(ipAssetRegistry.isRegistered(ipId));
         assertMetadata(ipId, ipMetadataDefault);
-        _assertAttachedLicenseTerms(ipId, licenseTermsId);
+        _assertAttachedLicenseTerms(ipId, licenseTermsIds);
         _assertRoyaltyTokenDistribution(ipId);
     }
 
@@ -287,40 +285,85 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
 
         uint32 testCommRevShare = 5 * 10 ** 6; // 5%
 
-        commRemixTermsData = WorkflowStructs.LicenseTermsData({
-            terms: PILFlavors.commercialRemix({
-                mintingFee: licenseMintingFee,
-                commercialRevShare: testCommRevShare,
-                royaltyPolicy: address(royaltyPolicyLAP),
-                currencyToken: address(mockToken)
-            }),
-            licensingConfig: Licensing.LicensingConfig({
-                isSet: true,
-                mintingFee: licenseMintingFee,
-                licensingHook: address(0),
-                hookData: "",
-                commercialRevShare: testCommRevShare, // 5%
-                disabled: false,
-                expectMinimumGroupRewardShare: 0,
-                expectGroupRewardPool: address(evenSplitGroupPool)
+        commRemixTermsData.push(
+            WorkflowStructs.LicenseTermsData({
+                terms: PILFlavors.commercialRemix({
+                    mintingFee: licenseMintingFee,
+                    commercialRevShare: testCommRevShare,
+                    royaltyPolicy: address(royaltyPolicyLAP),
+                    currencyToken: address(mockToken)
+                }),
+                licensingConfig: Licensing.LicensingConfig({
+                    isSet: true,
+                    mintingFee: licenseMintingFee,
+                    licensingHook: address(0),
+                    hookData: "",
+                    commercialRevShare: testCommRevShare, // 5%
+                    disabled: false,
+                    expectMinimumGroupRewardShare: 0,
+                    expectGroupRewardPool: address(evenSplitGroupPool)
+                })
             })
-        });
+        );
 
-        WorkflowStructs.LicenseTermsData[] memory licenseTermsDataParent = new WorkflowStructs.LicenseTermsData[](1);
-        licenseTermsDataParent[0] = commRemixTermsData;
+        commRemixTermsData.push(
+            WorkflowStructs.LicenseTermsData({
+                terms: PILFlavors.commercialRemix({
+                    mintingFee: licenseMintingFee,
+                    commercialRevShare: 5_000_000, // 5%
+                    royaltyPolicy: address(royaltyPolicyLRP),
+                    currencyToken: address(mockToken)
+                }),
+                licensingConfig: Licensing.LicensingConfig({
+                    isSet: true,
+                    mintingFee: licenseMintingFee,
+                    licensingHook: address(0),
+                    hookData: "",
+                    commercialRevShare: 5_000_000, // 5%
+                    disabled: false,
+                    expectMinimumGroupRewardShare: 0,
+                    expectGroupRewardPool: address(evenSplitGroupPool)
+                })
+            })
+        );
+
+        commRemixTermsData.push(
+            WorkflowStructs.LicenseTermsData({
+                terms: PILFlavors.commercialRemix({
+                    mintingFee: licenseMintingFee,
+                    commercialRevShare: 8_000_000, // 8%
+                    royaltyPolicy: address(royaltyPolicyLAP),
+                    currencyToken: address(mockToken)
+                }),
+                licensingConfig: Licensing.LicensingConfig({
+                    isSet: true,
+                    mintingFee: licenseMintingFee,
+                    licensingHook: address(0),
+                    hookData: "",
+                    commercialRevShare: 8_000_000, // 8%
+                    disabled: false,
+                    expectMinimumGroupRewardShare: 0,
+                    expectGroupRewardPool: address(evenSplitGroupPool)
+                })
+            })
+        );
+
         address[] memory ipIdParent = new address[](1);
-        uint256[] memory licenseTermsIdsParent;
+        uint256[] memory licenseTermsIds;
         vm.startPrank(u.alice);
         mockToken.mint(u.alice, licenseMintingFee);
         mockToken.approve(address(spgNftPublic), licenseMintingFee);
-        (ipIdParent[0], , licenseTermsIdsParent) = licenseAttachmentWorkflows.mintAndRegisterIpAndAttachPILTerms({
+        (ipIdParent[0], , licenseTermsIds) = licenseAttachmentWorkflows.mintAndRegisterIpAndAttachPILTerms({
             spgNftContract: address(spgNftPublic),
             recipient: u.alice,
             ipMetadata: ipMetadataDefault,
-            licenseTermsData: licenseTermsDataParent,
+            licenseTermsData: commRemixTermsData,
             allowDuplicates: true
         });
         vm.stopPrank();
+
+        uint256[] memory licenseTermsIdsParent = new uint256[](1);
+        licenseTermsIdsParent[0] = licenseTermsIds[0];
 
         derivativeData = WorkflowStructs.MakeDerivative({
             parentIpIds: ipIdParent,
@@ -361,27 +404,36 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
         );
     }
 
-    function _assertAttachedLicenseTerms(address ipId, uint256 licenseTermsId) private {
-        (address licenseTemplate, uint256 licenseTermsIdAttached) = licenseRegistry.getAttachedLicenseTerms(ipId, 0);
-        assertEq(licenseTermsId, licenseTermsIdAttached);
-        assertEq(licenseTemplate, address(pilTemplate));
-        assertEq(licenseTermsIdAttached, pilTemplate.getLicenseTermsId(commRemixTermsData.terms));
-        Licensing.LicensingConfig memory licensingConfig = licenseRegistry.getLicensingConfig(
-            ipId,
-            licenseTemplate,
-            licenseTermsIdAttached
-        );
-        assertEq(licensingConfig.isSet, commRemixTermsData.licensingConfig.isSet);
-        assertEq(licensingConfig.mintingFee, commRemixTermsData.licensingConfig.mintingFee);
-        assertEq(licensingConfig.licensingHook, commRemixTermsData.licensingConfig.licensingHook);
-        assertEq(licensingConfig.hookData, commRemixTermsData.licensingConfig.hookData);
-        assertEq(licensingConfig.commercialRevShare, commRemixTermsData.licensingConfig.commercialRevShare);
-        assertEq(licensingConfig.disabled, commRemixTermsData.licensingConfig.disabled);
-        assertEq(licensingConfig.expectGroupRewardPool, commRemixTermsData.licensingConfig.expectGroupRewardPool);
-        assertEq(
-            licensingConfig.expectMinimumGroupRewardShare,
-            commRemixTermsData.licensingConfig.expectMinimumGroupRewardShare
-        );
+    function _assertAttachedLicenseTerms(address ipId, uint256[] memory licenseTermsIds) private {
+        for (uint256 i = 0; i < commRemixTermsData.length; i++) {
+            (address licenseTemplate, uint256 licenseTermsIdAttached) = licenseRegistry.getAttachedLicenseTerms(
+                ipId,
+                i
+            );
+            assertEq(licenseTermsIds[i], licenseTermsIdAttached);
+            assertEq(licenseTemplate, address(pilTemplate));
+            assertEq(licenseTermsIdAttached, licenseTermsIds[i]);
+            assertEq(licenseTermsIdAttached, pilTemplate.getLicenseTermsId(commRemixTermsData[i].terms));
+            Licensing.LicensingConfig memory licensingConfig = licenseRegistry.getLicensingConfig(
+                ipId,
+                licenseTemplate,
+                licenseTermsIdAttached
+            );
+            assertEq(licensingConfig.isSet, commRemixTermsData[i].licensingConfig.isSet);
+            assertEq(licensingConfig.mintingFee, commRemixTermsData[i].licensingConfig.mintingFee);
+            assertEq(licensingConfig.licensingHook, commRemixTermsData[i].licensingConfig.licensingHook);
+            assertEq(licensingConfig.hookData, commRemixTermsData[i].licensingConfig.hookData);
+            assertEq(licensingConfig.commercialRevShare, commRemixTermsData[i].licensingConfig.commercialRevShare);
+            assertEq(licensingConfig.disabled, commRemixTermsData[i].licensingConfig.disabled);
+            assertEq(
+                licensingConfig.expectGroupRewardPool,
+                commRemixTermsData[i].licensingConfig.expectGroupRewardPool
+            );
+            assertEq(
+                licensingConfig.expectMinimumGroupRewardShare,
+                commRemixTermsData[i].licensingConfig.expectMinimumGroupRewardShare
+            );
+        }
     }
 
     /// @dev Assert that the royalty tokens have been distributed correctly.

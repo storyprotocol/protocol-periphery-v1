@@ -126,15 +126,21 @@ contract RoyaltyTokenDistributionWorkflows is
     /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
     /// @return ipId The ID of the registered IP.
     /// @return tokenId The ID of the minted NFT.
-    /// @return licenseTermsId The ID of the attached PIL terms.
+    /// @return licenseTermsIds The IDs of the attached PIL terms.
     function mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens(
         address spgNftContract,
         address recipient,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        WorkflowStructs.LicenseTermsData calldata licenseTermsData,
+        WorkflowStructs.LicenseTermsData[] calldata licenseTermsData,
         WorkflowStructs.RoyaltyShare[] calldata royaltyShares,
         bool allowDuplicates
-    ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId, uint256 licenseTermsId) {
+    )
+        external
+        onlyMintAuthorized(spgNftContract)
+        returns (address ipId, uint256 tokenId, uint256[] memory licenseTermsIds)
+    {
+        if (licenseTermsData.length == 0) revert Errors.RoyaltyTokenDistributionWorkflows__NoLicenseTermsData();
+
         tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
             to: address(this),
             payer: msg.sender,
@@ -146,7 +152,7 @@ contract RoyaltyTokenDistributionWorkflows is
         ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 
-        licenseTermsId = LicensingHelper.registerPILTermsAndAttachAndSetConfigs({
+        licenseTermsIds = LicensingHelper.registerMultiplePILTermsAndAttachAndSetConfigs({
             ipId: ipId,
             pilTemplate: address(PIL_TEMPLATE),
             licensingModule: address(LICENSING_MODULE),
@@ -217,15 +223,17 @@ contract RoyaltyTokenDistributionWorkflows is
     /// @param sigMetadataAndAttachAndConfig Signature data for setAll (metadata), attachLicenseTerms, and
     /// setLicensingConfig to the IP via the Core Metadata Module and Licensing Module.
     /// @return ipId The ID of the registered IP.
-    /// @return licenseTermsId The ID of the attached PIL terms.
+    /// @return licenseTermsIds The IDs of the attached PIL terms.
     /// @return ipRoyaltyVault The address of the deployed royalty vault.
     function registerIpAndAttachPILTermsAndDeployRoyaltyVault(
         address nftContract,
         uint256 tokenId,
         WorkflowStructs.IPMetadata calldata ipMetadata,
-        WorkflowStructs.LicenseTermsData calldata licenseTermsData,
+        WorkflowStructs.LicenseTermsData[] calldata licenseTermsData,
         WorkflowStructs.SignatureData calldata sigMetadataAndAttachAndConfig
-    ) external returns (address ipId, uint256 licenseTermsId, address ipRoyaltyVault) {
+    ) external returns (address ipId, uint256[] memory licenseTermsIds, address ipRoyaltyVault) {
+        if (licenseTermsData.length == 0) revert Errors.RoyaltyTokenDistributionWorkflows__NoLicenseTermsData();
+
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
         address[] memory modules = new address[](3);
@@ -246,7 +254,7 @@ contract RoyaltyTokenDistributionWorkflows is
 
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 
-        licenseTermsId = LicensingHelper.registerPILTermsAndAttachAndSetConfigs({
+        licenseTermsIds = LicensingHelper.registerMultiplePILTermsAndAttachAndSetConfigs({
             ipId: ipId,
             pilTemplate: address(PIL_TEMPLATE),
             licensingModule: address(LICENSING_MODULE),
