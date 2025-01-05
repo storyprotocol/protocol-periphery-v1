@@ -53,11 +53,13 @@ jobs:
       - name: Run solhint
         run: npx solhint contracts/**/*.sol
 
-  Coverage:
-    needs: [foundry-test]
-    uses: storyprotocol/gha-workflows/.github/workflows/reusable-forge-code-coverage.yml@main
-    # FOR LOCAL TESTING ONLY
-    # uses: ./../gha-workflows/.github/workflows/reusable-forge-code-coverage.yml
-    with:
-      exclude_paths: 'test/*, script/*'
-      branch_coverage: true --ignore-errors unused
+  # TODO: need to update storyprotocol/gha-workflows/.github/workflows/reusable-forge-code-coverage.yml@main to accommodate the changes in the new lcov version
+  #
+  # Coverage:
+  #   needs: [foundry-test]
+  #   uses: storyprotocol/gha-workflows/.github/workflows/reusable-forge-code-coverage.yml@main
+  #   # FOR LOCAL TESTING ONLY
+  #   # uses: ./../gha-workflows/.github/workflows/reusable-forge-code-coverage.yml
+  #   with:
+  #     exclude_paths: 'test/*, script/*'
+  #     branch_coverage: true
