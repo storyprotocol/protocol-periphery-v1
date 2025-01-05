@@ -177,11 +177,7 @@ contract DeployHelper is
 
             // Set SPGNFTBeacon for periphery workflow contracts, access controlled
             // can't be done in deployment script:
-            // derivativeWorkflows.setNftContractBeacon(address(spgNftBeacon));
-            // groupingWorkflows.setNftContractBeacon(address(spgNftBeacon));
-            // licenseAttachmentWorkflows.setNftContractBeacon(address(spgNftBeacon));
             // registrationWorkflows.setNftContractBeacon(address(spgNftBeacon));
-            // royaltyTokenDistributionWorkflows.setNftContractBeacon(address(spgNftBeacon));
         }
     }
 

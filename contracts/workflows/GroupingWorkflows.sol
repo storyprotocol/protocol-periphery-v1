@@ -39,18 +39,6 @@ contract GroupingWorkflows is
 {
     using ERC165Checker for address;
 
-    /// @dev Storage structure for the GroupingWorkflows
-    /// @param nftContractBeacon The address of the NFT contract beacon.
-    /// @custom:storage-location erc7201:story-protocol-periphery.GroupingWorkflows
-    struct GroupingWorkflowsStorage {
-        address nftContractBeacon;
-    }
-
-    // solhint-disable-next-line max-line-length
-    // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.GroupingWorkflows")) - 1)) & ~bytes32(uint256(0xff));
-    bytes32 private constant GroupingWorkflowsStorageLocation =
-        0xa8ddbb5f662015e2b3d6b4c61921979ad3d3d1d19e338b1c4ba6a196b10c6400;
-
     /// @notice The address of the Grouping Module.
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IGroupingModule public immutable GROUPING_MODULE;
@@ -108,14 +96,6 @@ contract GroupingWorkflows is
         if (accessManager == address(0)) revert Errors.GroupingWorkflows__ZeroAddressParam();
         __AccessManaged_init(accessManager);
         __UUPSUpgradeable_init();
-    }
-
-    /// @dev Sets the NFT contract beacon address.
-    /// @param newNftContractBeacon The address of the new NFT contract beacon.
-    function setNftContractBeacon(address newNftContractBeacon) external restricted {
-        if (newNftContractBeacon == address(0)) revert Errors.GroupingWorkflows__ZeroAddressParam();
-        GroupingWorkflowsStorage storage $ = _getGroupingWorkflowsStorage();
-        $.nftContractBeacon = newNftContractBeacon;
     }
 
     /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP, attach
@@ -333,13 +313,6 @@ contract GroupingWorkflows is
     //
     // Upgrade
     //
-
-    /// @dev Returns the storage struct of GroupingWorkflows.
-    function _getGroupingWorkflowsStorage() private pure returns (GroupingWorkflowsStorage storage $) {
-        assembly {
-            $.slot := GroupingWorkflowsStorageLocation
-        }
-    }
 
     /// @dev Hook to authorize the upgrade according to UUPSUpgradeable
     /// @param newImplementation The address of the new implementation

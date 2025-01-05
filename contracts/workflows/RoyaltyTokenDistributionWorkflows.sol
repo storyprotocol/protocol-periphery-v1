@@ -37,18 +37,6 @@ contract RoyaltyTokenDistributionWorkflows is
 {
     using ERC165Checker for address;
 
-    /// @dev Storage structure for the RoyaltyTokenDistributionWorkflows
-    /// @param nftContractBeacon The address of the NFT contract beacon.
-    /// @custom:storage-location erc7201:story-protocol-periphery.RoyaltyTokenDistributionWorkflows
-    struct RoyaltyTokenDistributionWorkflowsStorage {
-        address nftContractBeacon;
-    }
-
-    // solhint-disable-next-line max-line-length
-    // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.RoyaltyTokenDistributionWorkflows")) - 1)) & ~bytes32(uint256(0xff));
-    bytes32 private constant RoyaltyTokenDistributionWorkflowsStorageLocation =
-        0x49f5a60a01a4171ac277a9cd523bb469bbf7cf89b7349fb34e8335e241d25600;
-
     /// @notice The address of the Royalty Module.
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IRoyaltyModule public immutable ROYALTY_MODULE;
@@ -107,14 +95,6 @@ contract RoyaltyTokenDistributionWorkflows is
         if (accessManager == address(0)) revert Errors.RoyaltyTokenDistributionWorkflows__ZeroAddressParam();
         __AccessManaged_init(accessManager);
         __UUPSUpgradeable_init();
-    }
-
-    /// @dev Sets the NFT contract beacon address.
-    /// @param newNftContractBeacon The address of the new NFT contract beacon.
-    function setNftContractBeacon(address newNftContractBeacon) external restricted {
-        if (newNftContractBeacon == address(0)) revert Errors.RoyaltyTokenDistributionWorkflows__ZeroAddressParam();
-        RoyaltyTokenDistributionWorkflowsStorage storage $ = _getRoyaltyTokenDistributionWorkflowsStorage();
-        $.nftContractBeacon = newNftContractBeacon;
     }
 
     /// @notice Mint an NFT and register the IP, attach PIL terms, and distribute royalty tokens.
@@ -442,17 +422,6 @@ contract RoyaltyTokenDistributionWorkflows is
     //
     // Upgrade
     //
-
-    /// @dev Returns the storage struct of RoyaltyTokenDistributionWorkflows.
-    function _getRoyaltyTokenDistributionWorkflowsStorage()
-        private
-        pure
-        returns (RoyaltyTokenDistributionWorkflowsStorage storage $)
-    {
-        assembly {
-            $.slot := RoyaltyTokenDistributionWorkflowsStorageLocation
-        }
-    }
 
     /// @dev Hook to authorize the upgrade according to UUPSUpgradeable
     /// @param newImplementation The address of the new implementation

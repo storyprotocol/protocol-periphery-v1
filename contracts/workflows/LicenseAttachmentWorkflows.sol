@@ -32,18 +32,6 @@ contract LicenseAttachmentWorkflows is
 {
     using ERC165Checker for address;
 
-    /// @dev Storage structure for the LicenseAttachmentWorkflows
-    /// @param nftContractBeacon The address of the NFT contract beacon.
-    /// @custom:storage-location erc7201:story-protocol-periphery.LicenseAttachmentWorkflows
-    struct LicenseAttachmentWorkflowsStorage {
-        address nftContractBeacon;
-    }
-
-    // solhint-disable-next-line max-line-length
-    // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.LicenseAttachmentWorkflows")) - 1)) & ~bytes32(uint256(0xff));
-    bytes32 private constant LicenseAttachmentWorkflowsStorageLocation =
-        0x5dffa4259249ac7a3ead22d30b4086dd3916391710734d6dd1182f2c1fe1b200;
-
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
         address accessController,
@@ -80,14 +68,6 @@ contract LicenseAttachmentWorkflows is
         if (accessManager == address(0)) revert Errors.LicenseAttachmentWorkflows__ZeroAddressParam();
         __AccessManaged_init(accessManager);
         __UUPSUpgradeable_init();
-    }
-
-    /// @dev Sets the NFT contract beacon address.
-    /// @param newNftContractBeacon The address of the new NFT contract beacon.
-    function setNftContractBeacon(address newNftContractBeacon) external restricted {
-        if (newNftContractBeacon == address(0)) revert Errors.LicenseAttachmentWorkflows__ZeroAddressParam();
-        LicenseAttachmentWorkflowsStorage storage $ = _getLicenseAttachmentWorkflowsStorage();
-        $.nftContractBeacon = newNftContractBeacon;
     }
 
     /// @notice Register Programmable IP License Terms (if unregistered) and attach it to IP.
@@ -220,17 +200,6 @@ contract LicenseAttachmentWorkflows is
     //
     // Upgrade
     //
-
-    /// @dev Returns the storage struct of LicenseAttachmentWorkflows.
-    function _getLicenseAttachmentWorkflowsStorage()
-        private
-        pure
-        returns (LicenseAttachmentWorkflowsStorage storage $)
-    {
-        assembly {
-            $.slot := LicenseAttachmentWorkflowsStorageLocation
-        }
-    }
 
     /// @dev Hook to authorize the upgrade according to UUPSUpgradeable
     /// @param newImplementation The address of the new implementation
