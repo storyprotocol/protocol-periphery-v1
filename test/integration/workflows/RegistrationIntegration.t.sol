@@ -185,7 +185,8 @@ contract RegistrationIntegration is BaseIntegration {
                 bytes4(keccak256("mintAndRegisterIp(address,address,(string,bytes32,string,bytes32),bool)")),
                 address(spgNftContract),
                 testSender,
-                testIpMetadata
+                testIpMetadata,
+                true
             );
         }
         bytes[] memory results = registrationWorkflows.multicall(data);
