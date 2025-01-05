@@ -60,4 +60,4 @@ jobs:
     # uses: ./../gha-workflows/.github/workflows/reusable-forge-code-coverage.yml
     with:
       exclude_paths: 'test/*, script/*'
-      branch_coverage: true
+      branch_coverage: true --ignore-errors unused
