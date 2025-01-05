@@ -19,22 +19,31 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
     uint256 public tokenId1;
     uint256 public tokenId2;
     uint256 public tokenId3;
+    uint256 public commUseTermsId;
 
     function setUp() public override {
         super.setUp();
+        commUseTermsId = pilTemplate.registerLicenseTerms(
+            PILFlavors.commercialUse(0, address(mockToken), address(royaltyPolicyLAP))
+        );
         tokenId1 = mockNft.mint(ipOwner1);
         tokenId2 = mockNft.mint(ipOwner2);
         tokenId3 = mockNft.mint(ipOwner3);
         ipId1 = ipAssetRegistry.register(block.chainid, address(mockNft), tokenId1);
         ipId2 = ipAssetRegistry.register(block.chainid, address(mockNft), tokenId2);
         ipId3 = ipAssetRegistry.register(block.chainid, address(mockNft), tokenId3);
+        vm.prank(ipOwner1);
+        licensingModule.attachLicenseTerms(ipId1, address(pilTemplate), commUseTermsId);
+        vm.prank(ipOwner2);
+        licensingModule.attachLicenseTerms(ipId2, address(pilTemplate), commUseTermsId);
+        vm.prank(ipOwner3);
+        licensingModule.attachLicenseTerms(ipId3, address(pilTemplate), commUseTermsId);
         vm.label(ipId1, "IPAccount1");
         vm.label(ipId2, "IPAccount2");
         vm.label(ipId3, "IPAccount3");
     }
 
     function test_TotalLicenseTokenLimitHook_setLimit() public {
-        uint256 socialRemixTermsId = pilTemplate.registerLicenseTerms(PILFlavors.nonCommercialSocialRemixing());
         TotalLicenseTokenLimitHook totalLimitHook = new TotalLicenseTokenLimitHook(
             address(licenseRegistry),
             address(licenseToken),
@@ -56,26 +65,26 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
         });
 
         vm.startPrank(ipOwner1);
-        licensingModule.setLicensingConfig(ipId1, address(pilTemplate), socialRemixTermsId, licensingConfig);
-        totalLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), socialRemixTermsId, 10);
-        assertEq(totalLimitHook.getTotalLicenseTokenLimit(ipId1, address(pilTemplate), socialRemixTermsId), 10);
+        licensingModule.setLicensingConfig(ipId1, address(pilTemplate), commUseTermsId, licensingConfig);
+        totalLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId, 10);
+        assertEq(totalLimitHook.getTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId), 10);
         vm.stopPrank();
 
         vm.startPrank(ipOwner2);
         licensingModule.setLicensingConfig(ipId2, address(0), 0, licensingConfig);
-        totalLimitHook.setTotalLicenseTokenLimit(ipId2, address(pilTemplate), socialRemixTermsId, 20);
-        assertEq(totalLimitHook.getTotalLicenseTokenLimit(ipId2, address(pilTemplate), socialRemixTermsId), 20);
+        totalLimitHook.setTotalLicenseTokenLimit(ipId2, address(pilTemplate), commUseTermsId, 20);
+        assertEq(totalLimitHook.getTotalLicenseTokenLimit(ipId2, address(pilTemplate), commUseTermsId), 20);
         vm.stopPrank();
 
         vm.startPrank(ipOwner3);
-        licensingModule.setLicensingConfig(ipId3, address(pilTemplate), socialRemixTermsId, licensingConfig);
-        assertEq(totalLimitHook.getTotalLicenseTokenLimit(ipId3, address(pilTemplate), socialRemixTermsId), 0);
+        licensingModule.setLicensingConfig(ipId3, address(pilTemplate), commUseTermsId, licensingConfig);
+        assertEq(totalLimitHook.getTotalLicenseTokenLimit(ipId3, address(pilTemplate), commUseTermsId), 0);
         vm.stopPrank();
 
         licensingModule.mintLicenseTokens({
             licensorIpId: ipId1,
             licenseTemplate: address(pilTemplate),
-            licenseTermsId: socialRemixTermsId,
+            licenseTermsId: commUseTermsId,
             amount: 10,
             receiver: u.alice,
             royaltyContext: "",
@@ -85,7 +94,7 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
         licensingModule.mintLicenseTokens({
             licensorIpId: ipId2,
             licenseTemplate: address(pilTemplate),
-            licenseTermsId: socialRemixTermsId,
+            licenseTermsId: commUseTermsId,
             amount: 20,
             receiver: u.alice,
             royaltyContext: "",
@@ -95,7 +104,7 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
         licensingModule.mintLicenseTokens({
             licensorIpId: ipId3,
             licenseTemplate: address(pilTemplate),
-            licenseTermsId: socialRemixTermsId,
+            licenseTermsId: commUseTermsId,
             amount: 10,
             receiver: u.alice,
             royaltyContext: "",
@@ -114,7 +123,7 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
         licensingModule.mintLicenseTokens({
             licensorIpId: ipId1,
             licenseTemplate: address(pilTemplate),
-            licenseTermsId: socialRemixTermsId,
+            licenseTermsId: commUseTermsId,
             amount: 5,
             receiver: u.alice,
             royaltyContext: "",
@@ -133,7 +142,7 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
         licensingModule.mintLicenseTokens({
             licensorIpId: ipId2,
             licenseTemplate: address(pilTemplate),
-            licenseTermsId: socialRemixTermsId,
+            licenseTermsId: commUseTermsId,
             amount: 5,
             receiver: u.alice,
             royaltyContext: "",
@@ -143,7 +152,6 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
     }
 
     function test_TotalLicenseTokenLimitHook_revert_nonIpOwner_setLimit() public {
-        uint256 socialRemixTermsId = pilTemplate.registerLicenseTerms(PILFlavors.nonCommercialSocialRemixing());
         TotalLicenseTokenLimitHook totalLimitHook = new TotalLicenseTokenLimitHook(
             address(licenseRegistry),
             address(licenseToken),
@@ -165,9 +173,9 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
         });
 
         vm.startPrank(ipOwner1);
-        licensingModule.setLicensingConfig(ipId1, address(pilTemplate), socialRemixTermsId, licensingConfig);
-        totalLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), socialRemixTermsId, 10);
-        assertEq(totalLimitHook.getTotalLicenseTokenLimit(ipId1, address(pilTemplate), socialRemixTermsId), 10);
+        licensingModule.setLicensingConfig(ipId1, address(pilTemplate), commUseTermsId, licensingConfig);
+        totalLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId, 10);
+        assertEq(totalLimitHook.getTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId), 10);
         vm.stopPrank();
 
         vm.startPrank(ipOwner2);
@@ -180,11 +188,10 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
                 totalLimitHook.setTotalLicenseTokenLimit.selector
             )
         );
-        totalLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), socialRemixTermsId, 20);
+        totalLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId, 20);
     }
 
     function test_TotalLicenseTokenLimitHook_revert_limitLowerThanTotalSupply_setLimit() public {
-        uint256 socialRemixTermsId = pilTemplate.registerLicenseTerms(PILFlavors.nonCommercialSocialRemixing());
         TotalLicenseTokenLimitHook totalLimitHook = new TotalLicenseTokenLimitHook(
             address(licenseRegistry),
             address(licenseToken),
@@ -206,14 +213,14 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
         });
 
         vm.startPrank(ipOwner1);
-        licensingModule.setLicensingConfig(ipId1, address(pilTemplate), socialRemixTermsId, licensingConfig);
-        totalLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), socialRemixTermsId, 10);
-        assertEq(totalLimitHook.getTotalLicenseTokenLimit(ipId1, address(pilTemplate), socialRemixTermsId), 10);
+        licensingModule.setLicensingConfig(ipId1, address(pilTemplate), commUseTermsId, licensingConfig);
+        totalLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId, 10);
+        assertEq(totalLimitHook.getTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId), 10);
 
         licensingModule.mintLicenseTokens({
             licensorIpId: ipId1,
             licenseTemplate: address(pilTemplate),
-            licenseTermsId: socialRemixTermsId,
+            licenseTermsId: commUseTermsId,
             amount: 10,
             receiver: u.alice,
             royaltyContext: "",
@@ -228,6 +235,6 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
                 5
             )
         );
-        totalLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), socialRemixTermsId, 5);
+        totalLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId, 5);
     }
 }
