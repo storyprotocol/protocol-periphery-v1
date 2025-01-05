@@ -36,18 +36,6 @@ contract DerivativeWorkflows is
 {
     using ERC165Checker for address;
 
-    /// @dev Storage structure for the DerivativeWorkflows
-    /// @param nftContractBeacon The address of the NFT contract beacon.
-    /// @custom:storage-location erc7201:story-protocol-periphery.DerivativeWorkflows
-    struct DerivativeWorkflowsStorage {
-        address nftContractBeacon;
-    }
-
-    // solhint-disable-next-line max-line-length
-    // keccak256(abi.encode(uint256(keccak256("story-protocol-periphery.DerivativeWorkflows")) - 1)) & ~bytes32(uint256(0xff));
-    bytes32 private constant DerivativeWorkflowsStorageLocation =
-        0xd52de5238bdb22c2473ee7a9de2482cc2f392e6aae2d3cca6798fa8abd456f00;
-
     /// @notice The address of the Royalty Module.
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IRoyaltyModule public immutable ROYALTY_MODULE;
@@ -99,14 +87,6 @@ contract DerivativeWorkflows is
         if (accessManager == address(0)) revert Errors.DerivativeWorkflows__ZeroAddressParam();
         __AccessManaged_init(accessManager);
         __UUPSUpgradeable_init();
-    }
-
-    /// @dev Sets the NFT contract beacon address.
-    /// @param newNftContractBeacon The address of the new NFT contract beacon.
-    function setNftContractBeacon(address newNftContractBeacon) external restricted {
-        if (newNftContractBeacon == address(0)) revert Errors.DerivativeWorkflows__ZeroAddressParam();
-        DerivativeWorkflowsStorage storage $ = _getDerivativeWorkflowsStorage();
-        $.nftContractBeacon = newNftContractBeacon;
     }
 
     /// @notice Mint an NFT from a SPGNFT collection and register it as a derivative IP without license tokens.
@@ -287,13 +267,6 @@ contract DerivativeWorkflows is
     //
     // Upgrade
     //
-
-    /// @dev Returns the storage struct of DerivativeWorkflows.
-    function _getDerivativeWorkflowsStorage() private pure returns (DerivativeWorkflowsStorage storage $) {
-        assembly {
-            $.slot := DerivativeWorkflowsStorageLocation
-        }
-    }
 
     /// @dev Hook to authorize the upgrade according to UUPSUpgradeable
     /// @param newImplementation The address of the new implementation
