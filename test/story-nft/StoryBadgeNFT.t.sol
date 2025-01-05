@@ -6,6 +6,7 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC721Metadata } from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { TestProxyHelper } from "@storyprotocol/test/utils/TestProxyHelper.sol";
 
 // contracts
 import { BaseStoryNFT } from "../../contracts/story-nft/BaseStoryNFT.sol";
@@ -17,7 +18,6 @@ import { CachableNFT } from "../../contracts/story-nft/CachableNFT.sol";
 
 // test
 import { BaseTest } from "../utils/BaseTest.t.sol";
-import { TestProxyHelper } from "../utils/TestProxyHelper.t.sol";
 
 contract StoryBadgeNFTTest is BaseTest {
     function setUp() public override {

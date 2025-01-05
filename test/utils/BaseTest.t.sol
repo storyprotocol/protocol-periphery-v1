@@ -3,7 +3,7 @@ pragma solidity 0.8.26;
 
 // external
 import { Test } from "forge-std/Test.sol";
-import { Create3Deployer } from "@create3-deployer/contracts/Create3Deployer.sol";
+import { Create3Deployer } from "@storyprotocol/script/utils/Create3Deployer.sol";
 import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import { AccessPermission } from "@storyprotocol/core/lib/AccessPermission.sol";
 import { IAccessController } from "@storyprotocol/core/interfaces/access/IAccessController.sol";

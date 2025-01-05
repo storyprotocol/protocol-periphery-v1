@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 // external
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC721Metadata } from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
+import { TestProxyHelper } from "@storyprotocol/test/utils/TestProxyHelper.sol";
 
 // contracts
 import { IOrgNFT } from "../../contracts/interfaces/story-nft/IOrgNFT.sol";
@@ -11,7 +12,6 @@ import { OrgNFT } from "../../contracts/story-nft/OrgNFT.sol";
 
 // test
 import { BaseTest } from "../utils/BaseTest.t.sol";
-import { TestProxyHelper } from "../utils/TestProxyHelper.t.sol";
 
 contract OrgNFTTest is BaseTest {
     function setUp() public override {
