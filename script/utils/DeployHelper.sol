@@ -7,9 +7,9 @@ import { console2 } from "forge-std/console2.sol";
 import { Script } from "forge-std/Script.sol";
 import { stdJson } from "forge-std/StdJson.sol";
 import { ERC6551Registry } from "erc6551/ERC6551Registry.sol";
-import { ICreate3Deployer } from "@create3-deployer/contracts/ICreate3Deployer.sol";
 import { AccessManager } from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
+import { ICreate3Deployer } from "@storyprotocol/script/utils/ICreate3Deployer.sol";
 import { AccessController } from "@storyprotocol/core/access/AccessController.sol";
 import { CoreMetadataModule } from "@storyprotocol/core/modules/metadata/CoreMetadataModule.sol";
 import { CoreMetadataViewModule } from "@storyprotocol/core/modules/metadata/CoreMetadataViewModule.sol";
@@ -24,6 +24,7 @@ import { IpRoyaltyVault } from "@storyprotocol/core/modules/royalty/policies/IpR
 import { LicenseRegistry } from "@storyprotocol/core/registries/LicenseRegistry.sol";
 import { LicenseToken } from "@storyprotocol/core/LicenseToken.sol";
 import { LicensingModule } from "@storyprotocol/core/modules/licensing/LicensingModule.sol";
+import { IModuleRegistry } from "@storyprotocol/core/interfaces/registries/IModuleRegistry.sol";
 import { ModuleRegistry } from "@storyprotocol/core/registries/ModuleRegistry.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 import { PILicenseTemplate } from "@storyprotocol/core/modules/licensing/PILicenseTemplate.sol";
@@ -31,6 +32,7 @@ import { RoyaltyModule } from "@storyprotocol/core/modules/royalty/RoyaltyModule
 import { RoyaltyPolicyLAP } from "@storyprotocol/core/modules/royalty/policies/LAP/RoyaltyPolicyLAP.sol";
 import { RoyaltyPolicyLRP } from "@storyprotocol/core/modules/royalty/policies/LRP/RoyaltyPolicyLRP.sol";
 import { StorageLayoutChecker } from "@storyprotocol/script/utils/upgrades/StorageLayoutCheck.s.sol";
+import { TestProxyHelper } from "@storyprotocol/test/utils/TestProxyHelper.sol";
 
 // contracts
 import { SPGNFT } from "../../contracts/SPGNFT.sol";
@@ -55,7 +57,6 @@ import { StringUtil } from "./StringUtil.sol";
 
 // test
 import { MockERC20 } from "../../test/mocks/MockERC20.sol";
-import { TestProxyHelper } from "../../test/utils/TestProxyHelper.t.sol";
 
 contract DeployHelper is
     Script,
@@ -70,6 +71,9 @@ contract DeployHelper is
 
     // PROXY 1967 IMPLEMENTATION STORAGE SLOTS
     bytes32 internal constant IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+
+    // WIP address
+    address internal wipAddr = 0x1516000000000000000000000000000000000000;
 
     error DeploymentConfigError(string message);
 
@@ -243,9 +247,9 @@ contract DeployHelper is
         // Upgradeable Beacon for DefaultOrgStoryNFTTemplate
         _predeploy("DefaultOrgStoryNFTBeacon");
         defaultOrgStoryNftBeacon = address(UpgradeableBeacon(
-            create3Deployer.deploy(
-                _getSalt("DefaultOrgStoryNFTBeacon"),
-                abi.encodePacked(type(UpgradeableBeacon).creationCode, abi.encode(defaultOrgStoryNftTemplate, deployer))
+            create3Deployer.deployDeterministic(
+                abi.encodePacked(type(UpgradeableBeacon).creationCode, abi.encode(defaultOrgStoryNftTemplate, deployer)),
+                _getSalt("DefaultOrgStoryNFTBeacon")
             )
         ));
         _postdeploy("DefaultOrgStoryNFTBeacon", address(defaultOrgStoryNftBeacon));
@@ -432,8 +436,7 @@ contract DeployHelper is
         // SPGNFT contracts
         _predeploy("SPGNFTImpl");
         spgNftImpl = SPGNFT(
-            create3Deployer.deploy(
-                _getSalt(type(SPGNFT).name),
+            create3Deployer.deployDeterministic(
                 abi.encodePacked(type(SPGNFT).creationCode,
                     abi.encode(
                         address(derivativeWorkflows),
@@ -442,29 +445,30 @@ contract DeployHelper is
                         address(registrationWorkflows),
                         address(royaltyTokenDistributionWorkflows)
                     )
-                )
+                ),
+                _getSalt(type(SPGNFT).name)
             )
         );
         _postdeploy("SPGNFTImpl", address(spgNftImpl));
 
         _predeploy("SPGNFTBeacon");
         spgNftBeacon = UpgradeableBeacon(
-            create3Deployer.deploy(
-                _getSalt(type(UpgradeableBeacon).name),
-                abi.encodePacked(type(UpgradeableBeacon).creationCode, abi.encode(address(spgNftImpl), deployer))
+            create3Deployer.deployDeterministic(
+                abi.encodePacked(type(UpgradeableBeacon).creationCode, abi.encode(address(spgNftImpl), deployer)),
+                _getSalt(type(UpgradeableBeacon).name)
             )
         );
         _postdeploy("SPGNFTBeacon", address(spgNftBeacon));
 
         // Tokenizer Module
         _predeploy("TokenizerModule");
-        impl = address(new TokenizerModule(address(accessController), address(ipAssetRegistry), address(licenseRegistry), address(disputeModule)));
+        impl = address(new TokenizerModule(accessControllerAddr, ipAssetRegistryAddr, licenseRegistryAddr, disputeModuleAddr));
         tokenizerModule = TokenizerModule(
             TestProxyHelper.deployUUPSProxy(
                 create3Deployer,
                 _getSalt(type(TokenizerModule).name),
                 impl,
-                abi.encodeCall(TokenizerModule.initialize, address(protocolAccessManager))
+                abi.encodeCall(TokenizerModule.initialize, protocolAccessManagerAddr)
             )
         );
         impl = address(0);
@@ -480,9 +484,9 @@ contract DeployHelper is
         // Upgradeable Beacon for OwnableERC20Template
         _predeploy("OwnableERC20Beacon");
         ownableERC20Beacon = address(UpgradeableBeacon(
-            create3Deployer.deploy(
-                _getSalt("OwnableERC20Beacon"),
-                abi.encodePacked(type(UpgradeableBeacon).creationCode, abi.encode(ownableERC20Template, deployer))
+            create3Deployer.deployDeterministic(
+                abi.encodePacked(type(UpgradeableBeacon).creationCode, abi.encode(ownableERC20Template, deployer)),
+                _getSalt("OwnableERC20Beacon")
             )
         ));
         _postdeploy("OwnableERC20Beacon", address(ownableERC20Beacon));
@@ -501,7 +505,7 @@ contract DeployHelper is
        // Transfer ownership of beacon proxy to RegistrationWorkflows
        spgNftBeacon.transferOwnership(address(registrationWorkflows));
        tokenizerModule.whitelistTokenTemplate(address(ownableERC20Template), true);
-       moduleRegistry.registerModule("TOKENIZER_MODULE", address(tokenizerModule));
+       IModuleRegistry(moduleRegistryAddr).registerModule("TOKENIZER_MODULE", address(tokenizerModule));
        // more configurations may be added here
     }
 
@@ -511,9 +515,9 @@ contract DeployHelper is
 
         // protocolAccessManager
         protocolAccessManager = AccessManager(
-            create3Deployer.deploy(
-                _getSalt(type(AccessManager).name),
-                abi.encodePacked(type(AccessManager).creationCode, abi.encode(deployer))
+            create3Deployer.deployDeterministic(
+                abi.encodePacked(type(AccessManager).creationCode, abi.encode(deployer)),
+                _getSalt(type(AccessManager).name)
             )
         );
         protocolAccessManagerAddr = address(protocolAccessManager);
@@ -535,6 +539,7 @@ contract DeployHelper is
                 abi.encodeCall(ModuleRegistry.initialize, address(protocolAccessManager))
             )
         );
+        moduleRegistryAddr = address(moduleRegistry);
         require(
             _getDeployedAddress(type(ModuleRegistry).name) == address(moduleRegistry),
             "Deploy: Module Registry Address Mismatch"
@@ -620,7 +625,10 @@ contract DeployHelper is
             )
         );
         IPAccountImpl ipAccountImpl = IPAccountImpl(
-            payable(create3Deployer.deploy(_getSalt(type(IPAccountImpl).name), ipAccountImplCode))
+            payable(create3Deployer.deployDeterministic(
+                ipAccountImplCode,
+                _getSalt(type(IPAccountImpl).name)
+            ))
         );
         require(
             _getDeployedAddress(type(IPAccountImpl).name) == address(ipAccountImpl),
@@ -640,6 +648,7 @@ contract DeployHelper is
                 abi.encodeCall(DisputeModule.initialize, address(protocolAccessManager))
             )
         );
+        disputeModuleAddr = address(disputeModule);
         require(
             _getDeployedAddress(type(DisputeModule).name) == address(disputeModule),
             "Deploy: Dispute Module Address Mismatch"
@@ -737,23 +746,23 @@ contract DeployHelper is
 
         // ipRoyaltyVaultImpl
         ipRoyaltyVaultImpl = IpRoyaltyVault(
-            create3Deployer.deploy(
-                _getSalt(type(IpRoyaltyVault).name),
+            create3Deployer.deployDeterministic(
                 abi.encodePacked(
                     type(IpRoyaltyVault).creationCode,
                     abi.encode(address(disputeModule), address(royaltyModule), address(ipAssetRegistry), _getDeployedAddress(type(GroupingModule).name))
-                )
+                ),
+                _getSalt(type(IpRoyaltyVault).name)
             )
         );
 
         // ipRoyaltyVaultBeacon
         ipRoyaltyVaultBeacon = UpgradeableBeacon(
-            create3Deployer.deploy(
-                _getSalt("ipRoyaltyVaultBeacon"),
+            create3Deployer.deployDeterministic(
                 abi.encodePacked(
                     type(UpgradeableBeacon).creationCode,
                     abi.encode(address(ipRoyaltyVaultImpl), deployer)
-                )
+                ),
+                _getSalt("ipRoyaltyVaultBeacon")
             )
         );
 
@@ -815,24 +824,24 @@ contract DeployHelper is
 
         // coreMetadataModule
         coreMetadataModule = CoreMetadataModule(
-            create3Deployer.deploy(
-                _getSalt(type(CoreMetadataModule).name),
+            create3Deployer.deployDeterministic(
                 abi.encodePacked(
                     type(CoreMetadataModule).creationCode,
                     abi.encode(address(accessController), address(ipAssetRegistry))
-                )
+                ),
+                _getSalt(type(CoreMetadataModule).name)
             )
         );
         coreMetadataModuleAddr = address(coreMetadataModule);
 
         // coreMetadataViewModule
         coreMetadataViewModule = CoreMetadataViewModule(
-            create3Deployer.deploy(
-                _getSalt(type(CoreMetadataViewModule).name),
+            create3Deployer.deployDeterministic(
                 abi.encodePacked(
                     type(CoreMetadataViewModule).creationCode,
                     abi.encode(address(ipAssetRegistry), address(moduleRegistry))
-                )
+                ),
+                _getSalt(type(CoreMetadataViewModule).name)
             )
         );
 
@@ -948,7 +957,7 @@ contract DeployHelper is
 
     /// @dev Get the deterministic deployed address of a contract with CREATE3
     function _getDeployedAddress(string memory name) internal view returns (address) {
-        return create3Deployer.getDeployed(_getSalt(name));
+        return create3Deployer.predictDeterministicAddress(_getSalt(name));
     }
 
     /// @dev Load the implementation address from the proxy contract

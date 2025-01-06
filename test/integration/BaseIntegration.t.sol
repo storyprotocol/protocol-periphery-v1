@@ -58,7 +58,7 @@ contract BaseIntegration is Test, Script, StoryProtocolCoreAddressManager, Story
     RoyaltyWorkflows internal royaltyWorkflows;
 
     /// @dev Story USD
-    SUSD internal StoryUSD = SUSD(0x6058bB8A2a51a8e63Bd18cE897D08616331C25a7);
+    SUSD internal StoryUSD = SUSD(0x48D80f8b87F7f1B6f2fBF3A7C45Eb7De6C8374F9);
 
     /// @dev Test data
     string internal testCollectionName;

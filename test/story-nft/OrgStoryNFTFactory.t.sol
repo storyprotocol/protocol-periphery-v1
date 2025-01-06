@@ -5,6 +5,7 @@ pragma solidity 0.8.26;
 import { IAccessManaged } from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { TestProxyHelper } from "@storyprotocol/test/utils/TestProxyHelper.sol";
 
 // contracts
 import { IOrgNFT } from "../../contracts/interfaces/story-nft/IOrgNFT.sol";
@@ -15,7 +16,6 @@ import { OrgStoryNFTFactory } from "../../contracts/story-nft/OrgStoryNFTFactory
 
 // test
 import { BaseTest } from "../utils/BaseTest.t.sol";
-import { TestProxyHelper } from "../utils/TestProxyHelper.t.sol";
 
 contract OrgStoryNFTFactoryTest is BaseTest {
     string private orgName;

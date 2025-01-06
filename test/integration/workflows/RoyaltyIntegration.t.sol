@@ -52,9 +52,9 @@ contract RoyaltyIntegration is BaseIntegration {
         // setup IP graph
         _setupIpGraph();
 
-        address[] memory childIpIds = new address[](3);
-        address[] memory royaltyPolicies = new address[](3);
-        address[] memory currencyTokens = new address[](3);
+        address[] memory childIpIds = new address[](4);
+        address[] memory royaltyPolicies = new address[](4);
+        address[] memory currencyTokens = new address[](4);
 
         childIpIds[0] = childIpIdA;
         royaltyPolicies[0] = royaltyPolicyLRPAddr;

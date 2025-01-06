@@ -6,7 +6,7 @@ pragma solidity 0.8.26;
 import { DeployHelper } from "../utils/DeployHelper.sol";
 
 contract Main is DeployHelper {
-    address internal CREATE3_DEPLOYER = 0x384a891dFDE8180b054f04D66379f16B7a678Ad6;
+    address internal CREATE3_DEPLOYER = 0x9fBB3DF7C40Da2e5A0dE984fFE2CCB7C47cd0ABf;
     uint256 private constant CREATE3_DEFAULT_SEED = 12;
 
     constructor() DeployHelper(CREATE3_DEPLOYER){}
