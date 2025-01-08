@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## v1.3.0
+
+- **Story NFT & Badge Enhancements**
+  Introduced the initial Story NFT, enabled URI updates post-deployment, made `StoryBadgeNFT` upgradeable, added ERC-7572 metadata, refactored `OrgNFT` logic, and fixed a reentrancy vulnerability.
+
+- **NFT Caching Features**
+  Added caching functionality to `StoryBadgeNFT`, including auto-cache support, removal from cache, and corresponding state getters.
+
+- **Licensing & Permission Handling**
+  Added permission handling for license attachment, licensing hooks (limit tokens / lock operations), multi-license support, custom templates, license config during IP registration, `maxRevenueShare` alignment, and empty-license checks.
+
+- **Royalty & Grouping**
+  Added royalty claiming for group IPs, introduced `RoyaltyTokenDistributionWorkflows`, removed snapshots for simplification, deployed royalty vaults for member IPs, and aligned royalty logic with core updates.
+
+- **Tokenizer Module**
+  Introduced a Tokenizer module and an `OwnableERC20` contract implementation.
+
+- **Derivative & Protocol Compatibility**
+  Restored v1.2 compatibility for multiple workflows, enabled batch permissions for derivative registration, replaced permission setting with `executeWithSig`, and reverted direct function calls when needed.
+
+- **Fixes & Chores**
+  Updated tests and deployments, fixed integration tests, addressed licensing-token counting, refined deploy scripts (including CREATE3 usage), cleaned up storage variables, added missing documentation, and fixed typos.
+
+**Full Changelog**: [v1.2.3...v1.3.0](https://github.com/storyprotocol/protocol-periphery-v1/compare/v1.2.3...v1.3.0)
+
 ## v1.2.4
 
 * Introduced Story NFT with various enhancements:
