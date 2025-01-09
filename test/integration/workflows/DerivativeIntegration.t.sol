@@ -401,18 +401,4 @@ contract DerivativeIntegration is BaseIntegration {
 
         parentLicenseTemplate = pilTemplateAddr;
     }
-
-    /// @dev Assert parent and derivative relationship.
-    function assertParentChild(
-        address ipIdParent,
-        address ipIdChild,
-        uint256 expectedParentCount,
-        uint256 expectedParentIndex
-    ) internal view {
-        assertTrue(licenseRegistry.hasDerivativeIps(ipIdParent));
-        assertTrue(licenseRegistry.isDerivativeIp(ipIdChild));
-        assertTrue(licenseRegistry.isParentIp({ parentIpId: ipIdParent, childIpId: ipIdChild }));
-        assertEq(licenseRegistry.getParentIpCount(ipIdChild), expectedParentCount);
-        assertEq(licenseRegistry.getParentIp(ipIdChild, expectedParentIndex), ipIdParent);
-    }
 }
