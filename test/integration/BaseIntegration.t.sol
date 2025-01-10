@@ -29,6 +29,7 @@ import { LicenseAttachmentWorkflows } from "../../contracts/workflows/LicenseAtt
 import { GroupingWorkflows } from "../../contracts/workflows/GroupingWorkflows.sol";
 import { RegistrationWorkflows } from "../../contracts/workflows/RegistrationWorkflows.sol";
 import { RoyaltyWorkflows } from "../../contracts/workflows/RoyaltyWorkflows.sol";
+import { RoyaltyTokenDistributionWorkflows } from "../../contracts/workflows/RoyaltyTokenDistributionWorkflows.sol";
 import { WorkflowStructs } from "../../contracts/lib/WorkflowStructs.sol";
 
 // script
@@ -56,6 +57,7 @@ contract BaseIntegration is Test, Script, StoryProtocolCoreAddressManager, Story
     GroupingWorkflows internal groupingWorkflows;
     RegistrationWorkflows internal registrationWorkflows;
     RoyaltyWorkflows internal royaltyWorkflows;
+    RoyaltyTokenDistributionWorkflows internal royaltyTokenDistributionWorkflows;
 
     /// @dev Story USD
     SUSD internal StoryUSD = SUSD(0x48D80f8b87F7f1B6f2fBF3A7C45Eb7De6C8374F9);
@@ -106,6 +108,7 @@ contract BaseIntegration is Test, Script, StoryProtocolCoreAddressManager, Story
         groupingWorkflows = GroupingWorkflows(groupingWorkflowsAddr);
         registrationWorkflows = RegistrationWorkflows(registrationWorkflowsAddr);
         royaltyWorkflows = RoyaltyWorkflows(royaltyWorkflowsAddr);
+        royaltyTokenDistributionWorkflows = RoyaltyTokenDistributionWorkflows(royaltyTokenDistributionWorkflowsAddr);
 
         // set up test data
         testCollectionName = "Test Collection";
@@ -338,5 +341,19 @@ contract BaseIntegration is Test, Script, StoryProtocolCoreAddressManager, Story
         assertEq(coreMetadataViewModule.getMetadataURI(ipId), expectedMetadata.ipMetadataURI);
         assertEq(coreMetadataViewModule.getMetadataHash(ipId), expectedMetadata.ipMetadataHash);
         assertEq(coreMetadataViewModule.getNftMetadataHash(ipId), expectedMetadata.nftMetadataHash);
+    }
+
+    /// @dev Assert parent and derivative relationship.
+    function assertParentChild(
+        address ipIdParent,
+        address ipIdChild,
+        uint256 expectedParentCount,
+        uint256 expectedParentIndex
+    ) internal view {
+        assertTrue(licenseRegistry.hasDerivativeIps(ipIdParent));
+        assertTrue(licenseRegistry.isDerivativeIp(ipIdChild));
+        assertTrue(licenseRegistry.isParentIp({ parentIpId: ipIdParent, childIpId: ipIdChild }));
+        assertEq(licenseRegistry.getParentIpCount(ipIdChild), expectedParentCount);
+        assertEq(licenseRegistry.getParentIp(ipIdChild, expectedParentIndex), ipIdParent);
     }
 }
