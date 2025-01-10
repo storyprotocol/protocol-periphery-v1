@@ -503,8 +503,7 @@ contract GroupingIntegration is BaseIntegration {
     /// @notice Initializes test data and sets up the test environment
     /// @dev Sets up licenses, groups, and NFT collection
     function _setUpTest() private {
-        revShare = 10 * 10 ** 6; // 10%
-        require(revShare <= 100 * 10 ** 6, "Revenue share exceeds 100%");
+        revShare = 10 * 10 ** 6; // 10% (10 million basis points)
         
         testLicensesData.push(
             WorkflowStructs.LicenseData({
