@@ -228,8 +228,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @notice Mints an NFT from the collection. Only callable by the minter role.
     /// @param to The address of the recipient of the minted NFT.
     /// @param nftMetadataURI OPTIONAL. The URI of the desired metadata for the newly minted NFT.
-    /// @param nftMetadataHash OPTIONAL. A bytes32 hash of the NFT's metadata.
-    /// This metadata is accessible via the NFT's tokenURI.
+    /// @param nftMetadataHash OPTIONAL. A bytes32 hash of the NFT's metadata. This metadata is accessible via the NFT's tokenURI.
     /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
     /// @return tokenId The token ID of the minted NFT with the given metadata hash.
     function mint(
@@ -254,8 +253,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @param to The address of the recipient of the minted NFT.
     /// @param payer The address of the payer for the mint fee.
     /// @param nftMetadataURI OPTIONAL. The URI of the desired metadata for the newly minted NFT.
-    /// @param nftMetadataHash OPTIONAL. A bytes32 hash of the NFT's metadata.
-    /// This metadata is accessible via the NFT's tokenURI.
+    /// @param nftMetadataHash OPTIONAL. A bytes32 hash of the NFT's metadata. This metadata is accessible via the NFT's tokenURI.
     /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
     /// @return tokenId The token ID of the minted NFT with the given metadata hash.
     function mintByPeriphery(
@@ -292,8 +290,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @param to The address of the recipient of the minted NFT.
     /// @param payer The address of the payer for the mint fee.
     /// @param nftMetadataURI OPTIONAL. The URI of the desired metadata for the newly minted NFT.
-    /// @param nftMetadataHash OPTIONAL. A bytes32 hash of the NFT's metadata.
-    /// This metadata is accessible via the NFT's tokenURI.
+    /// @param nftMetadataHash OPTIONAL. A bytes32 hash of the NFT's metadata. This metadata is accessible via the NFT's tokenURI.
     /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
     /// @return tokenId The token ID of the minted NFT with the given metadata hash.
     function _mintToken(
