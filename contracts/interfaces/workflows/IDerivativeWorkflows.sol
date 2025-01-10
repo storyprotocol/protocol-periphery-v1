@@ -28,7 +28,7 @@ interface IDerivativeWorkflows {
     /// @param tokenId The ID of the NFT.
     /// @param derivData The derivative data to be used for registerDerivative.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
-    /// @param sigMetadataAndRegister OPTIONAL. Signature data for setAll (metadata) for the IP via the Core Metadata Module
+    /// @param sigMetadataAndRegister Signature data for setAll (metadata) for the IP via the Core Metadata Module
     /// and registerDerivative for the IP via the Licensing Module.
     /// @return ipId The ID of the newly registered IP.
     function registerIpAndMakeDerivative(
