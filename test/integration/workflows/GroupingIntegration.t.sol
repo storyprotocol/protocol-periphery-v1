@@ -407,7 +407,9 @@ contract GroupingIntegration is BaseIntegration {
         StoryUSD.mint(testSender, totalMintFee);
         StoryUSD.approve(address(spgNftContract), totalMintFee);
 
-        // mint a NFT from the spgNftContract
+        uint256 deadline = block.timestamp + 1000;
+
+        // mint NFTs from the spgNftContract
         uint256[] memory tokenIds = new uint256[](NUM_IPS);
         for (uint256 i = 0; i < NUM_IPS; i++) {
             tokenIds[i] = spgNftContract.mint({
@@ -423,8 +425,6 @@ contract GroupingIntegration is BaseIntegration {
         for (uint256 i = 0; i < NUM_IPS; i++) {
             expectedIpIds[i] = ipAssetRegistry.ipId(block.chainid, address(spgNftContract), tokenIds[i]);
         }
-
-        uint256 deadline = block.timestamp + 1000;
 
         // Get the signatures for setting the permission for calling `setAll` (IP metadata) and `attachLicenseTerms`
         // functions in `coreMetadataModule` and `licensingModule` from the IP owner
