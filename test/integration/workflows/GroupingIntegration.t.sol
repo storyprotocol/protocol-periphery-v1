@@ -333,16 +333,12 @@ contract GroupingIntegration is BaseIntegration {
         require(groupId != address(0), "Group ID not initialized");
 
         uint256 deadline = block.timestamp + 1000;
-        uint256 numCalls = 10;
         
-        require(numCalls > 0, "Number of calls must be greater than 0");
-        require(numCalls <= 50, "Number of calls exceeds maximum limit");
-
         // Get the signatures for setting the permission for calling `addIp` function in `GroupingModule`
-        bytes[] memory sigsAddToGroup = new bytes[](numCalls);
+        bytes[] memory sigsAddToGroup = new bytes[](NUM_IPS);
         bytes32 expectedStates = IIPAccount(payable(groupId)).state();
         
-        for (uint256 i = 0; i < numCalls; i++) {
+        for (uint256 i = 0; i < NUM_IPS; i++) {
             (sigsAddToGroup[i], expectedStates, ) = _getSetPermissionSigForPeriphery({
                 ipId: groupId,
                 to: groupingWorkflowsAddr,
@@ -356,8 +352,8 @@ contract GroupingIntegration is BaseIntegration {
         }
 
         // setup call data for batch calling `numCalls` `mintAndRegisterIpAndAttachLicenseAndAddToGroup`
-        bytes[] memory data = new bytes[](numCalls);
-        for (uint256 i = 0; i < numCalls; i++) {
+        bytes[] memory data = new bytes[](NUM_IPS);
+        for (uint256 i = 0; i < NUM_IPS; i++) {
             data[i] = abi.encodeWithSelector(
                 bytes4(
                     keccak256(
@@ -373,8 +369,8 @@ contract GroupingIntegration is BaseIntegration {
             );
         }
 
-        StoryUSD.mint(testSender, testMintFee * numCalls);
-        StoryUSD.approve(address(spgNftContract), testMintFee * numCalls);
+        StoryUSD.mint(testSender, testMintFee * NUM_IPS);
+        StoryUSD.approve(address(spgNftContract), testMintFee * NUM_IPS);
 
         // batch call `mintAndRegisterIpAndAttachLicenseAndAddToGroup`
         bytes[] memory results = groupingWorkflows.multicall(data);
@@ -382,7 +378,7 @@ contract GroupingIntegration is BaseIntegration {
         // check each IP is registered, added to the group, and metadata is set, license terms are attached
         address ipId;
         uint256 tokenId;
-        for (uint256 i = 0; i < numCalls; i++) {
+        for (uint256 i = 0; i < NUM_IPS; i++) {
             (ipId, tokenId) = abi.decode(results[i], (address, uint256));
             assertTrue(ipAssetRegistry.isRegistered(ipId));
             assertTrue(IGroupIPAssetRegistry(ipAssetRegistryAddr).containsIp(groupId, ipId));
@@ -405,19 +401,15 @@ contract GroupingIntegration is BaseIntegration {
         require(address(spgNftContract) != address(0), "SPG NFT contract not initialized");
         require(testLicensesData.length > 0, "License data not initialized");
 
-        uint256 numCalls = 10;
-        require(numCalls > 0, "Number of calls must be greater than 0");
-        require(numCalls <= 50, "Number of calls exceeds maximum limit");
-
-        uint256 totalMintFee = testMintFee * numCalls;
-        require(totalMintFee / numCalls == testMintFee, "Mint fee multiplication overflow");
+        uint256 totalMintFee = testMintFee * NUM_IPS;
+        require(totalMintFee / NUM_IPS == testMintFee, "Mint fee multiplication overflow");
 
         StoryUSD.mint(testSender, totalMintFee);
         StoryUSD.approve(address(spgNftContract), totalMintFee);
 
         // mint a NFT from the spgNftContract
-        uint256[] memory tokenIds = new uint256[](numCalls);
-        for (uint256 i = 0; i < numCalls; i++) {
+        uint256[] memory tokenIds = new uint256[](NUM_IPS);
+        for (uint256 i = 0; i < NUM_IPS; i++) {
             tokenIds[i] = spgNftContract.mint({
                 to: testSender,
                 nftMetadataURI: testIpMetadata.nftMetadataURI,
@@ -427,8 +419,8 @@ contract GroupingIntegration is BaseIntegration {
         }
 
         // get the expected IP ID
-        address[] memory expectedIpIds = new address[](numCalls);
-        for (uint256 i = 0; i < numCalls; i++) {
+        address[] memory expectedIpIds = new address[](NUM_IPS);
+        for (uint256 i = 0; i < NUM_IPS; i++) {
             expectedIpIds[i] = ipAssetRegistry.ipId(block.chainid, address(spgNftContract), tokenIds[i]);
         }
 
@@ -436,8 +428,8 @@ contract GroupingIntegration is BaseIntegration {
 
         // Get the signatures for setting the permission for calling `setAll` (IP metadata) and `attachLicenseTerms`
         // functions in `coreMetadataModule` and `licensingModule` from the IP owner
-        bytes[] memory sigsMetadataAndAttach = new bytes[](numCalls);
-        for (uint256 i = 0; i < numCalls; i++) {
+        bytes[] memory sigsMetadataAndAttach = new bytes[](NUM_IPS);
+        for (uint256 i = 0; i < NUM_IPS; i++) {
             (sigsMetadataAndAttach[i], , ) = _getSetBatchPermissionSigForPeriphery({
                 ipId: expectedIpIds[i],
                 permissionList: _getMetadataAndAttachTermsAndConfigPermissionList(
@@ -452,9 +444,9 @@ contract GroupingIntegration is BaseIntegration {
 
         // Get the signatures for setting the permission for calling `addIp` function in `GroupingModule`
         // from the Group IP owner
-        bytes[] memory sigsAddToGroup = new bytes[](numCalls);
+        bytes[] memory sigsAddToGroup = new bytes[](NUM_IPS);
         bytes32 expectedStates = IIPAccount(payable(groupId)).state();
-        for (uint256 i = 0; i < numCalls; i++) {
+        for (uint256 i = 0; i < NUM_IPS; i++) {
             (sigsAddToGroup[i], expectedStates, ) = _getSetPermissionSigForPeriphery({
                 ipId: groupId,
                 to: groupingWorkflowsAddr,
@@ -467,8 +459,8 @@ contract GroupingIntegration is BaseIntegration {
         }
 
         // setup call data for batch calling 10 `registerIpAndAttachLicenseAndAddToGroup`
-        bytes[] memory data = new bytes[](numCalls);
-        for (uint256 i = 0; i < numCalls; i++) {
+        bytes[] memory data = new bytes[](NUM_IPS);
+        for (uint256 i = 0; i < NUM_IPS; i++) {
             data[i] = abi.encodeWithSelector(
                 bytes4(
                     keccak256(
@@ -494,7 +486,7 @@ contract GroupingIntegration is BaseIntegration {
 
         // check each IP is registered, added to the group, and metadata is set, license terms are attached
         address ipId;
-        for (uint256 i = 0; i < numCalls; i++) {
+        for (uint256 i = 0; i < NUM_IPS; i++) {
             ipId = abi.decode(results[i], (address));
             assertEq(ipId, expectedIpIds[i]);
             assertTrue(ipAssetRegistry.isRegistered(ipId));
