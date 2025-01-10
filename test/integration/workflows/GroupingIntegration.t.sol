@@ -20,6 +20,9 @@ import { WorkflowStructs } from "../../../contracts/lib/WorkflowStructs.sol";
 // test
 import { BaseIntegration } from "../BaseIntegration.t.sol";
 
+/// @title GroupingIntegration
+/// @notice Integration tests for Story Protocol's grouping functionality
+/// @dev Tests various workflows related to IP grouping, licensing, and royalty distribution
 contract GroupingIntegration is BaseIntegration {
     using Strings for uint256;
 
@@ -28,9 +31,10 @@ contract GroupingIntegration is BaseIntegration {
     WorkflowStructs.LicenseData[] private testLicensesData;
     WorkflowStructs.LicenseData[] internal testGroupLicenseData;
     uint32 private revShare;
-    uint256 private numIps = 10;
+    uint256 private constant NUM_IPS = 10;
     address[] private ipIds;
 
+    /// @notice Main entry point for running integration tests
     /// @dev To use, run the following command:
     /// forge script test/integration/workflows/GroupingIntegration.t.sol:GroupingIntegration \
     /// --rpc-url=$TESTNET_URL -vvvv --broadcast --priority-gas-price=1 --legacy
@@ -48,10 +52,15 @@ contract GroupingIntegration is BaseIntegration {
         _endBroadcast();
     }
 
+    /// @notice Tests minting, registering IP, attaching license, and adding to group in a single transaction
+    /// @dev Verifies the complete workflow of creating and grouping an IP asset
     function _test_GroupingIntegration_mintAndRegisterIpAndAttachLicenseAndAddToGroup()
         private
         logTest("test_GroupingIntegration_mintAndRegisterIpAndAttachLicenseAndAddToGroup")
     {
+        require(address(spgNftContract) != address(0), "SPG NFT contract not initialized");
+        require(groupId != address(0), "Group ID not initialized");
+        
         uint256 deadline = block.timestamp + 1000;
 
         // Get the signature for setting the permission for calling `addIp` function in `GroupingModule`
@@ -65,6 +74,8 @@ contract GroupingIntegration is BaseIntegration {
             state: IIPAccount(payable(groupId)).state(),
             signerSk: testSenderSk
         });
+
+        require(sigAddToGroup.length > 0, "Invalid signature generated");
 
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee);
@@ -94,10 +105,15 @@ contract GroupingIntegration is BaseIntegration {
         }
     }
 
+    /// @notice Tests registering IP, attaching license, and adding to group for an existing NFT
+    /// @dev Verifies the workflow of grouping an existing NFT
     function _test_GroupingIntegration_registerIpAndAttachLicenseAndAddToGroup()
         private
         logTest("test_GroupingIntegration_registerIpAndAttachLicenseAndAddToGroup")
     {
+        require(address(spgNftContract) != address(0), "SPG NFT contract not initialized");
+        require(testLicensesData.length > 0, "License data not initialized");
+
         StoryUSD.mint(testSender, testMintFee);
         StoryUSD.approve(address(spgNftContract), testMintFee);
         uint256 tokenId = spgNftContract.mint({
@@ -163,10 +179,15 @@ contract GroupingIntegration is BaseIntegration {
         }
     }
 
+    /// @notice Tests registering a new group and attaching a license
+    /// @dev Verifies basic group creation and licensing
     function _test_GroupingIntegration_registerGroupAndAttachLicense()
         private
         logTest("test_GroupingIntegration_registerGroupAndAttachLicense")
     {
+        require(evenSplitGroupPoolAddr != address(0), "Group pool not initialized");
+        require(testLicensesData.length > 0, "License data not initialized");
+
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicense({
             groupPool: evenSplitGroupPoolAddr,
             licenseData: testGroupLicenseData[0]
@@ -181,10 +202,15 @@ contract GroupingIntegration is BaseIntegration {
         assertEq(licenseTermsId, testGroupLicenseData[0].licenseTermsId);
     }
 
+    /// @notice Tests registering a group, attaching license, and adding multiple IPs
+    /// @dev Verifies batch IP addition to a group
     function _test_GroupingIntegration_registerGroupAndAttachLicenseAndAddIps()
         private
         logTest("test_GroupingIntegration_registerGroupAndAttachLicenseAndAddIps")
     {
+        require(ipIds.length > 0, "No IPs initialized for grouping");
+        require(evenSplitGroupPoolAddr != address(0), "Group pool not initialized");
+
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
             groupPool: evenSplitGroupPoolAddr,
             ipIds: ipIds,
@@ -206,18 +232,23 @@ contract GroupingIntegration is BaseIntegration {
         assertEq(licenseTermsId, testGroupLicenseData[0].licenseTermsId);
     }
 
+    /// @notice Tests the complete workflow of collecting royalties and claiming rewards
+    /// @dev Verifies royalty distribution mechanism
     function _test_GroupingIntegration_collectRoyaltiesAndClaimReward()
         private
         logTest("test_GroupingIntegration_collectRoyaltiesAndClaimReward")
     {
+        require(revShare > 0, "Revenue share not initialized");
+        require(ipIds.length > 0, "No IPs initialized for royalty collection");
+
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
             groupPool: evenSplitGroupPoolAddr,
             ipIds: ipIds,
             licenseData: testGroupLicenseData[0]
         });
 
-        assertEq(IGroupIPAssetRegistry(ipAssetRegistryAddr).totalMembers(newGroupId), numIps);
-        assertEq(EvenSplitGroupPool(evenSplitGroupPoolAddr).getTotalIps(newGroupId), numIps);
+        assertEq(IGroupIPAssetRegistry(ipAssetRegistryAddr).totalMembers(newGroupId), NUM_IPS);
+        assertEq(EvenSplitGroupPool(evenSplitGroupPoolAddr).getTotalIps(newGroupId), NUM_IPS);
 
         address[] memory parentIpIds = new address[](1);
         parentIpIds[0] = newGroupId;
@@ -293,17 +324,22 @@ contract GroupingIntegration is BaseIntegration {
         }
     }
 
+    /// @notice Tests batch minting and grouping of multiple IPs using multicall
+    /// @dev Verifies the multicall functionality for minting and grouping workflow
     function _test_GroupingIntegration_multicall_mintAndRegisterIpAndAttachLicenseAndAddToGroup()
         private
         logTest("test_GroupingIntegration_multicall_mintAndRegisterIpAndAttachLicenseAndAddToGroup")
     {
+        require(address(spgNftContract) != address(0), "SPG NFT contract not initialized");
+        require(groupId != address(0), "Group ID not initialized");
+
         uint256 deadline = block.timestamp + 1000;
-        uint256 numCalls = 10;
+        
         // Get the signatures for setting the permission for calling `addIp` function in `GroupingModule`
-        // from the Group IP owner
-        bytes[] memory sigsAddToGroup = new bytes[](numCalls);
+        bytes[] memory sigsAddToGroup = new bytes[](NUM_IPS);
         bytes32 expectedStates = IIPAccount(payable(groupId)).state();
-        for (uint256 i = 0; i < numCalls; i++) {
+        
+        for (uint256 i = 0; i < NUM_IPS; i++) {
             (sigsAddToGroup[i], expectedStates, ) = _getSetPermissionSigForPeriphery({
                 ipId: groupId,
                 to: groupingWorkflowsAddr,
@@ -313,11 +349,12 @@ contract GroupingIntegration is BaseIntegration {
                 state: expectedStates,
                 signerSk: testSenderSk
             });
+            require(sigsAddToGroup[i].length > 0, string.concat("Invalid signature generated for index ", i.toString()));
         }
 
         // setup call data for batch calling `numCalls` `mintAndRegisterIpAndAttachLicenseAndAddToGroup`
-        bytes[] memory data = new bytes[](numCalls);
-        for (uint256 i = 0; i < numCalls; i++) {
+        bytes[] memory data = new bytes[](NUM_IPS);
+        for (uint256 i = 0; i < NUM_IPS; i++) {
             data[i] = abi.encodeWithSelector(
                 bytes4(
                     keccak256(
@@ -333,8 +370,8 @@ contract GroupingIntegration is BaseIntegration {
             );
         }
 
-        StoryUSD.mint(testSender, testMintFee * numCalls);
-        StoryUSD.approve(address(spgNftContract), testMintFee * numCalls);
+        StoryUSD.mint(testSender, testMintFee * NUM_IPS);
+        StoryUSD.approve(address(spgNftContract), testMintFee * NUM_IPS);
 
         // batch call `mintAndRegisterIpAndAttachLicenseAndAddToGroup`
         bytes[] memory results = groupingWorkflows.multicall(data);
@@ -342,7 +379,7 @@ contract GroupingIntegration is BaseIntegration {
         // check each IP is registered, added to the group, and metadata is set, license terms are attached
         address ipId;
         uint256 tokenId;
-        for (uint256 i = 0; i < numCalls; i++) {
+        for (uint256 i = 0; i < NUM_IPS; i++) {
             (ipId, tokenId) = abi.decode(results[i], (address, uint256));
             assertTrue(ipAssetRegistry.isRegistered(ipId));
             assertTrue(IGroupIPAssetRegistry(ipAssetRegistryAddr).containsIp(groupId, ipId));
@@ -356,17 +393,26 @@ contract GroupingIntegration is BaseIntegration {
         }
     }
 
+    /// @notice Tests batch registration and grouping of existing NFTs using multicall
+    /// @dev Verifies the multicall functionality for registration and grouping workflow
     function _test_GroupingIntegration_multicall_registerIpAndAttachLicenseAndAddToGroup()
         private
         logTest("test_GroupingIntegration_multicall_registerIpAndAttachLicenseAndAddToGroup")
     {
-        uint256 numCalls = 10;
+        require(address(spgNftContract) != address(0), "SPG NFT contract not initialized");
+        require(testLicensesData.length > 0, "License data not initialized");
 
-        StoryUSD.mint(testSender, testMintFee * numCalls);
-        StoryUSD.approve(address(spgNftContract), testMintFee * numCalls);
-        // mint a NFT from the spgNftContract
-        uint256[] memory tokenIds = new uint256[](numCalls);
-        for (uint256 i = 0; i < numCalls; i++) {
+        uint256 totalMintFee = testMintFee * NUM_IPS;
+        require(totalMintFee / NUM_IPS == testMintFee, "Mint fee multiplication overflow");
+
+        StoryUSD.mint(testSender, totalMintFee);
+        StoryUSD.approve(address(spgNftContract), totalMintFee);
+
+        uint256 deadline = block.timestamp + 1000;
+
+        // mint NFTs from the spgNftContract
+        uint256[] memory tokenIds = new uint256[](NUM_IPS);
+        for (uint256 i = 0; i < NUM_IPS; i++) {
             tokenIds[i] = spgNftContract.mint({
                 to: testSender,
                 nftMetadataURI: testIpMetadata.nftMetadataURI,
@@ -376,17 +422,15 @@ contract GroupingIntegration is BaseIntegration {
         }
 
         // get the expected IP ID
-        address[] memory expectedIpIds = new address[](numCalls);
-        for (uint256 i = 0; i < numCalls; i++) {
+        address[] memory expectedIpIds = new address[](NUM_IPS);
+        for (uint256 i = 0; i < NUM_IPS; i++) {
             expectedIpIds[i] = ipAssetRegistry.ipId(block.chainid, address(spgNftContract), tokenIds[i]);
         }
 
-        uint256 deadline = block.timestamp + 1000;
-
         // Get the signatures for setting the permission for calling `setAll` (IP metadata) and `attachLicenseTerms`
         // functions in `coreMetadataModule` and `licensingModule` from the IP owner
-        bytes[] memory sigsMetadataAndAttach = new bytes[](numCalls);
-        for (uint256 i = 0; i < numCalls; i++) {
+        bytes[] memory sigsMetadataAndAttach = new bytes[](NUM_IPS);
+        for (uint256 i = 0; i < NUM_IPS; i++) {
             (sigsMetadataAndAttach[i], , ) = _getSetBatchPermissionSigForPeriphery({
                 ipId: expectedIpIds[i],
                 permissionList: _getMetadataAndAttachTermsAndConfigPermissionList(
@@ -401,9 +445,9 @@ contract GroupingIntegration is BaseIntegration {
 
         // Get the signatures for setting the permission for calling `addIp` function in `GroupingModule`
         // from the Group IP owner
-        bytes[] memory sigsAddToGroup = new bytes[](numCalls);
+        bytes[] memory sigsAddToGroup = new bytes[](NUM_IPS);
         bytes32 expectedStates = IIPAccount(payable(groupId)).state();
-        for (uint256 i = 0; i < numCalls; i++) {
+        for (uint256 i = 0; i < NUM_IPS; i++) {
             (sigsAddToGroup[i], expectedStates, ) = _getSetPermissionSigForPeriphery({
                 ipId: groupId,
                 to: groupingWorkflowsAddr,
@@ -416,8 +460,8 @@ contract GroupingIntegration is BaseIntegration {
         }
 
         // setup call data for batch calling 10 `registerIpAndAttachLicenseAndAddToGroup`
-        bytes[] memory data = new bytes[](numCalls);
-        for (uint256 i = 0; i < numCalls; i++) {
+        bytes[] memory data = new bytes[](NUM_IPS);
+        for (uint256 i = 0; i < NUM_IPS; i++) {
             data[i] = abi.encodeWithSelector(
                 bytes4(
                     keccak256(
@@ -443,7 +487,7 @@ contract GroupingIntegration is BaseIntegration {
 
         // check each IP is registered, added to the group, and metadata is set, license terms are attached
         address ipId;
-        for (uint256 i = 0; i < numCalls; i++) {
+        for (uint256 i = 0; i < NUM_IPS; i++) {
             ipId = abi.decode(results[i], (address));
             assertEq(ipId, expectedIpIds[i]);
             assertTrue(ipAssetRegistry.isRegistered(ipId));
@@ -457,13 +501,16 @@ contract GroupingIntegration is BaseIntegration {
         }
     }
 
+    /// @notice Initializes test data and sets up the test environment
+    /// @dev Sets up licenses, groups, and NFT collection
     function _setUpTest() private {
-        revShare = 10 * 10 ** 6; // 10%
+        revShare = 10 * 10 ** 6; // 10% (10 million basis points)
+        
         testLicensesData.push(
             WorkflowStructs.LicenseData({
                 licenseTemplate: pilTemplateAddr,
                 licenseTermsId: pilTemplate.registerLicenseTerms(
-                    // minting fee is set to 0 beacause currently core protocol requires group IP's minting fee to be 0
+                    // minting fee is set to 0 because currently core protocol requires group IP's minting fee to be 0
                     PILFlavors.commercialRemix({
                         mintingFee: 0,
                         commercialRevShare: revShare,
@@ -532,8 +579,8 @@ contract GroupingIntegration is BaseIntegration {
                 )
             );
 
-            bytes[] memory data = new bytes[](numIps);
-            for (uint256 i = 0; i < numIps; i++) {
+            bytes[] memory data = new bytes[](NUM_IPS);
+            for (uint256 i = 0; i < NUM_IPS; i++) {
                 data[i] = abi.encodeWithSelector(
                     bytes4(keccak256("mintAndRegisterIp(address,address,(string,bytes32,string,bytes32),bool)")),
                     address(spgNftContract),
@@ -543,20 +590,20 @@ contract GroupingIntegration is BaseIntegration {
                 );
             }
 
-            StoryUSD.mint(testSender, testMintFee * numIps);
-            StoryUSD.approve(address(spgNftContract), testMintFee * numIps);
+            StoryUSD.mint(testSender, testMintFee * NUM_IPS);
+            StoryUSD.approve(address(spgNftContract), testMintFee * NUM_IPS);
 
             // batch call `mintAndRegisterIp`
             bytes[] memory results = registrationWorkflows.multicall(data);
 
             // decode the multicall results to get the IP IDs
-            ipIds = new address[](numIps);
-            for (uint256 i = 0; i < numIps; i++) {
+            ipIds = new address[](NUM_IPS);
+            for (uint256 i = 0; i < NUM_IPS; i++) {
                 (ipIds[i], ) = abi.decode(results[i], (address, uint256));
             }
 
             // attach license terms to the IPs
-            for (uint256 i = 0; i < numIps; i++) {
+            for (uint256 i = 0; i < NUM_IPS; i++) {
                 LicensingHelper.attachLicenseTermsAndSetConfigs({
                     ipId: ipIds[i],
                     licensingModule: licensingModuleAddr,
