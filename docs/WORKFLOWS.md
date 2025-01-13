@@ -47,7 +47,7 @@
 ### [Royalty Workflows](../contracts/interfaces/workflows/IRoyaltyWorkflows.sol)
 
 - `claimAllRevenue`:
-  - Transfers all avaiable royalties from various royalty policies to the royalty vault of the ancestor IP -> Claims all the revenue in each currency token from the ancestor IP's royalty vault to the claimer.
+  - Transfers all available royalties from various royalty policies to the royalty vault of the ancestor IP -> Claims all the revenue in each currency token from the ancestor IP's royalty vault to the claimer.
 
 ### [Royalty Token Distribution Workflows](../contracts/interfaces/workflows/IRoyaltyTokenDistributionWorkflows.sol)
 
