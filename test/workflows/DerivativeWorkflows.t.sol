@@ -602,7 +602,7 @@ contract DerivativeWorkflowsTest is BaseTest {
         licenseTokenIds[0] = startLicenseTokenId;
 
         (address ipIdChild, uint256 tokenIdChild) = derivativeWorkflows
-            .mintAndRegisterIpAndMakeDerivativeWithLicenseTokens({
+            .mintAndRegisterIpAndMakeDerivativeWithLicenseTokens_deprecated({
                 spgNftContract: address(nftContract),
                 licenseTokenIds: licenseTokenIds,
                 royaltyContext: "",
@@ -685,7 +685,7 @@ contract DerivativeWorkflowsTest is BaseTest {
             signerSk: sk.alice
         });
 
-        address ipIdChildActual = derivativeWorkflows.registerIpAndMakeDerivativeWithLicenseTokens({
+        address ipIdChildActual = derivativeWorkflows.registerIpAndMakeDerivativeWithLicenseTokens_deprecated({
             nftContract: address(nftContract),
             tokenId: tokenIdChild,
             licenseTokenIds: licenseTokenIds,
@@ -734,7 +734,7 @@ contract DerivativeWorkflowsTest is BaseTest {
             data[i] = abi.encodeWithSelector(
                 bytes4(
                     keccak256(
-                        "mintAndRegisterIpAndMakeDerivative(address,(address[],address,uint256[],bytes),(string,bytes32,string,bytes32),address)"
+                        "mintAndRegisterIpAndMakeDerivative_deprecated(address,(address[],address,uint256[],bytes),(string,bytes32,string,bytes32),address)"
                     )
                 ),
                 address(nftContract),
@@ -785,7 +785,7 @@ contract DerivativeWorkflowsTest is BaseTest {
         uint256[] memory licenseTermsIds = new uint256[](1);
         licenseTermsIds[0] = licenseTermsIdParent;
 
-        (address ipIdChild, uint256 tokenIdChild) = derivativeWorkflows.mintAndRegisterIpAndMakeDerivative({
+        (address ipIdChild, uint256 tokenIdChild) = derivativeWorkflows.mintAndRegisterIpAndMakeDerivative_deprecated({
             spgNftContract: address(nftContract),
             derivData: WorkflowStructs.MakeDerivativeDEPR({
                 parentIpIds: parentIpIds,
@@ -857,7 +857,7 @@ contract DerivativeWorkflowsTest is BaseTest {
         uint256[] memory licenseTermsIds = new uint256[](1);
         licenseTermsIds[0] = licenseTermsIdParent;
 
-        address ipIdChildActual = derivativeWorkflows.registerIpAndMakeDerivative({
+        address ipIdChildActual = derivativeWorkflows.registerIpAndMakeDerivative_deprecated({
             nftContract: address(nftContract),
             tokenId: tokenIdChild,
             derivData: WorkflowStructs.MakeDerivativeDEPR({

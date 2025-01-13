@@ -289,7 +289,7 @@ contract RegistrationWorkflowsTest is BaseTest {
 
         vm.expectRevert(Errors.Workflow__CallerNotAuthorizedToMint.selector);
         vm.prank(u.bob); // caller does not have minter role
-        registrationWorkflows.mintAndRegisterIp({
+        registrationWorkflows.mintAndRegisterIp_deprecated({
             spgNftContract: address(nftContract),
             recipient: u.bob,
             ipMetadata: ipMetadataEmpty
@@ -321,7 +321,7 @@ contract RegistrationWorkflowsTest is BaseTest {
         mockToken.approve(address(nftContract), 1000 * 10 ** mockToken.decimals());
 
         // caller has minter role and public minting is enabled
-        (address ipId, uint256 tokenId) = registrationWorkflows.mintAndRegisterIp({
+        (address ipId, uint256 tokenId) = registrationWorkflows.mintAndRegisterIp_deprecated({
             spgNftContract: address(nftContract),
             recipient: u.bob,
             ipMetadata: ipMetadataEmpty
@@ -338,7 +338,7 @@ contract RegistrationWorkflowsTest is BaseTest {
         mockToken.mint(address(caller), 1000 * 10 ** mockToken.decimals());
         mockToken.approve(address(nftContract), 1000 * 10 ** mockToken.decimals());
 
-        (address ipId1, uint256 tokenId1) = registrationWorkflows.mintAndRegisterIp({
+        (address ipId1, uint256 tokenId1) = registrationWorkflows.mintAndRegisterIp_deprecated({
             spgNftContract: address(nftContract),
             recipient: u.bob,
             ipMetadata: ipMetadataEmpty
@@ -348,7 +348,7 @@ contract RegistrationWorkflowsTest is BaseTest {
         assertEq(nftContract.tokenURI(tokenId1), string.concat(testBaseURI, tokenId1.toString()));
         assertMetadata(ipId1, ipMetadataEmpty);
 
-        (address ipId2, uint256 tokenId2) = registrationWorkflows.mintAndRegisterIp({
+        (address ipId2, uint256 tokenId2) = registrationWorkflows.mintAndRegisterIp_deprecated({
             spgNftContract: address(nftContract),
             recipient: u.bob,
             ipMetadata: ipMetadataDefault
@@ -370,7 +370,7 @@ contract RegistrationWorkflowsTest is BaseTest {
         bytes[] memory data = new bytes[](10);
         for (uint256 i = 0; i < 10; i++) {
             data[i] = abi.encodeWithSelector(
-                bytes4(keccak256("mintAndRegisterIp(address,address,(string,bytes32,string,bytes32))")),
+                bytes4(keccak256("mintAndRegisterIp_deprecated(address,address,(string,bytes32,string,bytes32))")),
                 address(nftContract),
                 u.bob,
                 ipMetadataDefault
