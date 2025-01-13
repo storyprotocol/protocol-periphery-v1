@@ -131,46 +131,15 @@ contract OrgStoryNFTFactory is IOrgStoryNFTFactory, AccessManagedUpgradeable, UU
         bytes calldata signature,
         IStoryNFT.StoryNftInitParams calldata storyNftInitParams
     ) external returns (address orgNft, uint256 orgTokenId, address orgIpId, address orgStoryNft) {
-        OrgStoryNFTFactoryStorage storage $ = _getOrgStoryNFTFactoryStorage();
-
-        // The given story NFT template must be whitelisted
-        if (!$.whitelistedNftTemplates[orgStoryNftTemplate])
-            revert OrgStoryNFTFactory__NftTemplateNotWhitelisted(orgStoryNftTemplate);
-
-        // The given signature must not have been used
-        if ($.usedSignatures[signature]) revert OrgStoryNFTFactory__SignatureAlreadyUsed(signature);
-
-        // Mark the signature as used
-        $.usedSignatures[signature] = true;
-
-        // The given organization name must not have been used
-        if ($.deployedOrgStoryNftsByOrgName[orgName] != address(0))
-            revert OrgStoryNFTFactory__OrgAlreadyDeployed(orgName, $.deployedOrgStoryNftsByOrgName[orgName]);
-
-        // The signature must be valid
-        bytes32 hash = keccak256(abi.encodePacked(msg.sender)).toEthSignedMessageHash();
-        if (!SignatureChecker.isValidSignatureNow($.signer, hash, signature))
-            revert OrgStoryNFTFactory__InvalidSignature(signature);
-
-        // Mint the organization NFT and register it as an IP
-        (orgTokenId, orgIpId) = ORG_NFT.mintOrgNft(orgNftRecipient, orgIpMetadata);
-
-        orgNft = address(ORG_NFT);
-
-        // Creates a new BeaconProxy for the story NFT template and initializes it
-        orgStoryNft = address(
-            new BeaconProxy(
-                IOrgStoryNFT(orgStoryNftTemplate).getBeacon(),
-                abi.encodeWithSelector(IOrgStoryNFT.initialize.selector, orgTokenId, orgIpId, storyNftInitParams)
-            )
+        _validateSignature(signature);
+        (orgNft, orgTokenId, orgIpId, orgStoryNft) = _deployOrgStoryNft(
+            orgStoryNftTemplate,
+            orgNftRecipient,
+            orgName,
+            orgIpMetadata,
+            storyNftInitParams,
+            false
         );
-
-        // Stores the deployed story NFT address
-        $.deployedOrgStoryNftsByOrgName[orgName] = orgStoryNft;
-        $.deployedOrgStoryNftsByOrgTokenId[orgTokenId] = orgStoryNft;
-        $.deployedOrgStoryNftsByOrgIpId[orgIpId] = orgStoryNft;
-
-        emit OrgStoryNftDeployed(orgName, orgNft, orgTokenId, orgIpId, orgStoryNft);
     }
 
     /// @notice Mints a new organization NFT and deploys a proxy to `orgStoryNftTemplate` as the OrgStoryNFT
@@ -194,39 +163,14 @@ contract OrgStoryNFTFactory is IOrgStoryNFTFactory, AccessManagedUpgradeable, UU
         IStoryNFT.StoryNftInitParams calldata storyNftInitParams,
         bool isRootOrg
     ) external restricted returns (address orgNft, uint256 orgTokenId, address orgIpId, address orgStoryNft) {
-        OrgStoryNFTFactoryStorage storage $ = _getOrgStoryNFTFactoryStorage();
-
-        // The given story NFT template must be whitelisted
-        if (!$.whitelistedNftTemplates[orgStoryNftTemplate])
-            revert OrgStoryNFTFactory__NftTemplateNotWhitelisted(orgStoryNftTemplate);
-
-        // The given organization name must not have been used
-        if ($.deployedOrgStoryNftsByOrgName[orgName] != address(0))
-            revert OrgStoryNFTFactory__OrgAlreadyDeployed(orgName, $.deployedOrgStoryNftsByOrgName[orgName]);
-
-        // Mint the organization NFT and register it as an IP
-        if (isRootOrg) {
-            (orgTokenId, orgIpId) = ORG_NFT.mintRootOrgNft(orgNftRecipient, orgIpMetadata);
-        } else {
-            (orgTokenId, orgIpId) = ORG_NFT.mintOrgNft(orgNftRecipient, orgIpMetadata);
-        }
-
-        orgNft = address(ORG_NFT);
-
-        // Creates a new BeaconProxy for the story NFT template and initializes it
-        orgStoryNft = address(
-            new BeaconProxy(
-                IOrgStoryNFT(orgStoryNftTemplate).getBeacon(),
-                abi.encodeWithSelector(IOrgStoryNFT.initialize.selector, orgTokenId, orgIpId, storyNftInitParams)
-            )
+        (orgNft, orgTokenId, orgIpId, orgStoryNft) = _deployOrgStoryNft(
+            orgStoryNftTemplate,
+            orgNftRecipient,
+            orgName,
+            orgIpMetadata,
+            storyNftInitParams,
+            isRootOrg
         );
-
-        // Stores the deployed story NFT address
-        $.deployedOrgStoryNftsByOrgName[orgName] = orgStoryNft;
-        $.deployedOrgStoryNftsByOrgTokenId[orgTokenId] = orgStoryNft;
-        $.deployedOrgStoryNftsByOrgIpId[orgIpId] = orgStoryNft;
-
-        emit OrgStoryNftDeployed(orgName, orgNft, orgTokenId, orgIpId, orgStoryNft);
     }
 
     /// @notice Sets the default StoryNFT template of the OrgStoryNFTFactory.
@@ -295,6 +239,63 @@ contract OrgStoryNFTFactory is IOrgStoryNFTFactory, AccessManagedUpgradeable, UU
     /// @param nftTemplate The address of the OrgStoryNFT template.
     function isNftTemplateWhitelisted(address nftTemplate) external view returns (bool) {
         return _getOrgStoryNFTFactoryStorage().whitelistedNftTemplates[nftTemplate];
+    }
+
+    function _validateSignature(bytes calldata signature) private {
+        OrgStoryNFTFactoryStorage storage $ = _getOrgStoryNFTFactoryStorage();
+
+        // The given signature must not have been used
+        if ($.usedSignatures[signature]) revert OrgStoryNFTFactory__SignatureAlreadyUsed(signature);
+
+        // Mark the signature as used
+        $.usedSignatures[signature] = true;
+
+        bytes32 hash = keccak256(abi.encodePacked(msg.sender)).toEthSignedMessageHash();
+        if (!SignatureChecker.isValidSignatureNow($.signer, hash, signature))
+            revert OrgStoryNFTFactory__InvalidSignature(signature);
+    }
+
+    function _deployOrgStoryNft(
+        address orgStoryNftTemplate,
+        address orgNftRecipient,
+        string calldata orgName,
+        WorkflowStructs.IPMetadata calldata orgIpMetadata,
+        IStoryNFT.StoryNftInitParams calldata storyNftInitParams,
+        bool isRootOrg
+    ) private returns (address orgNft, uint256 orgTokenId, address orgIpId, address orgStoryNft) {
+        OrgStoryNFTFactoryStorage storage $ = _getOrgStoryNFTFactoryStorage();
+
+        // The given story NFT template must be whitelisted
+        if (!$.whitelistedNftTemplates[orgStoryNftTemplate])
+            revert OrgStoryNFTFactory__NftTemplateNotWhitelisted(orgStoryNftTemplate);
+
+        // The given organization name must not have been used
+        if ($.deployedOrgStoryNftsByOrgName[orgName] != address(0))
+            revert OrgStoryNFTFactory__OrgAlreadyDeployed(orgName, $.deployedOrgStoryNftsByOrgName[orgName]);
+
+        // Mint the organization NFT and register it as an IP
+        if (isRootOrg) {
+            (orgTokenId, orgIpId) = ORG_NFT.mintRootOrgNft(orgNftRecipient, orgIpMetadata);
+        } else {
+            (orgTokenId, orgIpId) = ORG_NFT.mintOrgNft(orgNftRecipient, orgIpMetadata);
+        }
+
+        orgNft = address(ORG_NFT);
+
+        // Creates a new BeaconProxy for the story NFT template and initializes it
+        orgStoryNft = address(
+            new BeaconProxy(
+                IOrgStoryNFT(orgStoryNftTemplate).getBeacon(),
+                abi.encodeWithSelector(IOrgStoryNFT.initialize.selector, orgTokenId, orgIpId, storyNftInitParams)
+            )
+        );
+
+        // Stores the deployed story NFT address
+        $.deployedOrgStoryNftsByOrgName[orgName] = orgStoryNft;
+        $.deployedOrgStoryNftsByOrgTokenId[orgTokenId] = orgStoryNft;
+        $.deployedOrgStoryNftsByOrgIpId[orgIpId] = orgStoryNft;
+
+        emit OrgStoryNftDeployed(orgName, orgNft, orgTokenId, orgIpId, orgStoryNft);
     }
 
     /// @dev Returns the storage struct of OrgStoryNFTFactory.
