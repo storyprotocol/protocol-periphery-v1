@@ -278,7 +278,7 @@ contract DerivativeWorkflows is
 
     /// @notice Mint an NFT from a SPGNFT collection and register it as a derivative IP without license tokens.
     /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function mintAndRegisterIpAndMakeDerivative(
+    function mintAndRegisterIpAndMakeDerivative_deprecated(
         address spgNftContract,
         WorkflowStructs.MakeDerivativeDEPR calldata derivData,
         WorkflowStructs.IPMetadata calldata ipMetadata,
@@ -320,7 +320,7 @@ contract DerivativeWorkflows is
 
     /// @notice Register the given NFT as a derivative IP with metadata without license tokens.
     /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function registerIpAndMakeDerivative(
+    function registerIpAndMakeDerivative_deprecated(
         address nftContract,
         uint256 tokenId,
         WorkflowStructs.MakeDerivativeDEPR calldata derivData,
@@ -368,7 +368,7 @@ contract DerivativeWorkflows is
 
     /// @notice Mint an NFT from a collection and register it as a derivative IP using license tokens
     /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function mintAndRegisterIpAndMakeDerivativeWithLicenseTokens(
+    function mintAndRegisterIpAndMakeDerivativeWithLicenseTokens_deprecated(
         address spgNftContract,
         uint256[] calldata licenseTokenIds,
         bytes calldata royaltyContext,
@@ -399,7 +399,7 @@ contract DerivativeWorkflows is
 
     /// @notice Register the given NFT as a derivative IP using license tokens.
     /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function registerIpAndMakeDerivativeWithLicenseTokens(
+    function registerIpAndMakeDerivativeWithLicenseTokens_deprecated(
         address nftContract,
         uint256 tokenId,
         uint256[] calldata licenseTokenIds,

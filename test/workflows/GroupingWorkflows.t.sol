@@ -664,7 +664,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
         });
 
         vm.startPrank(minter);
-        (address ipId, uint256 tokenId) = groupingWorkflows.mintAndRegisterIpAndAttachLicenseAndAddToGroup({
+        (address ipId, uint256 tokenId) = groupingWorkflows.mintAndRegisterIpAndAttachLicenseAndAddToGroup_deprecated({
             spgNftContract: address(spgNftPublic),
             groupId: groupId,
             recipient: minter,
@@ -735,7 +735,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             signerSk: groupOwnerSk
         });
 
-        address ipId = groupingWorkflows.registerIpAndAttachLicenseAndAddToGroup({
+        address ipId = groupingWorkflows.registerIpAndAttachLicenseAndAddToGroup_deprecated({
             nftContract: address(mockNft),
             tokenId: tokenId,
             groupId: groupId,
@@ -778,7 +778,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
     // Register group IP → Attach license terms to group IPA
     function test_GroupingWorkflows_registerGroupAndAttachLicense_DEPR() public {
         vm.startPrank(groupOwner);
-        address newGroupId = groupingWorkflows.registerGroupAndAttachLicense({
+        address newGroupId = groupingWorkflows.registerGroupAndAttachLicense_deprecated({
             groupPool: address(evenSplitGroupPool),
             licenseTemplate: address(pilTemplate),
             licenseTermsId: testLicensesData[0].licenseTermsId
@@ -800,7 +800,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
     // Register group IP → Attach license terms to group IPA → Add existing IPs to the new group IPA
     function test_GroupingWorkflows_registerGroupAndAttachLicenseAndAddIps_DEPR() public {
         vm.startPrank(groupOwner);
-        address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
+        address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps_deprecated({
             groupPool: address(evenSplitGroupPool),
             ipIds: ipIds,
             licenseTemplate: address(pilTemplate),
@@ -832,7 +832,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
         address ipOwner2 = u.carl;
 
         vm.startPrank(groupOwner);
-        address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
+        address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps_deprecated({
             groupPool: address(evenSplitGroupPool),
             ipIds: ipIds,
             licenseTemplate: address(pilTemplate),
@@ -853,7 +853,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
         mockToken.mint(ipOwner1, 1 * 10 ** mockToken.decimals());
         mockToken.approve(address(spgNftPublic), 1 * 10 ** mockToken.decimals());
 
-        (address ipId1, ) = derivativeWorkflows.mintAndRegisterIpAndMakeDerivative({
+        (address ipId1, ) = derivativeWorkflows.mintAndRegisterIpAndMakeDerivative_deprecated({
             spgNftContract: address(spgNftPublic),
             derivData: WorkflowStructs.MakeDerivativeDEPR({
                 parentIpIds: parentIpIds,
@@ -871,7 +871,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
         mockToken.mint(ipOwner2, 1 * 10 ** mockToken.decimals());
         mockToken.approve(address(spgNftPublic), 1 * 10 ** mockToken.decimals());
 
-        (address ipId2, ) = derivativeWorkflows.mintAndRegisterIpAndMakeDerivative({
+        (address ipId2, ) = derivativeWorkflows.mintAndRegisterIpAndMakeDerivative_deprecated({
             spgNftContract: address(spgNftPublic),
             derivData: WorkflowStructs.MakeDerivativeDEPR({
                 parentIpIds: parentIpIds,
@@ -904,7 +904,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
         address[] memory royaltyTokens = new address[](1);
         royaltyTokens[0] = address(mockToken);
 
-        uint256[] memory collectedRoyalties = groupingWorkflows.collectRoyaltiesAndClaimReward(
+        uint256[] memory collectedRoyalties = groupingWorkflows.collectRoyaltiesAndClaimReward_deprecated(
             newGroupId,
             royaltyTokens,
             snapshotIds,
@@ -935,7 +935,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
         snapshotIds[0] = 0;
 
         vm.expectRevert(Errors.GroupingWorkflows__ZeroAddressParam.selector);
-        groupingWorkflows.collectRoyaltiesAndClaimReward(groupId, currencyTokens, snapshotIds, ipIds);
+        groupingWorkflows.collectRoyaltiesAndClaimReward_deprecated(groupId, currencyTokens, snapshotIds, ipIds);
     }
 
     // Multicall (mint → Register IP → Attach PIL terms → Add new IP to group IPA)
@@ -964,7 +964,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             data[i] = abi.encodeWithSelector(
                 bytes4(
                     keccak256(
-                        "mintAndRegisterIpAndAttachLicenseAndAddToGroup(address,address,address,address,uint256,(string,bytes32,string,bytes32),(address,uint256,bytes))"
+                        "mintAndRegisterIpAndAttachLicenseAndAddToGroup_deprecated(address,address,address,address,uint256,(string,bytes32,string,bytes32),(address,uint256,bytes))"
                     )
                 ),
                 address(spgNftPublic),
@@ -1054,7 +1054,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             data[i] = abi.encodeWithSelector(
                 bytes4(
                     keccak256(
-                        "registerIpAndAttachLicenseAndAddToGroup(address,uint256,address,address,uint256,(string,bytes32,string,bytes32),(address,uint256,bytes),(address,uint256,bytes))"
+                        "registerIpAndAttachLicenseAndAddToGroup_deprecated(address,uint256,address,address,uint256,(string,bytes32,string,bytes32),(address,uint256,bytes),(address,uint256,bytes))"
                     )
                 ),
                 mockNft,

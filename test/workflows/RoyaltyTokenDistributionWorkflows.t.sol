@@ -500,7 +500,7 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
         mockToken.approve(address(royaltyTokenDistributionWorkflows), licenseMintingFee);
 
         (address ipId, uint256 tokenId, uint256[] memory licenseTermsIds) = royaltyTokenDistributionWorkflows
-            .mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens({
+            .mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens_deprecated({
                 spgNftContract: address(spgNftPublic),
                 recipient: u.alice,
                 ipMetadata: ipMetadataDefault,
@@ -534,7 +534,7 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
         PILTerms[] memory terms = new PILTerms[](1);
         terms[0] = PILFlavors.nonCommercialSocialRemixing();
         vm.expectRevert(Errors.RoyaltyTokenDistributionWorkflows__RoyaltyVaultNotDeployed.selector);
-        royaltyTokenDistributionWorkflows.mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens({
+        royaltyTokenDistributionWorkflows.mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens_deprecated({
             spgNftContract: address(spgNftPublic),
             recipient: u.alice,
             ipMetadata: ipMetadataDefault,
@@ -578,12 +578,13 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
         vm.startPrank(u.alice);
         mockToken.mint(u.alice, licenseMintingFee);
         mockToken.approve(address(spgNftPublic), licenseMintingFee);
-        (ipIdParent[0], , licenseTermsIdsParent) = licenseAttachmentWorkflows.mintAndRegisterIpAndAttachPILTerms({
-            spgNftContract: address(spgNftPublic),
-            recipient: u.alice,
-            ipMetadata: ipMetadataDefault,
-            terms: commRemixTermsParent
-        });
+        (ipIdParent[0], , licenseTermsIdsParent) = licenseAttachmentWorkflows
+            .mintAndRegisterIpAndAttachPILTerms_deprecated({
+                spgNftContract: address(spgNftPublic),
+                recipient: u.alice,
+                ipMetadata: ipMetadataDefault,
+                terms: commRemixTermsParent
+            });
         vm.stopPrank();
 
         derivativeDataDEPR = WorkflowStructs.MakeDerivativeDEPR({

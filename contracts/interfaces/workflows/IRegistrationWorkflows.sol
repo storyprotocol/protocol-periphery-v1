@@ -51,7 +51,7 @@ interface IRegistrationWorkflows {
 
     /// @notice Mint an NFT from a SPGNFT collection and register it with metadata as an IP.
     /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function mintAndRegisterIp(
+    function mintAndRegisterIp_deprecated(
         address spgNftContract,
         address recipient,
         WorkflowStructs.IPMetadata calldata ipMetadata

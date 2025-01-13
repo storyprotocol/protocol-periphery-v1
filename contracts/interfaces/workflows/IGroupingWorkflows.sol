@@ -89,7 +89,7 @@ interface IGroupingWorkflows {
     /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP,
     /// attach license terms to the registered IP, and add it to a group IP.
     /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function mintAndRegisterIpAndAttachLicenseAndAddToGroup(
+    function mintAndRegisterIpAndAttachLicenseAndAddToGroup_deprecated(
         address spgNftContract,
         address groupId,
         address recipient,
@@ -104,7 +104,7 @@ interface IGroupingWorkflows {
     /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
     /// @dev UPDATE REQUIRED: The sigMetadataAndAttachAndConfig permission signature data must be updated and include permissions for
     /// metadata setting, license attachment, and licensing configuration permissions
-    function registerIpAndAttachLicenseAndAddToGroup(
+    function registerIpAndAttachLicenseAndAddToGroup_deprecated(
         address nftContract,
         uint256 tokenId,
         address groupId,
@@ -117,7 +117,7 @@ interface IGroupingWorkflows {
 
     /// @notice Register a group IP with a group reward pool and attach license terms to the group IP
     /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function registerGroupAndAttachLicense(
+    function registerGroupAndAttachLicense_deprecated(
         address groupPool,
         address licenseTemplate,
         uint256 licenseTermsId
@@ -126,7 +126,7 @@ interface IGroupingWorkflows {
     /// @notice Register a group IP with a group reward pool, attach license terms to the group IP,
     /// and add individual IPs to the group IP.
     /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function registerGroupAndAttachLicenseAndAddIps(
+    function registerGroupAndAttachLicenseAndAddIps_deprecated(
         address groupPool,
         address[] calldata ipIds,
         address licenseTemplate,
@@ -135,7 +135,7 @@ interface IGroupingWorkflows {
 
     /// @notice Collect royalties for the entire group and distribute the rewards to each member IP's royalty vault
     /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function collectRoyaltiesAndClaimReward(
+    function collectRoyaltiesAndClaimReward_deprecated(
         address groupIpId,
         address[] calldata currencyTokens,
         uint256[] calldata groupSnapshotIds,

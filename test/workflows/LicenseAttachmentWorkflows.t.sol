@@ -467,7 +467,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
 
         uint256 ltAmt = pilTemplate.totalRegisteredLicenseTerms();
 
-        uint256[] memory licenseTermsIds = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+        uint256[] memory licenseTermsIds = licenseAttachmentWorkflows.registerPILTermsAndAttach_deprecated({
             ipId: ipId,
             terms: terms,
             sigAttach: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: signature })
@@ -487,7 +487,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         withEnoughTokens(address(licenseAttachmentWorkflows))
     {
         (address ipId1, uint256 tokenId1, uint256[] memory licenseTermsIds1) = licenseAttachmentWorkflows
-            .mintAndRegisterIpAndAttachPILTerms({
+            .mintAndRegisterIpAndAttachPILTerms_deprecated({
                 spgNftContract: address(nftContract),
                 recipient: caller,
                 ipMetadata: ipMetadataEmpty,
@@ -519,7 +519,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         assertEq(licenseTermsId, licenseTermsIds1[4]);
 
         (address ipId2, uint256 tokenId2, uint256[] memory licenseTermsIds2) = licenseAttachmentWorkflows
-            .mintAndRegisterIpAndAttachPILTerms({
+            .mintAndRegisterIpAndAttachPILTerms_deprecated({
                 spgNftContract: address(nftContract),
                 recipient: caller,
                 ipMetadata: ipMetadataDefault,
@@ -567,7 +567,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             signerSk: sk.alice
         });
 
-        licenseAttachmentWorkflows.registerIpAndAttachPILTerms({
+        licenseAttachmentWorkflows.registerIpAndAttachPILTerms_deprecated({
             nftContract: address(nftContract),
             tokenId: tokenId,
             ipMetadata: ipMetadataDefault,
@@ -613,7 +613,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             signerSk: sk.alice
         });
 
-        uint256[] memory licenseTermsIds1 = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+        uint256[] memory licenseTermsIds1 = licenseAttachmentWorkflows.registerPILTermsAndAttach_deprecated({
             ipId: ipId,
             terms: terms,
             sigAttach: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: signature1 })
@@ -630,7 +630,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         });
 
         /// attach the same license terms to the IP again, but it shouldn't revert
-        uint256[] memory licenseTermsIds2 = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+        uint256[] memory licenseTermsIds2 = licenseAttachmentWorkflows.registerPILTermsAndAttach_deprecated({
             ipId: ipId,
             terms: terms,
             sigAttach: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: signature2 })
@@ -650,7 +650,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         withEnoughTokens(address(licenseAttachmentWorkflows))
     {
         (address ipIdParent, , uint256[] memory licenseTermsIdsParent) = licenseAttachmentWorkflows
-            .mintAndRegisterIpAndAttachPILTerms({
+            .mintAndRegisterIpAndAttachPILTerms_deprecated({
                 spgNftContract: address(nftContract),
                 recipient: caller,
                 ipMetadata: ipMetadataDefault,
@@ -663,7 +663,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         uint256[] memory licenseTermsIds = new uint256[](1);
         licenseTermsIds[0] = licenseTermsIdsParent[0];
 
-        (address ipIdChild, ) = derivativeWorkflows.mintAndRegisterIpAndMakeDerivative({
+        (address ipIdChild, ) = derivativeWorkflows.mintAndRegisterIpAndMakeDerivative_deprecated({
             spgNftContract: address(nftContract),
             derivData: WorkflowStructs.MakeDerivativeDEPR({
                 parentIpIds: parentIpIds,
@@ -689,7 +689,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
 
         /// attach license terms to the child ip, should revert with the correct error
         vm.expectRevert(CoreErrors.LicensingModule__DerivativesCannotAddLicenseTerms.selector);
-        licenseAttachmentWorkflows.registerPILTermsAndAttach({
+        licenseAttachmentWorkflows.registerPILTermsAndAttach_deprecated({
             ipId: ipIdChild,
             terms: terms,
             sigAttach: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: signature })
@@ -716,7 +716,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
 
         uint256 ltAmt = pilTemplate.totalRegisteredLicenseTerms();
 
-        uint256 licenseTermsId = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+        uint256 licenseTermsId = licenseAttachmentWorkflows.registerPILTermsAndAttach_deprecated({
             ipId: ipId,
             terms: PILFlavors.commercialUse({
                 mintingFee: 100,
@@ -736,7 +736,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         withEnoughTokens(address(licenseAttachmentWorkflows))
     {
         (address ipId1, uint256 tokenId1, uint256 licenseTermsId1) = licenseAttachmentWorkflows
-            .mintAndRegisterIpAndAttachPILTerms({
+            .mintAndRegisterIpAndAttachPILTerms_deprecated({
                 spgNftContract: address(nftContract),
                 recipient: caller,
                 ipMetadata: ipMetadataEmpty,
@@ -752,7 +752,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         assertEq(licenseTermsId, licenseTermsId1);
 
         (address ipId2, uint256 tokenId2, uint256 licenseTermsId2) = licenseAttachmentWorkflows
-            .mintAndRegisterIpAndAttachPILTerms({
+            .mintAndRegisterIpAndAttachPILTerms_deprecated({
                 spgNftContract: address(nftContract),
                 recipient: caller,
                 ipMetadata: ipMetadataDefault,
@@ -796,7 +796,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             signerSk: sk.alice
         });
 
-        licenseAttachmentWorkflows.registerIpAndAttachPILTerms({
+        licenseAttachmentWorkflows.registerIpAndAttachPILTerms_deprecated({
             nftContract: address(nftContract),
             tokenId: tokenId,
             ipMetadata: ipMetadataDefault,
@@ -824,7 +824,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             signerSk: sk.alice
         });
 
-        uint256 licenseTermsId1 = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+        uint256 licenseTermsId1 = licenseAttachmentWorkflows.registerPILTermsAndAttach_deprecated({
             ipId: ipId,
             terms: PILFlavors.commercialUse({
                 mintingFee: 100,
@@ -845,7 +845,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         });
 
         // attach the same license terms to the IP again, but it shouldn't revert
-        uint256 licenseTermsId2 = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+        uint256 licenseTermsId2 = licenseAttachmentWorkflows.registerPILTermsAndAttach_deprecated({
             ipId: ipId,
             terms: PILFlavors.commercialUse({
                 mintingFee: 100,
@@ -865,7 +865,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         withEnoughTokens(address(licenseAttachmentWorkflows))
     {
         (address ipIdParent, , uint256 licenseTermsIdParent) = licenseAttachmentWorkflows
-            .mintAndRegisterIpAndAttachPILTerms({
+            .mintAndRegisterIpAndAttachPILTerms_deprecated({
                 spgNftContract: address(nftContract),
                 recipient: caller,
                 ipMetadata: ipMetadataDefault,
@@ -878,7 +878,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         uint256[] memory licenseTermsIds = new uint256[](1);
         licenseTermsIds[0] = licenseTermsIdParent;
 
-        (address ipIdChild, ) = derivativeWorkflows.mintAndRegisterIpAndMakeDerivative({
+        (address ipIdChild, ) = derivativeWorkflows.mintAndRegisterIpAndMakeDerivative_deprecated({
             spgNftContract: address(nftContract),
             derivData: WorkflowStructs.MakeDerivativeDEPR({
                 parentIpIds: parentIpIds,
@@ -904,7 +904,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
 
         // attach a different license terms to the child ip, should revert with the correct error
         vm.expectRevert(CoreErrors.LicensingModule__DerivativesCannotAddLicenseTerms.selector);
-        licenseAttachmentWorkflows.registerPILTermsAndAttach({
+        licenseAttachmentWorkflows.registerPILTermsAndAttach_deprecated({
             ipId: ipIdChild,
             terms: PILFlavors.commercialUse({
                 mintingFee: 100,

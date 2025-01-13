@@ -96,7 +96,7 @@ interface IRoyaltyTokenDistributionWorkflows {
 
     /// @notice Mint an NFT and register the IP, attach PIL terms, and distribute royalty tokens.
     /// @dev THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens(
+    function mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens_deprecated(
         address spgNftContract,
         address recipient,
         WorkflowStructs.IPMetadata calldata ipMetadata,
@@ -106,7 +106,7 @@ interface IRoyaltyTokenDistributionWorkflows {
 
     /// @notice Register an IP, attach PIL terms, and deploy a royalty vault.
     /// @dev THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function registerIpAndAttachPILTermsAndDeployRoyaltyVault(
+    function registerIpAndAttachPILTermsAndDeployRoyaltyVault_deprecated(
         address nftContract,
         uint256 tokenId,
         WorkflowStructs.IPMetadata calldata ipMetadata,

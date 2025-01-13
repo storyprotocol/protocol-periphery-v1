@@ -63,7 +63,7 @@ interface ILicenseAttachmentWorkflows {
 
     /// @notice Register Programmable IP License Terms (if unregistered) and attach it to IP.
     /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function registerPILTermsAndAttach(
+    function registerPILTermsAndAttach_deprecated(
         address ipId,
         PILTerms[] calldata terms,
         WorkflowStructs.SignatureData calldata sigAttach
@@ -72,7 +72,7 @@ interface ILicenseAttachmentWorkflows {
     /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP,
     /// register Programmable IPLicense
     /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function mintAndRegisterIpAndAttachPILTerms(
+    function mintAndRegisterIpAndAttachPILTerms_deprecated(
         address spgNftContract,
         address recipient,
         WorkflowStructs.IPMetadata calldata ipMetadata,
@@ -81,7 +81,7 @@ interface ILicenseAttachmentWorkflows {
 
     /// @notice Register a given NFT as an IP and attach Programmable IP License Terms.
     /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function registerIpAndAttachPILTerms(
+    function registerIpAndAttachPILTerms_deprecated(
         address nftContract,
         uint256 tokenId,
         WorkflowStructs.IPMetadata calldata ipMetadata,
@@ -92,7 +92,7 @@ interface ILicenseAttachmentWorkflows {
 
     /// @notice Register Programmable IP License Terms (if unregistered) and attach it to IP.
     /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function registerPILTermsAndAttach(
+    function registerPILTermsAndAttach_deprecated(
         address ipId,
         PILTerms calldata terms,
         WorkflowStructs.SignatureData calldata sigAttach
@@ -101,7 +101,7 @@ interface ILicenseAttachmentWorkflows {
     /// Mint an NFT from a SPGNFT collection, register it with metadata as an IP,
     /// register Programmable IPLicense
     /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function mintAndRegisterIpAndAttachPILTerms(
+    function mintAndRegisterIpAndAttachPILTerms_deprecated(
         address spgNftContract,
         address recipient,
         WorkflowStructs.IPMetadata calldata ipMetadata,
@@ -110,7 +110,7 @@ interface ILicenseAttachmentWorkflows {
 
     /// @notice Register a given NFT as an IP and attach Programmable IP License Terms.
     /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function registerIpAndAttachPILTerms(
+    function registerIpAndAttachPILTerms_deprecated(
         address nftContract,
         uint256 tokenId,
         WorkflowStructs.IPMetadata calldata ipMetadata,
