@@ -44,16 +44,4 @@ interface IRegistrationWorkflows {
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigMetadata
     ) external returns (address ipId);
-
-    ////////////////////////////////////////////////////////////////////////////
-    //                   DEPRECATED, WILL BE REMOVED IN V1.4                  //
-    ////////////////////////////////////////////////////////////////////////////
-
-    /// @notice Mint an NFT from a SPGNFT collection and register it with metadata as an IP.
-    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function mintAndRegisterIp_deprecated(
-        address spgNftContract,
-        address recipient,
-        WorkflowStructs.IPMetadata calldata ipMetadata
-    ) external returns (address ipId, uint256 tokenId);
 }
