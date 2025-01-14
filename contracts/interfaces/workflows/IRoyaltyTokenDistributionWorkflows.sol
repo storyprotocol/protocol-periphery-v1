@@ -89,29 +89,4 @@ interface IRoyaltyTokenDistributionWorkflows {
         WorkflowStructs.RoyaltyShare[] calldata royaltyShares,
         WorkflowStructs.SignatureData calldata sigApproveRoyaltyTokens
     ) external;
-
-    ////////////////////////////////////////////////////////////////////////////
-    //                   DEPRECATED, WILL BE REMOVED IN V1.4                  //
-    ////////////////////////////////////////////////////////////////////////////
-
-    /// @notice Mint an NFT and register the IP, attach PIL terms, and distribute royalty tokens.
-    /// @dev THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens_deprecated(
-        address spgNftContract,
-        address recipient,
-        WorkflowStructs.IPMetadata calldata ipMetadata,
-        PILTerms[] calldata terms,
-        WorkflowStructs.RoyaltyShare[] calldata royaltyShares
-    ) external returns (address ipId, uint256 tokenId, uint256[] memory licenseTermsIds);
-
-    /// @notice Register an IP, attach PIL terms, and deploy a royalty vault.
-    /// @dev THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function registerIpAndAttachPILTermsAndDeployRoyaltyVault_deprecated(
-        address nftContract,
-        uint256 tokenId,
-        WorkflowStructs.IPMetadata calldata ipMetadata,
-        PILTerms[] calldata terms,
-        WorkflowStructs.SignatureData calldata sigMetadata,
-        WorkflowStructs.SignatureData calldata sigAttach
-    ) external returns (address ipId, uint256[] memory licenseTermsIds, address ipRoyaltyVault);
 }
