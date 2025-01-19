@@ -87,7 +87,7 @@ contract RegistrationWorkflows is
     }
 
     /// @dev Upgrades the NFT contract beacon. Restricted to only the protocol access manager.
-    /// @param newNftContract The address of the new NFT contract implemenetation.
+    /// @param newNftContract The address of the new NFT contract implementation.
     function upgradeCollections(address newNftContract) public restricted {
         // UpgradeableBeacon checks for newImplementation.bytecode.length > 0, so no need to check for zero address.
         UpgradeableBeacon(_getRegistrationWorkflowsStorage().nftContractBeacon).upgradeTo(newNftContract);
