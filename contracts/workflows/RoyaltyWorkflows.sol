@@ -43,7 +43,7 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
         __UUPSUpgradeable_init();
     }
 
-    /// @notice Transfers all avaiable royalties from various royalty policies to the royalty
+    /// @notice Transfers all available royalties from various royalty policies to the royalty
     ///         vault of an ancestor IP, and claims all the revenue for each currency token
     ///         from the ancestor IP's royalty vault to the claimer.
     /// @param ancestorIpId The address of the ancestor IP from which the revenue is being claimed.
