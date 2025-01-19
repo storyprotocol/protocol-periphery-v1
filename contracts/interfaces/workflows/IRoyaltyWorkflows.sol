@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 /// @title Royalty Workflows Interface
 /// @notice Interface for IP royalty workflows.
 interface IRoyaltyWorkflows {
-    /// @notice Transfers all avaiable royalties from various royalty policies to the royalty
+    /// @notice Transfers all available royalties from various royalty policies to the royalty
     ///         vault of an ancestor IP, and claims all the revenue for each currency token
     ///         from the ancestor IP's royalty vault to the claimer.
     /// @param ancestorIpId The address of the ancestor IP from which the revenue is being claimed.
