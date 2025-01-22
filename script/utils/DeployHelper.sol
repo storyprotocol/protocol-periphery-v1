@@ -80,7 +80,7 @@ contract DeployHelper is
     bytes32 internal constant IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
     // WIP address
-    address internal wipAddr = 0x1516000000000000000000000000000000000000;
+    address internal wipAddr = 0x1514000000000000000000000000000000000000;
 
     // IPAccount contracts
     IPAccountImpl internal ipAccountImplCode;
