@@ -36,7 +36,6 @@ library MetadataHelper {
     }
 
     /// @dev Sets the metadata for the given IP if metadata is non-empty.
-    /// @dev Sets the metadata for the given IP if metadata is non-empty.
     /// @param ipId The ID of the IP.
     /// @param coreMetadataModule The address of the Core Metadata Module.
     /// @param ipMetadata The metadata to set.
