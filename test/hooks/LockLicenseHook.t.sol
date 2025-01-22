@@ -116,7 +116,7 @@ contract LockLicenseHookTest is BaseTest {
         vm.startPrank(ipOwner);
         Licensing.LicensingConfig memory licensingConfig = Licensing.LicensingConfig({
             isSet: true,
-            mintingFee: 1000,
+            mintingFee: 0,
             licensingHook: address(lockLicenseHook),
             hookData: "",
             commercialRevShare: 0,

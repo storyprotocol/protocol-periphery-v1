@@ -71,7 +71,7 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
         vm.stopPrank();
 
         vm.startPrank(ipOwner2);
-        licensingModule.setLicensingConfig(ipId2, address(0), 0, licensingConfig);
+        licensingModule.setLicensingConfig(ipId2, address(pilTemplate), commUseTermsId, licensingConfig);
         totalLimitHook.setTotalLicenseTokenLimit(ipId2, address(pilTemplate), commUseTermsId, 20);
         assertEq(totalLimitHook.getTotalLicenseTokenLimit(ipId2, address(pilTemplate), commUseTermsId), 20);
         vm.stopPrank();

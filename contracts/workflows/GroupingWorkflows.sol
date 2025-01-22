@@ -104,6 +104,7 @@ contract GroupingWorkflows is
     /// @param spgNftContract The address of the SPGNFT collection.
     /// @param groupId The ID of the group IP to add the newly registered IP.
     /// @param recipient The address of the recipient of the minted NFT.
+    /// @param maxAllowedRewardShare The maximum reward share percentage that can be allocated to each member IP.
     /// @param licensesData The data of the licenses and their configurations to be attached to the new IP.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
     /// @param sigAddToGroup Signature data for addIp to the group IP via the Grouping Module.
@@ -114,6 +115,7 @@ contract GroupingWorkflows is
         address spgNftContract,
         address groupId,
         address recipient,
+        uint256 maxAllowedRewardShare,
         WorkflowStructs.LicenseData[] calldata licensesData,
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigAddToGroup,
@@ -144,7 +146,7 @@ contract GroupingWorkflows is
 
         address[] memory ipIds = new address[](1);
         ipIds[0] = ipId;
-        GROUPING_MODULE.addIp(groupId, ipIds);
+        GROUPING_MODULE.addIp(groupId, ipIds, maxAllowedRewardShare);
 
         ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
     }
@@ -154,6 +156,7 @@ contract GroupingWorkflows is
     /// @param nftContract The address of the NFT collection.
     /// @param tokenId The ID of the NFT.
     /// @param groupId The ID of the group IP to add the newly registered IP.
+    /// @param maxAllowedRewardShare The maximum reward share percentage that can be allocated to each member IP.
     /// @param licensesData The data of the licenses and their configurations to be attached to the new IP.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param sigMetadataAndAttachAndConfig Signature data for setAll (metadata), attachLicenseTerms, and
@@ -164,6 +167,7 @@ contract GroupingWorkflows is
         address nftContract,
         uint256 tokenId,
         address groupId,
+        uint256 maxAllowedRewardShare,
         WorkflowStructs.LicenseData[] calldata licensesData,
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigMetadataAndAttachAndConfig,
@@ -204,7 +208,7 @@ contract GroupingWorkflows is
 
         address[] memory ipIds = new address[](1);
         ipIds[0] = ipId;
-        GROUPING_MODULE.addIp(groupId, ipIds);
+        GROUPING_MODULE.addIp(groupId, ipIds, maxAllowedRewardShare);
     }
 
     /// @notice Register a group IP with a group reward pool and attach license terms to the group IP
@@ -233,11 +237,13 @@ contract GroupingWorkflows is
     /// @dev ipIds must have the same PIL terms as the group IP.
     /// @param groupPool The address of the group reward pool.
     /// @param ipIds The IDs of the IPs to add to the newly registered group IP.
+    /// @param maxAllowedRewardShare The maximum reward share percentage that can be allocated to each member IP.
     /// @param licenseData The data of the license and its configuration to be attached to the new group IP.
     /// @return groupId The ID of the newly registered group IP.
     function registerGroupAndAttachLicenseAndAddIps(
         address groupPool,
         address[] calldata ipIds,
+        uint256 maxAllowedRewardShare,
         WorkflowStructs.LicenseData calldata licenseData
     ) external returns (address groupId) {
         groupId = GROUPING_MODULE.registerGroup(groupPool);
@@ -250,7 +256,7 @@ contract GroupingWorkflows is
             licenseData.licensingConfig
         );
 
-        GROUPING_MODULE.addIp(groupId, ipIds);
+        GROUPING_MODULE.addIp(groupId, ipIds, maxAllowedRewardShare);
 
         GROUP_NFT.safeTransferFrom(address(this), msg.sender, GROUP_NFT.totalSupply() - 1);
     }

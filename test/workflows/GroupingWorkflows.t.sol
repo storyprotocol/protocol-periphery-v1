@@ -119,6 +119,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             spgNftContract: address(spgNftPublic),
             groupId: groupId,
             recipient: minter,
+            maxAllowedRewardShare: 100e6, // 100%
             ipMetadata: ipMetadataDefault,
             licensesData: testLicensesData,
             sigAddToGroup: WorkflowStructs.SignatureData({
@@ -150,6 +151,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             spgNftContract: address(spgNftPublic),
             groupId: groupId,
             recipient: minter,
+            maxAllowedRewardShare: 100e6, // 100%
             ipMetadata: ipMetadataDefault,
             licensesData: testLicensesData,
             sigAddToGroup: WorkflowStructs.SignatureData({
@@ -210,6 +212,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             nftContract: address(mockNft),
             tokenId: tokenId,
             groupId: groupId,
+            maxAllowedRewardShare: 100e6, // 100%
             licensesData: testLicensesData,
             ipMetadata: ipMetadataDefault,
             sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
@@ -267,6 +270,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
             groupPool: address(evenSplitGroupPool),
             ipIds: ipIds,
+            maxAllowedRewardShare: 100e6, // 100%
             licenseData: testGroupLicenseData[0]
         });
         vm.stopPrank();
@@ -298,6 +302,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
             groupPool: address(evenSplitGroupPool),
             ipIds: ipIds,
+            maxAllowedRewardShare: 100e6, // 100%
             licenseData: testGroupLicenseData[0]
         });
         vm.stopPrank();
@@ -430,12 +435,13 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             data[i] = abi.encodeWithSelector(
                 bytes4(
                     keccak256(
-                        "mintAndRegisterIpAndAttachLicenseAndAddToGroup(address,address,address,(address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))[],(string,bytes32,string,bytes32),(address,uint256,bytes),bool)"
+                        "mintAndRegisterIpAndAttachLicenseAndAddToGroup(address,address,address,uint256,(address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))[],(string,bytes32,string,bytes32),(address,uint256,bytes),bool)"
                     )
                 ),
                 address(spgNftPublic),
                 groupId,
                 minter,
+                100e6, // 100%
                 testLicensesData,
                 ipMetadataDefault,
                 WorkflowStructs.SignatureData({ signer: groupOwner, deadline: deadline, signature: sigsAddToGroup[i] }),
@@ -513,12 +519,13 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             data[i] = abi.encodeWithSelector(
                 bytes4(
                     keccak256(
-                        "registerIpAndAttachLicenseAndAddToGroup(address,uint256,address,(address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))[],(string,bytes32,string,bytes32),(address,uint256,bytes),(address,uint256,bytes))"
+                        "registerIpAndAttachLicenseAndAddToGroup(address,uint256,address,uint256,(address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))[],(string,bytes32,string,bytes32),(address,uint256,bytes),(address,uint256,bytes))"
                     )
                 ),
                 mockNft,
                 tokenIds[i],
                 groupId,
+                100e6, // 100%
                 testLicensesData,
                 ipMetadataDefault,
                 WorkflowStructs.SignatureData({
@@ -554,6 +561,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             spgNftContract: address(spgNftPublic),
             groupId: groupId,
             recipient: minter,
+            maxAllowedRewardShare: 100e6, // 100%
             ipMetadata: ipMetadataDefault,
             licensesData: new WorkflowStructs.LicenseData[](0),
             sigAddToGroup: WorkflowStructs.SignatureData({
@@ -569,6 +577,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             nftContract: address(mockNft),
             tokenId: 0,
             groupId: groupId,
+            maxAllowedRewardShare: 100e6, // 100%
             licensesData: new WorkflowStructs.LicenseData[](0),
             ipMetadata: ipMetadataDefault,
             sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({

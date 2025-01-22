@@ -72,6 +72,7 @@ contract GroupingIntegration is BaseIntegration {
             spgNftContract: address(spgNftContract),
             groupId: groupId,
             recipient: testSender,
+            maxAllowedRewardShare: 100e6, // 100%
             ipMetadata: testIpMetadata,
             licensesData: testLicensesData,
             sigAddToGroup: WorkflowStructs.SignatureData({
@@ -138,6 +139,7 @@ contract GroupingIntegration is BaseIntegration {
             nftContract: address(spgNftContract),
             tokenId: tokenId,
             groupId: groupId,
+            maxAllowedRewardShare: 100e6, // 100%
             licensesData: testLicensesData,
             ipMetadata: testIpMetadata,
             sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
@@ -188,6 +190,7 @@ contract GroupingIntegration is BaseIntegration {
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
             groupPool: evenSplitGroupPoolAddr,
             ipIds: ipIds,
+            maxAllowedRewardShare: 100e6, // 100%
             licenseData: testGroupLicenseData[0]
         });
 
@@ -213,6 +216,7 @@ contract GroupingIntegration is BaseIntegration {
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
             groupPool: evenSplitGroupPoolAddr,
             ipIds: ipIds,
+            maxAllowedRewardShare: 100e6, // 100%
             licenseData: testGroupLicenseData[0]
         });
 
@@ -321,12 +325,13 @@ contract GroupingIntegration is BaseIntegration {
             data[i] = abi.encodeWithSelector(
                 bytes4(
                     keccak256(
-                        "mintAndRegisterIpAndAttachLicenseAndAddToGroup(address,address,address,(address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))[],(string,bytes32,string,bytes32),(address,uint256,bytes),bool)"
+                        "mintAndRegisterIpAndAttachLicenseAndAddToGroup(address,address,address,uint256,(address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))[],(string,bytes32,string,bytes32),(address,uint256,bytes),bool)"
                     )
                 ),
                 address(spgNftContract),
                 groupId,
                 testSender,
+                100e6, // 100%
                 testLicensesData,
                 testIpMetadata,
                 WorkflowStructs.SignatureData({ signer: testSender, deadline: deadline, signature: sigsAddToGroup[i] })
@@ -421,12 +426,13 @@ contract GroupingIntegration is BaseIntegration {
             data[i] = abi.encodeWithSelector(
                 bytes4(
                     keccak256(
-                        "registerIpAndAttachLicenseAndAddToGroup(address,uint256,address,(address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))[],(string,bytes32,string,bytes32),(address,uint256,bytes),(address,uint256,bytes))"
+                        "registerIpAndAttachLicenseAndAddToGroup(address,uint256,address,uint256,(address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))[],(string,bytes32,string,bytes32),(address,uint256,bytes),(address,uint256,bytes))"
                     )
                 ),
                 address(spgNftContract),
                 tokenIds[i],
                 groupId,
+                100e6, // 100%
                 testLicensesData,
                 testIpMetadata,
                 WorkflowStructs.SignatureData({

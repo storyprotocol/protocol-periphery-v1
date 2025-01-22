@@ -8,6 +8,7 @@ import { Script } from "forge-std/Script.sol";
 import { stdJson } from "forge-std/StdJson.sol";
 import { ERC6551Registry } from "erc6551/ERC6551Registry.sol";
 import { AccessManager } from "@openzeppelin/contracts/access/manager/AccessManager.sol";
+import { BeaconProxy } from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import { ICreate3Deployer } from "@storyprotocol/script/utils/ICreate3Deployer.sol";
 import { AccessController } from "@storyprotocol/core/access/AccessController.sol";
@@ -74,6 +75,14 @@ contract DeployHelper is
 
     // WIP address
     address internal wipAddr = 0x1516000000000000000000000000000000000000;
+
+    // IPAccount contracts
+    IPAccountImpl internal ipAccountImplCode;
+    UpgradeableBeacon internal ipAccountImplBeacon;
+    BeaconProxy internal ipAccountImpl;
+    string internal constant IP_ACCOUNT_IMPL_CODE = "IPAccountImplCode";
+    string internal constant IP_ACCOUNT_IMPL_BEACON = "IPAccountImplBeacon";
+    string internal constant IP_ACCOUNT_IMPL_BEACON_PROXY = "IPAccountImplBeaconProxy";
 
     error DeploymentConfigError(string message);
 
@@ -551,8 +560,9 @@ contract DeployHelper is
         impl = address(
             new IPAssetRegistry(
                 address(erc6551Registry),
-                _getDeployedAddress(type(IPAccountImpl).name),
-                _getDeployedAddress(type(GroupingModule).name)
+                _getDeployedAddress(IP_ACCOUNT_IMPL_BEACON_PROXY),
+                _getDeployedAddress(type(GroupingModule).name),
+                _getDeployedAddress(IP_ACCOUNT_IMPL_BEACON)
             )
         );
         ipAssetRegistry = IPAssetRegistry(
@@ -614,8 +624,8 @@ contract DeployHelper is
         );
         require(_loadProxyImpl(address(licenseRegistry)) == impl, "LicenseRegistry Proxy Implementation Mismatch");
 
-        // ipAccountImpl
-        bytes memory ipAccountImplCode = abi.encodePacked(
+        // IPAccountImpl contracts
+        bytes memory ipAccountImplCodeBytes = abi.encodePacked(
             type(IPAccountImpl).creationCode,
             abi.encode(
                 address(accessController),
@@ -624,21 +634,44 @@ contract DeployHelper is
                 address(moduleRegistry)
             )
         );
-        IPAccountImpl ipAccountImpl = IPAccountImpl(
-            payable(create3Deployer.deployDeterministic(
-                ipAccountImplCode,
-                _getSalt(type(IPAccountImpl).name)
+        _predeploy(IP_ACCOUNT_IMPL_CODE);
+        ipAccountImplCode = IPAccountImpl(
+            payable(create3Deployer.deployDeterministic(ipAccountImplCodeBytes, _getSalt(IP_ACCOUNT_IMPL_CODE)))
+        );
+        _postdeploy(IP_ACCOUNT_IMPL_CODE, address(ipAccountImplCode));
+        require(
+            _getDeployedAddress(IP_ACCOUNT_IMPL_CODE) == address(ipAccountImplCode),
+            "Deploy: IP Account Impl Code Address Mismatch"
+        );
+
+        _predeploy(IP_ACCOUNT_IMPL_BEACON);
+        ipAccountImplBeacon = UpgradeableBeacon(
+            create3Deployer.deployDeterministic(
+                abi.encodePacked(
+                    type(UpgradeableBeacon).creationCode,
+                    abi.encode(address(ipAccountImplCode), deployer)
+                ),
+                _getSalt(IP_ACCOUNT_IMPL_BEACON)
+            )
+        );
+        _postdeploy(IP_ACCOUNT_IMPL_BEACON, address(ipAccountImplBeacon));
+
+        _predeploy(IP_ACCOUNT_IMPL_BEACON_PROXY);
+        ipAccountImpl = BeaconProxy(payable(
+            create3Deployer.deployDeterministic(
+                abi.encodePacked(
+                    type(BeaconProxy).creationCode,
+                    abi.encode(address(ipAccountImplBeacon), "")
+                ),
+                _getSalt(IP_ACCOUNT_IMPL_BEACON_PROXY)
             ))
         );
-        require(
-            _getDeployedAddress(type(IPAccountImpl).name) == address(ipAccountImpl),
-            "Deploy: IP Account Impl Address Mismatch"
-        );
+        _postdeploy(IP_ACCOUNT_IMPL_BEACON_PROXY, address(ipAccountImpl));
 
         // disputeModule
         impl = address(0); // Make sure we don't deploy wrong impl
         impl = address(
-            new DisputeModule(address(accessController), address(ipAssetRegistry), address(licenseRegistry))
+            new DisputeModule(address(accessController), address(ipAssetRegistry), address(licenseRegistry), address(ipGraphACL))
         );
         disputeModule = DisputeModule(
             TestProxyHelper.deployUUPSProxy(
@@ -663,7 +696,8 @@ contract DeployHelper is
                 _getDeployedAddress(type(LicensingModule).name),
                 address(disputeModule),
                 address(licenseRegistry),
-                address(ipAssetRegistry)
+                address(ipAssetRegistry),
+                address(ipGraphACL)
             )
         );
         royaltyModule = RoyaltyModule(
@@ -671,7 +705,7 @@ contract DeployHelper is
                 create3Deployer,
                 _getSalt(type(RoyaltyModule).name),
                 impl,
-                abi.encodeCall(RoyaltyModule.initialize, (address(protocolAccessManager), 1024, 1024, 10))
+                abi.encodeCall(RoyaltyModule.initialize, (address(protocolAccessManager), uint256(15)))
             )
         );
         royaltyModuleAddr = address(royaltyModule);
@@ -691,7 +725,8 @@ contract DeployHelper is
                 address(royaltyModule),
                 address(licenseRegistry),
                 address(disputeModule),
-                _getDeployedAddress(type(LicenseToken).name)
+                _getDeployedAddress(type(LicenseToken).name),
+                address(ipGraphACL)
             )
         );
         licensingModule = LicensingModule(
@@ -797,7 +832,8 @@ contract DeployHelper is
                 address(accessController),
                 address(ipAccountRegistry),
                 address(licenseRegistry),
-                address(royaltyModule)
+                address(royaltyModule),
+                address(moduleRegistry)
             )
         );
         pilTemplate = PILicenseTemplate(
@@ -929,9 +965,12 @@ contract DeployHelper is
         moduleRegistry.registerModule("CORE_METADATA_VIEW_MODULE", address(coreMetadataViewModule));
         moduleRegistry.registerModule("GROUPING_MODULE", address(groupingModule));
 
-        ipGraphACL.whitelistAddress(_getDeployedAddress(type(RoyaltyPolicyLAP).name));
-        ipGraphACL.whitelistAddress(_getDeployedAddress(type(RoyaltyPolicyLRP).name));
-        ipGraphACL.whitelistAddress(_getDeployedAddress(type(LicenseRegistry).name));
+        ipGraphACL.whitelistAddress(address(licenseRegistry));
+        ipGraphACL.whitelistAddress(address(royaltyPolicyLAP));
+        ipGraphACL.whitelistAddress(address(royaltyPolicyLRP));
+        ipGraphACL.whitelistAddress(address(royaltyModule));
+        ipGraphACL.whitelistAddress(address(disputeModule));
+        ipGraphACL.whitelistAddress(address(licensingModule));
 
         coreMetadataViewModule.updateCoreMetadataModule();
 
