@@ -33,7 +33,11 @@ import { RoyaltyModule } from "@storyprotocol/core/modules/royalty/RoyaltyModule
 import { RoyaltyPolicyLAP } from "@storyprotocol/core/modules/royalty/policies/LAP/RoyaltyPolicyLAP.sol";
 import { RoyaltyPolicyLRP } from "@storyprotocol/core/modules/royalty/policies/LRP/RoyaltyPolicyLRP.sol";
 import { StorageLayoutChecker } from "@storyprotocol/script/utils/upgrades/StorageLayoutCheck.s.sol";
+import { AccessManager } from "@openzeppelin/contracts/access/manager/AccessManager.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { TestProxyHelper } from "@storyprotocol/test/utils/TestProxyHelper.sol";
+import { ProtocolAdmin } from "@storyprotocol/core/lib/ProtocolAdmin.sol";
+import { ProtocolPausableUpgradeable } from "@storyprotocol/core/pause/ProtocolPausableUpgradeable.sol";
 
 // contracts
 import { SPGNFT } from "../../contracts/SPGNFT.sol";
@@ -548,7 +552,23 @@ contract DeployHelper is
        IModuleRegistry(moduleRegistryAddr).registerModule("TOKENIZER_MODULE", address(tokenizerModule));
        IModuleRegistry(moduleRegistryAddr).registerModule("LOCK_LICENSE_HOOK", address(lockLicenseHook));
        IModuleRegistry(moduleRegistryAddr).registerModule("TOTAL_LICENSE_TOKEN_LIMIT_HOOK", address(totalLicenseTokenLimitHook));
-       // more configurations may be added here
+       // add upgrade role and pause role to tokenizer module
+       bytes4[] memory selectors = new bytes4[](1);
+       selectors[0] = UUPSUpgradeable.upgradeToAndCall.selector;
+       AccessManager(protocolAccessManagerAddr).setTargetFunctionRole(
+            address(tokenizerModule),
+            selectors,
+            ProtocolAdmin.UPGRADER_ROLE
+        );
+
+        selectors = new bytes4[](2);
+        selectors[0] = ProtocolPausableUpgradeable.pause.selector;
+        selectors[1] = ProtocolPausableUpgradeable.unpause.selector;
+        AccessManager(protocolAccessManagerAddr).setTargetFunctionRole(
+            address(tokenizerModule),
+            selectors,
+            ProtocolAdmin.PAUSE_ADMIN_ROLE
+        );
     }
 
     function _deployMockCoreContracts() private {
