@@ -116,13 +116,13 @@ contract OrgStoryNFTFactory is IOrgStoryNFTFactory, AccessManagedUpgradeable, UU
     /// @param orgNftRecipient The address of the recipient of the organization NFT.
     /// @param orgName The name of the organization.
     /// @param orgIpMetadata OPTIONAL. The desired metadata for the newly minted OrgNFT and registered IP.
-    /// @param signature The signature from the OrgStoryNFTFactory's whitelist signer. This signautre is genreated by
+    /// @param signature The signature from the OrgStoryNFTFactory's whitelist signer. This signature is genreated by
     ///  having the whitelist signer sign the caller's address (msg.sender) for this `deployStoryNft` function.
     /// @param storyNftInitParams The initialization data for the OrgStoryNFT (see {IOrgStoryNFT-InitParams}).
     /// @return orgNft The address of the organization NFT.
     /// @return orgTokenId The token ID of the organization NFT.
     /// @return orgIpId The ID of the organization IP.
-    /// @return orgStoryNft The address of the dployed OrgStoryNFT
+    /// @return orgStoryNft The address of the deployed OrgStoryNFT
     function deployOrgStoryNft(
         address orgStoryNftTemplate,
         address orgNftRecipient,
@@ -154,7 +154,7 @@ contract OrgStoryNFTFactory is IOrgStoryNFTFactory, AccessManagedUpgradeable, UU
     /// @return orgNft The address of the organization NFT.
     /// @return orgTokenId The token ID of the organization NFT.
     /// @return orgIpId The ID of the organization IP.
-    /// @return orgStoryNft The address of the dployed OrgStoryNFT
+    /// @return orgStoryNft The address of the deployed OrgStoryNFT
     function deployOrgStoryNftByAdmin(
         address orgStoryNftTemplate,
         address orgNftRecipient,
