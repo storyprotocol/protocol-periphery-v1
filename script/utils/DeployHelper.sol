@@ -528,10 +528,10 @@ contract DeployHelper is
                 abi.encodePacked(
                     type(TotalLicenseTokenLimitHook).creationCode,
                     abi.encode(
-                        address(licenseRegistry),
-                        address(licenseToken),
-                        address(accessController),
-                        address(ipAssetRegistry)
+                        licenseRegistryAddr,
+                        licenseTokenAddr,
+                        accessControllerAddr,
+                        ipAssetRegistryAddr
                     )
                 ),
                 _getSalt("TotalLicenseTokenLimitHook")
