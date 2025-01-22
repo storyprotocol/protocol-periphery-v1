@@ -12,7 +12,7 @@ import { Errors } from "./lib/Errors.sol";
 import { SPGNFTLib } from "./lib/SPGNFTLib.sol";
 
 contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeable {
-    /// @dev Storage structure for the SPGNFTSotrage.
+    /// @dev Storage structure for the SPGNFTStorage.
     /// @param _maxSupply The maximum supply of the collection.
     /// @param _totalSupply The total minted supply of the collection.
     /// @param _mintFee The fee to mint an NFT from the collection.
