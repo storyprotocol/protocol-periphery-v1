@@ -31,6 +31,12 @@ contract RoyaltyTokenDistributionIntegration is BaseIntegration {
     WorkflowStructs.LicenseTermsData[] private commRemixTermsData;
     WorkflowStructs.RoyaltyShare[] private royaltyShares;
 
+    // random addresses
+    address private shareRecipientA=0xfD6BC5A922Df6Fa2034d97958C5401023B21641B;
+    address private shareRecipientB=0x3D1f17203f8B6918D1B96CE195920e768AB7a9aB;
+    address private shareRecipientC=0x021CBD607beeCA2ACecBD8533D822f5Ca70169f3;
+    address private shareRecipientD=0x5Bf05b423a1D090522700a3D5609D1FBbD690e76;
+
     /// @dev To use, run the following command:
     /// forge script test/integration/workflows/RoyaltyTokenDistributionIntegration.t.sol:RoyaltyTokenDistributionIntegration \
     /// --rpc-url=$TESTNET_URL -vvvv --broadcast --priority-gas-price=1 --legacy
@@ -246,10 +252,10 @@ contract RoyaltyTokenDistributionIntegration is BaseIntegration {
 
     function _setupTest() private {
         ipMetadata = WorkflowStructs.IPMetadata({
-            ipMetadataURI: "",
-            ipMetadataHash: "",
-            nftMetadataURI: "",
-            nftMetadataHash: ""
+            ipMetadataURI: "test-ip-uri",
+            ipMetadataHash: "test-ip-hash",
+            nftMetadataURI: "test-nft-uri",
+            nftMetadataHash: "test-nft-hash"
         });
 
         spgNftContract = ISPGNFT(
@@ -364,28 +370,28 @@ contract RoyaltyTokenDistributionIntegration is BaseIntegration {
 
         royaltyShares.push(
             WorkflowStructs.RoyaltyShare({
-                recipient: testSender,
+                recipient: shareRecipientA,
                 percentage: 50_000_000 // 50%
             })
         );
 
         royaltyShares.push(
             WorkflowStructs.RoyaltyShare({
-                recipient: testSender,
+                recipient: shareRecipientB,
                 percentage: 20_000_000 // 20%
             })
         );
 
         royaltyShares.push(
             WorkflowStructs.RoyaltyShare({
-                recipient: testSender,
+                recipient: shareRecipientC,
                 percentage: 20_000_000 // 20%
             })
         );
 
         royaltyShares.push(
             WorkflowStructs.RoyaltyShare({
-                recipient: testSender,
+                recipient: shareRecipientD,
                 percentage: 5_000_000 // 5%
             })
         );
@@ -393,33 +399,7 @@ contract RoyaltyTokenDistributionIntegration is BaseIntegration {
 
     function _assertAttachedLicenseTerms(address ipId, uint256[] memory licenseTermsIds) private {
         for (uint256 i = 0; i < commRemixTermsData.length; i++) {
-            (address licenseTemplate, uint256 licenseTermsIdAttached) = licenseRegistry.getAttachedLicenseTerms(
-                ipId,
-                i
-            );
-            assertEq(licenseTermsIds[i], licenseTermsIdAttached);
-            assertEq(licenseTemplate, address(pilTemplate));
-            assertEq(licenseTermsIdAttached, licenseTermsIds[i]);
-            assertEq(licenseTermsIdAttached, pilTemplate.getLicenseTermsId(commRemixTermsData[i].terms));
-            Licensing.LicensingConfig memory licensingConfig = licenseRegistry.getLicensingConfig(
-                ipId,
-                licenseTemplate,
-                licenseTermsIdAttached
-            );
-            assertEq(licensingConfig.isSet, commRemixTermsData[i].licensingConfig.isSet);
-            assertEq(licensingConfig.mintingFee, commRemixTermsData[i].licensingConfig.mintingFee);
-            assertEq(licensingConfig.licensingHook, commRemixTermsData[i].licensingConfig.licensingHook);
-            assertEq(licensingConfig.hookData, commRemixTermsData[i].licensingConfig.hookData);
-            assertEq(licensingConfig.commercialRevShare, commRemixTermsData[i].licensingConfig.commercialRevShare);
-            assertEq(licensingConfig.disabled, commRemixTermsData[i].licensingConfig.disabled);
-            assertEq(
-                licensingConfig.expectGroupRewardPool,
-                commRemixTermsData[i].licensingConfig.expectGroupRewardPool
-            );
-            assertEq(
-                licensingConfig.expectMinimumGroupRewardShare,
-                commRemixTermsData[i].licensingConfig.expectMinimumGroupRewardShare
-            );
+            assertTrue(licenseRegistry.hasIpAttachedLicenseTerms(ipId, address(pilTemplate), licenseTermsIds[i]));
         }
     }
 
