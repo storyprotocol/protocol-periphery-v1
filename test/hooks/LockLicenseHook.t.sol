@@ -23,6 +23,7 @@ contract LockLicenseHookTest is BaseTest {
         uint256 socialRemixTermsId = pilTemplate.registerLicenseTerms(PILFlavors.nonCommercialSocialRemixing());
 
         vm.startPrank(ipOwner);
+        licensingModule.attachLicenseTerms(ipId, address(pilTemplate), socialRemixTermsId);
         Licensing.LicensingConfig memory licensingConfig = Licensing.LicensingConfig({
             isSet: true,
             mintingFee: 0,
@@ -60,8 +61,8 @@ contract LockLicenseHookTest is BaseTest {
     function test_LockLicenseHook_revert_beforeRegisterDerivative() public {
         uint256 socialRemixTermsId = pilTemplate.registerLicenseTerms(PILFlavors.nonCommercialSocialRemixing());
 
-
         vm.startPrank(ipOwner);
+        licensingModule.attachLicenseTerms(ipId, address(pilTemplate), socialRemixTermsId);
         Licensing.LicensingConfig memory licensingConfig = Licensing.LicensingConfig({
             isSet: true,
             mintingFee: 0,
@@ -106,6 +107,7 @@ contract LockLicenseHookTest is BaseTest {
         uint256 socialRemixTermsId = pilTemplate.registerLicenseTerms(PILFlavors.nonCommercialSocialRemixing());
 
         vm.startPrank(ipOwner);
+        licensingModule.attachLicenseTerms(ipId, address(pilTemplate), socialRemixTermsId);
         Licensing.LicensingConfig memory licensingConfig = Licensing.LicensingConfig({
             isSet: true,
             mintingFee: 0,

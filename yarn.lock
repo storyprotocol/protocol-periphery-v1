@@ -428,7 +428,7 @@
 
 "@story-protocol/protocol-core@github:piplabs/protocol-core-v1-private-fork#main":
   version "1.1.0"
-  resolved "git+ssh://git@github.com/piplabs/protocol-core-v1-private-fork.git#f014fa09550246c74d09729c9cc98e96b5384c2e"
+  resolved "git+ssh://git@github.com/piplabs/protocol-core-v1-private-fork.git#4e6e5fadb402e63599654b0040fde568d274d8eb"
   dependencies:
     "@openzeppelin/contracts" "5.0.2"
     "@openzeppelin/contracts-upgradeable" "5.0.2"

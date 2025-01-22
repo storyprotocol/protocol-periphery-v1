@@ -53,7 +53,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
                         mintingFee: 0,
                         commercialRevShare: revShare,
                         currencyToken: address(mockToken),
-                        royaltyPolicy: address(royaltyPolicyLAP)
+                        royaltyPolicy: address(royaltyPolicyLRP)
                     })
                 ),
                 licensingConfig: Licensing.LicensingConfig({
