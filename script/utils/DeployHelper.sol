@@ -48,6 +48,8 @@ import { StoryBadgeNFT } from "../../contracts/story-nft/StoryBadgeNFT.sol";
 import { OrgStoryNFTFactory } from "../../contracts/story-nft/OrgStoryNFTFactory.sol";
 import { OwnableERC20 } from "../../contracts/modules/tokenizer/OwnableERC20.sol";
 import { TokenizerModule } from "../../contracts/modules/tokenizer/TokenizerModule.sol";
+import { LockLicenseHook } from "../../contracts/hooks/LockLicenseHook.sol";
+import { TotalLicenseTokenLimitHook } from "../../contracts/hooks/TotalLicenseTokenLimitHook.sol";
 
 // script
 import { BroadcastManager } from "./BroadcastManager.s.sol";
@@ -113,6 +115,10 @@ contract DeployHelper is
     TokenizerModule internal tokenizerModule;
     address internal ownableERC20Template;
     address internal ownableERC20Beacon;
+
+    // LicensingHooks
+    LockLicenseHook internal lockLicenseHook;
+    TotalLicenseTokenLimitHook internal totalLicenseTokenLimitHook;
 
     // DeployHelper variable
     bool internal writeDeploys;
@@ -187,10 +193,6 @@ contract DeployHelper is
 
             if (writeDeploys) _writeDeployment(); // JsonDeploymentHandler.s.sol
             _endBroadcast(); // BroadcastManager.s.sol
-
-            // Set SPGNFTBeacon for periphery workflow contracts, access controlled
-            // can't be done in deployment script:
-            // registrationWorkflows.setNftContractBeacon(address(spgNftBeacon));
         }
     }
 
@@ -499,7 +501,6 @@ contract DeployHelper is
             )
         ));
         _postdeploy("OwnableERC20Beacon", address(ownableERC20Beacon));
-
         require(
             UpgradeableBeacon(ownableERC20Beacon).implementation() == address(ownableERC20Template),
             "DeployHelper: Invalid beacon implementation"
@@ -508,13 +509,45 @@ contract DeployHelper is
             OwnableERC20(ownableERC20Template).upgradableBeacon() == address(ownableERC20Beacon),
             "DeployHelper: Invalid beacon address in template"
         );
+
+        // LicensingHooks
+        _predeploy("LockLicenseHook");
+        lockLicenseHook = LockLicenseHook(
+            create3Deployer.deployDeterministic(
+                abi.encodePacked(
+                    type(LockLicenseHook).creationCode
+                ),
+                _getSalt("LockLicenseHook")
+            )
+        );
+        _postdeploy("LockLicenseHook", address(lockLicenseHook));
+
+        _predeploy("TotalLicenseTokenLimitHook");
+        totalLicenseTokenLimitHook = TotalLicenseTokenLimitHook(
+            create3Deployer.deployDeterministic(
+                abi.encodePacked(
+                    type(TotalLicenseTokenLimitHook).creationCode,
+                    abi.encode(
+                        address(licenseRegistry),
+                        address(licenseToken),
+                        address(accessController),
+                        address(ipAssetRegistry)
+                    )
+                ),
+                _getSalt("TotalLicenseTokenLimitHook")
+            )
+        );
+        _postdeploy("TotalLicenseTokenLimitHook", address(totalLicenseTokenLimitHook));
     }
 
     function _configurePeripheryContracts() private {
        // Transfer ownership of beacon proxy to RegistrationWorkflows
        spgNftBeacon.transferOwnership(address(registrationWorkflows));
+       registrationWorkflows.setNftContractBeacon(address(spgNftBeacon));
        tokenizerModule.whitelistTokenTemplate(address(ownableERC20Template), true);
        IModuleRegistry(moduleRegistryAddr).registerModule("TOKENIZER_MODULE", address(tokenizerModule));
+       IModuleRegistry(moduleRegistryAddr).registerModule("LOCK_LICENSE_HOOK", address(lockLicenseHook));
+       IModuleRegistry(moduleRegistryAddr).registerModule("TOTAL_LICENSE_TOKEN_LIMIT_HOOK", address(totalLicenseTokenLimitHook));
        // more configurations may be added here
     }
 
