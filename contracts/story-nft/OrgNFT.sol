@@ -120,6 +120,9 @@ contract OrgNFT is IOrgNFT, ERC721URIStorageUpgradeable, AccessManagedUpgradeabl
         (rootOrgTokenId, rootOrgIpId) = _mintAndRegisterIp(address(this), orgIpMetadata);
         $.rootOrgIpId = rootOrgIpId;
 
+        // attach default license terms
+        LICENSING_MODULE.attachDefaultLicenseTerms(rootOrgIpId);
+
         _safeTransfer(address(this), recipient, rootOrgTokenId);
     }
 

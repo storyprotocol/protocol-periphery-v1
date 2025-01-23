@@ -10,7 +10,7 @@ import { ILicenseToken } from "@storyprotocol/core/interfaces/ILicenseToken.sol"
 import { ILicenseTemplate } from "@storyprotocol/core/interfaces/modules/licensing/ILicenseTemplate.sol";
 
 contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingHook {
-    string public constant override name = "TotalLicenseTokenLimitHook";
+    string public constant override name = "TOTAL_LICENSE_TOKEN_LIMIT_HOOK";
 
     /// @notice The address of the License Registry.
     ILicenseRegistry public immutable LICENSE_REGISTRY;

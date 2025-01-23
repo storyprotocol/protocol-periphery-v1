@@ -12,6 +12,7 @@ interface IGroupingWorkflows {
     /// @param spgNftContract The address of the SPGNFT collection.
     /// @param groupId The ID of the group IP to add the newly registered IP.
     /// @param recipient The address of the recipient of the minted NFT.
+    /// @param maxAllowedRewardShare The maximum reward share percentage that can be allocated to the new IP.
     /// @param licensesData The data of the licenses and their configurations to be attached to the new IP.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
     /// @param sigAddToGroup Signature data for addIp to the group IP via the Grouping Module.
@@ -22,6 +23,7 @@ interface IGroupingWorkflows {
         address spgNftContract,
         address groupId,
         address recipient,
+        uint256 maxAllowedRewardShare,
         WorkflowStructs.LicenseData[] calldata licensesData,
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigAddToGroup,
@@ -33,6 +35,7 @@ interface IGroupingWorkflows {
     /// @param nftContract The address of the NFT collection.
     /// @param tokenId The ID of the NFT.
     /// @param groupId The ID of the group IP to add the newly registered IP.
+    /// @param maxAllowedRewardShare The maximum reward share percentage that can be allocated to the new IP.
     /// @param licensesData The data of the licenses and their configurations to be attached to the new IP.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param sigMetadataAndAttachAndConfig Signature data for setAll (metadata), attachLicenseTerms, and
@@ -43,6 +46,7 @@ interface IGroupingWorkflows {
         address nftContract,
         uint256 tokenId,
         address groupId,
+        uint256 maxAllowedRewardShare,
         WorkflowStructs.LicenseData[] calldata licensesData,
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigMetadataAndAttachAndConfig,
@@ -63,11 +67,13 @@ interface IGroupingWorkflows {
     /// @dev ipIds must be have the same license terms as the group IP.
     /// @param groupPool The address of the group reward pool.
     /// @param ipIds The IDs of the IPs to add to the newly registered group IP.
+    /// @param maxAllowedRewardShare The maximum reward share percentage that can be allocated to each member IP.
     /// @param licenseData The data of the license and its configuration to be attached to the new group IP.
     /// @return groupId The ID of the newly registered group IP.
     function registerGroupAndAttachLicenseAndAddIps(
         address groupPool,
         address[] calldata ipIds,
+        uint256 maxAllowedRewardShare,
         WorkflowStructs.LicenseData calldata licenseData
     ) external returns (address groupId);
 

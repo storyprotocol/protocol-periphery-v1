@@ -44,19 +44,10 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
     }
 
     function test_TotalLicenseTokenLimitHook_setLimit() public {
-        TotalLicenseTokenLimitHook totalLimitHook = new TotalLicenseTokenLimitHook(
-            address(licenseRegistry),
-            address(licenseToken),
-            address(accessController),
-            address(ipAssetRegistry)
-        );
-
-        vm.prank(u.admin);
-        moduleRegistry.registerModule("TotalLicenseTokenLimitHook", address(totalLimitHook));
         Licensing.LicensingConfig memory licensingConfig = Licensing.LicensingConfig({
             isSet: true,
             mintingFee: 100,
-            licensingHook: address(totalLimitHook),
+            licensingHook: address(totalLicenseTokenLimitHook),
             hookData: "",
             commercialRevShare: 0,
             disabled: false,
@@ -66,19 +57,19 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
 
         vm.startPrank(ipOwner1);
         licensingModule.setLicensingConfig(ipId1, address(pilTemplate), commUseTermsId, licensingConfig);
-        totalLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId, 10);
-        assertEq(totalLimitHook.getTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId), 10);
+        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId, 10);
+        assertEq(totalLicenseTokenLimitHook.getTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId), 10);
         vm.stopPrank();
 
         vm.startPrank(ipOwner2);
-        licensingModule.setLicensingConfig(ipId2, address(0), 0, licensingConfig);
-        totalLimitHook.setTotalLicenseTokenLimit(ipId2, address(pilTemplate), commUseTermsId, 20);
-        assertEq(totalLimitHook.getTotalLicenseTokenLimit(ipId2, address(pilTemplate), commUseTermsId), 20);
+        licensingModule.setLicensingConfig(ipId2, address(pilTemplate), commUseTermsId, licensingConfig);
+        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(ipId2, address(pilTemplate), commUseTermsId, 20);
+        assertEq(totalLicenseTokenLimitHook.getTotalLicenseTokenLimit(ipId2, address(pilTemplate), commUseTermsId), 20);
         vm.stopPrank();
 
         vm.startPrank(ipOwner3);
         licensingModule.setLicensingConfig(ipId3, address(pilTemplate), commUseTermsId, licensingConfig);
-        assertEq(totalLimitHook.getTotalLicenseTokenLimit(ipId3, address(pilTemplate), commUseTermsId), 0);
+        assertEq(totalLicenseTokenLimitHook.getTotalLicenseTokenLimit(ipId3, address(pilTemplate), commUseTermsId), 0);
         vm.stopPrank();
 
         licensingModule.mintLicenseTokens({
@@ -152,19 +143,10 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
     }
 
     function test_TotalLicenseTokenLimitHook_revert_nonIpOwner_setLimit() public {
-        TotalLicenseTokenLimitHook totalLimitHook = new TotalLicenseTokenLimitHook(
-            address(licenseRegistry),
-            address(licenseToken),
-            address(accessController),
-            address(ipAssetRegistry)
-        );
-
-        vm.prank(u.admin);
-        moduleRegistry.registerModule("TotalLicenseTokenLimitHook", address(totalLimitHook));
         Licensing.LicensingConfig memory licensingConfig = Licensing.LicensingConfig({
             isSet: true,
             mintingFee: 100,
-            licensingHook: address(totalLimitHook),
+            licensingHook: address(totalLicenseTokenLimitHook),
             hookData: "",
             commercialRevShare: 0,
             disabled: false,
@@ -174,8 +156,8 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
 
         vm.startPrank(ipOwner1);
         licensingModule.setLicensingConfig(ipId1, address(pilTemplate), commUseTermsId, licensingConfig);
-        totalLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId, 10);
-        assertEq(totalLimitHook.getTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId), 10);
+        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId, 10);
+        assertEq(totalLicenseTokenLimitHook.getTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId), 10);
         vm.stopPrank();
 
         vm.startPrank(ipOwner2);
@@ -184,27 +166,18 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
                 Errors.AccessController__PermissionDenied.selector,
                 ipId1,
                 ipOwner2,
-                address(totalLimitHook),
-                totalLimitHook.setTotalLicenseTokenLimit.selector
+                address(totalLicenseTokenLimitHook),
+                totalLicenseTokenLimitHook.setTotalLicenseTokenLimit.selector
             )
         );
-        totalLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId, 20);
+        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId, 20);
     }
 
     function test_TotalLicenseTokenLimitHook_revert_limitLowerThanTotalSupply_setLimit() public {
-        TotalLicenseTokenLimitHook totalLimitHook = new TotalLicenseTokenLimitHook(
-            address(licenseRegistry),
-            address(licenseToken),
-            address(accessController),
-            address(ipAssetRegistry)
-        );
-
-        vm.prank(u.admin);
-        moduleRegistry.registerModule("TotalLicenseTokenLimitHook", address(totalLimitHook));
         Licensing.LicensingConfig memory licensingConfig = Licensing.LicensingConfig({
             isSet: true,
             mintingFee: 100,
-            licensingHook: address(totalLimitHook),
+            licensingHook: address(totalLicenseTokenLimitHook),
             hookData: "",
             commercialRevShare: 0,
             disabled: false,
@@ -214,8 +187,8 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
 
         vm.startPrank(ipOwner1);
         licensingModule.setLicensingConfig(ipId1, address(pilTemplate), commUseTermsId, licensingConfig);
-        totalLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId, 10);
-        assertEq(totalLimitHook.getTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId), 10);
+        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId, 10);
+        assertEq(totalLicenseTokenLimitHook.getTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId), 10);
 
         licensingModule.mintLicenseTokens({
             licensorIpId: ipId1,
@@ -235,6 +208,6 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
                 5
             )
         );
-        totalLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId, 5);
+        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId, 5);
     }
 }
