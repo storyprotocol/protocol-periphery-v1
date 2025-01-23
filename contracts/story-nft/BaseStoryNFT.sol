@@ -115,7 +115,6 @@ abstract contract BaseStoryNFT is IStoryNFT, ERC721URIStorageUpgradeable, Ownabl
         ) {
             ICoreMetadataModule(CORE_METADATA_MODULE).setAll(ipId, ipMetadataURI, ipMetadataHash, nftMetadataHash);
         }
-
     }
 
     /// @notice Register `ipId` as a derivative of `parentIpIds` under `licenseTemplate` with `licenseTermsIds`.
