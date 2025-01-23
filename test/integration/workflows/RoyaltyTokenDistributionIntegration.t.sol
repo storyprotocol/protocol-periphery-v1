@@ -32,10 +32,10 @@ contract RoyaltyTokenDistributionIntegration is BaseIntegration {
     WorkflowStructs.RoyaltyShare[] private royaltyShares;
 
     // random addresses
-    address private shareRecipientA=0xfD6BC5A922Df6Fa2034d97958C5401023B21641B;
-    address private shareRecipientB=0x3D1f17203f8B6918D1B96CE195920e768AB7a9aB;
-    address private shareRecipientC=0x021CBD607beeCA2ACecBD8533D822f5Ca70169f3;
-    address private shareRecipientD=0x5Bf05b423a1D090522700a3D5609D1FBbD690e76;
+    address private shareRecipientA = 0xfD6BC5A922Df6Fa2034d97958C5401023B21641B;
+    address private shareRecipientB = 0x3D1f17203f8B6918D1B96CE195920e768AB7a9aB;
+    address private shareRecipientC = 0x021CBD607beeCA2ACecBD8533D822f5Ca70169f3;
+    address private shareRecipientD = 0x5Bf05b423a1D090522700a3D5609D1FBbD690e76;
 
     /// @dev To use, run the following command:
     /// forge script test/integration/workflows/RoyaltyTokenDistributionIntegration.t.sol:RoyaltyTokenDistributionIntegration \
