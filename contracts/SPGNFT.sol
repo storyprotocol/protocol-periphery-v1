@@ -323,7 +323,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
             $._nftMetadataHashToTokenId[nftMetadataHash] = tokenId;
         }
 
-        _mint(to, tokenId);
+        _safeMint(to, tokenId);
 
         if (bytes(nftMetadataURI).length > 0) _setTokenURI(tokenId, nftMetadataURI);
     }

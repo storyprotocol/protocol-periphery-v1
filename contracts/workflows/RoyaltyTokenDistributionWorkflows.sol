@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 // solhint-disable-next-line max-line-length
 import { AccessManagedUpgradeable } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { MulticallUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -33,7 +34,8 @@ contract RoyaltyTokenDistributionWorkflows is
     BaseWorkflow,
     MulticallUpgradeable,
     AccessManagedUpgradeable,
-    UUPSUpgradeable
+    UUPSUpgradeable,
+    ERC721Holder
 {
     using ERC165Checker for address;
 
