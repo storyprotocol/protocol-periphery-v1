@@ -197,6 +197,70 @@ contract LicenseAttachmentWorkflows is
         });
     }
 
+    /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP,
+    /// and attach default license terms.
+    /// @param spgNftContract The address of the SPGNFT collection.
+    /// @param recipient The address of the recipient of the minted NFT.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
+    /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
+    /// @return ipId The ID of the newly registered IP.
+    /// @return tokenId The ID of the newly minted NFT.
+    function mintAndRegisterIpAndAttachDefaultTerms(
+        address spgNftContract,
+        address recipient,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        bool allowDuplicates
+    ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId) {
+        tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
+            to: address(this),
+            payer: msg.sender,
+            nftMetadataURI: ipMetadata.nftMetadataURI,
+            nftMetadataHash: ipMetadata.nftMetadataHash,
+            allowDuplicates: allowDuplicates
+        });
+
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
+        MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
+
+        LICENSING_MODULE.attachDefaultLicenseTerms(ipId);
+
+        ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
+    }
+
+    /// @notice Register a given NFT as an IP and attach default license terms.
+    /// @param nftContract The address of the NFT collection.
+    /// @param tokenId The ID of the NFT.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param sigMetadataAndDefaultTerms Signature data for setAll (metadata) and attachDefaultLicenseTerms
+    /// to the IP via the Core Metadata Module and Licensing Module.
+    /// @return ipId The ID of the newly registered IP.
+    function registerIpAndAttachDefaultTerms(
+        address nftContract,
+        uint256 tokenId,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        WorkflowStructs.SignatureData calldata sigMetadataAndDefaultTerms
+    ) external returns (address ipId) {
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
+
+        address[] memory modules = new address[](2);
+        bytes4[] memory selectors = new bytes4[](2);
+        modules[0] = address(CORE_METADATA_MODULE);
+        modules[1] = address(LICENSING_MODULE);
+        selectors[0] = ICoreMetadataModule.setAll.selector;
+        selectors[1] = ILicensingModule.attachDefaultLicenseTerms.selector;
+        PermissionHelper.setBatchPermissionForModules({
+            ipId: ipId,
+            accessController: address(ACCESS_CONTROLLER),
+            modules: modules,
+            selectors: selectors,
+            sigData: sigMetadataAndDefaultTerms
+        });
+
+        MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
+
+        LICENSING_MODULE.attachDefaultLicenseTerms(ipId);
+    }
+
     //
     // Upgrade
     //

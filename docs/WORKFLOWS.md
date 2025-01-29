@@ -19,6 +19,10 @@
   - Registers an IP → Registers multiple PIL terms → Attaches them to the IP → Sets the licensing configuration for each of the attached PIL terms
 - `mintAndRegisterIpAndAttachPILTerms`:
   - Mints a NFT → Registers it as an IP → Registers multiple PIL terms → Attaches them to the IP → Sets the licensing configuration for each of the attached PIL terms
+- `mintAndRegisterIpAndAttachDefaultTerms`:
+  - Mints a NFT → Registers it as an IP → Attaches default license terms to the IP
+- `registerIpAndAttachDefaultTerms`:
+  - Registers an IP → Attaches default license terms to the IP
 
 ### [Derivative Workflows](../contracts/interfaces/workflows/IDerivativeWorkflows.sol)
 

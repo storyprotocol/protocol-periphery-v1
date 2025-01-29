@@ -57,6 +57,34 @@ interface ILicenseAttachmentWorkflows {
         WorkflowStructs.SignatureData calldata sigMetadataAndAttachAndConfig
     ) external returns (address ipId, uint256[] memory licenseTermsIds);
 
+    /// @notice Mint an NFT from a SPGNFT collection, register it as an IP, and attach default license terms.
+    /// @param spgNftContract The address of the SPGNFT collection.
+    /// @param recipient The address of the recipient of the minted NFT.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
+    /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
+    /// @return ipId The ID of the newly registered IP.
+    /// @return tokenId The ID of the newly minted NFT.
+    function mintAndRegisterIpAndAttachDefaultTerms(
+        address spgNftContract,
+        address recipient,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        bool allowDuplicates
+    ) external returns (address ipId, uint256 tokenId);
+
+    /// @notice Register a given NFT as an IP and attach default license terms.
+    /// @param nftContract The address of the NFT collection.
+    /// @param tokenId The ID of the NFT.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param sigMetadataAndDefaultTerms Signature data for setAll (metadata) and attachDefaultLicenseTerms
+    /// to the IP via the Core Metadata Module and Licensing Module.
+    /// @return ipId The ID of the newly registered IP.
+    function registerIpAndAttachDefaultTerms(
+        address nftContract,
+        uint256 tokenId,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        WorkflowStructs.SignatureData calldata sigMetadataAndDefaultTerms
+    ) external returns (address ipId);
+
     ////////////////////////////////////////////////////////////////////////////
     //                              DEPRECATED                                //
     ////////////////////////////////////////////////////////////////////////////

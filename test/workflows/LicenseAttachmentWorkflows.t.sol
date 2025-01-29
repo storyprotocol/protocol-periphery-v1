@@ -336,6 +336,71 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         });
     }
 
+    function test_LicenseAttachmentWorkflows_mintAndRegisterIpAndAttachDefaultTerms()
+        public
+        withCollection
+        whenCallerHasMinterRole
+        withEnoughTokens(address(licenseAttachmentWorkflows))
+    {
+        (address ipId1, uint256 tokenId1) = licenseAttachmentWorkflows.mintAndRegisterIpAndAttachDefaultTerms({
+            spgNftContract: address(nftContract),
+            recipient: caller,
+            ipMetadata: ipMetadataEmpty,
+            allowDuplicates: true
+        });
+        assertTrue(ipAssetRegistry.isRegistered(ipId1));
+        assertEq(tokenId1, 1);
+        assertEq(nftContract.tokenURI(tokenId1), string.concat(testBaseURI, tokenId1.toString()));
+        assertMetadata(ipId1, ipMetadataEmpty);
+        uint256[] memory licenseTemplates = new uint256[](1);
+        (, licenseTemplates[0]) = licenseRegistry.getDefaultLicenseTerms();
+        (, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId1, 0);
+        assertEq(licenseTermsId, licenseTemplates[0]);
+    }
+
+    function test_LicenseAttachmentWorkflows_registerIpAndAttachDefaultTerms()
+        public
+        withCollection
+        whenCallerHasMinterRole
+        withEnoughTokens(address(licenseAttachmentWorkflows))
+    {
+        uint256 tokenId = nftContract.mint({
+            to: caller,
+            nftMetadataURI: ipMetadataEmpty.nftMetadataURI,
+            nftMetadataHash: ipMetadataEmpty.nftMetadataHash,
+            allowDuplicates: true
+        });
+        address payable ipId = payable(ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenId));
+
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory sigMetadataAndDefaultTerms, , ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: ipId,
+            permissionList: _getMetadataAndDefaultTermsPermissionList(ipId, address(licenseAttachmentWorkflows)),
+            deadline: deadline,
+            state: bytes32(0),
+            signerSk: sk.alice
+        });
+
+        licenseAttachmentWorkflows.registerIpAndAttachDefaultTerms({
+            nftContract: address(nftContract),
+            tokenId: tokenId,
+            ipMetadata: ipMetadataDefault,
+            sigMetadataAndDefaultTerms: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: deadline,
+                signature: sigMetadataAndDefaultTerms
+            })
+        });
+
+        assertTrue(ipAssetRegistry.isRegistered(ipId));
+        assertMetadata(ipId, ipMetadataDefault);
+        uint256[] memory licenseTemplates = new uint256[](1);
+        (, licenseTemplates[0]) = licenseRegistry.getDefaultLicenseTerms();
+        (, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId, 0);
+        assertEq(licenseTermsId, licenseTemplates[0]);
+    }
+
     function _assertAttachedLicenseTerms(address ipId, uint256[] memory licenseTermsIds) internal {
         for (uint256 i = 0; i < commTermsData.length; i++) {
             (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId, i);
