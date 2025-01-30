@@ -228,7 +228,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         emit ContractURIUpdated();
     }
 
-    /// @notice Mints an NFT from the collection. Only callable by the minter role.
+    /// @notice Mints an NFT from the collection. Only callable when public minting is enabled or when the caller has minter role.
     /// @param to The address of the recipient of the minted NFT.
     /// @param nftMetadataURI OPTIONAL. The URI of the desired metadata for the newly minted NFT.
     /// @param nftMetadataHash OPTIONAL. A bytes32 hash of the NFT's metadata. This metadata is accessible via the NFT's tokenURI.
@@ -358,10 +358,6 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         _grantRole(SPGNFTLib.ADMIN_ROLE, ROYALTY_TOKEN_DISTRIBUTION_WORKFLOWS_ADDRESS);
         _grantRole(SPGNFTLib.MINTER_ROLE, ROYALTY_TOKEN_DISTRIBUTION_WORKFLOWS_ADDRESS);
     }
-
-    //
-    // Upgrade
-    //
 
     /// @dev Returns the storage struct of SPGNFT.
     function _getSPGNFTStorage() private pure returns (SPGNFTStorage storage $) {
