@@ -53,7 +53,7 @@ interface IOrgStoryNFTFactory {
     /// @param defaultOrgStoryNftTemplate The new default OrgStoryNFT template.
     event DefaultOrgStoryNftTemplateUpdated(address defaultOrgStoryNftTemplate);
 
-    /// @notice Emitted when a new orgnization NFT is minted and a new Organization StoryNFT associated with it is deployed.
+    /// @notice Emitted when a new organization NFT is minted and a new Organization StoryNFT associated with it is deployed.
     /// @param orgName The name of the organization.
     /// @param orgNft The address of the organization NFT.
     /// @param orgTokenId The token ID of the organization NFT.
