@@ -120,6 +120,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         $._contractURI = initParams.contractURI;
 
         __ERC721_init(initParams.name, initParams.symbol);
+        __AccessControl_init();
     }
 
     /// @notice Returns the total minted supply of the collection.

@@ -41,6 +41,7 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
         if (accessManager == address(0)) revert Errors.RoyaltyWorkflows__ZeroAddressParam();
         __AccessManaged_init(accessManager);
         __UUPSUpgradeable_init();
+        __Multicall_init();
     }
 
     /// @notice Transfers all available royalties from various royalty policies to the royalty

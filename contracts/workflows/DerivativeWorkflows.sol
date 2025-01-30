@@ -87,6 +87,7 @@ contract DerivativeWorkflows is
         if (accessManager == address(0)) revert Errors.DerivativeWorkflows__ZeroAddressParam();
         __AccessManaged_init(accessManager);
         __UUPSUpgradeable_init();
+        __Multicall_init();
     }
 
     /// @notice Mint an NFT from a SPGNFT collection and register it as a derivative IP without license tokens.

@@ -99,6 +99,7 @@ contract RoyaltyTokenDistributionWorkflows is
         if (accessManager == address(0)) revert Errors.RoyaltyTokenDistributionWorkflows__ZeroAddressParam();
         __AccessManaged_init(accessManager);
         __UUPSUpgradeable_init();
+        __Multicall_init();
     }
 
     /// @notice Mint an NFT and register the IP, attach PIL terms, and distribute royalty tokens.

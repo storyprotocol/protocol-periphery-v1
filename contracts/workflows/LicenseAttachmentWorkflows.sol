@@ -70,6 +70,7 @@ contract LicenseAttachmentWorkflows is
         if (accessManager == address(0)) revert Errors.LicenseAttachmentWorkflows__ZeroAddressParam();
         __AccessManaged_init(accessManager);
         __UUPSUpgradeable_init();
+        __Multicall_init();
     }
 
     /// @notice Register Programmable IP License Terms (if unregistered) and attach it to IP.

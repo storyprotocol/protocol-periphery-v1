@@ -78,6 +78,7 @@ contract RegistrationWorkflows is
         if (accessManager == address(0)) revert Errors.RegistrationWorkflows__ZeroAddressParam();
         __AccessManaged_init(accessManager);
         __UUPSUpgradeable_init();
+        __Multicall_init();
     }
 
     /// @dev Sets the NFT contract beacon address.

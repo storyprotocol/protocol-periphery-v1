@@ -96,6 +96,7 @@ contract GroupingWorkflows is
         if (accessManager == address(0)) revert Errors.GroupingWorkflows__ZeroAddressParam();
         __AccessManaged_init(accessManager);
         __UUPSUpgradeable_init();
+        __Multicall_init();
     }
 
     /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP, attach
