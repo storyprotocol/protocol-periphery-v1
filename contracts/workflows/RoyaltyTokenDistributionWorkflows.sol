@@ -7,6 +7,7 @@ import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC16
 import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { MulticallUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
@@ -38,6 +39,7 @@ contract RoyaltyTokenDistributionWorkflows is
     ERC721Holder
 {
     using ERC165Checker for address;
+    using SafeERC20 for IERC20;
 
     /// @notice The address of the Royalty Module.
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
@@ -403,7 +405,7 @@ contract RoyaltyTokenDistributionWorkflows is
 
         // distribute the royalty tokens
         for (uint256 i; i < royaltyShares.length; i++) {
-            IERC20(ipRoyaltyVault).transferFrom({
+            IERC20(ipRoyaltyVault).safeTransferFrom({
                 from: ipId,
                 to: royaltyShares[i].recipient,
                 value: royaltyShares[i].percentage

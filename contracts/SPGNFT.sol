@@ -6,12 +6,15 @@ import { AccessControlUpgradeable } from "@openzeppelin/contracts-upgradeable/ac
 import { ERC721URIStorageUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { ISPGNFT } from "./interfaces/ISPGNFT.sol";
 import { Errors } from "./lib/Errors.sol";
 import { SPGNFTLib } from "./lib/SPGNFTLib.sol";
 
 contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeable {
+    using SafeERC20 for IERC20;
+
     /// @dev Storage structure for the SPGNFTSotrage.
     /// @param _maxSupply The maximum supply of the collection.
     /// @param _totalSupply The total minted supply of the collection.
@@ -275,7 +278,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @dev Withdraws the contract's token balance to the fee recipient.
     /// @param token The token to withdraw.
     function withdrawToken(address token) public {
-        IERC20(token).transfer(_getSPGNFTStorage()._mintFeeRecipient, IERC20(token).balanceOf(address(this)));
+        IERC20(token).safeTransfer(_getSPGNFTStorage()._mintFeeRecipient, IERC20(token).balanceOf(address(this)));
     }
 
     /// @dev Supports ERC165 interface.
@@ -314,7 +317,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         }
 
         if ($._mintFeeToken != address(0) && $._mintFee > 0) {
-            IERC20($._mintFeeToken).transferFrom(payer, address(this), $._mintFee);
+            IERC20($._mintFeeToken).safeTransferFrom(payer, address(this), $._mintFee);
         }
 
         tokenId = ++$._totalSupply;
