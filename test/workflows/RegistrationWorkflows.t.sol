@@ -184,12 +184,14 @@ contract RegistrationWorkflowsTest is BaseTest {
             signerSk: sk.alice
         });
 
+        vm.startPrank(u.alice);
         address actualIpId = registrationWorkflows.registerIp({
             nftContract: address(mockNft),
             tokenId: tokenId,
             ipMetadata: ipMetadataDefault,
             sigMetadata: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: sigMetadata })
         });
+        vm.stopPrank();
 
         assertEq(IIPAccount(payable(actualIpId)).state(), expectedState);
         assertEq(actualIpId, expectedIpId);

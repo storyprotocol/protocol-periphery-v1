@@ -143,6 +143,9 @@ contract RegistrationWorkflows is
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigMetadata
     ) external returns (address ipId) {
+        if (msg.sender != address(0) && msg.sender != sigMetadata.signer)
+            revert Errors.RegistrationWorkflows__CallerNotSigner(msg.sender, sigMetadata.signer);
+
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
         MetadataHelper.setMetadataWithSig(
             ipId,

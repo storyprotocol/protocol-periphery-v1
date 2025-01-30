@@ -106,7 +106,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             signerSk: groupOwnerSk
         });
 
-        vm.startPrank(minter);
+        vm.startPrank(groupOwner);
         vm.expectRevert(
             abi.encodeWithSelector(
                 Errors.SPGNFT__DuplicatedNFTMetadataHash.selector,
@@ -118,7 +118,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
         groupingWorkflows.mintAndRegisterIpAndAttachLicenseAndAddToGroup({
             spgNftContract: address(spgNftPublic),
             groupId: groupId,
-            recipient: minter,
+            recipient: groupOwner,
             maxAllowedRewardShare: 100e6, // 100%
             ipMetadata: ipMetadataDefault,
             licensesData: testLicensesData,
@@ -146,11 +146,11 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             state: IIPAccount(payable(groupId)).state(),
             signerSk: groupOwnerSk
         });
-        vm.startPrank(minter);
+        vm.startPrank(groupOwner);
         (address ipId, uint256 tokenId) = groupingWorkflows.mintAndRegisterIpAndAttachLicenseAndAddToGroup({
             spgNftContract: address(spgNftPublic),
             groupId: groupId,
-            recipient: minter,
+            recipient: groupOwner,
             maxAllowedRewardShare: 100e6, // 100%
             ipMetadata: ipMetadataDefault,
             licensesData: testLicensesData,
@@ -182,8 +182,8 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
     // Register IP → Attach license terms → Add new IP to group IPA
     function test_GroupingWorkflows_registerIpAndAttachLicenseAndAddToGroup() public {
         // mint a NFT from the mock ERC721 contract
-        vm.startPrank(minter);
-        uint256 tokenId = MockERC721(mockNft).mint(minter);
+        vm.startPrank(groupOwner);
+        uint256 tokenId = MockERC721(mockNft).mint(groupOwner);
         vm.stopPrank();
         // get the expected IP ID
         address expectedIpId = IIPAssetRegistry(ipAssetRegistry).ipId(block.chainid, address(mockNft), tokenId);
@@ -195,7 +195,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             permissionList: _getMetadataAndAttachTermsAndConfigPermissionList(expectedIpId, address(groupingWorkflows)),
             deadline: deadline,
             state: bytes32(0),
-            signerSk: minterSk
+            signerSk: groupOwnerSk
         });
         // Get the signature for setting the permission for calling `addIp` function in `GroupingModule`
         // from the Group IP owner
@@ -208,6 +208,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             state: IIPAccount(payable(groupId)).state(),
             signerSk: groupOwnerSk
         });
+        vm.startPrank(groupOwner);
         address ipId = groupingWorkflows.registerIpAndAttachLicenseAndAddToGroup({
             nftContract: address(mockNft),
             tokenId: tokenId,
@@ -216,7 +217,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             licensesData: testLicensesData,
             ipMetadata: ipMetadataDefault,
             sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
-                signer: minter,
+                signer: groupOwner,
                 deadline: deadline,
                 signature: sigMetadataAndAttach
             }),
@@ -226,6 +227,8 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
                 signature: sigAddToGroup
             })
         });
+        vm.stopPrank();
+
         // check the IP id matches the expected IP id
         assertEq(ipId, expectedIpId);
         // check the IP is registered
@@ -440,7 +443,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
                 ),
                 address(spgNftPublic),
                 groupId,
-                minter,
+                groupOwner,
                 100e6, // 100%
                 testLicensesData,
                 ipMetadataDefault,
@@ -449,7 +452,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             );
         }
         // batch call `mintAndRegisterIpAndAttachLicenseAndAddToGroup`
-        vm.startPrank(minter);
+        vm.startPrank(groupOwner);
         bytes[] memory results = groupingWorkflows.multicall(data);
         vm.stopPrank();
         // check each IP is registered, added to the group, and metadata is set, license terms are attached
@@ -472,9 +475,9 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
     function test_GroupingWorkflows_multicall_registerIpAndAttachLicenseAndAddToGroup() public {
         // mint a NFT from the mock ERC721 contract
         uint256[] memory tokenIds = new uint256[](10);
-        vm.startPrank(minter);
+        vm.startPrank(groupOwner);
         for (uint256 i = 0; i < 10; i++) {
-            tokenIds[i] = MockERC721(mockNft).mint(minter);
+            tokenIds[i] = MockERC721(mockNft).mint(groupOwner);
         }
         vm.stopPrank();
         // get the expected IP ID
@@ -495,7 +498,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
                 ),
                 deadline: deadline,
                 state: bytes32(0),
-                signerSk: minterSk
+                signerSk: groupOwnerSk
             });
         }
         // Get the signatures for setting the permission for calling `addIp` function in `GroupingModule`
@@ -529,7 +532,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
                 testLicensesData,
                 ipMetadataDefault,
                 WorkflowStructs.SignatureData({
-                    signer: minter,
+                    signer: groupOwner,
                     deadline: deadline,
                     signature: sigsMetadataAndAttach[i]
                 }),
@@ -537,7 +540,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             );
         }
         // batch call `registerIpAndAttachLicenseAndAddToGroup`
-        vm.startPrank(minter);
+        vm.startPrank(groupOwner);
         bytes[] memory results = groupingWorkflows.multicall(data);
         vm.stopPrank();
         // check each IP is registered, added to the group, and metadata is set, license terms are attached
@@ -560,7 +563,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
         groupingWorkflows.mintAndRegisterIpAndAttachLicenseAndAddToGroup({
             spgNftContract: address(spgNftPublic),
             groupId: groupId,
-            recipient: minter,
+            recipient: groupOwner,
             maxAllowedRewardShare: 100e6, // 100%
             ipMetadata: ipMetadataDefault,
             licensesData: new WorkflowStructs.LicenseData[](0),
@@ -581,7 +584,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             licensesData: new WorkflowStructs.LicenseData[](0),
             ipMetadata: ipMetadataDefault,
             sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
-                signer: minter,
+                signer: groupOwner,
                 deadline: block.timestamp + 1000,
                 signature: new bytes(0)
             }),
@@ -612,8 +615,8 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
     // setup individual IPs for testing
     function _setupIPs() internal {
         // mint and approve tokens for minting
-        vm.startPrank(minter);
-        MockERC20(mockToken).mint(minter, 1000 * 10 * 10 ** MockERC20(mockToken).decimals());
+        vm.startPrank(groupOwner);
+        MockERC20(mockToken).mint(groupOwner, 1000 * 10 * 10 ** MockERC20(mockToken).decimals());
         MockERC20(mockToken).approve(address(spgNftPublic), 1000 * 10 * 10 ** MockERC20(mockToken).decimals());
         vm.stopPrank();
 
@@ -623,14 +626,14 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             data[i] = abi.encodeWithSelector(
                 bytes4(keccak256("mintAndRegisterIp(address,address,(string,bytes32,string,bytes32),bool)")),
                 address(spgNftPublic),
-                minter,
+                groupOwner,
                 ipMetadataDefault,
                 true
             );
         }
 
         // batch call `mintAndRegisterIp`
-        vm.startPrank(minter);
+        vm.startPrank(groupOwner);
         bytes[] memory results = registrationWorkflows.multicall(data);
         vm.stopPrank();
 
@@ -641,7 +644,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
         }
 
         // attach license terms to the IPs
-        vm.startPrank(minter);
+        vm.startPrank(groupOwner);
         for (uint256 i = 0; i < 10; i++) {
             LicensingHelper.attachLicenseTermsAndSetConfigs(
                 ipIds[i],
@@ -672,11 +675,11 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             signerSk: groupOwnerSk
         });
 
-        vm.startPrank(minter);
+        vm.startPrank(groupOwner);
         (address ipId, uint256 tokenId) = groupingWorkflows.mintAndRegisterIpAndAttachLicenseAndAddToGroup_deprecated({
             spgNftContract: address(spgNftPublic),
             groupId: groupId,
-            recipient: minter,
+            recipient: groupOwner,
             licenseTemplate: address(pilTemplate),
             ipMetadata: ipMetadataDefault,
             licenseTermsId: testLicensesData[0].licenseTermsId,
@@ -713,8 +716,8 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
     // Register IP → Attach license terms → Add new IP to group IPA
     function test_GroupingWorkflows_registerIpAndAttachLicenseAndAddToGroup_DEPR() public {
         // mint a NFT from the mock ERC721 contract
-        vm.startPrank(minter);
-        uint256 tokenId = MockERC721(mockNft).mint(minter);
+        vm.startPrank(groupOwner);
+        uint256 tokenId = MockERC721(mockNft).mint(groupOwner);
         vm.stopPrank();
 
         // get the expected IP ID
@@ -729,7 +732,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             permissionList: _getMetadataAndAttachTermsAndConfigPermissionList(expectedIpId, address(groupingWorkflows)),
             deadline: deadline,
             state: bytes32(0),
-            signerSk: minterSk
+            signerSk: groupOwnerSk
         });
 
         // Get the signature for setting the permission for calling `addIp` function in `GroupingModule`
@@ -744,6 +747,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             signerSk: groupOwnerSk
         });
 
+        vm.startPrank(groupOwner);
         address ipId = groupingWorkflows.registerIpAndAttachLicenseAndAddToGroup_deprecated({
             nftContract: address(mockNft),
             tokenId: tokenId,
@@ -752,7 +756,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             licenseTermsId: testLicensesData[0].licenseTermsId,
             ipMetadata: ipMetadataDefault,
             sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
-                signer: minter,
+                signer: groupOwner,
                 deadline: deadline,
                 signature: sigMetadataAndAttach
             }),
@@ -762,6 +766,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
                 signature: sigAddToGroup
             })
         });
+        vm.stopPrank();
 
         // check the IP id matches the expected IP id
         assertEq(ipId, expectedIpId);
@@ -978,7 +983,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
                 ),
                 address(spgNftPublic),
                 groupId,
-                minter,
+                groupOwner,
                 pilTemplate,
                 testLicensesData[0].licenseTermsId,
                 ipMetadataDefault,
@@ -987,7 +992,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
         }
 
         // batch call `mintAndRegisterIpAndAttachLicenseAndAddToGroup`
-        vm.startPrank(minter);
+        vm.startPrank(groupOwner);
         bytes[] memory results = groupingWorkflows.multicall(data);
         vm.stopPrank();
 
@@ -1011,9 +1016,9 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
     function test_GroupingWorkflows_multicall_registerIpAndAttachLicenseAndAddToGroup_DEPR() public {
         // mint a NFT from the mock ERC721 contract
         uint256[] memory tokenIds = new uint256[](10);
-        vm.startPrank(minter);
+        vm.startPrank(groupOwner);
         for (uint256 i = 0; i < 10; i++) {
-            tokenIds[i] = MockERC721(mockNft).mint(minter);
+            tokenIds[i] = MockERC721(mockNft).mint(groupOwner);
         }
         vm.stopPrank();
 
@@ -1037,7 +1042,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
                 ),
                 deadline: deadline,
                 state: bytes32(0),
-                signerSk: minterSk
+                signerSk: groupOwnerSk
             });
         }
 
@@ -1073,7 +1078,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
                 testLicensesData[0].licenseTermsId,
                 ipMetadataDefault,
                 WorkflowStructs.SignatureData({
-                    signer: minter,
+                    signer: groupOwner,
                     deadline: deadline,
                     signature: sigsMetadataAndAttach[i]
                 }),
@@ -1082,7 +1087,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
         }
 
         // batch call `registerIpAndAttachLicenseAndAddToGroup`
-        vm.startPrank(minter);
+        vm.startPrank(groupOwner);
         bytes[] memory results = groupingWorkflows.multicall(data);
         vm.stopPrank();
 

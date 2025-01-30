@@ -215,6 +215,11 @@ contract RoyaltyTokenDistributionWorkflows is
         WorkflowStructs.SignatureData calldata sigMetadataAndAttachAndConfig
     ) external returns (address ipId, uint256[] memory licenseTermsIds, address ipRoyaltyVault) {
         if (licenseTermsData.length == 0) revert Errors.RoyaltyTokenDistributionWorkflows__NoLicenseTermsData();
+        if (msg.sender != sigMetadataAndAttachAndConfig.signer)
+            revert Errors.RoyaltyTokenDistributionWorkflows__CallerNotSigner(
+                msg.sender,
+                sigMetadataAndAttachAndConfig.signer
+            );
 
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
@@ -262,6 +267,9 @@ contract RoyaltyTokenDistributionWorkflows is
         WorkflowStructs.MakeDerivative calldata derivData,
         WorkflowStructs.SignatureData calldata sigMetadataAndRegister
     ) external returns (address ipId, address ipRoyaltyVault) {
+        if (msg.sender != sigMetadataAndRegister.signer)
+            revert Errors.RoyaltyTokenDistributionWorkflows__CallerNotSigner(msg.sender, sigMetadataAndRegister.signer);
+
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
         address[] memory modules = new address[](2);
@@ -299,6 +307,12 @@ contract RoyaltyTokenDistributionWorkflows is
         WorkflowStructs.RoyaltyShare[] calldata royaltyShares,
         WorkflowStructs.SignatureData calldata sigApproveRoyaltyTokens
     ) external {
+        if (msg.sender != sigApproveRoyaltyTokens.signer)
+            revert Errors.RoyaltyTokenDistributionWorkflows__CallerNotSigner(
+                msg.sender,
+                sigApproveRoyaltyTokens.signer
+            );
+
         _distributeRoyaltyTokens(ipId, royaltyShares, sigApproveRoyaltyTokens);
     }
 
@@ -478,6 +492,11 @@ contract RoyaltyTokenDistributionWorkflows is
         WorkflowStructs.SignatureData calldata sigMetadata,
         WorkflowStructs.SignatureData calldata sigAttach
     ) external returns (address ipId, uint256[] memory licenseTermsIds, address ipRoyaltyVault) {
+        if (msg.sender != sigMetadata.signer)
+            revert Errors.RoyaltyTokenDistributionWorkflows__CallerNotSigner(msg.sender, sigMetadata.signer);
+        if (msg.sender != sigAttach.signer)
+            revert Errors.RoyaltyTokenDistributionWorkflows__CallerNotSigner(msg.sender, sigAttach.signer);
+
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
         MetadataHelper.setMetadataWithSig(
             ipId,

@@ -98,6 +98,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
 
         uint256 ltAmt = pilTemplate.totalRegisteredLicenseTerms();
 
+        vm.startPrank(u.alice);
         uint256[] memory licenseTermsIds = licenseAttachmentWorkflows.registerPILTermsAndAttach({
             ipId: ipId,
             licenseTermsData: commTermsData,
@@ -107,6 +108,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
                 signature: signature
             })
         });
+        vm.stopPrank();
         _assertAttachedLicenseTerms(ipId, licenseTermsIds);
     }
 
@@ -205,6 +207,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             signerSk: sk.alice
         });
 
+        vm.startPrank(u.alice);
         uint256[] memory licenseTermsIds1 = licenseAttachmentWorkflows.registerPILTermsAndAttach({
             ipId: ipId,
             licenseTermsData: commTermsData,
@@ -214,6 +217,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
                 signature: signature1
             })
         });
+        vm.stopPrank();
 
         (bytes memory signature2, , ) = _getSetBatchPermissionSigForPeriphery({
             ipId: ipId,
@@ -224,6 +228,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         });
 
         // attach the same license terms to the IP again, but it shouldn't revert
+        vm.startPrank(u.alice);
         uint256[] memory licenseTermsIds2 = licenseAttachmentWorkflows.registerPILTermsAndAttach({
             ipId: ipId,
             licenseTermsData: commTermsData,
@@ -233,6 +238,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
                 signature: signature2
             })
         });
+        vm.stopPrank();
 
         for (uint256 i = 0; i < licenseTermsIds1.length; i++) {
             assertEq(licenseTermsIds1[i], licenseTermsIds2[i]);
@@ -532,11 +538,13 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
 
         uint256 ltAmt = pilTemplate.totalRegisteredLicenseTerms();
 
+        vm.startPrank(u.alice);
         uint256[] memory licenseTermsIds = licenseAttachmentWorkflows.registerPILTermsAndAttach_deprecated({
             ipId: ipId,
             terms: terms,
             sigAttach: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: signature })
         });
+        vm.stopPrank();
 
         assertEq(licenseTermsIds[0], ltAmt + 1);
         assertEq(licenseTermsIds[1], ltAmt + 2);
@@ -678,11 +686,13 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             signerSk: sk.alice
         });
 
+        vm.startPrank(u.alice);
         uint256[] memory licenseTermsIds1 = licenseAttachmentWorkflows.registerPILTermsAndAttach_deprecated({
             ipId: ipId,
             terms: terms,
             sigAttach: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: signature1 })
         });
+        vm.stopPrank();
 
         (bytes memory signature2, , ) = _getSetPermissionSigForPeriphery({
             ipId: ipId,
@@ -695,11 +705,13 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         });
 
         /// attach the same license terms to the IP again, but it shouldn't revert
+        vm.startPrank(u.alice);
         uint256[] memory licenseTermsIds2 = licenseAttachmentWorkflows.registerPILTermsAndAttach_deprecated({
             ipId: ipId,
             terms: terms,
             sigAttach: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: signature2 })
         });
+        vm.stopPrank();
 
         assertEq(licenseTermsIds1[0], licenseTermsIds2[0]);
         assertEq(licenseTermsIds1[1], licenseTermsIds2[1]);
@@ -781,6 +793,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
 
         uint256 ltAmt = pilTemplate.totalRegisteredLicenseTerms();
 
+        vm.startPrank(u.alice);
         uint256 licenseTermsId = licenseAttachmentWorkflows.registerPILTermsAndAttach_deprecated({
             ipId: ipId,
             terms: PILFlavors.commercialUse({
@@ -790,6 +803,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             }),
             sigAttach: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: signature })
         });
+        vm.stopPrank();
 
         assertEq(licenseTermsId, ltAmt + 1);
     }
@@ -889,6 +903,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             signerSk: sk.alice
         });
 
+        vm.startPrank(u.alice);
         uint256 licenseTermsId1 = licenseAttachmentWorkflows.registerPILTermsAndAttach_deprecated({
             ipId: ipId,
             terms: PILFlavors.commercialUse({
@@ -898,6 +913,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             }),
             sigAttach: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: signature1 })
         });
+        vm.stopPrank();
 
         (bytes memory signature2, , ) = _getSetPermissionSigForPeriphery({
             ipId: ipId,
@@ -910,6 +926,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         });
 
         // attach the same license terms to the IP again, but it shouldn't revert
+        vm.startPrank(u.alice);
         uint256 licenseTermsId2 = licenseAttachmentWorkflows.registerPILTermsAndAttach_deprecated({
             ipId: ipId,
             terms: PILFlavors.commercialUse({
@@ -919,6 +936,7 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
             }),
             sigAttach: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: signature2 })
         });
+        vm.stopPrank();
 
         assertEq(licenseTermsId1, licenseTermsId2);
     }

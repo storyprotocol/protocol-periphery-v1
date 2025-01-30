@@ -83,6 +83,8 @@ contract LicenseAttachmentWorkflows is
         WorkflowStructs.SignatureData calldata sigAttachAndConfig
     ) external returns (uint256[] memory licenseTermsIds) {
         if (licenseTermsData.length == 0) revert Errors.LicenseAttachmentWorkflows__NoLicenseTermsData();
+        if (msg.sender != sigAttachAndConfig.signer)
+            revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigAttachAndConfig.signer);
 
         address[] memory modules = new address[](2);
         bytes4[] memory selectors = new bytes4[](2);
@@ -170,6 +172,8 @@ contract LicenseAttachmentWorkflows is
         WorkflowStructs.SignatureData calldata sigMetadataAndAttachAndConfig
     ) external returns (address ipId, uint256[] memory licenseTermsIds) {
         if (licenseTermsData.length == 0) revert Errors.LicenseAttachmentWorkflows__NoLicenseTermsData();
+        if (msg.sender != sigMetadataAndAttachAndConfig.signer)
+            revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigMetadataAndAttachAndConfig.signer);
 
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
@@ -242,6 +246,9 @@ contract LicenseAttachmentWorkflows is
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigMetadataAndDefaultTerms
     ) external returns (address ipId) {
+        if (msg.sender != sigMetadataAndDefaultTerms.signer)
+            revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigMetadataAndDefaultTerms.signer);
+
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
         address[] memory modules = new address[](2);
@@ -283,6 +290,8 @@ contract LicenseAttachmentWorkflows is
         WorkflowStructs.SignatureData calldata sigAttach
     ) external returns (uint256[] memory licenseTermsIds) {
         if (terms.length == 0) revert Errors.LicenseAttachmentWorkflows__NoLicenseTermsData();
+        if (msg.sender != sigAttach.signer)
+            revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigAttach.signer);
 
         PermissionHelper.setPermissionForModule(
             ipId,
@@ -336,6 +345,10 @@ contract LicenseAttachmentWorkflows is
         WorkflowStructs.SignatureData calldata sigAttach
     ) external returns (address ipId, uint256[] memory licenseTermsIds) {
         if (terms.length == 0) revert Errors.LicenseAttachmentWorkflows__NoLicenseTermsData();
+        if (msg.sender != sigMetadata.signer)
+            revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigMetadata.signer);
+        if (msg.sender != sigAttach.signer)
+            revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigAttach.signer);
 
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
         MetadataHelper.setMetadataWithSig(
@@ -364,6 +377,9 @@ contract LicenseAttachmentWorkflows is
         PILTerms calldata terms,
         WorkflowStructs.SignatureData calldata sigAttach
     ) external returns (uint256 licenseTermsId) {
+        if (msg.sender != sigAttach.signer)
+            revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigAttach.signer);
+
         PermissionHelper.setPermissionForModule(
             ipId,
             address(LICENSING_MODULE),
@@ -419,6 +435,11 @@ contract LicenseAttachmentWorkflows is
         WorkflowStructs.SignatureData calldata sigMetadata,
         WorkflowStructs.SignatureData calldata sigAttach
     ) external returns (address ipId, uint256 licenseTermsId) {
+        if (msg.sender != sigMetadata.signer)
+            revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigMetadata.signer);
+        if (msg.sender != sigAttach.signer)
+            revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigAttach.signer);
+
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
         MetadataHelper.setMetadataWithSig(
             ipId,

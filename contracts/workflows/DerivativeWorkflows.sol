@@ -142,6 +142,9 @@ contract DerivativeWorkflows is
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigMetadataAndRegister
     ) external returns (address ipId) {
+        if (msg.sender != sigMetadataAndRegister.signer)
+            revert Errors.DerivativeWorkflows__CallerNotSigner(msg.sender, sigMetadataAndRegister.signer);
+
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
         address[] memory modules = new address[](2);
@@ -226,6 +229,9 @@ contract DerivativeWorkflows is
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigMetadataAndRegister
     ) external returns (address ipId) {
+        if (msg.sender != sigMetadataAndRegister.signer)
+            revert Errors.DerivativeWorkflows__CallerNotSigner(msg.sender, sigMetadataAndRegister.signer);
+
         _collectLicenseTokens(licenseTokenIds, address(LICENSE_TOKEN));
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
@@ -328,6 +334,11 @@ contract DerivativeWorkflows is
         WorkflowStructs.SignatureData calldata sigMetadata,
         WorkflowStructs.SignatureData calldata sigRegister
     ) external returns (address ipId) {
+        if (msg.sender != sigMetadata.signer)
+            revert Errors.DerivativeWorkflows__CallerNotSigner(msg.sender, sigMetadata.signer);
+        if (msg.sender != sigRegister.signer)
+            revert Errors.DerivativeWorkflows__CallerNotSigner(msg.sender, sigRegister.signer);
+
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
         MetadataHelper.setMetadataWithSig(
             ipId,
@@ -408,6 +419,11 @@ contract DerivativeWorkflows is
         WorkflowStructs.SignatureData calldata sigMetadata,
         WorkflowStructs.SignatureData calldata sigRegister
     ) external returns (address ipId) {
+        if (msg.sender != sigMetadata.signer)
+            revert Errors.DerivativeWorkflows__CallerNotSigner(msg.sender, sigMetadata.signer);
+        if (msg.sender != sigRegister.signer)
+            revert Errors.DerivativeWorkflows__CallerNotSigner(msg.sender, sigRegister.signer);
+
         _collectLicenseTokens(licenseTokenIds, address(LICENSE_TOKEN));
 
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);

@@ -122,6 +122,8 @@ contract GroupingWorkflows is
         bool allowDuplicates
     ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId) {
         if (licensesData.length == 0) revert Errors.GroupingWorkflows__NoLicenseData();
+        if (msg.sender != sigAddToGroup.signer)
+            revert Errors.GroupingWorkflows__CallerNotSigner(msg.sender, sigAddToGroup.signer);
 
         tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
             to: address(this),
@@ -174,6 +176,10 @@ contract GroupingWorkflows is
         WorkflowStructs.SignatureData calldata sigAddToGroup
     ) external returns (address ipId) {
         if (licensesData.length == 0) revert Errors.GroupingWorkflows__NoLicenseData();
+        if (msg.sender != sigMetadataAndAttachAndConfig.signer)
+            revert Errors.GroupingWorkflows__CallerNotSigner(msg.sender, sigMetadataAndAttachAndConfig.signer);
+        if (msg.sender != sigAddToGroup.signer)
+            revert Errors.GroupingWorkflows__CallerNotSigner(msg.sender, sigAddToGroup.signer);
 
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
@@ -340,6 +346,9 @@ contract GroupingWorkflows is
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigAddToGroup
     ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId) {
+        if (msg.sender != sigAddToGroup.signer)
+            revert Errors.GroupingWorkflows__CallerNotSigner(msg.sender, sigAddToGroup.signer);
+
         tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
             to: address(this),
             payer: msg.sender,
@@ -382,6 +391,11 @@ contract GroupingWorkflows is
         WorkflowStructs.SignatureData calldata sigMetadataAndAttachAndConfig,
         WorkflowStructs.SignatureData calldata sigAddToGroup
     ) external returns (address ipId) {
+        if (msg.sender != sigMetadataAndAttachAndConfig.signer)
+            revert Errors.GroupingWorkflows__CallerNotSigner(msg.sender, sigMetadataAndAttachAndConfig.signer);
+        if (msg.sender != sigAddToGroup.signer)
+            revert Errors.GroupingWorkflows__CallerNotSigner(msg.sender, sigAddToGroup.signer);
+
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
         address[] memory modules = new address[](3);
