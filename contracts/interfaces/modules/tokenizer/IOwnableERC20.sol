@@ -31,6 +31,6 @@ interface IOwnableERC20 is IERC20, IERC165 {
     /// @notice Returns the upgradable beacon
     function upgradableBeacon() external view returns (address);
 
-    /// @notice Returns the ip id to whom this fractionalized token belongs to
+    /// @notice Returns the ip id to which this fractionalized token belongs to
     function ipId() external view returns (address);
 }
