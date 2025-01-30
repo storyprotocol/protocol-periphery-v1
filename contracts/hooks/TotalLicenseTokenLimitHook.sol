@@ -75,7 +75,8 @@ contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingH
     ) external verifyPermission(licensorIpId) {
         bytes32 key = keccak256(abi.encodePacked(licensorIpId, licenseTemplate, licenseTermsId));
         uint256 totalSupply = _getTotalSupply(licensorIpId);
-        if (limit < totalSupply) revert TotalLicenseTokenLimitHook_LimitLowerThanTotalSupply(totalSupply, limit);
+        if (limit != 0 && limit < totalSupply)
+            revert TotalLicenseTokenLimitHook_LimitLowerThanTotalSupply(totalSupply, limit);
         totalLicenseTokenLimit[key] = limit;
         emit SetTotalLicenseTokenLimit(licensorIpId, licenseTemplate, licenseTermsId, limit);
     }
