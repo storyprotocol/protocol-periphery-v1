@@ -60,7 +60,7 @@ interface IGroupingWorkflows {
 
     /// @notice Register a group IP with a group reward pool, attach license terms to the group IP,
     /// and add individual IPs to the group IP.
-    /// @dev ipIds must be have the same license terms as the group IP.
+    /// @dev ipIds must have to the same license terms as the group IP.
     /// @param groupPool The address of the group reward pool.
     /// @param ipIds The IDs of the IPs to add to the newly registered group IP.
     /// @param licenseData The data of the license and its configuration to be attached to the new group IP.
