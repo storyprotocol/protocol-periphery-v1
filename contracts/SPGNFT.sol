@@ -187,8 +187,8 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @dev Only callable by the fee recipient.
     /// @param newFeeRecipient The new fee recipient.
     function setMintFeeRecipient(address newFeeRecipient) external {
-        if (msg.sender != _getSPGNFTStorage()._mintFeeRecipient) {
-            revert Errors.SPGNFT__CallerNotFeeRecipient();
+        if (msg.sender != _getSPGNFTStorage()._mintFeeRecipient && !hasRole(SPGNFTLib.ADMIN_ROLE, msg.sender)) {
+            revert Errors.SPGNFT__CallerNotFeeRecipientOrAdmin();
         }
         _getSPGNFTStorage()._mintFeeRecipient = newFeeRecipient;
     }

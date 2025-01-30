@@ -102,8 +102,8 @@ library Errors {
     /// @notice Minting is denied if the public minting is false (=> private) but caller does not have the minter role.
     error SPGNFT__MintingDenied();
 
-    /// @notice Caller is not the fee recipient.
-    error SPGNFT__CallerNotFeeRecipient();
+    /// @notice Caller is not the fee recipient or admin.
+    error SPGNFT__CallerNotFeeRecipientOrAdmin();
 
     /// @notice Minting is closed.
     error SPGNFT__MintingClosed();
