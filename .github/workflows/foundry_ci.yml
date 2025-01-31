@@ -22,11 +22,6 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-      
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.5.4
-        with:
-          ssh-private-key: ${{ secrets.SSH }}
 
       - name: Run install
         uses: borales/actions-yarn@v4
