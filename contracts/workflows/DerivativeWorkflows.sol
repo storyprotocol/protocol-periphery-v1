@@ -87,6 +87,7 @@ contract DerivativeWorkflows is
         if (accessManager == address(0)) revert Errors.DerivativeWorkflows__ZeroAddressParam();
         __AccessManaged_init(accessManager);
         __UUPSUpgradeable_init();
+        __Multicall_init();
     }
 
     /// @notice Mint an NFT from a SPGNFT collection and register it as a derivative IP without license tokens.
@@ -142,6 +143,9 @@ contract DerivativeWorkflows is
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigMetadataAndRegister
     ) external returns (address ipId) {
+        if (msg.sender != sigMetadataAndRegister.signer)
+            revert Errors.DerivativeWorkflows__CallerNotSigner(msg.sender, sigMetadataAndRegister.signer);
+
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
         address[] memory modules = new address[](2);
@@ -226,6 +230,9 @@ contract DerivativeWorkflows is
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigMetadataAndRegister
     ) external returns (address ipId) {
+        if (msg.sender != sigMetadataAndRegister.signer)
+            revert Errors.DerivativeWorkflows__CallerNotSigner(msg.sender, sigMetadataAndRegister.signer);
+
         _collectLicenseTokens(licenseTokenIds, address(LICENSE_TOKEN));
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
@@ -271,4 +278,176 @@ contract DerivativeWorkflows is
     /// @dev Hook to authorize the upgrade according to UUPSUpgradeable
     /// @param newImplementation The address of the new implementation
     function _authorizeUpgrade(address newImplementation) internal override restricted {}
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                   DEPRECATED, WILL BE REMOVED IN V1.4                  //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Mint an NFT from a SPGNFT collection and register it as a derivative IP without license tokens.
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function mintAndRegisterIpAndMakeDerivative_deprecated(
+        address spgNftContract,
+        WorkflowStructs.MakeDerivativeDEPR calldata derivData,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        address recipient
+    ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId) {
+        tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
+            to: address(this),
+            payer: msg.sender,
+            nftMetadataURI: ipMetadata.nftMetadataURI,
+            nftMetadataHash: "",
+            allowDuplicates: true
+        });
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
+
+        MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
+
+        LicensingHelper.collectMintFeesAndSetApproval(
+            msg.sender,
+            address(ROYALTY_MODULE),
+            address(LICENSING_MODULE),
+            derivData.licenseTemplate,
+            derivData.parentIpIds,
+            derivData.licenseTermsIds
+        );
+
+        LICENSING_MODULE.registerDerivative({
+            childIpId: ipId,
+            parentIpIds: derivData.parentIpIds,
+            licenseTermsIds: derivData.licenseTermsIds,
+            licenseTemplate: derivData.licenseTemplate,
+            royaltyContext: derivData.royaltyContext,
+            maxMintingFee: 0, // no limit
+            maxRts: ROYALTY_MODULE.maxPercent(), // no limit
+            maxRevenueShare: ROYALTY_MODULE.maxPercent() // no limit
+        });
+
+        ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
+    }
+
+    /// @notice Register the given NFT as a derivative IP with metadata without license tokens.
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function registerIpAndMakeDerivative_deprecated(
+        address nftContract,
+        uint256 tokenId,
+        WorkflowStructs.MakeDerivativeDEPR calldata derivData,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        WorkflowStructs.SignatureData calldata sigMetadata,
+        WorkflowStructs.SignatureData calldata sigRegister
+    ) external returns (address ipId) {
+        if (msg.sender != sigMetadata.signer)
+            revert Errors.DerivativeWorkflows__CallerNotSigner(msg.sender, sigMetadata.signer);
+        if (msg.sender != sigRegister.signer)
+            revert Errors.DerivativeWorkflows__CallerNotSigner(msg.sender, sigRegister.signer);
+
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
+        MetadataHelper.setMetadataWithSig(
+            ipId,
+            address(CORE_METADATA_MODULE),
+            address(ACCESS_CONTROLLER),
+            ipMetadata,
+            sigMetadata
+        );
+
+        PermissionHelper.setPermissionForModule(
+            ipId,
+            address(LICENSING_MODULE),
+            address(ACCESS_CONTROLLER),
+            ILicensingModule.registerDerivative.selector,
+            sigRegister
+        );
+
+        LicensingHelper.collectMintFeesAndSetApproval(
+            msg.sender,
+            address(ROYALTY_MODULE),
+            address(LICENSING_MODULE),
+            derivData.licenseTemplate,
+            derivData.parentIpIds,
+            derivData.licenseTermsIds
+        );
+
+        LICENSING_MODULE.registerDerivative({
+            childIpId: ipId,
+            parentIpIds: derivData.parentIpIds,
+            licenseTermsIds: derivData.licenseTermsIds,
+            licenseTemplate: derivData.licenseTemplate,
+            royaltyContext: derivData.royaltyContext,
+            maxMintingFee: 0, // no limit
+            maxRts: ROYALTY_MODULE.maxPercent(), // no limit
+            maxRevenueShare: ROYALTY_MODULE.maxPercent() // no limit
+        });
+    }
+
+    /// @notice Mint an NFT from a collection and register it as a derivative IP using license tokens
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function mintAndRegisterIpAndMakeDerivativeWithLicenseTokens_deprecated(
+        address spgNftContract,
+        uint256[] calldata licenseTokenIds,
+        bytes calldata royaltyContext,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        address recipient
+    ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId) {
+        _collectLicenseTokens(licenseTokenIds, address(LICENSE_TOKEN));
+
+        tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
+            to: address(this),
+            payer: msg.sender,
+            nftMetadataURI: ipMetadata.nftMetadataURI,
+            nftMetadataHash: "",
+            allowDuplicates: true
+        });
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
+        MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
+
+        LICENSING_MODULE.registerDerivativeWithLicenseTokens(
+            ipId,
+            licenseTokenIds,
+            royaltyContext,
+            ROYALTY_MODULE.maxPercent()
+        );
+
+        ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
+    }
+
+    /// @notice Register the given NFT as a derivative IP using license tokens.
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function registerIpAndMakeDerivativeWithLicenseTokens_deprecated(
+        address nftContract,
+        uint256 tokenId,
+        uint256[] calldata licenseTokenIds,
+        bytes calldata royaltyContext,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        WorkflowStructs.SignatureData calldata sigMetadata,
+        WorkflowStructs.SignatureData calldata sigRegister
+    ) external returns (address ipId) {
+        if (msg.sender != sigMetadata.signer)
+            revert Errors.DerivativeWorkflows__CallerNotSigner(msg.sender, sigMetadata.signer);
+        if (msg.sender != sigRegister.signer)
+            revert Errors.DerivativeWorkflows__CallerNotSigner(msg.sender, sigRegister.signer);
+
+        _collectLicenseTokens(licenseTokenIds, address(LICENSE_TOKEN));
+
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
+        MetadataHelper.setMetadataWithSig(
+            ipId,
+            address(CORE_METADATA_MODULE),
+            address(ACCESS_CONTROLLER),
+            ipMetadata,
+            sigMetadata
+        );
+
+        PermissionHelper.setPermissionForModule(
+            ipId,
+            address(LICENSING_MODULE),
+            address(ACCESS_CONTROLLER),
+            ILicensingModule.registerDerivativeWithLicenseTokens.selector,
+            sigRegister
+        );
+        LICENSING_MODULE.registerDerivativeWithLicenseTokens(
+            ipId,
+            licenseTokenIds,
+            royaltyContext,
+            ROYALTY_MODULE.maxPercent()
+        );
+    }
 }

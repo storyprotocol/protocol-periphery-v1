@@ -30,6 +30,8 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         _test_LicenseAttachmentIntegration_registerPILTermsAndAttach();
         _test_LicenseAttachmentIntegration_mintAndRegisterIpAndAttachPILTerms();
         _test_LicenseAttachmentIntegration_registerIpAndAttachPILTerms();
+        _test_LicenseAttachmentIntegration_mintAndRegisterIpAndAttachDefaultTerms();
+        _test_LicenseAttachmentIntegration_registerIpAndAttachDefaultTerms();
         _endBroadcast();
     }
 
@@ -178,6 +180,79 @@ contract LicenseAttachmentIntegration is BaseIntegration {
             assertEq(licenseTermsIds[i], expectedLicenseTermsId);
             assertEq(expectedLicenseTermsId, pilTemplate.getLicenseTermsId(commTermsData[i].terms));
         }
+    }
+
+    function _test_LicenseAttachmentIntegration_mintAndRegisterIpAndAttachDefaultTerms()
+        private
+        logTest("test_LicenseAttachmentWorkflows_mintAndRegisterIpAndAttachDefaultTerms")
+    {
+        StoryUSD.mint(testSender, testMintFee);
+        StoryUSD.approve(address(spgNftContract), testMintFee);
+
+        (address ipId1, uint256 tokenId1) = licenseAttachmentWorkflows.mintAndRegisterIpAndAttachDefaultTerms({
+            spgNftContract: address(spgNftContract),
+            recipient: testSender,
+            ipMetadata: testIpMetadata,
+            allowDuplicates: true
+        });
+        assertTrue(ipAssetRegistry.isRegistered(ipId1));
+        assertEq(tokenId1, spgNftContract.totalSupply());
+        assertEq(spgNftContract.tokenURI(tokenId1), string.concat(testBaseURI, testIpMetadata.nftMetadataURI));
+        assertMetadata(ipId1, testIpMetadata);
+        (address defaultLicenseTemplate, uint256 defaultLicenseTermsId) = licenseRegistry.getDefaultLicenseTerms();
+        (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId1, 0);
+        assertEq(defaultLicenseTemplate, defaultLicenseTemplate);
+        assertEq(defaultLicenseTermsId, defaultLicenseTermsId);
+        assertEq(licenseTermsId, defaultLicenseTermsId);
+    }
+
+    function _test_LicenseAttachmentIntegration_registerIpAndAttachDefaultTerms()
+        private
+        logTest("test_LicenseAttachmentWorkflows_registerIpAndAttachDefaultTerms")
+    {
+        StoryUSD.mint(testSender, testMintFee);
+        StoryUSD.approve(address(spgNftContract), testMintFee);
+
+        uint256 tokenId = spgNftContract.mint({
+            to: testSender,
+            nftMetadataURI: "",
+            nftMetadataHash: bytes32(0),
+            allowDuplicates: true
+        });
+        address expectedIpId = ipAssetRegistry.ipId(block.chainid, address(spgNftContract), tokenId);
+
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory sigMetadataAndAttachAndConfig, bytes32 expectedState, ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: expectedIpId,
+            permissionList: _getMetadataAndAttachTermsAndConfigPermissionList(
+                expectedIpId,
+                licenseAttachmentWorkflowsAddr
+            ),
+            deadline: deadline,
+            state: bytes32(0),
+            signerSk: testSenderSk
+        });
+
+        address ipId = licenseAttachmentWorkflows.registerIpAndAttachDefaultTerms({
+            nftContract: address(spgNftContract),
+            tokenId: tokenId,
+            ipMetadata: testIpMetadata,
+            sigMetadataAndDefaultTerms: WorkflowStructs.SignatureData({
+                signer: testSender,
+                deadline: deadline,
+                signature: sigMetadataAndAttachAndConfig
+            })
+        });
+
+        assertEq(ipId, expectedIpId);
+        assertTrue(ipAssetRegistry.isRegistered(ipId));
+        assertEq(IIPAccount(payable(ipId)).state(), expectedState);
+        (address defaultLicenseTemplate, uint256 defaultLicenseTermsId) = licenseRegistry.getDefaultLicenseTerms();
+        (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId, 0);
+        assertEq(defaultLicenseTemplate, defaultLicenseTemplate);
+        assertEq(defaultLicenseTermsId, defaultLicenseTermsId);
+        assertEq(licenseTermsId, defaultLicenseTermsId);
     }
 
     function _setUpTest() private {

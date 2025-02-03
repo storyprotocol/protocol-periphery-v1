@@ -92,7 +92,7 @@ contract RoyaltyWorkflowsTest is BaseTest {
                 royaltyModule.maxPercent() + // 1000 * 10% = 100 royalty from childIpB
                 (((defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent()) * defaultCommRevShareA) /
                 royaltyModule.maxPercent() // 1000 * 10% * 10% = 10 royalty from grandChildIp
-            // TODO(SP-XXX): Value should be 20 but MockIPGraph in @storyprotocol/test currently only supports 
+            // TODO(SP-XXX): Value should be 20 but MockIPGraph in @storyprotocol/test currently only supports
             // single-path calculation. This needs to be updated once MockIPGraph supports multi-path calculations.
         );
         assertEq(

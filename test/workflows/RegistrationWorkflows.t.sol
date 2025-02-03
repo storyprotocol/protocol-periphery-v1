@@ -184,12 +184,14 @@ contract RegistrationWorkflowsTest is BaseTest {
             signerSk: sk.alice
         });
 
+        vm.startPrank(u.alice);
         address actualIpId = registrationWorkflows.registerIp({
             nftContract: address(mockNft),
             tokenId: tokenId,
             ipMetadata: ipMetadataDefault,
             sigMetadata: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: sigMetadata })
         });
+        vm.stopPrank();
 
         assertEq(IIPAccount(payable(actualIpId)).state(), expectedState);
         assertEq(actualIpId, expectedIpId);
@@ -250,6 +252,130 @@ contract RegistrationWorkflowsTest is BaseTest {
                 u.bob,
                 ipMetadataDefault,
                 true
+            );
+        }
+        bytes[] memory results = registrationWorkflows.multicall(data);
+        address[] memory ipIds = new address[](10);
+        uint256[] memory tokenIds = new uint256[](10);
+
+        for (uint256 i = 0; i < 10; i++) {
+            (ipIds[i], tokenIds[i]) = abi.decode(results[i], (address, uint256));
+            assertTrue(ipAssetRegistry.isRegistered(ipIds[i]));
+            assertEq(nftContract.tokenURI(tokenIds[i]), string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
+            assertMetadata(ipIds[i], ipMetadataDefault);
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                   DEPRECATED, WILL BE REMOVED IN V1.4                  //
+    ////////////////////////////////////////////////////////////////////////////
+    function test_RegistrationWorkflows_revert_mintAndRegisterIp_callerNotAuthorizedToMint_DEPR() public {
+        vm.prank(u.alice); // minter and admin of nftContract
+        nftContract = ISPGNFT(
+            registrationWorkflows.createCollection(
+                ISPGNFT.InitParams({
+                    name: "Test Private Collection",
+                    symbol: "TESTPRIV",
+                    baseURI: testBaseURI,
+                    contractURI: testContractURI,
+                    maxSupply: 100,
+                    mintFee: 100 * 10 ** mockToken.decimals(),
+                    mintFeeToken: address(mockToken),
+                    mintFeeRecipient: feeRecipient,
+                    owner: minter,
+                    mintOpen: true,
+                    isPublicMinting: false // not public minting
+                })
+            )
+        );
+
+        vm.expectRevert(Errors.Workflow__CallerNotAuthorizedToMint.selector);
+        vm.prank(u.bob); // caller does not have minter role
+        registrationWorkflows.mintAndRegisterIp_deprecated({
+            spgNftContract: address(nftContract),
+            recipient: u.bob,
+            ipMetadata: ipMetadataEmpty
+        });
+    }
+
+    function test_RegistrationWorkflows_mintAndRegisterIp_publicMint_DEPR() public {
+        vm.prank(u.alice); // minter and admin of nftContract
+        nftContract = ISPGNFT(
+            registrationWorkflows.createCollection(
+                ISPGNFT.InitParams({
+                    name: "Test Public Collection",
+                    symbol: "TESTPUB",
+                    baseURI: testBaseURI,
+                    contractURI: testContractURI,
+                    maxSupply: 100,
+                    mintFee: 1 * 10 ** mockToken.decimals(),
+                    mintFeeToken: address(mockToken),
+                    mintFeeRecipient: feeRecipient,
+                    owner: minter,
+                    mintOpen: true,
+                    isPublicMinting: true // public minting is enabled
+                })
+            )
+        );
+
+        vm.startPrank(u.bob); // caller does not have minter role
+        mockToken.mint(address(u.bob), 1000 * 10 ** mockToken.decimals());
+        mockToken.approve(address(nftContract), 1000 * 10 ** mockToken.decimals());
+
+        // caller has minter role and public minting is enabled
+        (address ipId, uint256 tokenId) = registrationWorkflows.mintAndRegisterIp_deprecated({
+            spgNftContract: address(nftContract),
+            recipient: u.bob,
+            ipMetadata: ipMetadataEmpty
+        });
+        vm.stopPrank();
+
+        assertTrue(ipAssetRegistry.isRegistered(ipId));
+        assertEq(tokenId, 1);
+        assertEq(nftContract.tokenURI(tokenId), string.concat(testBaseURI, tokenId.toString()));
+        assertMetadata(ipId, ipMetadataEmpty);
+    }
+
+    function test_RegistrationWorkflows_mintAndRegisterIp_DEPR() public withCollection whenCallerHasMinterRole {
+        mockToken.mint(address(caller), 1000 * 10 ** mockToken.decimals());
+        mockToken.approve(address(nftContract), 1000 * 10 ** mockToken.decimals());
+
+        (address ipId1, uint256 tokenId1) = registrationWorkflows.mintAndRegisterIp_deprecated({
+            spgNftContract: address(nftContract),
+            recipient: u.bob,
+            ipMetadata: ipMetadataEmpty
+        });
+        assertEq(tokenId1, 1);
+        assertTrue(ipAssetRegistry.isRegistered(ipId1));
+        assertEq(nftContract.tokenURI(tokenId1), string.concat(testBaseURI, tokenId1.toString()));
+        assertMetadata(ipId1, ipMetadataEmpty);
+
+        (address ipId2, uint256 tokenId2) = registrationWorkflows.mintAndRegisterIp_deprecated({
+            spgNftContract: address(nftContract),
+            recipient: u.bob,
+            ipMetadata: ipMetadataDefault
+        });
+        assertEq(tokenId2, 2);
+        assertTrue(ipAssetRegistry.isRegistered(ipId2));
+        assertEq(nftContract.tokenURI(tokenId2), string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
+        assertMetadata(ipId2, ipMetadataDefault);
+    }
+
+    function test_RegistrationWorkflows_multicall_mintAndRegisterIp_DEPR()
+        public
+        withCollection
+        whenCallerHasMinterRole
+    {
+        mockToken.mint(address(caller), 1000 * 10 * 10 ** mockToken.decimals());
+        mockToken.approve(address(nftContract), 1000 * 10 * 10 ** mockToken.decimals());
+
+        bytes[] memory data = new bytes[](10);
+        for (uint256 i = 0; i < 10; i++) {
+            data[i] = abi.encodeWithSelector(
+                bytes4(keccak256("mintAndRegisterIp_deprecated(address,address,(string,bytes32,string,bytes32))")),
+                address(nftContract),
+                u.bob,
+                ipMetadataDefault
             );
         }
         bytes[] memory results = registrationWorkflows.multicall(data);

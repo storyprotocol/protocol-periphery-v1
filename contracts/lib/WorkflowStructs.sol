@@ -73,4 +73,17 @@ library WorkflowStructs {
         address recipient;
         uint32 percentage;
     }
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                   DEPRECATED, WILL BE REMOVED IN V1.4                  //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Struct for creating a derivative IP without license tokens.
+    /// @notice THIS VERSION OF THE STRUCT IS DEPRECATED, WILL BE REMOVED IN V1.4
+    struct MakeDerivativeDEPR {
+        address[] parentIpIds;
+        address licenseTemplate;
+        uint256[] licenseTermsIds;
+        bytes royaltyContext;
+    }
 }

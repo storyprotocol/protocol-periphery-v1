@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 // solhint-disable-next-line max-line-length
 import { AccessManagedUpgradeable } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import { MulticallUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
@@ -28,7 +29,8 @@ contract LicenseAttachmentWorkflows is
     BaseWorkflow,
     MulticallUpgradeable,
     AccessManagedUpgradeable,
-    UUPSUpgradeable
+    UUPSUpgradeable,
+    ERC721Holder
 {
     using ERC165Checker for address;
 
@@ -68,6 +70,7 @@ contract LicenseAttachmentWorkflows is
         if (accessManager == address(0)) revert Errors.LicenseAttachmentWorkflows__ZeroAddressParam();
         __AccessManaged_init(accessManager);
         __UUPSUpgradeable_init();
+        __Multicall_init();
     }
 
     /// @notice Register Programmable IP License Terms (if unregistered) and attach it to IP.
@@ -81,6 +84,8 @@ contract LicenseAttachmentWorkflows is
         WorkflowStructs.SignatureData calldata sigAttachAndConfig
     ) external returns (uint256[] memory licenseTermsIds) {
         if (licenseTermsData.length == 0) revert Errors.LicenseAttachmentWorkflows__NoLicenseTermsData();
+        if (msg.sender != sigAttachAndConfig.signer)
+            revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigAttachAndConfig.signer);
 
         address[] memory modules = new address[](2);
         bytes4[] memory selectors = new bytes4[](2);
@@ -168,6 +173,8 @@ contract LicenseAttachmentWorkflows is
         WorkflowStructs.SignatureData calldata sigMetadataAndAttachAndConfig
     ) external returns (address ipId, uint256[] memory licenseTermsIds) {
         if (licenseTermsData.length == 0) revert Errors.LicenseAttachmentWorkflows__NoLicenseTermsData();
+        if (msg.sender != sigMetadataAndAttachAndConfig.signer)
+            revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigMetadataAndAttachAndConfig.signer);
 
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
@@ -197,6 +204,73 @@ contract LicenseAttachmentWorkflows is
         });
     }
 
+    /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP,
+    /// and attach default license terms.
+    /// @param spgNftContract The address of the SPGNFT collection.
+    /// @param recipient The address of the recipient of the minted NFT.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
+    /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
+    /// @return ipId The ID of the newly registered IP.
+    /// @return tokenId The ID of the newly minted NFT.
+    function mintAndRegisterIpAndAttachDefaultTerms(
+        address spgNftContract,
+        address recipient,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        bool allowDuplicates
+    ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId) {
+        tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
+            to: address(this),
+            payer: msg.sender,
+            nftMetadataURI: ipMetadata.nftMetadataURI,
+            nftMetadataHash: ipMetadata.nftMetadataHash,
+            allowDuplicates: allowDuplicates
+        });
+
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
+        MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
+
+        LICENSING_MODULE.attachDefaultLicenseTerms(ipId);
+
+        ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
+    }
+
+    /// @notice Register a given NFT as an IP and attach default license terms.
+    /// @param nftContract The address of the NFT collection.
+    /// @param tokenId The ID of the NFT.
+    /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
+    /// @param sigMetadataAndDefaultTerms Signature data for setAll (metadata) and attachDefaultLicenseTerms
+    /// to the IP via the Core Metadata Module and Licensing Module.
+    /// @return ipId The ID of the newly registered IP.
+    function registerIpAndAttachDefaultTerms(
+        address nftContract,
+        uint256 tokenId,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        WorkflowStructs.SignatureData calldata sigMetadataAndDefaultTerms
+    ) external returns (address ipId) {
+        if (msg.sender != sigMetadataAndDefaultTerms.signer)
+            revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigMetadataAndDefaultTerms.signer);
+
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
+
+        address[] memory modules = new address[](2);
+        bytes4[] memory selectors = new bytes4[](2);
+        modules[0] = address(CORE_METADATA_MODULE);
+        modules[1] = address(LICENSING_MODULE);
+        selectors[0] = ICoreMetadataModule.setAll.selector;
+        selectors[1] = ILicensingModule.attachDefaultLicenseTerms.selector;
+        PermissionHelper.setBatchPermissionForModules({
+            ipId: ipId,
+            accessController: address(ACCESS_CONTROLLER),
+            modules: modules,
+            selectors: selectors,
+            sigData: sigMetadataAndDefaultTerms
+        });
+
+        MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
+
+        LICENSING_MODULE.attachDefaultLicenseTerms(ipId);
+    }
+
     //
     // Upgrade
     //
@@ -204,4 +278,208 @@ contract LicenseAttachmentWorkflows is
     /// @dev Hook to authorize the upgrade according to UUPSUpgradeable
     /// @param newImplementation The address of the new implementation
     function _authorizeUpgrade(address newImplementation) internal override restricted {}
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                              DEPRECATED                                //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Register Programmable IP License Terms (if unregistered) and attach it to IP.
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function registerPILTermsAndAttach_deprecated(
+        address ipId,
+        PILTerms[] calldata terms,
+        WorkflowStructs.SignatureData calldata sigAttach
+    ) external returns (uint256[] memory licenseTermsIds) {
+        if (terms.length == 0) revert Errors.LicenseAttachmentWorkflows__NoLicenseTermsData();
+        if (msg.sender != sigAttach.signer)
+            revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigAttach.signer);
+
+        PermissionHelper.setPermissionForModule(
+            ipId,
+            address(LICENSING_MODULE),
+            address(ACCESS_CONTROLLER),
+            ILicensingModule.attachLicenseTerms.selector,
+            sigAttach
+        );
+
+        licenseTermsIds = _registerMultiplePILTermsAndAttach(ipId, terms);
+    }
+
+    /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP,
+    /// register Programmable IP License Terms (if unregistered), and attach it to the registered IP.
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function mintAndRegisterIpAndAttachPILTerms_deprecated(
+        address spgNftContract,
+        address recipient,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        PILTerms[] calldata terms
+    )
+        external
+        onlyMintAuthorized(spgNftContract)
+        returns (address ipId, uint256 tokenId, uint256[] memory licenseTermsIds)
+    {
+        if (terms.length == 0) revert Errors.LicenseAttachmentWorkflows__NoLicenseTermsData();
+
+        tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
+            to: address(this),
+            payer: msg.sender,
+            nftMetadataURI: ipMetadata.nftMetadataURI,
+            nftMetadataHash: "",
+            allowDuplicates: true
+        });
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
+        MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
+
+        licenseTermsIds = _registerMultiplePILTermsAndAttach(ipId, terms);
+
+        ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
+    }
+
+    /// @notice Register a given NFT as an IP and attach Programmable IP License Terms.
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function registerIpAndAttachPILTerms_deprecated(
+        address nftContract,
+        uint256 tokenId,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        PILTerms[] calldata terms,
+        WorkflowStructs.SignatureData calldata sigMetadata,
+        WorkflowStructs.SignatureData calldata sigAttach
+    ) external returns (address ipId, uint256[] memory licenseTermsIds) {
+        if (terms.length == 0) revert Errors.LicenseAttachmentWorkflows__NoLicenseTermsData();
+        if (msg.sender != sigMetadata.signer)
+            revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigMetadata.signer);
+        if (msg.sender != sigAttach.signer)
+            revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigAttach.signer);
+
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
+        MetadataHelper.setMetadataWithSig(
+            ipId,
+            address(CORE_METADATA_MODULE),
+            address(ACCESS_CONTROLLER),
+            ipMetadata,
+            sigMetadata
+        );
+
+        PermissionHelper.setPermissionForModule(
+            ipId,
+            address(LICENSING_MODULE),
+            address(ACCESS_CONTROLLER),
+            ILicensingModule.attachLicenseTerms.selector,
+            sigAttach
+        );
+
+        licenseTermsIds = _registerMultiplePILTermsAndAttach(ipId, terms);
+    }
+
+    /// @notice Register Programmable IP License Terms (if unregistered) and attach it to IP.
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function registerPILTermsAndAttach_deprecated(
+        address ipId,
+        PILTerms calldata terms,
+        WorkflowStructs.SignatureData calldata sigAttach
+    ) external returns (uint256 licenseTermsId) {
+        if (msg.sender != sigAttach.signer)
+            revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigAttach.signer);
+
+        PermissionHelper.setPermissionForModule(
+            ipId,
+            address(LICENSING_MODULE),
+            address(ACCESS_CONTROLLER),
+            ILicensingModule.attachLicenseTerms.selector,
+            sigAttach
+        );
+
+        licenseTermsId = LicensingHelper.registerPILTermsAndAttach(
+            ipId,
+            address(PIL_TEMPLATE),
+            address(LICENSING_MODULE),
+            terms
+        );
+    }
+
+    /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP,
+    /// register Programmable IP License Terms (if unregistered), and attach it to the registered IP.
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function mintAndRegisterIpAndAttachPILTerms_deprecated(
+        address spgNftContract,
+        address recipient,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        PILTerms calldata terms
+    ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId, uint256 licenseTermsId) {
+        tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
+            to: address(this),
+            payer: msg.sender,
+            nftMetadataURI: ipMetadata.nftMetadataURI,
+            nftMetadataHash: "",
+            allowDuplicates: true
+        });
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
+        MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
+
+        licenseTermsId = LicensingHelper.registerPILTermsAndAttach(
+            ipId,
+            address(PIL_TEMPLATE),
+            address(LICENSING_MODULE),
+            terms
+        );
+
+        ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
+    }
+
+    /// @notice Register a given NFT as an IP and attach Programmable IP License Terms.
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function registerIpAndAttachPILTerms_deprecated(
+        address nftContract,
+        uint256 tokenId,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        PILTerms calldata terms,
+        WorkflowStructs.SignatureData calldata sigMetadata,
+        WorkflowStructs.SignatureData calldata sigAttach
+    ) external returns (address ipId, uint256 licenseTermsId) {
+        if (msg.sender != sigMetadata.signer)
+            revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigMetadata.signer);
+        if (msg.sender != sigAttach.signer)
+            revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigAttach.signer);
+
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
+        MetadataHelper.setMetadataWithSig(
+            ipId,
+            address(CORE_METADATA_MODULE),
+            address(ACCESS_CONTROLLER),
+            ipMetadata,
+            sigMetadata
+        );
+
+        PermissionHelper.setPermissionForModule(
+            ipId,
+            address(LICENSING_MODULE),
+            address(ACCESS_CONTROLLER),
+            ILicensingModule.attachLicenseTerms.selector,
+            sigAttach
+        );
+
+        licenseTermsId = LicensingHelper.registerPILTermsAndAttach(
+            ipId,
+            address(PIL_TEMPLATE),
+            address(LICENSING_MODULE),
+            terms
+        );
+    }
+
+    /// @notice THIS FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function _registerMultiplePILTermsAndAttach(
+        address ipId,
+        PILTerms[] calldata terms
+    ) private returns (uint256[] memory licenseTermsIds) {
+        licenseTermsIds = new uint256[](terms.length);
+        uint256 length = terms.length;
+        for (uint256 i; i < length; i++) {
+            licenseTermsIds[i] = LicensingHelper.registerPILTermsAndAttach(
+                ipId,
+                address(PIL_TEMPLATE),
+                address(LICENSING_MODULE),
+                terms[i]
+            );
+        }
+    }
 }

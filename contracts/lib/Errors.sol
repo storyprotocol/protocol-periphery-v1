@@ -15,6 +15,9 @@ library Errors {
     /// @notice Zero address provided as a param to the RegistrationWorkflows.
     error RegistrationWorkflows__ZeroAddressParam();
 
+    /// @notice Caller is not the signer in the signature data.
+    error RegistrationWorkflows__CallerNotSigner(address caller, address signer);
+
     ////////////////////////////////////////////////////////////////////////////
     //                         LicenseAttachmentWorkflows                     //
     ////////////////////////////////////////////////////////////////////////////
@@ -24,6 +27,9 @@ library Errors {
 
     /// @notice License terms data list is empty.
     error LicenseAttachmentWorkflows__NoLicenseTermsData();
+
+    /// @notice Caller is not the signer in the signature data.
+    error LicenseAttachmentWorkflows__CallerNotSigner(address caller, address signer);
 
     ////////////////////////////////////////////////////////////////////////////
     //                         DerivativeWorkflows                            //
@@ -38,6 +44,9 @@ library Errors {
     /// @notice Caller is not the owner of the license token.
     error DerivativeWorkflows__CallerAndNotTokenOwner(uint256 tokenId, address caller, address actualTokenOwner);
 
+    /// @notice Caller is not the signer in the signature data.
+    error DerivativeWorkflows__CallerNotSigner(address caller, address signer);
+
     ////////////////////////////////////////////////////////////////////////////
     //                             Grouping Workflows                         //
     ////////////////////////////////////////////////////////////////////////////
@@ -47,6 +56,9 @@ library Errors {
 
     /// @notice License data list is empty.
     error GroupingWorkflows__NoLicenseData();
+
+    /// @notice Caller is not the signer in the signature data.
+    error GroupingWorkflows__CallerNotSigner(address caller, address signer);
 
     ////////////////////////////////////////////////////////////////////////////
     //                              Royalty Workflows                         //
@@ -72,6 +84,9 @@ library Errors {
     /// @notice License terms data list is empty.
     error RoyaltyTokenDistributionWorkflows__NoLicenseTermsData();
 
+    /// @notice Caller is not the signer in the signature data.
+    error RoyaltyTokenDistributionWorkflows__CallerNotSigner(address caller, address signer);
+
     ////////////////////////////////////////////////////////////////////////////
     //                               SPGNFT                                   //
     ////////////////////////////////////////////////////////////////////////////
@@ -88,8 +103,8 @@ library Errors {
     /// @notice Minting is denied if the public minting is false (=> private) but caller does not have the minter role.
     error SPGNFT__MintingDenied();
 
-    /// @notice Caller is not the fee recipient.
-    error SPGNFT__CallerNotFeeRecipient();
+    /// @notice Caller is not the fee recipient or admin.
+    error SPGNFT__CallerNotFeeRecipientOrAdmin();
 
     /// @notice Minting is closed.
     error SPGNFT__MintingClosed();

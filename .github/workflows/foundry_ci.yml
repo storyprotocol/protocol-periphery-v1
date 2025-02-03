@@ -22,7 +22,7 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-          
+
       - name: Run install
         uses: borales/actions-yarn@v4
         with:
