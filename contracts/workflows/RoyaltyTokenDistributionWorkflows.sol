@@ -234,7 +234,7 @@ contract RoyaltyTokenDistributionWorkflows is
         selectors[0] = ICoreMetadataModule.setAll.selector;
         selectors[1] = ILicensingModule.attachLicenseTerms.selector;
         selectors[2] = ILicensingModule.setLicensingConfig.selector;
-        PermissionHelper.setBatchPermissionForModules({
+        PermissionHelper.setBatchTransientPermissionForModules({
             ipId: ipId,
             accessController: address(ACCESS_CONTROLLER),
             modules: modules,
@@ -281,7 +281,7 @@ contract RoyaltyTokenDistributionWorkflows is
         modules[1] = address(LICENSING_MODULE);
         selectors[0] = ICoreMetadataModule.setAll.selector;
         selectors[1] = ILicensingModule.registerDerivative.selector;
-        PermissionHelper.setBatchPermissionForModules({
+        PermissionHelper.setBatchTransientPermissionForModules({
             ipId: ipId,
             accessController: address(ACCESS_CONTROLLER),
             modules: modules,
@@ -509,7 +509,7 @@ contract RoyaltyTokenDistributionWorkflows is
             sigMetadata
         );
 
-        PermissionHelper.setPermissionForModule(
+        PermissionHelper.setTransientPermissionForModule(
             ipId,
             address(LICENSING_MODULE),
             address(ACCESS_CONTROLLER),

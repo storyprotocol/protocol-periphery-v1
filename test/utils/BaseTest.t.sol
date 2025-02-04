@@ -423,12 +423,12 @@ contract BaseTest is Test, DeployHelper {
                     IIPAccount.execute.selector,
                     address(accessControllerAddr),
                     0, // amount of ether to send
-                    abi.encodeWithSelector(IAccessController.setBatchPermissions.selector, permissionList)
+                    abi.encodeWithSelector(IAccessController.setBatchTransientPermissions.selector, permissionList)
                 )
             )
         );
 
-        data = abi.encodeWithSelector(IAccessController.setBatchPermissions.selector, permissionList);
+        data = abi.encodeWithSelector(IAccessController.setBatchTransientPermissions.selector, permissionList);
 
         bytes32 digest = MessageHashUtils.toTypedDataHash(
             MetaTx.calculateDomainSeparator(ipId),
@@ -475,7 +475,7 @@ contract BaseTest is Test, DeployHelper {
                     address(accessControllerAddr),
                     0, // amount of ether to send
                     abi.encodeWithSelector(
-                        IAccessController.setPermission.selector,
+                        IAccessController.setTransientPermission.selector,
                         ipId,
                         to,
                         address(module),
@@ -487,7 +487,7 @@ contract BaseTest is Test, DeployHelper {
         );
 
         data = abi.encodeWithSelector(
-            IAccessController.setPermission.selector,
+            IAccessController.setTransientPermission.selector,
             ipId,
             to,
             address(module),

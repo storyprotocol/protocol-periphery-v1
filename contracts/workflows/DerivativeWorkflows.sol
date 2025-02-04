@@ -154,7 +154,7 @@ contract DerivativeWorkflows is
         modules[1] = address(LICENSING_MODULE);
         selectors[0] = ICoreMetadataModule.setAll.selector;
         selectors[1] = ILicensingModule.registerDerivative.selector;
-        PermissionHelper.setBatchPermissionForModules({
+        PermissionHelper.setBatchTransientPermissionForModules({
             ipId: ipId,
             accessController: address(ACCESS_CONTROLLER),
             modules: modules,
@@ -242,7 +242,7 @@ contract DerivativeWorkflows is
         modules[1] = address(LICENSING_MODULE);
         selectors[0] = ICoreMetadataModule.setAll.selector;
         selectors[1] = ILicensingModule.registerDerivativeWithLicenseTokens.selector;
-        PermissionHelper.setBatchPermissionForModules({
+        PermissionHelper.setBatchTransientPermissionForModules({
             ipId: ipId,
             accessController: address(ACCESS_CONTROLLER),
             modules: modules,
@@ -349,7 +349,7 @@ contract DerivativeWorkflows is
             sigMetadata
         );
 
-        PermissionHelper.setPermissionForModule(
+        PermissionHelper.setTransientPermissionForModule(
             ipId,
             address(LICENSING_MODULE),
             address(ACCESS_CONTROLLER),
@@ -436,7 +436,7 @@ contract DerivativeWorkflows is
             sigMetadata
         );
 
-        PermissionHelper.setPermissionForModule(
+        PermissionHelper.setTransientPermissionForModule(
             ipId,
             address(LICENSING_MODULE),
             address(ACCESS_CONTROLLER),

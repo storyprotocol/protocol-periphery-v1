@@ -24,7 +24,7 @@ library MetadataHelper {
         WorkflowStructs.SignatureData calldata sigData
     ) internal {
         if (sigData.signer != address(0) && sigData.deadline != 0 && sigData.signature.length != 0) {
-            PermissionHelper.setPermissionForModule({
+            PermissionHelper.setTransientPermissionForModule({
                 ipId: ipId,
                 module: coreMetadataModule,
                 accessController: accessController,

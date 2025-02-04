@@ -139,7 +139,7 @@ contract GroupingWorkflows is
 
         _attachLicensesAndSetConfigs(ipId, licensesData);
 
-        PermissionHelper.setPermissionForModule(
+        PermissionHelper.setTransientPermissionForModule(
             groupId,
             address(GROUPING_MODULE),
             address(ACCESS_CONTROLLER),
@@ -193,7 +193,7 @@ contract GroupingWorkflows is
         selectors[1] = ILicensingModule.attachLicenseTerms.selector;
         selectors[2] = ILicensingModule.setLicensingConfig.selector;
 
-        PermissionHelper.setBatchPermissionForModules({
+        PermissionHelper.setBatchTransientPermissionForModules({
             ipId: ipId,
             accessController: address(ACCESS_CONTROLLER),
             modules: modules,
@@ -205,7 +205,7 @@ contract GroupingWorkflows is
 
         _attachLicensesAndSetConfigs(ipId, licensesData);
 
-        PermissionHelper.setPermissionForModule(
+        PermissionHelper.setTransientPermissionForModule(
             groupId,
             address(GROUPING_MODULE),
             address(ACCESS_CONTROLLER),
@@ -362,7 +362,7 @@ contract GroupingWorkflows is
 
         _prepConfigAndAttachLicenseAndSetConfig(ipId, groupId, licenseTemplate, licenseTermsId);
 
-        PermissionHelper.setPermissionForModule(
+        PermissionHelper.setTransientPermissionForModule(
             groupId,
             address(GROUPING_MODULE),
             address(ACCESS_CONTROLLER),
@@ -408,7 +408,7 @@ contract GroupingWorkflows is
         selectors[1] = ILicensingModule.attachLicenseTerms.selector;
         selectors[2] = ILicensingModule.setLicensingConfig.selector;
 
-        PermissionHelper.setBatchPermissionForModules(
+        PermissionHelper.setBatchTransientPermissionForModules(
             ipId,
             address(ACCESS_CONTROLLER),
             modules,
@@ -420,7 +420,7 @@ contract GroupingWorkflows is
 
         _prepConfigAndAttachLicenseAndSetConfig(ipId, groupId, licenseTemplate, licenseTermsId);
 
-        PermissionHelper.setPermissionForModule(
+        PermissionHelper.setTransientPermissionForModule(
             groupId,
             address(GROUPING_MODULE),
             address(ACCESS_CONTROLLER),

@@ -93,7 +93,7 @@ contract LicenseAttachmentWorkflows is
         modules[1] = address(LICENSING_MODULE);
         selectors[0] = ILicensingModule.attachLicenseTerms.selector;
         selectors[1] = ILicensingModule.setLicensingConfig.selector;
-        PermissionHelper.setBatchPermissionForModules({
+        PermissionHelper.setBatchTransientPermissionForModules({
             ipId: ipId,
             accessController: address(ACCESS_CONTROLLER),
             modules: modules,
@@ -186,7 +186,7 @@ contract LicenseAttachmentWorkflows is
         selectors[0] = ICoreMetadataModule.setAll.selector;
         selectors[1] = ILicensingModule.attachLicenseTerms.selector;
         selectors[2] = ILicensingModule.setLicensingConfig.selector;
-        PermissionHelper.setBatchPermissionForModules({
+        PermissionHelper.setBatchTransientPermissionForModules({
             ipId: ipId,
             accessController: address(ACCESS_CONTROLLER),
             modules: modules,
@@ -258,7 +258,7 @@ contract LicenseAttachmentWorkflows is
         modules[1] = address(LICENSING_MODULE);
         selectors[0] = ICoreMetadataModule.setAll.selector;
         selectors[1] = ILicensingModule.attachDefaultLicenseTerms.selector;
-        PermissionHelper.setBatchPermissionForModules({
+        PermissionHelper.setBatchTransientPermissionForModules({
             ipId: ipId,
             accessController: address(ACCESS_CONTROLLER),
             modules: modules,
@@ -294,7 +294,7 @@ contract LicenseAttachmentWorkflows is
         if (msg.sender != sigAttach.signer)
             revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigAttach.signer);
 
-        PermissionHelper.setPermissionForModule(
+        PermissionHelper.setTransientPermissionForModule(
             ipId,
             address(LICENSING_MODULE),
             address(ACCESS_CONTROLLER),
@@ -360,7 +360,7 @@ contract LicenseAttachmentWorkflows is
             sigMetadata
         );
 
-        PermissionHelper.setPermissionForModule(
+        PermissionHelper.setTransientPermissionForModule(
             ipId,
             address(LICENSING_MODULE),
             address(ACCESS_CONTROLLER),
@@ -381,7 +381,7 @@ contract LicenseAttachmentWorkflows is
         if (msg.sender != sigAttach.signer)
             revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigAttach.signer);
 
-        PermissionHelper.setPermissionForModule(
+        PermissionHelper.setTransientPermissionForModule(
             ipId,
             address(LICENSING_MODULE),
             address(ACCESS_CONTROLLER),
@@ -450,7 +450,7 @@ contract LicenseAttachmentWorkflows is
             sigMetadata
         );
 
-        PermissionHelper.setPermissionForModule(
+        PermissionHelper.setTransientPermissionForModule(
             ipId,
             address(LICENSING_MODULE),
             address(ACCESS_CONTROLLER),
