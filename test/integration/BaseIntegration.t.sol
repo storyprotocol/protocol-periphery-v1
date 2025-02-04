@@ -247,12 +247,12 @@ contract BaseIntegration is Test, Script, StoryProtocolCoreAddressManager, Story
                     IIPAccount.execute.selector,
                     address(accessControllerAddr),
                     0, // amount of ether to send
-                    abi.encodeWithSelector(IAccessController.setBatchPermissions.selector, permissionList)
+                    abi.encodeWithSelector(IAccessController.setBatchTransientPermissions.selector, permissionList)
                 )
             )
         );
 
-        data = abi.encodeWithSelector(IAccessController.setBatchPermissions.selector, permissionList);
+        data = abi.encodeWithSelector(IAccessController.setBatchTransientPermissions.selector, permissionList);
 
         bytes32 digest = MessageHashUtils.toTypedDataHash(
             MetaTx.calculateDomainSeparator(ipId),
@@ -299,7 +299,7 @@ contract BaseIntegration is Test, Script, StoryProtocolCoreAddressManager, Story
                     address(accessControllerAddr),
                     0, // amount of ether to send
                     abi.encodeWithSelector(
-                        IAccessController.setPermission.selector,
+                        IAccessController.setTransientPermission.selector,
                         ipId,
                         to,
                         address(module),
@@ -311,7 +311,7 @@ contract BaseIntegration is Test, Script, StoryProtocolCoreAddressManager, Story
         );
 
         data = abi.encodeWithSelector(
-            IAccessController.setPermission.selector,
+            IAccessController.setTransientPermission.selector,
             ipId,
             to,
             address(module),

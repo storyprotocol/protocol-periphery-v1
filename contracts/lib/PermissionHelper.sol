@@ -10,14 +10,14 @@ import { WorkflowStructs } from "./WorkflowStructs.sol";
 /// @title Periphery Permission Helper Library
 /// @notice Library for all permissions related helper functions for Periphery contracts.
 library PermissionHelper {
-    /// @dev Sets permission via signature to allow this contract to interact with the Licensing Module on behalf of the
+    /// @dev Sets transient permission via signature to allow this contract to interact with the Licensing Module on behalf of the
     /// provided IP Account.
     /// @param ipId The ID of the IP.
     /// @param module The address of the module to set the permission for.
     /// @param accessController The address of the Access Controller contract.
     /// @param selector The selector of the function to be permitted for execution.
     /// @param sigData Signature data for setting the permission.
-    function setPermissionForModule(
+    function setTransientPermissionForModule(
         address ipId,
         address module,
         address accessController,
@@ -28,7 +28,7 @@ library PermissionHelper {
             accessController,
             0,
             abi.encodeWithSelector(
-                IAccessController.setPermission.selector,
+                IAccessController.setTransientPermission.selector,
                 address(ipId),
                 address(this),
                 address(module),
@@ -41,14 +41,14 @@ library PermissionHelper {
         );
     }
 
-    /// @dev Sets batch permission via signature to allow this contract to interact with multiple modules
+    /// @dev Sets batch transient permission via signature to allow this contract to interact with multiple modules
     /// on behalf of the provided IP Account.
     /// @param ipId The ID of the IP.
     /// @param accessController The address of the Access Controller contract.
     /// @param modules The addresses of the modules to set the permission for.
     /// @param selectors The selectors of the functions to be permitted for execution.
     /// @param sigData Signature data for setting the batch permission.
-    function setBatchPermissionForModules(
+    function setBatchTransientPermissionForModules(
         address ipId,
         address accessController,
         address[] memory modules,
@@ -70,7 +70,7 @@ library PermissionHelper {
         IIPAccount(payable(ipId)).executeWithSig(
             accessController,
             0,
-            abi.encodeWithSelector(IAccessController.setBatchPermissions.selector, permissionList),
+            abi.encodeWithSelector(IAccessController.setBatchTransientPermissions.selector, permissionList),
             sigData.signer,
             sigData.deadline,
             sigData.signature
