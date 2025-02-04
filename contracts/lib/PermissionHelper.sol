@@ -41,7 +41,7 @@ library PermissionHelper {
         );
     }
 
-    /// @dev Sets batch permission via signature to allow this contract to interact with mutiple modules
+    /// @dev Sets batch permission via signature to allow this contract to interact with multiple modules
     /// on behalf of the provided IP Account.
     /// @param ipId The ID of the IP.
     /// @param accessController The address of the Access Controller contract.

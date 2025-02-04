@@ -469,7 +469,7 @@ contract GroupingIntegration is BaseIntegration {
             WorkflowStructs.LicenseData({
                 licenseTemplate: pilTemplateAddr,
                 licenseTermsId: pilTemplate.registerLicenseTerms(
-                    // minting fee is set to 0 beacause currently core protocol requires group IP's minting fee to be 0
+                    // minting fee is set to 0 because currently core protocol requires group IP's minting fee to be 0
                     PILFlavors.commercialRemix({
                         mintingFee: 0,
                         commercialRevShare: revShare,
