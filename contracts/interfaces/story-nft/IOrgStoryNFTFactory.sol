@@ -14,7 +14,7 @@ interface IOrgStoryNFTFactory {
     /// @param signature The signature that is invalid.
     error OrgStoryNFTFactory__InvalidSignature(bytes signature);
 
-    /// @notice NftTemplate is not whitelisted to be used as a OrgStoryNFT.
+    /// @notice NftTemplate is not whitelisted to be used as an OrgStoryNFT.
     /// @param nftTemplate The NFT template that is not whitelisted.
     error OrgStoryNFTFactory__NftTemplateNotWhitelisted(address nftTemplate);
 
@@ -35,7 +35,7 @@ interface IOrgStoryNFTFactory {
     /// @param orgIpId The ID of the organization IP that is not found.
     error OrgStoryNFTFactory__OrgNotFoundByOrgIpId(address orgIpId);
 
-    /// @notice Signature is already used to deploy a OrgStoryNFT.
+    /// @notice Signature is already used to deploy an OrgStoryNFT.
     /// @param signature The signature that is already used.
     error OrgStoryNFTFactory__SignatureAlreadyUsed(bytes signature);
 
@@ -84,7 +84,7 @@ interface IOrgStoryNFTFactory {
     /// @return orgNft The address of the organization NFT.
     /// @return orgTokenId The token ID of the organization NFT.
     /// @return orgIpId The ID of the organization IP.
-    /// @return orgStoryNft The address of the dployed OrgStoryNFT
+    /// @return orgStoryNft The address of the deployed OrgStoryNFT
     function deployOrgStoryNft(
         address orgStoryNftTemplate,
         address orgNftRecipient,
@@ -106,7 +106,7 @@ interface IOrgStoryNFTFactory {
     /// @return orgNft The address of the organization NFT.
     /// @return orgTokenId The token ID of the organization NFT.
     /// @return orgIpId The ID of the organization IP.
-    /// @return orgStoryNft The address of the dployed OrgStoryNFT
+    /// @return orgStoryNft The address of the deployed OrgStoryNFT
     function deployOrgStoryNftByAdmin(
         address orgStoryNftTemplate,
         address orgNftRecipient,

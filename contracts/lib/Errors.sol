@@ -1,3 +1,4 @@
+
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
@@ -71,7 +72,7 @@ library Errors {
     /// @notice Zero address provided as a param to the RoyaltyTokenDistributionWorkflows.
     error RoyaltyTokenDistributionWorkflows__ZeroAddressParam();
 
-    /// @notice Total percentage exceed the current balance of the IP account.
+    /// @notice Total percentage exceeds the current balance of the IP account.
     error RoyaltyTokenDistributionWorkflows__TotalSharesExceedsIPAccountBalance(
         uint32 totalShares,
         uint32 ipAccountBalance

@@ -15,7 +15,7 @@ import { SPGNFTLib } from "./lib/SPGNFTLib.sol";
 contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeable {
     using SafeERC20 for IERC20;
 
-    /// @dev Storage structure for the SPGNFTSotrage.
+    /// @dev Storage structure for the SPGNFTStorage.
     /// @param _maxSupply The maximum supply of the collection.
     /// @param _totalSupply The total minted supply of the collection.
     /// @param _mintFee The fee to mint an NFT from the collection.

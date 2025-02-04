@@ -48,7 +48,7 @@ abstract contract CachableNFT is OwnableUpgradeable {
         $.autoCacheBaseFeeThreshold = threshold;
     }
 
-    /// @notice Mints NFTs to the cache.
+    /// @notice Mints NFTs and adds them to the cache.
     /// @param amount The number of NFTs to mint.
     function mintToCache(uint256 amount) external onlyOwner {
         // mint NFT to cache

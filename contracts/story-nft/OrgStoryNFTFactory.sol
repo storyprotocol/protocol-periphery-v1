@@ -122,7 +122,7 @@ contract OrgStoryNFTFactory is IOrgStoryNFTFactory, AccessManagedUpgradeable, UU
     /// @return orgNft The address of the organization NFT.
     /// @return orgTokenId The token ID of the organization NFT.
     /// @return orgIpId The ID of the organization IP.
-    /// @return orgStoryNft The address of the dployed OrgStoryNFT
+    /// @return orgStoryNft The address of the deployed OrgStoryNFT
     function deployOrgStoryNft(
         address orgStoryNftTemplate,
         address orgNftRecipient,
@@ -154,7 +154,7 @@ contract OrgStoryNFTFactory is IOrgStoryNFTFactory, AccessManagedUpgradeable, UU
     /// @return orgNft The address of the organization NFT.
     /// @return orgTokenId The token ID of the organization NFT.
     /// @return orgIpId The ID of the organization IP.
-    /// @return orgStoryNft The address of the dployed OrgStoryNFT
+    /// @return orgStoryNft The address of the deployed OrgStoryNFT
     function deployOrgStoryNftByAdmin(
         address orgStoryNftTemplate,
         address orgNftRecipient,
