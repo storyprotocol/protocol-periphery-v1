@@ -21,11 +21,9 @@ contract LockLicenseHookTest is BaseTest {
 
     function test_LockLicenseHook_revert_beforeMintLicenseTokens() public {
         uint256 socialRemixTermsId = pilTemplate.registerLicenseTerms(PILFlavors.nonCommercialSocialRemixing());
-        LockLicenseHook lockLicenseHook = new LockLicenseHook();
-        vm.prank(u.admin);
-        moduleRegistry.registerModule("LockLicenseHook", address(lockLicenseHook));
 
         vm.startPrank(ipOwner);
+        licensingModule.attachLicenseTerms(ipId, address(pilTemplate), socialRemixTermsId);
         Licensing.LicensingConfig memory licensingConfig = Licensing.LicensingConfig({
             isSet: true,
             mintingFee: 0,
@@ -62,11 +60,9 @@ contract LockLicenseHookTest is BaseTest {
 
     function test_LockLicenseHook_revert_beforeRegisterDerivative() public {
         uint256 socialRemixTermsId = pilTemplate.registerLicenseTerms(PILFlavors.nonCommercialSocialRemixing());
-        LockLicenseHook lockLicenseHook = new LockLicenseHook();
-        vm.prank(u.admin);
-        moduleRegistry.registerModule("LockLicenseHook", address(lockLicenseHook));
 
         vm.startPrank(ipOwner);
+        licensingModule.attachLicenseTerms(ipId, address(pilTemplate), socialRemixTermsId);
         Licensing.LicensingConfig memory licensingConfig = Licensing.LicensingConfig({
             isSet: true,
             mintingFee: 0,
@@ -109,14 +105,12 @@ contract LockLicenseHookTest is BaseTest {
 
     function test_LockLicenseHook_calculateMintingFee() public {
         uint256 socialRemixTermsId = pilTemplate.registerLicenseTerms(PILFlavors.nonCommercialSocialRemixing());
-        LockLicenseHook lockLicenseHook = new LockLicenseHook();
-        vm.prank(u.admin);
-        moduleRegistry.registerModule("LockLicenseHook", address(lockLicenseHook));
 
         vm.startPrank(ipOwner);
+        licensingModule.attachLicenseTerms(ipId, address(pilTemplate), socialRemixTermsId);
         Licensing.LicensingConfig memory licensingConfig = Licensing.LicensingConfig({
             isSet: true,
-            mintingFee: 1000,
+            mintingFee: 0,
             licensingHook: address(lockLicenseHook),
             hookData: "",
             commercialRevShare: 0,

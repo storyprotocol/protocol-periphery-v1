@@ -106,7 +106,7 @@ contract TokenizerModule is
         address ipId,
         address tokenTemplate,
         bytes calldata initData
-    ) external verifyPermission(ipId) nonReentrant returns (address token) {
+    ) external nonReentrant verifyPermission(ipId) returns (address token) {
         if (DISPUTE_MODULE.isIpTagged(ipId)) revert Errors.TokenizerModule__DisputedIpId(ipId);
         if (LICENSE_REGISTRY.isExpiredNow(ipId)) revert Errors.TokenizerModule__IpExpired(ipId);
 

@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.26;
-// two mode passthrough and cache
-// passthrough will just forward the call to the nft contract
 
-// cache contrat has three modes
+// cache contract has three modes
 // 1. cache mode
 // 2. passthrough mode
 // 3. auto mode

@@ -6,7 +6,7 @@ import { BaseModule } from "@storyprotocol/core/modules/BaseModule.sol";
 import { ILicensingHook } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingHook.sol";
 
 contract LockLicenseHook is BaseModule, ILicensingHook {
-    string public constant override name = "LockLicenseHook";
+    string public constant override name = "LOCK_LICENSE_HOOK";
 
     /// @notice Emitted when attempting to perform an action on a locked license
     /// @param licensorIpId The licensor IP id that is locked

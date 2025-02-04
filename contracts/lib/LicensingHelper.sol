@@ -114,7 +114,14 @@ library LicensingHelper {
         Licensing.LicensingConfig memory licensingConfig
     ) internal {
         attachLicenseTerms(ipId, licensingModule, licenseTemplate, licenseTermsId);
-        ILicensingModule(licensingModule).setLicensingConfig(ipId, licenseTemplate, licenseTermsId, licensingConfig);
+        if (licensingConfig.isSet) {
+            ILicensingModule(licensingModule).setLicensingConfig(
+                ipId,
+                licenseTemplate,
+                licenseTermsId,
+                licensingConfig
+            );
+        }
     }
 
     /// @dev Collects mint fees and registers a derivative.

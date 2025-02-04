@@ -8,6 +8,7 @@ import { Script } from "forge-std/Script.sol";
 import { stdJson } from "forge-std/StdJson.sol";
 import { ERC6551Registry } from "erc6551/ERC6551Registry.sol";
 import { AccessManager } from "@openzeppelin/contracts/access/manager/AccessManager.sol";
+import { BeaconProxy } from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import { ICreate3Deployer } from "@storyprotocol/script/utils/ICreate3Deployer.sol";
 import { AccessController } from "@storyprotocol/core/access/AccessController.sol";
@@ -32,7 +33,11 @@ import { RoyaltyModule } from "@storyprotocol/core/modules/royalty/RoyaltyModule
 import { RoyaltyPolicyLAP } from "@storyprotocol/core/modules/royalty/policies/LAP/RoyaltyPolicyLAP.sol";
 import { RoyaltyPolicyLRP } from "@storyprotocol/core/modules/royalty/policies/LRP/RoyaltyPolicyLRP.sol";
 import { StorageLayoutChecker } from "@storyprotocol/script/utils/upgrades/StorageLayoutCheck.s.sol";
+import { AccessManager } from "@openzeppelin/contracts/access/manager/AccessManager.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { TestProxyHelper } from "@storyprotocol/test/utils/TestProxyHelper.sol";
+import { ProtocolAdmin } from "@storyprotocol/core/lib/ProtocolAdmin.sol";
+import { ProtocolPausableUpgradeable } from "@storyprotocol/core/pause/ProtocolPausableUpgradeable.sol";
 
 // contracts
 import { SPGNFT } from "../../contracts/SPGNFT.sol";
@@ -47,6 +52,8 @@ import { StoryBadgeNFT } from "../../contracts/story-nft/StoryBadgeNFT.sol";
 import { OrgStoryNFTFactory } from "../../contracts/story-nft/OrgStoryNFTFactory.sol";
 import { OwnableERC20 } from "../../contracts/modules/tokenizer/OwnableERC20.sol";
 import { TokenizerModule } from "../../contracts/modules/tokenizer/TokenizerModule.sol";
+import { LockLicenseHook } from "../../contracts/hooks/LockLicenseHook.sol";
+import { TotalLicenseTokenLimitHook } from "../../contracts/hooks/TotalLicenseTokenLimitHook.sol";
 
 // script
 import { BroadcastManager } from "./BroadcastManager.s.sol";
@@ -73,7 +80,15 @@ contract DeployHelper is
     bytes32 internal constant IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
     // WIP address
-    address internal wipAddr = 0x1516000000000000000000000000000000000000;
+    address internal wipAddr = 0x1514000000000000000000000000000000000000;
+
+    // IPAccount contracts
+    IPAccountImpl internal ipAccountImplCode;
+    UpgradeableBeacon internal ipAccountImplBeacon;
+    BeaconProxy internal ipAccountImpl;
+    string internal constant IP_ACCOUNT_IMPL_CODE = "IPAccountImplCode";
+    string internal constant IP_ACCOUNT_IMPL_BEACON = "IPAccountImplBeacon";
+    string internal constant IP_ACCOUNT_IMPL_BEACON_PROXY = "IPAccountImplBeaconProxy";
 
     error DeploymentConfigError(string message);
 
@@ -104,6 +119,10 @@ contract DeployHelper is
     TokenizerModule internal tokenizerModule;
     address internal ownableERC20Template;
     address internal ownableERC20Beacon;
+
+    // LicensingHooks
+    LockLicenseHook internal lockLicenseHook;
+    TotalLicenseTokenLimitHook internal totalLicenseTokenLimitHook;
 
     // DeployHelper variable
     bool internal writeDeploys;
@@ -178,10 +197,6 @@ contract DeployHelper is
 
             if (writeDeploys) _writeDeployment(); // JsonDeploymentHandler.s.sol
             _endBroadcast(); // BroadcastManager.s.sol
-
-            // Set SPGNFTBeacon for periphery workflow contracts, access controlled
-            // can't be done in deployment script:
-            // registrationWorkflows.setNftContractBeacon(address(spgNftBeacon));
         }
     }
 
@@ -490,7 +505,6 @@ contract DeployHelper is
             )
         ));
         _postdeploy("OwnableERC20Beacon", address(ownableERC20Beacon));
-
         require(
             UpgradeableBeacon(ownableERC20Beacon).implementation() == address(ownableERC20Template),
             "DeployHelper: Invalid beacon implementation"
@@ -499,14 +513,62 @@ contract DeployHelper is
             OwnableERC20(ownableERC20Template).upgradableBeacon() == address(ownableERC20Beacon),
             "DeployHelper: Invalid beacon address in template"
         );
+
+        // LicensingHooks
+        _predeploy("LockLicenseHook");
+        lockLicenseHook = LockLicenseHook(
+            create3Deployer.deployDeterministic(
+                abi.encodePacked(
+                    type(LockLicenseHook).creationCode
+                ),
+                _getSalt("LockLicenseHook")
+            )
+        );
+        _postdeploy("LockLicenseHook", address(lockLicenseHook));
+
+        _predeploy("TotalLicenseTokenLimitHook");
+        totalLicenseTokenLimitHook = TotalLicenseTokenLimitHook(
+            create3Deployer.deployDeterministic(
+                abi.encodePacked(
+                    type(TotalLicenseTokenLimitHook).creationCode,
+                    abi.encode(
+                        licenseRegistryAddr,
+                        licenseTokenAddr,
+                        accessControllerAddr,
+                        ipAssetRegistryAddr
+                    )
+                ),
+                _getSalt("TotalLicenseTokenLimitHook")
+            )
+        );
+        _postdeploy("TotalLicenseTokenLimitHook", address(totalLicenseTokenLimitHook));
     }
 
     function _configurePeripheryContracts() private {
        // Transfer ownership of beacon proxy to RegistrationWorkflows
        spgNftBeacon.transferOwnership(address(registrationWorkflows));
+       registrationWorkflows.setNftContractBeacon(address(spgNftBeacon));
        tokenizerModule.whitelistTokenTemplate(address(ownableERC20Template), true);
        IModuleRegistry(moduleRegistryAddr).registerModule("TOKENIZER_MODULE", address(tokenizerModule));
-       // more configurations may be added here
+       IModuleRegistry(moduleRegistryAddr).registerModule("LOCK_LICENSE_HOOK", address(lockLicenseHook));
+       IModuleRegistry(moduleRegistryAddr).registerModule("TOTAL_LICENSE_TOKEN_LIMIT_HOOK", address(totalLicenseTokenLimitHook));
+       // add upgrade role and pause role to tokenizer module
+       bytes4[] memory selectors = new bytes4[](1);
+       selectors[0] = UUPSUpgradeable.upgradeToAndCall.selector;
+       AccessManager(protocolAccessManagerAddr).setTargetFunctionRole(
+            address(tokenizerModule),
+            selectors,
+            ProtocolAdmin.UPGRADER_ROLE
+        );
+
+        selectors = new bytes4[](2);
+        selectors[0] = ProtocolPausableUpgradeable.pause.selector;
+        selectors[1] = ProtocolPausableUpgradeable.unpause.selector;
+        AccessManager(protocolAccessManagerAddr).setTargetFunctionRole(
+            address(tokenizerModule),
+            selectors,
+            ProtocolAdmin.PAUSE_ADMIN_ROLE
+        );
     }
 
     function _deployMockCoreContracts() private {
@@ -551,8 +613,9 @@ contract DeployHelper is
         impl = address(
             new IPAssetRegistry(
                 address(erc6551Registry),
-                _getDeployedAddress(type(IPAccountImpl).name),
-                _getDeployedAddress(type(GroupingModule).name)
+                _getDeployedAddress(IP_ACCOUNT_IMPL_BEACON_PROXY),
+                _getDeployedAddress(type(GroupingModule).name),
+                _getDeployedAddress(IP_ACCOUNT_IMPL_BEACON)
             )
         );
         ipAssetRegistry = IPAssetRegistry(
@@ -614,8 +677,8 @@ contract DeployHelper is
         );
         require(_loadProxyImpl(address(licenseRegistry)) == impl, "LicenseRegistry Proxy Implementation Mismatch");
 
-        // ipAccountImpl
-        bytes memory ipAccountImplCode = abi.encodePacked(
+        // IPAccountImpl contracts
+        bytes memory ipAccountImplCodeBytes = abi.encodePacked(
             type(IPAccountImpl).creationCode,
             abi.encode(
                 address(accessController),
@@ -624,21 +687,44 @@ contract DeployHelper is
                 address(moduleRegistry)
             )
         );
-        IPAccountImpl ipAccountImpl = IPAccountImpl(
-            payable(create3Deployer.deployDeterministic(
-                ipAccountImplCode,
-                _getSalt(type(IPAccountImpl).name)
+        _predeploy(IP_ACCOUNT_IMPL_CODE);
+        ipAccountImplCode = IPAccountImpl(
+            payable(create3Deployer.deployDeterministic(ipAccountImplCodeBytes, _getSalt(IP_ACCOUNT_IMPL_CODE)))
+        );
+        _postdeploy(IP_ACCOUNT_IMPL_CODE, address(ipAccountImplCode));
+        require(
+            _getDeployedAddress(IP_ACCOUNT_IMPL_CODE) == address(ipAccountImplCode),
+            "Deploy: IP Account Impl Code Address Mismatch"
+        );
+
+        _predeploy(IP_ACCOUNT_IMPL_BEACON);
+        ipAccountImplBeacon = UpgradeableBeacon(
+            create3Deployer.deployDeterministic(
+                abi.encodePacked(
+                    type(UpgradeableBeacon).creationCode,
+                    abi.encode(address(ipAccountImplCode), deployer)
+                ),
+                _getSalt(IP_ACCOUNT_IMPL_BEACON)
+            )
+        );
+        _postdeploy(IP_ACCOUNT_IMPL_BEACON, address(ipAccountImplBeacon));
+
+        _predeploy(IP_ACCOUNT_IMPL_BEACON_PROXY);
+        ipAccountImpl = BeaconProxy(payable(
+            create3Deployer.deployDeterministic(
+                abi.encodePacked(
+                    type(BeaconProxy).creationCode,
+                    abi.encode(address(ipAccountImplBeacon), "")
+                ),
+                _getSalt(IP_ACCOUNT_IMPL_BEACON_PROXY)
             ))
         );
-        require(
-            _getDeployedAddress(type(IPAccountImpl).name) == address(ipAccountImpl),
-            "Deploy: IP Account Impl Address Mismatch"
-        );
+        _postdeploy(IP_ACCOUNT_IMPL_BEACON_PROXY, address(ipAccountImpl));
 
         // disputeModule
         impl = address(0); // Make sure we don't deploy wrong impl
         impl = address(
-            new DisputeModule(address(accessController), address(ipAssetRegistry), address(licenseRegistry))
+            new DisputeModule(address(accessController), address(ipAssetRegistry), address(licenseRegistry), address(ipGraphACL))
         );
         disputeModule = DisputeModule(
             TestProxyHelper.deployUUPSProxy(
@@ -663,7 +749,8 @@ contract DeployHelper is
                 _getDeployedAddress(type(LicensingModule).name),
                 address(disputeModule),
                 address(licenseRegistry),
-                address(ipAssetRegistry)
+                address(ipAssetRegistry),
+                address(ipGraphACL)
             )
         );
         royaltyModule = RoyaltyModule(
@@ -671,7 +758,7 @@ contract DeployHelper is
                 create3Deployer,
                 _getSalt(type(RoyaltyModule).name),
                 impl,
-                abi.encodeCall(RoyaltyModule.initialize, (address(protocolAccessManager), 1024, 1024, 10))
+                abi.encodeCall(RoyaltyModule.initialize, (address(protocolAccessManager), uint256(15)))
             )
         );
         royaltyModuleAddr = address(royaltyModule);
@@ -691,7 +778,8 @@ contract DeployHelper is
                 address(royaltyModule),
                 address(licenseRegistry),
                 address(disputeModule),
-                _getDeployedAddress(type(LicenseToken).name)
+                _getDeployedAddress(type(LicenseToken).name),
+                address(ipGraphACL)
             )
         );
         licensingModule = LicensingModule(
@@ -797,7 +885,8 @@ contract DeployHelper is
                 address(accessController),
                 address(ipAccountRegistry),
                 address(licenseRegistry),
-                address(royaltyModule)
+                address(royaltyModule),
+                address(moduleRegistry)
             )
         );
         pilTemplate = PILicenseTemplate(
@@ -929,9 +1018,12 @@ contract DeployHelper is
         moduleRegistry.registerModule("CORE_METADATA_VIEW_MODULE", address(coreMetadataViewModule));
         moduleRegistry.registerModule("GROUPING_MODULE", address(groupingModule));
 
-        ipGraphACL.whitelistAddress(_getDeployedAddress(type(RoyaltyPolicyLAP).name));
-        ipGraphACL.whitelistAddress(_getDeployedAddress(type(RoyaltyPolicyLRP).name));
-        ipGraphACL.whitelistAddress(_getDeployedAddress(type(LicenseRegistry).name));
+        ipGraphACL.whitelistAddress(address(licenseRegistry));
+        ipGraphACL.whitelistAddress(address(royaltyPolicyLAP));
+        ipGraphACL.whitelistAddress(address(royaltyPolicyLRP));
+        ipGraphACL.whitelistAddress(address(royaltyModule));
+        ipGraphACL.whitelistAddress(address(disputeModule));
+        ipGraphACL.whitelistAddress(address(licensingModule));
 
         coreMetadataViewModule.updateCoreMetadataModule();
 

@@ -370,4 +370,33 @@ contract SPGNFTTest is BaseTest {
 
         vm.stopPrank();
     }
+
+    function test_SPGNFT_setMintFeeRecipient() public {
+        // alice is admin and fee recipient
+        vm.startPrank(u.alice);
+        nftContract.setMintFeeRecipient(u.bob);
+        vm.stopPrank();
+
+        // alice is admin, bob is fee recipient
+        vm.startPrank(u.bob);
+        nftContract.setMintFeeRecipient(u.carl);
+        vm.stopPrank();
+
+        // alice is admin, carl is fee recipient
+        vm.startPrank(u.alice);
+        nftContract.setMintFeeRecipient(u.bob);
+        vm.stopPrank();
+    }
+
+    function test_SPGNFT_setMintFeeRecipient_revert_callerNotFeeRecipientOrAdmin() public {
+        vm.startPrank(u.bob);
+        vm.expectRevert(Errors.SPGNFT__CallerNotFeeRecipientOrAdmin.selector);
+        nftContract.setMintFeeRecipient(u.carl);
+        vm.stopPrank();
+
+        vm.startPrank(u.carl);
+        vm.expectRevert(Errors.SPGNFT__CallerNotFeeRecipientOrAdmin.selector);
+        nftContract.setMintFeeRecipient(u.bob);
+        vm.stopPrank();
+    }
 }

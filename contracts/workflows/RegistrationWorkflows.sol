@@ -5,6 +5,7 @@ pragma solidity 0.8.26;
 import { AccessManagedUpgradeable } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import { BeaconProxy } from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import { MulticallUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -24,7 +25,8 @@ contract RegistrationWorkflows is
     BaseWorkflow,
     MulticallUpgradeable,
     AccessManagedUpgradeable,
-    UUPSUpgradeable
+    UUPSUpgradeable,
+    ERC721Holder
 {
     using ERC165Checker for address;
 
@@ -76,6 +78,7 @@ contract RegistrationWorkflows is
         if (accessManager == address(0)) revert Errors.RegistrationWorkflows__ZeroAddressParam();
         __AccessManaged_init(accessManager);
         __UUPSUpgradeable_init();
+        __Multicall_init();
     }
 
     /// @dev Sets the NFT contract beacon address.
@@ -141,6 +144,9 @@ contract RegistrationWorkflows is
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigMetadata
     ) external returns (address ipId) {
+        if (msg.sender != address(0) && msg.sender != sigMetadata.signer)
+            revert Errors.RegistrationWorkflows__CallerNotSigner(msg.sender, sigMetadata.signer);
+
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
         MetadataHelper.setMetadataWithSig(
             ipId,
@@ -165,4 +171,26 @@ contract RegistrationWorkflows is
     /// @dev Hook to authorize the upgrade according to UUPSUpgradeable
     /// @param newImplementation The address of the new implementation
     function _authorizeUpgrade(address newImplementation) internal override restricted {}
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                   DEPRECATED, WILL BE REMOVED IN V1.4                  //
+    ////////////////////////////////////////////////////////////////////////////
+    /// @notice Mint an NFT from a SPGNFT collection and register it with metadata as an IP.
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function mintAndRegisterIp_deprecated(
+        address spgNftContract,
+        address recipient,
+        WorkflowStructs.IPMetadata calldata ipMetadata
+    ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId) {
+        tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
+            to: address(this),
+            payer: msg.sender,
+            nftMetadataURI: ipMetadata.nftMetadataURI,
+            nftMetadataHash: "",
+            allowDuplicates: true
+        });
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
+        MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
+        ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
+    }
 }

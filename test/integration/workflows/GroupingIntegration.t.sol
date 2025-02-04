@@ -72,6 +72,7 @@ contract GroupingIntegration is BaseIntegration {
             spgNftContract: address(spgNftContract),
             groupId: groupId,
             recipient: testSender,
+            maxAllowedRewardShare: 100e6, // 100%
             ipMetadata: testIpMetadata,
             licensesData: testLicensesData,
             sigAddToGroup: WorkflowStructs.SignatureData({
@@ -138,6 +139,7 @@ contract GroupingIntegration is BaseIntegration {
             nftContract: address(spgNftContract),
             tokenId: tokenId,
             groupId: groupId,
+            maxAllowedRewardShare: 100e6, // 100%
             licensesData: testLicensesData,
             ipMetadata: testIpMetadata,
             sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
@@ -188,6 +190,7 @@ contract GroupingIntegration is BaseIntegration {
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
             groupPool: evenSplitGroupPoolAddr,
             ipIds: ipIds,
+            maxAllowedRewardShare: 100e6, // 100%
             licenseData: testGroupLicenseData[0]
         });
 
@@ -213,6 +216,7 @@ contract GroupingIntegration is BaseIntegration {
         address newGroupId = groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
             groupPool: evenSplitGroupPoolAddr,
             ipIds: ipIds,
+            maxAllowedRewardShare: 100e6, // 100%
             licenseData: testGroupLicenseData[0]
         });
 
@@ -264,13 +268,13 @@ contract GroupingIntegration is BaseIntegration {
         StoryUSD.mint(testSender, amount1);
         StoryUSD.approve(address(royaltyModule), amount1);
         royaltyModule.payRoyaltyOnBehalf(ipId1, testSender, address(StoryUSD), amount1);
-        IGraphAwareRoyaltyPolicy(royaltyPolicyLAPAddr).transferToVault(ipId1, newGroupId, address(StoryUSD));
+        IGraphAwareRoyaltyPolicy(royaltyPolicyLRPAddr).transferToVault(ipId1, newGroupId, address(StoryUSD));
 
         uint256 amount2 = 10_000 * 10 ** StoryUSD.decimals(); // 10,000 tokens
         StoryUSD.mint(testSender, amount2);
         StoryUSD.approve(address(royaltyModule), amount2);
         royaltyModule.payRoyaltyOnBehalf(ipId2, testSender, address(StoryUSD), amount2);
-        IGraphAwareRoyaltyPolicy(royaltyPolicyLAPAddr).transferToVault(ipId2, newGroupId, address(StoryUSD));
+        IGraphAwareRoyaltyPolicy(royaltyPolicyLRPAddr).transferToVault(ipId2, newGroupId, address(StoryUSD));
 
         address[] memory royaltyTokens = new address[](1);
         royaltyTokens[0] = address(StoryUSD);
@@ -321,12 +325,13 @@ contract GroupingIntegration is BaseIntegration {
             data[i] = abi.encodeWithSelector(
                 bytes4(
                     keccak256(
-                        "mintAndRegisterIpAndAttachLicenseAndAddToGroup(address,address,address,(address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))[],(string,bytes32,string,bytes32),(address,uint256,bytes),bool)"
+                        "mintAndRegisterIpAndAttachLicenseAndAddToGroup(address,address,address,uint256,(address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))[],(string,bytes32,string,bytes32),(address,uint256,bytes),bool)"
                     )
                 ),
                 address(spgNftContract),
                 groupId,
                 testSender,
+                100e6, // 100%
                 testLicensesData,
                 testIpMetadata,
                 WorkflowStructs.SignatureData({ signer: testSender, deadline: deadline, signature: sigsAddToGroup[i] })
@@ -421,12 +426,13 @@ contract GroupingIntegration is BaseIntegration {
             data[i] = abi.encodeWithSelector(
                 bytes4(
                     keccak256(
-                        "registerIpAndAttachLicenseAndAddToGroup(address,uint256,address,(address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))[],(string,bytes32,string,bytes32),(address,uint256,bytes),(address,uint256,bytes))"
+                        "registerIpAndAttachLicenseAndAddToGroup(address,uint256,address,uint256,(address,uint256,(bool,uint256,address,bytes,uint32,bool,uint32,address))[],(string,bytes32,string,bytes32),(address,uint256,bytes),(address,uint256,bytes))"
                     )
                 ),
                 address(spgNftContract),
                 tokenIds[i],
                 groupId,
+                100e6, // 100%
                 testLicensesData,
                 testIpMetadata,
                 WorkflowStructs.SignatureData({
@@ -467,7 +473,7 @@ contract GroupingIntegration is BaseIntegration {
                     PILFlavors.commercialRemix({
                         mintingFee: 0,
                         commercialRevShare: revShare,
-                        royaltyPolicy: royaltyPolicyLAPAddr,
+                        royaltyPolicy: royaltyPolicyLRPAddr,
                         currencyToken: address(StoryUSD)
                     })
                 ),

@@ -6,12 +6,15 @@ import { AccessControlUpgradeable } from "@openzeppelin/contracts-upgradeable/ac
 import { ERC721URIStorageUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { ISPGNFT } from "./interfaces/ISPGNFT.sol";
 import { Errors } from "./lib/Errors.sol";
 import { SPGNFTLib } from "./lib/SPGNFTLib.sol";
 
 contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeable {
+    using SafeERC20 for IERC20;
+
     /// @dev Storage structure for the SPGNFTSotrage.
     /// @param _maxSupply The maximum supply of the collection.
     /// @param _totalSupply The total minted supply of the collection.
@@ -117,6 +120,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         $._contractURI = initParams.contractURI;
 
         __ERC721_init(initParams.name, initParams.symbol);
+        __AccessControl_init();
     }
 
     /// @notice Returns the total minted supply of the collection.
@@ -187,8 +191,8 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @dev Only callable by the fee recipient.
     /// @param newFeeRecipient The new fee recipient.
     function setMintFeeRecipient(address newFeeRecipient) external {
-        if (msg.sender != _getSPGNFTStorage()._mintFeeRecipient) {
-            revert Errors.SPGNFT__CallerNotFeeRecipient();
+        if (msg.sender != _getSPGNFTStorage()._mintFeeRecipient && !hasRole(SPGNFTLib.ADMIN_ROLE, msg.sender)) {
+            revert Errors.SPGNFT__CallerNotFeeRecipientOrAdmin();
         }
         _getSPGNFTStorage()._mintFeeRecipient = newFeeRecipient;
     }
@@ -225,7 +229,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         emit ContractURIUpdated();
     }
 
-    /// @notice Mints an NFT from the collection. Only callable by the minter role.
+    /// @notice Mints an NFT from the collection. Only callable when public minting is enabled or when the caller has minter role.
     /// @param to The address of the recipient of the minted NFT.
     /// @param nftMetadataURI OPTIONAL. The URI of the desired metadata for the newly minted NFT.
     /// @param nftMetadataHash OPTIONAL. A bytes32 hash of the NFT's metadata. This metadata is accessible via the NFT's tokenURI.
@@ -275,7 +279,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @dev Withdraws the contract's token balance to the fee recipient.
     /// @param token The token to withdraw.
     function withdrawToken(address token) public {
-        IERC20(token).transfer(_getSPGNFTStorage()._mintFeeRecipient, IERC20(token).balanceOf(address(this)));
+        IERC20(token).safeTransfer(_getSPGNFTStorage()._mintFeeRecipient, IERC20(token).balanceOf(address(this)));
     }
 
     /// @dev Supports ERC165 interface.
@@ -314,7 +318,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         }
 
         if ($._mintFeeToken != address(0) && $._mintFee > 0) {
-            IERC20($._mintFeeToken).transferFrom(payer, address(this), $._mintFee);
+            IERC20($._mintFeeToken).safeTransferFrom(payer, address(this), $._mintFee);
         }
 
         tokenId = ++$._totalSupply;
@@ -323,7 +327,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
             $._nftMetadataHashToTokenId[nftMetadataHash] = tokenId;
         }
 
-        _mint(to, tokenId);
+        _safeMint(to, tokenId);
 
         if (bytes(nftMetadataURI).length > 0) _setTokenURI(tokenId, nftMetadataURI);
     }
@@ -355,10 +359,6 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         _grantRole(SPGNFTLib.ADMIN_ROLE, ROYALTY_TOKEN_DISTRIBUTION_WORKFLOWS_ADDRESS);
         _grantRole(SPGNFTLib.MINTER_ROLE, ROYALTY_TOKEN_DISTRIBUTION_WORKFLOWS_ADDRESS);
     }
-
-    //
-    // Upgrade
-    //
 
     /// @dev Returns the storage struct of SPGNFT.
     function _getSPGNFTStorage() private pure returns (SPGNFTStorage storage $) {

@@ -96,6 +96,7 @@ contract GroupingWorkflows is
         if (accessManager == address(0)) revert Errors.GroupingWorkflows__ZeroAddressParam();
         __AccessManaged_init(accessManager);
         __UUPSUpgradeable_init();
+        __Multicall_init();
     }
 
     /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP, attach
@@ -104,6 +105,7 @@ contract GroupingWorkflows is
     /// @param spgNftContract The address of the SPGNFT collection.
     /// @param groupId The ID of the group IP to add the newly registered IP.
     /// @param recipient The address of the recipient of the minted NFT.
+    /// @param maxAllowedRewardShare The maximum reward share percentage that can be allocated to each member IP.
     /// @param licensesData The data of the licenses and their configurations to be attached to the new IP.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
     /// @param sigAddToGroup Signature data for addIp to the group IP via the Grouping Module.
@@ -114,12 +116,15 @@ contract GroupingWorkflows is
         address spgNftContract,
         address groupId,
         address recipient,
+        uint256 maxAllowedRewardShare,
         WorkflowStructs.LicenseData[] calldata licensesData,
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigAddToGroup,
         bool allowDuplicates
     ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId) {
         if (licensesData.length == 0) revert Errors.GroupingWorkflows__NoLicenseData();
+        if (msg.sender != sigAddToGroup.signer)
+            revert Errors.GroupingWorkflows__CallerNotSigner(msg.sender, sigAddToGroup.signer);
 
         tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
             to: address(this),
@@ -144,7 +149,7 @@ contract GroupingWorkflows is
 
         address[] memory ipIds = new address[](1);
         ipIds[0] = ipId;
-        GROUPING_MODULE.addIp(groupId, ipIds);
+        GROUPING_MODULE.addIp(groupId, ipIds, maxAllowedRewardShare);
 
         ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
     }
@@ -154,6 +159,7 @@ contract GroupingWorkflows is
     /// @param nftContract The address of the NFT collection.
     /// @param tokenId The ID of the NFT.
     /// @param groupId The ID of the group IP to add the newly registered IP.
+    /// @param maxAllowedRewardShare The maximum reward share percentage that can be allocated to each member IP.
     /// @param licensesData The data of the licenses and their configurations to be attached to the new IP.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
     /// @param sigMetadataAndAttachAndConfig Signature data for setAll (metadata), attachLicenseTerms, and
@@ -164,12 +170,17 @@ contract GroupingWorkflows is
         address nftContract,
         uint256 tokenId,
         address groupId,
+        uint256 maxAllowedRewardShare,
         WorkflowStructs.LicenseData[] calldata licensesData,
         WorkflowStructs.IPMetadata calldata ipMetadata,
         WorkflowStructs.SignatureData calldata sigMetadataAndAttachAndConfig,
         WorkflowStructs.SignatureData calldata sigAddToGroup
     ) external returns (address ipId) {
         if (licensesData.length == 0) revert Errors.GroupingWorkflows__NoLicenseData();
+        if (msg.sender != sigMetadataAndAttachAndConfig.signer)
+            revert Errors.GroupingWorkflows__CallerNotSigner(msg.sender, sigMetadataAndAttachAndConfig.signer);
+        if (msg.sender != sigAddToGroup.signer)
+            revert Errors.GroupingWorkflows__CallerNotSigner(msg.sender, sigAddToGroup.signer);
 
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
@@ -204,7 +215,7 @@ contract GroupingWorkflows is
 
         address[] memory ipIds = new address[](1);
         ipIds[0] = ipId;
-        GROUPING_MODULE.addIp(groupId, ipIds);
+        GROUPING_MODULE.addIp(groupId, ipIds, maxAllowedRewardShare);
     }
 
     /// @notice Register a group IP with a group reward pool and attach license terms to the group IP
@@ -233,11 +244,13 @@ contract GroupingWorkflows is
     /// @dev ipIds must have the same PIL terms as the group IP.
     /// @param groupPool The address of the group reward pool.
     /// @param ipIds The IDs of the IPs to add to the newly registered group IP.
+    /// @param maxAllowedRewardShare The maximum reward share percentage that can be allocated to each member IP.
     /// @param licenseData The data of the license and its configuration to be attached to the new group IP.
     /// @return groupId The ID of the newly registered group IP.
     function registerGroupAndAttachLicenseAndAddIps(
         address groupPool,
         address[] calldata ipIds,
+        uint256 maxAllowedRewardShare,
         WorkflowStructs.LicenseData calldata licenseData
     ) external returns (address groupId) {
         groupId = GROUPING_MODULE.registerGroup(groupPool);
@@ -250,7 +263,7 @@ contract GroupingWorkflows is
             licenseData.licensingConfig
         );
 
-        GROUPING_MODULE.addIp(groupId, ipIds);
+        GROUPING_MODULE.addIp(groupId, ipIds, maxAllowedRewardShare);
 
         GROUP_NFT.safeTransferFrom(address(this), msg.sender, GROUP_NFT.totalSupply() - 1);
     }
@@ -317,4 +330,229 @@ contract GroupingWorkflows is
     /// @dev Hook to authorize the upgrade according to UUPSUpgradeable
     /// @param newImplementation The address of the new implementation
     function _authorizeUpgrade(address newImplementation) internal override restricted {}
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                   DEPRECATED, WILL BE REMOVED IN V1.4                  //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP, attach
+    /// license terms to the registered IP, and add it to a group IP.
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function mintAndRegisterIpAndAttachLicenseAndAddToGroup_deprecated(
+        address spgNftContract,
+        address groupId,
+        address recipient,
+        address licenseTemplate,
+        uint256 licenseTermsId,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        WorkflowStructs.SignatureData calldata sigAddToGroup
+    ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId) {
+        if (msg.sender != sigAddToGroup.signer)
+            revert Errors.GroupingWorkflows__CallerNotSigner(msg.sender, sigAddToGroup.signer);
+
+        tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
+            to: address(this),
+            payer: msg.sender,
+            nftMetadataURI: ipMetadata.nftMetadataURI,
+            nftMetadataHash: "",
+            allowDuplicates: true
+        });
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
+        MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
+
+        _prepConfigAndAttachLicenseAndSetConfig(ipId, groupId, licenseTemplate, licenseTermsId);
+
+        PermissionHelper.setPermissionForModule(
+            groupId,
+            address(GROUPING_MODULE),
+            address(ACCESS_CONTROLLER),
+            IGroupingModule.addIp.selector,
+            sigAddToGroup
+        );
+
+        address[] memory ipIds = new address[](1);
+        ipIds[0] = ipId;
+        GROUPING_MODULE.addIp(groupId, ipIds, 100e6);
+
+        ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
+    }
+
+    /// @notice Register an NFT as IP with metadata, attach license terms to the registered IP,
+    /// and add it to a group IP.
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    /// @dev UPDATE REQUIRED: The sigMetadataAndAttachAndConfig permission signature data must be updated and include permissions for
+    /// metadata setting, license attachment, and licensing configuration permissions
+    function registerIpAndAttachLicenseAndAddToGroup_deprecated(
+        address nftContract,
+        uint256 tokenId,
+        address groupId,
+        address licenseTemplate,
+        uint256 licenseTermsId,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        WorkflowStructs.SignatureData calldata sigMetadataAndAttachAndConfig,
+        WorkflowStructs.SignatureData calldata sigAddToGroup
+    ) external returns (address ipId) {
+        if (msg.sender != sigMetadataAndAttachAndConfig.signer)
+            revert Errors.GroupingWorkflows__CallerNotSigner(msg.sender, sigMetadataAndAttachAndConfig.signer);
+        if (msg.sender != sigAddToGroup.signer)
+            revert Errors.GroupingWorkflows__CallerNotSigner(msg.sender, sigAddToGroup.signer);
+
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
+
+        address[] memory modules = new address[](3);
+        bytes4[] memory selectors = new bytes4[](3);
+        modules[0] = address(CORE_METADATA_MODULE);
+        modules[1] = address(LICENSING_MODULE);
+        modules[2] = address(LICENSING_MODULE);
+        selectors[0] = ICoreMetadataModule.setAll.selector;
+        selectors[1] = ILicensingModule.attachLicenseTerms.selector;
+        selectors[2] = ILicensingModule.setLicensingConfig.selector;
+
+        PermissionHelper.setBatchPermissionForModules(
+            ipId,
+            address(ACCESS_CONTROLLER),
+            modules,
+            selectors,
+            sigMetadataAndAttachAndConfig
+        );
+
+        MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
+
+        _prepConfigAndAttachLicenseAndSetConfig(ipId, groupId, licenseTemplate, licenseTermsId);
+
+        PermissionHelper.setPermissionForModule(
+            groupId,
+            address(GROUPING_MODULE),
+            address(ACCESS_CONTROLLER),
+            IGroupingModule.addIp.selector,
+            sigAddToGroup
+        );
+
+        address[] memory ipIds = new address[](1);
+        ipIds[0] = ipId;
+        GROUPING_MODULE.addIp(groupId, ipIds, 100e6);
+    }
+
+    /// @notice Register a group IP with a group reward pool and attach license terms to the group IP
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function registerGroupAndAttachLicense_deprecated(
+        address groupPool,
+        address licenseTemplate,
+        uint256 licenseTermsId
+    ) external returns (address groupId) {
+        groupId = GROUPING_MODULE.registerGroup(groupPool);
+
+        _prepConfigAndAttachLicenseAndSetConfigForGroup(groupId, groupPool, licenseTemplate, licenseTermsId);
+
+        GROUP_NFT.safeTransferFrom(address(this), msg.sender, GROUP_NFT.totalSupply() - 1);
+    }
+
+    /// @notice Register a group IP with a group reward pool, attach license terms to the group IP,
+    /// and add individual IPs to the group IP.
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function registerGroupAndAttachLicenseAndAddIps_deprecated(
+        address groupPool,
+        address[] calldata ipIds,
+        address licenseTemplate,
+        uint256 licenseTermsId
+    ) external returns (address groupId) {
+        groupId = GROUPING_MODULE.registerGroup(groupPool);
+
+        _prepConfigAndAttachLicenseAndSetConfigForGroup(groupId, groupPool, licenseTemplate, licenseTermsId);
+
+        GROUPING_MODULE.addIp(groupId, ipIds, 100e6);
+
+        GROUP_NFT.safeTransferFrom(address(this), msg.sender, GROUP_NFT.totalSupply() - 1);
+    }
+
+    /// @notice Collect royalties for the entire group and distribute the rewards to each member IP's royalty vault
+    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function collectRoyaltiesAndClaimReward_deprecated(
+        address groupIpId,
+        address[] calldata currencyTokens,
+        uint256[] calldata groupSnapshotIds,
+        address[] calldata memberIpIds
+    ) external returns (uint256[] memory collectedRoyalties) {
+        (address groupLicenseTemplate, uint256 groupLicenseTermsId) = LICENSE_REGISTRY.getAttachedLicenseTerms(
+            groupIpId,
+            0
+        );
+
+        for (uint256 i = 0; i < memberIpIds.length; i++) {
+            // check if given member IPs already have a royalty vault
+            if (ROYALTY_MODULE.ipRoyaltyVaults(memberIpIds[i]) == address(0)) {
+                // mint license tokens to the member IPs if they don't have a royalty vault
+                LICENSING_MODULE.mintLicenseTokens({
+                    licensorIpId: memberIpIds[i],
+                    licenseTemplate: groupLicenseTemplate,
+                    licenseTermsId: groupLicenseTermsId,
+                    amount: 1,
+                    receiver: msg.sender,
+                    royaltyContext: "",
+                    maxMintingFee: 0,
+                    maxRevenueShare: 0
+                });
+            }
+        }
+
+        collectedRoyalties = new uint256[](currencyTokens.length);
+        for (uint256 i = 0; i < currencyTokens.length; i++) {
+            if (currencyTokens[i] == address(0)) revert Errors.GroupingWorkflows__ZeroAddressParam();
+            collectedRoyalties[i] = GROUPING_MODULE.collectRoyalties(groupIpId, currencyTokens[i]);
+            GROUPING_MODULE.claimReward(groupIpId, currencyTokens[i], memberIpIds);
+        }
+    }
+
+    /// @notice THIS FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function _prepConfigAndAttachLicenseAndSetConfig(
+        address ipId,
+        address groupId,
+        address licenseTemplate,
+        uint256 licenseTermsId
+    ) private {
+        PILTerms memory terms = IPILicenseTemplate(licenseTemplate).getLicenseTerms(licenseTermsId);
+        WorkflowStructs.LicenseData[] memory licensesData = new WorkflowStructs.LicenseData[](1);
+        licensesData[0] = WorkflowStructs.LicenseData({
+            licenseTemplate: licenseTemplate,
+            licenseTermsId: licenseTermsId,
+            licensingConfig: Licensing.LicensingConfig({
+                isSet: true,
+                mintingFee: terms.defaultMintingFee,
+                licensingHook: address(0),
+                hookData: "",
+                commercialRevShare: terms.commercialRevShare,
+                disabled: false,
+                expectMinimumGroupRewardShare: 0,
+                expectGroupRewardPool: IGroupIPAssetRegistry(address(IP_ASSET_REGISTRY)).getGroupRewardPool(groupId)
+            })
+        });
+        _attachLicensesAndSetConfigs(ipId, licensesData);
+    }
+
+    /// @notice THIS FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
+    function _prepConfigAndAttachLicenseAndSetConfigForGroup(
+        address groupId,
+        address groupRewardPool,
+        address licenseTemplate,
+        uint256 licenseTermsId
+    ) private {
+        PILTerms memory terms = IPILicenseTemplate(licenseTemplate).getLicenseTerms(licenseTermsId);
+        Licensing.LicensingConfig memory licensingConfig = Licensing.LicensingConfig({
+            isSet: true,
+            mintingFee: terms.defaultMintingFee,
+            licensingHook: address(0),
+            hookData: "",
+            commercialRevShare: terms.commercialRevShare,
+            disabled: false,
+            expectMinimumGroupRewardShare: 0,
+            expectGroupRewardPool: address(0)
+        });
+        LicensingHelper.attachLicenseTermsAndSetConfigs(
+            groupId,
+            address(LICENSING_MODULE),
+            licenseTemplate,
+            licenseTermsId,
+            licensingConfig
+        );
+    }
 }
