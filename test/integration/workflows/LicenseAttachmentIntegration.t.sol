@@ -223,12 +223,9 @@ contract LicenseAttachmentIntegration is BaseIntegration {
 
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory sigMetadataAndAttachAndConfig, bytes32 expectedState, ) = _getSetBatchPermissionSigForPeriphery({
+        (bytes memory sigMetadataAndDefaultTerms, bytes32 expectedState, ) = _getSetBatchPermissionSigForPeriphery({
             ipId: expectedIpId,
-            permissionList: _getMetadataAndAttachTermsAndConfigPermissionList(
-                expectedIpId,
-                licenseAttachmentWorkflowsAddr
-            ),
+            permissionList: _getMetadataAndDefaultTermsPermissionList(expectedIpId, licenseAttachmentWorkflowsAddr),
             deadline: deadline,
             state: bytes32(0),
             signerSk: testSenderSk
@@ -241,7 +238,7 @@ contract LicenseAttachmentIntegration is BaseIntegration {
             sigMetadataAndDefaultTerms: WorkflowStructs.SignatureData({
                 signer: testSender,
                 deadline: deadline,
-                signature: sigMetadataAndAttachAndConfig
+                signature: sigMetadataAndDefaultTerms
             })
         });
 
