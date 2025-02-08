@@ -18,13 +18,14 @@ For access to the core PoC contracts, please visit the [protocol-core-v1](https:
 >📘 **[Learn more about Story](https://docs.storyprotocol.xyz/)**
 
 Story PoC Periphery combines multiple common independent interactions with the Story PoC Protocol into a single transaction.
-For example, this `mintAndRegisterIpAndAttachPILTerms` is one of the functions that allows you to mint an NFT, register it as an IP Asset, and attach License Terms to it all in one call.
+For example, this `mintAndRegisterIpAndAttachPILTerms` is one of the functions that allows you to mint an NFT, register it as an IP Asset, attach License Terms, and setting Licensing Configuration all in one call.
 ```solidity
 function mintAndRegisterIpAndAttachPILTerms(
-  address nftContract,
+  address spgNftContract,
   address recipient,
-  IPMetadata calldata ipMetadata,
-  PILTerms calldata terms
+  WorkflowStructs.IPMetadata calldata ipMetadata,
+  WorkflowStructs.LicenseTermsData[] calldata licenseTermsData,
+  bool allowDuplicates
 ) external onlyCallerWithMinterRole(nftContract) returns (address ipId, uint256 tokenId, uint256 licenseTermsId)
 ```
 
@@ -36,19 +37,8 @@ Batch calling functions is supported both natively and through the `Multicall3` 
 
 ### Deployed Contracts
 
-[![Version](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fstoryprotocol%2Fprotocol-periphery-v1%2Fmain%2Fpackage.json&query=%24.version&label=PoC%20Periphery)](https://github.com/storyprotocol/protocol-periphery-v1/releases) contracts are deployed on Story Testnet at the following addresses:
+[![Version](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fstoryprotocol%2Fprotocol-periphery-v1%2Fmain%2Fpackage.json&query=%24.version&label=PoC%20Periphery)](https://github.com/storyprotocol/protocol-periphery-v1/releases) contracts are deployed on Story. The contract addresses can be found in [deployment-1315.json](./deploy-out/deployment-1315.json) (Story Aeneid Testnet) and [deployment-1514.json](./deploy-out/deployment-1514.json) (Story Homer Mainnet).
 
-```json
-{
-  "DerivativeWorkflows": "0xE0e1d222E024bF14B1e0A4b48fC6e6B6F8ebaEB3",
-  "GroupingWorkflows": "0xfAa9CCd49DCDfB9a950CBF036cD6082e623a6bcC",
-  "LicenseAttachmentWorkflows": "0xC7A40c41Cbe44C6B326447081877d69F98127C59",
-  "RegistrationWorkflows": "0x8D8E0d24E7B6420d3209EfA185Fa451c95D8316A",
-  "RoyaltyWorkflows": "0x19E435b1C0857375F9423C8ba508203054CE1d9F",
-  "SPGNFTBeacon": "0xD753c698aE69194C851d60BF759d537DE7477696",
-  "SPGNFTImpl": "0xA12e66a4429c9B7f38893c9b00E80646e0e76446"
-}
-```
 
 ## Quick Start
 

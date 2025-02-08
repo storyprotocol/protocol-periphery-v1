@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## v1.3.1
+
+This release builds on v1.3.0 with **enhanced security, improved code efficiency, and expanded test coverage**, while ensuring **workflow contract backward compatibility** and improving **permission handling**.
+
+- Ensured **workflow contracts maintain backward compatibility** ([#165](https://github.com/storyprotocol/protocol-periphery-v1/pull/165), [#166](https://github.com/storyprotocol/protocol-periphery-v1/pull/166))
+- **Replaced permanent permission with transient permission** ([#176](https://github.com/storyprotocol/protocol-periphery-v1/pull/176))
+- **Other security fixes** ([#175](https://github.com/storyprotocol/protocol-periphery-v1/pull/175)):
+  - Ensured `msg.sender` matches `signer` in workflow contracts
+  - Used `safeERC20` in `SPGNFT`
+  - Added initializers for **future-proofing**
+  - Made `nonReentrant` modifier **precede all other modifiers** in `TokenizerModule`
+  - Allowed setting `TotalLicenseTokenLimit` to `0` (no limit) in licensing hook
+  - Replaced `_mint` with `_safeMint` in `SPGNFT`
+- **Refactored** `OrgStoryNFTFactory` contract to **reduce code redundancy** ([#156](https://github.com/storyprotocol/protocol-periphery-v1/pull/156))
+- **Added new integration tests** and fixed existing ones ([#162](https://github.com/storyprotocol/protocol-periphery-v1/pull/162), [#177](https://github.com/storyprotocol/protocol-periphery-v1/pull/177))
+- **Fixed typos and improved documentation/comments** ([#163](https://github.com/storyprotocol/protocol-periphery-v1/pull/163), [#164](https://github.com/storyprotocol/protocol-periphery-v1/pull/164), [#167](https://github.com/storyprotocol/protocol-periphery-v1/pull/167), [#168](https://github.com/storyprotocol/protocol-periphery-v1/pull/168), [#169](https://github.com/storyprotocol/protocol-periphery-v1/pull/169), [#173](https://github.com/storyprotocol/protocol-periphery-v1/pull/173))
+
+
+**Full Changelog**: [v1.3.0...v1.3.1](https://github.com/storyprotocol/protocol-periphery-v1/compare/v1.3.0...v1.3.1)
+
 ## v1.3.0
 
 - **Story NFT & Badge Enhancements**
