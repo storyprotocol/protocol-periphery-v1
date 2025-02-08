@@ -1,0 +1,17 @@
+{
+    "main": {
+        "DerivativeWorkflows": "0x9e2d496f72C547C2C535B167e06ED8729B374a4f",
+        "GroupingWorkflows": "0xD7c0beb3aa4DCD4723465f1ecAd045676c24CDCd",
+        "LicenseAttachmentWorkflows": "0xcC2E862bCee5B6036Db0de6E06Ae87e524a79fd8",
+        "LockLicenseHook": "0x5D874d4813c4A8A9FB2AB55F30cED9720AEC0222",
+        "OwnableERC20Beacon": "0x9a81C447C0b4C47d41d94177AEea3511965d3Bc9",
+        "OwnableERC20Template": "0x37DbEbcFe991901C4F255E7a3C4F7D3B45EAEDe9",
+        "RegistrationWorkflows": "0xbe39E1C756e921BD25DF86e7AAa31106d1eb0424",
+        "RoyaltyTokenDistributionWorkflows": "0xa38f42B8d33809917f23997B8423054aAB97322C",
+        "RoyaltyWorkflows": "0x9515faE61E0c0447C6AC6dEe5628A2097aFE1890",
+        "SPGNFTBeacon": "0xD2926B9ecaE85fF59B6FB0ff02f568a680c01218",
+        "SPGNFTImpl": "0xc09e3788Fdfbd3dd8CDaa2aa481B52CcFAb74a42",
+        "TokenizerModule": "0x7e14cD9833E8A0c649bCF4AB6768f62D57febbd3",
+        "TotalLicenseTokenLimitHook": "0xba8E30d9EB784Badc2aF610F56d99d212BC2A90c"
+    }
+}
