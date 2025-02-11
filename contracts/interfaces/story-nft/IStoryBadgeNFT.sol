@@ -24,6 +24,10 @@ interface IStoryBadgeNFT is IStoryNFT, IERC721Metadata, IERC5192 {
     /// @notice Zero address provided as a param to StoryBadgeNFT functions.
     error StoryBadgeNFT__ZeroAddressParam();
 
+    /// @notice The recipient already has a badge.
+    /// @param recipient The address of the recipient.
+    error StoryBadgeNFT__RecipientAlreadyHasBadge(address recipient);
+
     ////////////////////////////////////////////////////////////////////////////
     //                              Structs                                   //
     ////////////////////////////////////////////////////////////////////////////

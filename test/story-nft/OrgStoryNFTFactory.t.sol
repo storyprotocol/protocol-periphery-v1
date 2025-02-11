@@ -369,4 +369,42 @@ contract OrgStoryNFTFactoryTest is BaseTest {
             storyNftInitParams: storyNftInitParams
         });
     }
+
+    function test_StoryNFTFactory_revert_deployStoryNftByAdmin_OrgAlreadyDeployed() public {
+        bytes memory signature = _signAddress(orgStoryNftFactorySignerSk, u.carl);
+
+        vm.startPrank(u.carl);
+        (, uint256 orgTokenId, address orgIpId, address storyNft) = orgStoryNftFactory.deployOrgStoryNft({
+            orgStoryNftTemplate: address(defaultOrgStoryNftTemplate),
+            orgNftRecipient: u.carl,
+            orgName: orgName,
+            orgIpMetadata: ipMetadataDefault,
+            signature: signature,
+            storyNftInitParams: storyNftInitParams
+        });
+        vm.stopPrank();
+
+        // Change signer
+        vm.prank(u.admin);
+        orgStoryNftFactory.setSigner(u.dan);
+
+        // Try to deploy with same org name but different signer
+        signature = _signAddress(sk.dan, u.carl);
+        vm.prank(u.carl);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IOrgStoryNFTFactory.OrgStoryNFTFactory__OrgAlreadyDeployed.selector,
+                orgName,
+                address(storyNft)
+            )
+        );
+        orgStoryNftFactory.deployOrgStoryNft({
+            orgStoryNftTemplate: address(defaultOrgStoryNftTemplate),
+            orgNftRecipient: u.carl,
+            orgName: orgName,
+            orgIpMetadata: ipMetadataDefault,
+            signature: signature,
+            storyNftInitParams: storyNftInitParams
+        });
+    }
 }
