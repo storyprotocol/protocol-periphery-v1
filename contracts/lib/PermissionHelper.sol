@@ -10,6 +10,9 @@ import { WorkflowStructs } from "./WorkflowStructs.sol";
 /// @title Periphery Permission Helper Library
 /// @notice Library for all permissions related helper functions for Periphery contracts.
 library PermissionHelper {
+    /// @notice Error for when the length of modules and selectors mismatch.
+    error PermissionHelper__ModulesAndSelectorsMismatch();
+
     /// @dev Sets transient permission via signature to allow this contract to interact with the Licensing Module on behalf of the
     /// provided IP Account.
     /// @param ipId The ID of the IP.
@@ -55,7 +58,8 @@ library PermissionHelper {
         bytes4[] memory selectors,
         WorkflowStructs.SignatureData calldata sigData
     ) internal {
-        // assumes modules and selectors must have a 1:1 mapping
+        if (modules.length != selectors.length) revert PermissionHelper__ModulesAndSelectorsMismatch();
+
         AccessPermission.Permission[] memory permissionList = new AccessPermission.Permission[](modules.length);
         for (uint256 i = 0; i < modules.length; i++) {
             permissionList[i] = AccessPermission.Permission({
