@@ -140,7 +140,7 @@ contract StoryBadgeNFTTest is BaseTest {
     }
 
     function test_StoryBadgeNFT_mint() public {
-        bytes memory signature = _signAddress(rootOrgStoryNftSignerSk, u.carl);
+        bytes memory signature = _signAddress(rootOrgStoryNftSignerSk, u.carl, address(rootOrgStoryNft));
 
         uint256 totalSupplyBefore = rootOrgStoryNft.totalSupply();
         vm.startPrank(u.carl);
@@ -195,7 +195,7 @@ contract StoryBadgeNFTTest is BaseTest {
         vm.prank(rootOrgStoryNftOwner);
         rootOrgStoryNft.setSigner(u.bob);
 
-        bytes memory signature = _signAddress(sk.bob, u.carl);
+        bytes memory signature = _signAddress(sk.bob, u.carl, address(rootOrgStoryNft));
 
         vm.prank(u.carl);
         rootOrgStoryNft.mint(u.carl, signature);
@@ -214,7 +214,7 @@ contract StoryBadgeNFTTest is BaseTest {
     }
 
     function test_StoryBadgeNFT_cachedMint() public {
-        bytes memory signature = _signAddress(rootOrgStoryNftSignerSk, u.alice);
+        bytes memory signature = _signAddress(rootOrgStoryNftSignerSk, u.alice, address(rootOrgStoryNft));
         vm.startPrank(u.alice);
         (uint256 tokenId, ) = rootOrgStoryNft.mint(u.alice, signature);
         assertEq(rootOrgStoryNft.ownerOf(tokenId), u.alice); // minted directly
@@ -228,7 +228,7 @@ contract StoryBadgeNFTTest is BaseTest {
         rootOrgStoryNft.setCacheMode(CachableNFT.CacheMode.Cache); // enable cache mode
         vm.stopPrank();
 
-        signature = _signAddress(rootOrgStoryNftSignerSk, u.carl);
+        signature = _signAddress(rootOrgStoryNftSignerSk, u.carl, address(rootOrgStoryNft));
         vm.startPrank(u.carl);
         (tokenId, ) = rootOrgStoryNft.mint(u.carl, signature);
         assertEq(rootOrgStoryNft.ownerOf(tokenId), u.carl); // minted from cache
@@ -239,7 +239,7 @@ contract StoryBadgeNFTTest is BaseTest {
         rootOrgStoryNft.setCacheMode(CachableNFT.CacheMode.Passthrough); // disable cache mode
         vm.stopPrank();
 
-        signature = _signAddress(rootOrgStoryNftSignerSk, u.bob);
+        signature = _signAddress(rootOrgStoryNftSignerSk, u.bob, address(rootOrgStoryNft));
         vm.startPrank(u.bob);
         (tokenId, ) = rootOrgStoryNft.mint(u.bob, signature);
         assertEq(rootOrgStoryNft.ownerOf(tokenId), u.bob); // minted directly
@@ -252,7 +252,7 @@ contract StoryBadgeNFTTest is BaseTest {
         vm.stopPrank();
 
         vm.fee(20 gwei);
-        signature = _signAddress(rootOrgStoryNftSignerSk, u.dan);
+        signature = _signAddress(rootOrgStoryNftSignerSk, u.dan, address(rootOrgStoryNft));
         vm.startPrank(u.dan);
         (tokenId, ) = rootOrgStoryNft.mint(u.dan, signature);
         assertEq(rootOrgStoryNft.ownerOf(tokenId), u.dan); // minted directly
@@ -261,7 +261,7 @@ contract StoryBadgeNFTTest is BaseTest {
 
         vm.fee(200 gwei);
         address eva = vm.addr(0x123456);
-        signature = _signAddress(rootOrgStoryNftSignerSk, eva);
+        signature = _signAddress(rootOrgStoryNftSignerSk, eva, address(rootOrgStoryNft));
         vm.startPrank(eva);
         (tokenId, ) = rootOrgStoryNft.mint(eva, signature);
         assertEq(rootOrgStoryNft.ownerOf(tokenId), eva); // minted from cache
@@ -284,7 +284,7 @@ contract StoryBadgeNFTTest is BaseTest {
     }
 
     function test_StoryBadgeNFT_revert_mint_SignatureAlreadyUsed() public {
-        bytes memory signature = _signAddress(rootOrgStoryNftSignerSk, u.carl);
+        bytes memory signature = _signAddress(rootOrgStoryNftSignerSk, u.carl, address(rootOrgStoryNft));
 
         vm.startPrank(u.carl);
         rootOrgStoryNft.mint(u.carl, signature);
@@ -294,7 +294,7 @@ contract StoryBadgeNFTTest is BaseTest {
     }
 
     function test_StoryBadgeNFT_revert_mint_InvalidSignature() public {
-        bytes memory signature = _signAddress(sk.carl, u.carl);
+        bytes memory signature = _signAddress(sk.carl, u.carl, address(rootOrgStoryNft));
 
         vm.startPrank(u.carl);
         vm.expectRevert(IStoryBadgeNFT.StoryBadgeNFT__InvalidSignature.selector);
@@ -303,7 +303,7 @@ contract StoryBadgeNFTTest is BaseTest {
     }
 
     function test_StoryBadgeNFT_revert_TransferLocked() public {
-        bytes memory signature = _signAddress(rootOrgStoryNftSignerSk, u.carl);
+        bytes memory signature = _signAddress(rootOrgStoryNftSignerSk, u.carl, address(rootOrgStoryNft));
 
         vm.startPrank(u.carl);
         (uint256 tokenId, ) = rootOrgStoryNft.mint(u.carl, signature);

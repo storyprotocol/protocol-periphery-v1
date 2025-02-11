@@ -95,7 +95,7 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, CachableNFT, ERC721Ho
         $.usedSignatures[signature] = true;
 
         // The given signature must be valid
-        bytes32 digest = keccak256(abi.encodePacked(msg.sender)).toEthSignedMessageHash();
+        bytes32 digest = keccak256(abi.encodePacked(msg.sender, address(this))).toEthSignedMessageHash();
         if (!SignatureChecker.isValidSignatureNow($.signer, digest, signature))
             revert StoryBadgeNFT__InvalidSignature();
 
