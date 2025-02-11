@@ -434,7 +434,7 @@ contract DeployHelper is
             licensingModuleAddr,
             pilTemplateAddr,
             royaltyModuleAddr,
-            royaltyPolicyLAPAddr,
+            royaltyPolicyLRPAddr,
             wipAddr
         ));
         royaltyTokenDistributionWorkflows = RoyaltyTokenDistributionWorkflows(
@@ -826,6 +826,7 @@ contract DeployHelper is
                 abi.encodeCall(RoyaltyPolicyLRP.initialize, address(protocolAccessManager))
             )
         );
+        royaltyPolicyLRPAddr = address(royaltyPolicyLRP);
         require(
             _getDeployedAddress(type(RoyaltyPolicyLRP).name) == address(royaltyPolicyLRP),
             "Deploy: Royalty Policy LRP Address Mismatch"

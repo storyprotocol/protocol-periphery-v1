@@ -279,6 +279,66 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
         vm.stopPrank();
     }
 
+    function test_RoyaltyTokenDistributionWorkflows_deployRoyaltyVault_LicenseShouldNotBeDisabled() public {
+        uint256 tokenId = mockNft.mint(u.alice);
+        address expectedIpId = ipAssetRegistry.ipId(block.chainid, address(mockNft), tokenId);
+        uint256 deadline = block.timestamp + 1000;
+
+        WorkflowStructs.LicenseTermsData[] memory licenseTermsData = new WorkflowStructs.LicenseTermsData[](1);
+        licenseTermsData[0] = WorkflowStructs.LicenseTermsData({
+            terms: PILFlavors.commercialUse({
+                mintingFee: 0,
+                currencyToken: wipAddr,
+                royaltyPolicy: royaltyPolicyLRPAddr
+            }),
+            licensingConfig: Licensing.LicensingConfig({
+                isSet: false,
+                mintingFee: 0,
+                licensingHook: address(0),
+                hookData: "",
+                commercialRevShare: 0,
+                disabled: false,
+                expectMinimumGroupRewardShare: 0,
+                expectGroupRewardPool: address(0)
+            })
+        });
+
+        (bytes memory signatureMetadataAndAttachAndConfig, , ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: expectedIpId,
+            permissionList: _getMetadataAndAttachTermsAndConfigPermissionList(
+                expectedIpId,
+                address(royaltyTokenDistributionWorkflows)
+            ),
+            deadline: deadline,
+            state: bytes32(0),
+            signerSk: sk.alice
+        });
+
+        // register IP, attach PIL terms, and deploy royalty vault
+        vm.startPrank(u.alice);
+        (address ipId, uint256[] memory licenseTermsIds, address ipRoyaltyVault) = royaltyTokenDistributionWorkflows
+            .registerIpAndAttachPILTermsAndDeployRoyaltyVault({
+                nftContract: address(mockNft),
+                tokenId: tokenId,
+                ipMetadata: ipMetadataDefault,
+                licenseTermsData: licenseTermsData,
+                sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
+                    signer: u.alice,
+                    deadline: deadline,
+                    signature: signatureMetadataAndAttachAndConfig
+                })
+            });
+        vm.stopPrank();
+
+        // check that the license is not disabled
+        Licensing.LicensingConfig memory licensingConfig = licenseRegistry.getLicensingConfig(
+            ipId,
+            address(pilTemplate),
+            licenseTermsIds[0]
+        );
+        assertEq(licensingConfig.disabled, false);
+    }
+
     function _setUpTest() private {
         nftMintingFee = 1 * 10 ** mockToken.decimals();
         licenseMintingFee = 1 * 10 ** mockToken.decimals();

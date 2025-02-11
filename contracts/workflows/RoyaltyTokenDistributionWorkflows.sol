@@ -45,9 +45,9 @@ contract RoyaltyTokenDistributionWorkflows is
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IRoyaltyModule public immutable ROYALTY_MODULE;
 
-    /// @notice The address of the Liquid Absolute Percentage (LAP) Royalty Policy.
+    /// @notice The address of the Liquid Relative Percentage (LRP) Royalty Policy.
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    address public immutable ROYALTY_POLICY_LAP;
+    address public immutable ROYALTY_POLICY_LRP;
 
     /// @notice The address of the Wrapped IP (WIP) token contract.
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
@@ -62,7 +62,7 @@ contract RoyaltyTokenDistributionWorkflows is
         address licensingModule,
         address pilTemplate,
         address royaltyModule,
-        address royaltyPolicyLAP,
+        address royaltyPolicyLRP,
         address wip
     )
         BaseWorkflow(
@@ -82,12 +82,12 @@ contract RoyaltyTokenDistributionWorkflows is
             licensingModule == address(0) ||
             pilTemplate == address(0) ||
             royaltyModule == address(0) ||
-            royaltyPolicyLAP == address(0) ||
+            royaltyPolicyLRP == address(0) ||
             wip == address(0)
         ) revert Errors.RoyaltyTokenDistributionWorkflows__ZeroAddressParam();
 
         ROYALTY_MODULE = IRoyaltyModule(royaltyModule);
-        ROYALTY_POLICY_LAP = royaltyPolicyLAP;
+        ROYALTY_POLICY_LRP = royaltyPolicyLRP;
         WIP = wip;
 
         _disableInitializers();
@@ -324,17 +324,27 @@ contract RoyaltyTokenDistributionWorkflows is
     /// @return ipRoyaltyVault The address of the deployed royalty vault.
     function _deployRoyaltyVault(address ipId) internal returns (address ipRoyaltyVault) {
         if (ROYALTY_MODULE.ipRoyaltyVaults(ipId) == address(0)) {
+            uint256 licenseTermsId = PIL_TEMPLATE.registerLicenseTerms(
+                PILFlavors.commercialUse({ mintingFee: 0, currencyToken: WIP, royaltyPolicy: ROYALTY_POLICY_LRP })
+            );
+
+            // check if the license is already attached to the IP
+            bool hasIpAttachedLicenseTerms = LICENSE_REGISTRY.hasIpAttachedLicenseTerms(
+                ipId,
+                address(PIL_TEMPLATE),
+                licenseTermsId
+            );
+
+            // if the license is not already attached to the IP,
             // attach a temporary commercial license to the IP for the royalty vault deployment
-            uint256 licenseTermsId = LicensingHelper.registerPILTermsAndAttach({
-                ipId: ipId,
-                pilTemplate: address(PIL_TEMPLATE),
-                licensingModule: address(LICENSING_MODULE),
-                terms: PILFlavors.commercialUse({
-                    mintingFee: 0,
-                    currencyToken: WIP,
-                    royaltyPolicy: ROYALTY_POLICY_LAP
-                })
-            });
+            if (!hasIpAttachedLicenseTerms) {
+                LicensingHelper.attachLicenseTerms(
+                    ipId,
+                    address(LICENSING_MODULE),
+                    address(PIL_TEMPLATE),
+                    licenseTermsId
+                );
+            }
 
             uint256[] memory licenseTermsIds = new uint256[](1);
             licenseTermsIds[0] = licenseTermsId;
@@ -351,22 +361,25 @@ contract RoyaltyTokenDistributionWorkflows is
                 maxRevenueShare: 0
             });
 
+            // if the license is not intended to be attached to the IP,
             // set the licensing configuration to disable the temporary license
-            LICENSING_MODULE.setLicensingConfig({
-                ipId: ipId,
-                licenseTemplate: address(PIL_TEMPLATE),
-                licenseTermsId: licenseTermsId,
-                licensingConfig: Licensing.LicensingConfig({
-                    isSet: true,
-                    mintingFee: 0,
-                    licensingHook: address(0),
-                    hookData: "",
-                    commercialRevShare: 0,
-                    disabled: true,
-                    expectMinimumGroupRewardShare: 0,
-                    expectGroupRewardPool: address(0)
-                })
-            });
+            if (!hasIpAttachedLicenseTerms) {
+                LICENSING_MODULE.setLicensingConfig({
+                    ipId: ipId,
+                    licenseTemplate: address(PIL_TEMPLATE),
+                    licenseTermsId: licenseTermsId,
+                    licensingConfig: Licensing.LicensingConfig({
+                        isSet: true,
+                        mintingFee: 0,
+                        licensingHook: address(0),
+                        hookData: "",
+                        commercialRevShare: 0,
+                        disabled: true,
+                        expectMinimumGroupRewardShare: 0,
+                        expectGroupRewardPool: address(0)
+                    })
+                });
+            }
         }
 
         ipRoyaltyVault = ROYALTY_MODULE.ipRoyaltyVaults(ipId);
