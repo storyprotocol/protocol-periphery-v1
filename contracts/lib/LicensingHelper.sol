@@ -17,6 +17,9 @@ import { WorkflowStructs } from "./WorkflowStructs.sol";
 library LicensingHelper {
     using SafeERC20 for IERC20;
 
+    /// @notice Error for when the length of parent IP IDs and license terms IDs mismatch.
+    error LicensingHelper__ParentIpIdsAndLicenseTermsIdsMismatch();
+
     /// @notice Registers multiple PIL terms and attaches them to the given IP and sets their licensing configurations.
     /// @param ipId The ID of the IP.
     /// @param licenseTermsData The PIL terms and licensing configuration data to be attached to the IP.
@@ -208,6 +211,9 @@ library LicensingHelper {
         address[] memory parentIpIds,
         uint256[] memory licenseTermsIds
     ) private view returns (uint256 totalMintFee) {
+        if (parentIpIds.length != licenseTermsIds.length)
+            revert LicensingHelper__ParentIpIdsAndLicenseTermsIdsMismatch();
+
         uint256 mintFee;
 
         for (uint256 i = 0; i < parentIpIds.length; i++) {
