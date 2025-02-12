@@ -29,9 +29,15 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
     WorkflowStructs.RoyaltyShare[] private royaltyShares;
     WorkflowStructs.MakeDerivative private derivativeData;
 
+    /// DEPRECATED, WILL BE REMOVED IN V1.4----------------------------------------------------------------------------
+    PILTerms[] private commRemixTerms;
+    WorkflowStructs.MakeDerivativeDEPR private derivativeDataDEPR;
+    ///----------------------------------------------------------------------------------------------------------------
+
     function setUp() public override {
         super.setUp();
         _setUpTest();
+        _setUpDEPR();
     }
 
     function test_RoyaltyTokenDistributionWorkflows_mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens()
@@ -53,7 +59,7 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
         vm.stopPrank();
 
         assertTrue(ipAssetRegistry.isRegistered(ipId));
-        assertEq(tokenId, 2);
+        assertEq(tokenId, 3);
         assertEq(spgNftPublic.tokenURI(tokenId), string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
         assertMetadata(ipId, ipMetadataDefault);
         _assertAttachedLicenseTerms(ipId, licenseTermsIds);
@@ -79,7 +85,7 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
             });
         vm.stopPrank();
 
-        assertEq(tokenId, 2);
+        assertEq(tokenId, 3);
         assertEq(spgNftPublic.tokenURI(tokenId), string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
         assertEq(ipAssetRegistry.ipId(block.chainid, address(spgNftPublic), tokenId), ipId);
         assertMetadata(ipId, ipMetadataDefault);
@@ -539,5 +545,113 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerSk, digest);
         signature = abi.encodePacked(r, s, v);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                   DEPRECATED, WILL BE REMOVED IN V1.4                  //
+    ////////////////////////////////////////////////////////////////////////////
+
+    function test_RoyaltyTokenDistributionWorkflows_mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens_DEPR()
+        public
+    {
+        vm.startPrank(u.alice);
+        mockToken.mint(u.alice, nftMintingFee + licenseMintingFee);
+        mockToken.approve(address(spgNftPublic), nftMintingFee);
+        mockToken.approve(address(royaltyTokenDistributionWorkflows), licenseMintingFee);
+
+        (address ipId, uint256 tokenId, uint256[] memory licenseTermsIds) = royaltyTokenDistributionWorkflows
+            .mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens_deprecated({
+                spgNftContract: address(spgNftPublic),
+                recipient: u.alice,
+                ipMetadata: ipMetadataDefault,
+                terms: commRemixTerms,
+                royaltyShares: royaltyShares
+            });
+        vm.stopPrank();
+
+        assertTrue(ipAssetRegistry.isRegistered(ipId));
+        assertEq(tokenId, 3);
+        assertEq(spgNftPublic.tokenURI(tokenId), string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
+        assertMetadata(ipId, ipMetadataDefault);
+        assertEq(licenseTermsIds[0], pilTemplate.getLicenseTermsId(commRemixTerms[0]));
+        (address licenseTemplateAttached, uint256 licenseTermsIdAttached) = licenseRegistry.getAttachedLicenseTerms(
+            ipId,
+            0
+        );
+        assertEq(licenseTemplateAttached, address(pilTemplate));
+        assertEq(licenseTermsIdAttached, pilTemplate.getLicenseTermsId(commRemixTerms[0]));
+        (licenseTemplateAttached, licenseTermsIdAttached) = licenseRegistry.getAttachedLicenseTerms(ipId, 1);
+        assertEq(licenseTemplateAttached, address(pilTemplate));
+        assertEq(licenseTermsIdAttached, pilTemplate.getLicenseTermsId(commRemixTerms[1]));
+        _assertRoyaltyTokenDistribution(ipId);
+    }
+
+    function test_RoyaltyTokenDistributionWorkflows_revert_RoyaltyVaultNotDeployed_DEPR() public {
+        vm.startPrank(u.alice);
+        mockToken.mint(u.alice, licenseMintingFee);
+        mockToken.approve(address(spgNftPublic), licenseMintingFee);
+
+        PILTerms[] memory terms = new PILTerms[](1);
+        terms[0] = PILFlavors.nonCommercialSocialRemixing();
+        vm.expectRevert(Errors.RoyaltyTokenDistributionWorkflows__RoyaltyVaultNotDeployed.selector);
+        royaltyTokenDistributionWorkflows.mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens_deprecated({
+            spgNftContract: address(spgNftPublic),
+            recipient: u.alice,
+            ipMetadata: ipMetadataDefault,
+            terms: terms,
+            royaltyShares: royaltyShares
+        });
+        vm.stopPrank();
+    }
+
+    function _setUpDEPR() private {
+        uint32 testCommRevShare = 5 * 10 ** 6; // 5%
+
+        commRemixTerms.push(
+            PILFlavors.commercialRemix({
+                mintingFee: licenseMintingFee,
+                commercialRevShare: testCommRevShare,
+                royaltyPolicy: address(royaltyPolicyLAP),
+                currencyToken: address(mockToken)
+            })
+        );
+
+        commRemixTerms.push(
+            PILFlavors.commercialRemix({
+                mintingFee: licenseMintingFee,
+                commercialRevShare: testCommRevShare,
+                royaltyPolicy: address(royaltyPolicyLRP),
+                currencyToken: address(mockToken)
+            })
+        );
+
+        PILTerms[] memory commRemixTermsParent = new PILTerms[](1);
+        commRemixTermsParent[0] = PILFlavors.commercialRemix({
+            mintingFee: licenseMintingFee,
+            commercialRevShare: testCommRevShare,
+            royaltyPolicy: address(royaltyPolicyLRP),
+            currencyToken: address(mockToken)
+        });
+
+        address[] memory ipIdParent = new address[](1);
+        uint256[] memory licenseTermsIdsParent;
+        vm.startPrank(u.alice);
+        mockToken.mint(u.alice, licenseMintingFee);
+        mockToken.approve(address(spgNftPublic), licenseMintingFee);
+        (ipIdParent[0], , licenseTermsIdsParent) = licenseAttachmentWorkflows
+            .mintAndRegisterIpAndAttachPILTerms_deprecated({
+                spgNftContract: address(spgNftPublic),
+                recipient: u.alice,
+                ipMetadata: ipMetadataDefault,
+                terms: commRemixTermsParent
+            });
+        vm.stopPrank();
+
+        derivativeDataDEPR = WorkflowStructs.MakeDerivativeDEPR({
+            parentIpIds: ipIdParent,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsIds: licenseTermsIdsParent,
+            royaltyContext: ""
+        });
     }
 }
