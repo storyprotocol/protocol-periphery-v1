@@ -91,6 +91,9 @@ contract StoryBadgeNFT is IStoryBadgeNFT, BaseOrgStoryNFT, CachableNFT, ERC721Ho
         // The given signature must not have been used
         if ($.usedSignatures[signature]) revert StoryBadgeNFT__SignatureAlreadyUsed();
 
+        // The recipient must not already have a badge
+        if (balanceOf(recipient) > 0) revert StoryBadgeNFT__RecipientAlreadyHasBadge(recipient);
+
         // Mark the signature as used
         $.usedSignatures[signature] = true;
 

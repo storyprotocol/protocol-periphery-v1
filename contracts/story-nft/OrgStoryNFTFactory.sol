@@ -273,6 +273,9 @@ contract OrgStoryNFTFactory is IOrgStoryNFTFactory, AccessManagedUpgradeable, UU
         if ($.deployedOrgStoryNftsByOrgName[orgName] != address(0))
             revert OrgStoryNFTFactory__OrgAlreadyDeployed(orgName, $.deployedOrgStoryNftsByOrgName[orgName]);
 
+        if (ORG_NFT.balanceOf(orgNftRecipient) > 0)
+            revert OrgStoryNFTFactory__OrgAlreadyDeployed(orgName, $.deployedOrgStoryNftsByOrgName[orgName]);
+
         // Mint the organization NFT and register it as an IP
         if (isRootOrg) {
             (orgTokenId, orgIpId) = ORG_NFT.mintRootOrgNft(orgNftRecipient, orgIpMetadata);

@@ -321,4 +321,25 @@ contract StoryBadgeNFTTest is BaseTest {
         rootOrgStoryNft.safeTransferFrom(u.carl, u.bob, tokenId);
         vm.stopPrank();
     }
+
+    function test_StoryBadgeNFT_revert_mint_RecipientAlreadyHasBadge() public {
+        bytes memory signature = _signAddress(rootOrgStoryNftSignerSk, u.carl);
+
+        vm.startPrank(u.carl);
+        rootOrgStoryNft.mint(u.carl, signature);
+        vm.stopPrank();
+
+        // Change signer
+        vm.prank(u.admin);
+        rootOrgStoryNft.setSigner(u.dan);
+
+        // Try to mint again with new signer
+        signature = _signAddress(sk.dan, u.carl);
+
+        vm.prank(u.carl);
+        vm.expectRevert(
+            abi.encodeWithSelector(IStoryBadgeNFT.StoryBadgeNFT__RecipientAlreadyHasBadge.selector, u.carl)
+        );
+        rootOrgStoryNft.mint(u.carl, signature);
+    }
 }
