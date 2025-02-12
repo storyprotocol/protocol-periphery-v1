@@ -512,9 +512,20 @@ contract BaseTest is Test, DeployHelper {
         signature = abi.encodePacked(r, s, v);
     }
 
-    /// @dev Uses `signerSk` to sign `addr` and return the signature.
-    function _signAddress(uint256 signerSk, address addr) internal pure returns (bytes memory signature) {
-        bytes32 digest = keccak256(abi.encodePacked(addr)).toEthSignedMessageHash();
+    /// @dev Uses `signerSk` to sign `recipient` and return the signature.
+    function _signAddress(uint256 signerSk, address recipient) internal pure returns (bytes memory signature) {
+        bytes32 digest = keccak256(abi.encodePacked(recipient)).toEthSignedMessageHash();
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerSk, digest);
+        signature = abi.encodePacked(r, s, v);
+    }
+
+    /// @dev Uses `signerSk` to sign `recipient` and `badgeAddr` and return the signature.
+    function _signAddress(
+        uint256 signerSk,
+        address recipient,
+        address badgeAddr
+    ) internal pure returns (bytes memory signature) {
+        bytes32 digest = keccak256(abi.encodePacked(recipient, badgeAddr)).toEthSignedMessageHash();
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerSk, digest);
         signature = abi.encodePacked(r, s, v);
     }
