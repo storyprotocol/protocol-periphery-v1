@@ -323,7 +323,7 @@ contract StoryBadgeNFTTest is BaseTest {
     }
 
     function test_StoryBadgeNFT_revert_mint_RecipientAlreadyHasBadge() public {
-        bytes memory signature = _signAddress(rootOrgStoryNftSignerSk, u.carl);
+        bytes memory signature = _signAddress(rootOrgStoryNftSignerSk, u.carl, address(rootOrgStoryNft));
 
         vm.startPrank(u.carl);
         rootOrgStoryNft.mint(u.carl, signature);
@@ -334,7 +334,7 @@ contract StoryBadgeNFTTest is BaseTest {
         rootOrgStoryNft.setSigner(u.dan);
 
         // Try to mint again with new signer
-        signature = _signAddress(sk.dan, u.carl);
+        signature = _signAddress(sk.dan, u.carl, address(rootOrgStoryNft));
 
         vm.prank(u.carl);
         vm.expectRevert(
