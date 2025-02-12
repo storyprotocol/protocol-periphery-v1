@@ -11,8 +11,6 @@ Welcome to the Story PoC Periphery repository. This repository contains the peri
 
 For access to the core PoC contracts, please visit the [protocol-core-v1](https://github.com/storyprotocol/protocol-core-v1) repository.
 
-> 🚧 WARNING, Beta version: This code is in active development and unaudited. Do not use in production.
-
 ## Documentation
 
 >📘 **[Learn more about Story](https://docs.storyprotocol.xyz/)**
@@ -35,10 +33,13 @@ For a list of currently supported workflows, check out the [Workflows documentat
 ### Batching Calls
 Batch calling functions is supported both natively and through the `Multicall3` contract. For more information, check out the [Multicall documentation](/docs/MULTICALL.md).
 
+### Audit Reports
+
+Audit reports are available in the [./audits](./audits) directory.
+
 ### Deployed Contracts
 
 [![Version](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fstoryprotocol%2Fprotocol-periphery-v1%2Fmain%2Fpackage.json&query=%24.version&label=PoC%20Periphery)](https://github.com/storyprotocol/protocol-periphery-v1/releases) contracts are deployed on Story. The contract addresses can be found in [deployment-1315.json](./deploy-out/deployment-1315.json) (Story Aeneid Testnet) and [deployment-1514.json](./deploy-out/deployment-1514.json) (Story Homer Mainnet).
-
 
 ## Quick Start
 
