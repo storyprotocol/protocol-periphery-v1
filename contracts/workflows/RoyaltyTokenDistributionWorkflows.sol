@@ -45,9 +45,9 @@ contract RoyaltyTokenDistributionWorkflows is
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IRoyaltyModule public immutable ROYALTY_MODULE;
 
-    /// @notice The address of the Liquid Absolute Percentage (LAP) Royalty Policy.
+    /// @notice The address of the Liquid Relative Percentage (LRP) Royalty Policy.
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    address public immutable ROYALTY_POLICY_LAP;
+    address public immutable ROYALTY_POLICY_LRP;
 
     /// @notice The address of the Wrapped IP (WIP) token contract.
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
@@ -62,7 +62,7 @@ contract RoyaltyTokenDistributionWorkflows is
         address licensingModule,
         address pilTemplate,
         address royaltyModule,
-        address royaltyPolicyLAP,
+        address royaltyPolicyLRP,
         address wip
     )
         BaseWorkflow(
@@ -82,12 +82,12 @@ contract RoyaltyTokenDistributionWorkflows is
             licensingModule == address(0) ||
             pilTemplate == address(0) ||
             royaltyModule == address(0) ||
-            royaltyPolicyLAP == address(0) ||
+            royaltyPolicyLRP == address(0) ||
             wip == address(0)
         ) revert Errors.RoyaltyTokenDistributionWorkflows__ZeroAddressParam();
 
         ROYALTY_MODULE = IRoyaltyModule(royaltyModule);
-        ROYALTY_POLICY_LAP = royaltyPolicyLAP;
+        ROYALTY_POLICY_LRP = royaltyPolicyLRP;
         WIP = wip;
 
         _disableInitializers();
@@ -126,17 +126,7 @@ contract RoyaltyTokenDistributionWorkflows is
     {
         if (licenseTermsData.length == 0) revert Errors.RoyaltyTokenDistributionWorkflows__NoLicenseTermsData();
 
-        tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
-            to: address(this),
-            payer: msg.sender,
-            nftMetadataURI: ipMetadata.nftMetadataURI,
-            nftMetadataHash: ipMetadata.nftMetadataHash,
-            allowDuplicates: allowDuplicates
-        });
-
-        ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
-        MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
-
+        (tokenId, ipId) = _mintAndRegisterIp(spgNftContract, ipMetadata, allowDuplicates);
         licenseTermsIds = LicensingHelper.registerMultiplePILTermsAndAttachAndSetConfigs({
             ipId: ipId,
             pilTemplate: address(PIL_TEMPLATE),
@@ -171,18 +161,7 @@ contract RoyaltyTokenDistributionWorkflows is
         WorkflowStructs.RoyaltyShare[] calldata royaltyShares,
         bool allowDuplicates
     ) external onlyMintAuthorized(spgNftContract) returns (address ipId, uint256 tokenId) {
-        tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
-            to: address(this),
-            payer: msg.sender,
-            nftMetadataURI: ipMetadata.nftMetadataURI,
-            nftMetadataHash: ipMetadata.nftMetadataHash,
-            allowDuplicates: allowDuplicates
-        });
-
-        ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
-
-        MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
-
+        (tokenId, ipId) = _mintAndRegisterIp(spgNftContract, ipMetadata, allowDuplicates);
         LicensingHelper.collectMintFeesAndMakeDerivative({
             childIpId: ipId,
             royaltyModule: address(ROYALTY_MODULE),
@@ -324,20 +303,27 @@ contract RoyaltyTokenDistributionWorkflows is
     /// @return ipRoyaltyVault The address of the deployed royalty vault.
     function _deployRoyaltyVault(address ipId) internal returns (address ipRoyaltyVault) {
         if (ROYALTY_MODULE.ipRoyaltyVaults(ipId) == address(0)) {
-            // attach a temporary commercial license to the IP for the royalty vault deployment
-            uint256 licenseTermsId = LicensingHelper.registerPILTermsAndAttach({
-                ipId: ipId,
-                pilTemplate: address(PIL_TEMPLATE),
-                licensingModule: address(LICENSING_MODULE),
-                terms: PILFlavors.commercialUse({
-                    mintingFee: 0,
-                    currencyToken: WIP,
-                    royaltyPolicy: ROYALTY_POLICY_LAP
-                })
-            });
+            uint256 licenseTermsId = PIL_TEMPLATE.registerLicenseTerms(
+                PILFlavors.commercialUse({ mintingFee: 0, currencyToken: WIP, royaltyPolicy: ROYALTY_POLICY_LRP })
+            );
 
-            uint256[] memory licenseTermsIds = new uint256[](1);
-            licenseTermsIds[0] = licenseTermsId;
+            // check if the license is already attached to the IP
+            bool hasIpAttachedLicenseTerms = LICENSE_REGISTRY.hasIpAttachedLicenseTerms(
+                ipId,
+                address(PIL_TEMPLATE),
+                licenseTermsId
+            );
+
+            // if the license is not already attached to the IP,
+            // attach a temporary commercial license to the IP for the royalty vault deployment
+            if (!hasIpAttachedLicenseTerms) {
+                LicensingHelper.attachLicenseTerms(
+                    ipId,
+                    address(LICENSING_MODULE),
+                    address(PIL_TEMPLATE),
+                    licenseTermsId
+                );
+            }
 
             // mint a license token to trigger the royalty vault deployment
             LICENSING_MODULE.mintLicenseTokens({
@@ -351,22 +337,25 @@ contract RoyaltyTokenDistributionWorkflows is
                 maxRevenueShare: 0
             });
 
+            // if the license is not intended to be attached to the IP,
             // set the licensing configuration to disable the temporary license
-            LICENSING_MODULE.setLicensingConfig({
-                ipId: ipId,
-                licenseTemplate: address(PIL_TEMPLATE),
-                licenseTermsId: licenseTermsId,
-                licensingConfig: Licensing.LicensingConfig({
-                    isSet: true,
-                    mintingFee: 0,
-                    licensingHook: address(0),
-                    hookData: "",
-                    commercialRevShare: 0,
-                    disabled: true,
-                    expectMinimumGroupRewardShare: 0,
-                    expectGroupRewardPool: address(0)
-                })
-            });
+            if (!hasIpAttachedLicenseTerms) {
+                LICENSING_MODULE.setLicensingConfig({
+                    ipId: ipId,
+                    licenseTemplate: address(PIL_TEMPLATE),
+                    licenseTermsId: licenseTermsId,
+                    licensingConfig: Licensing.LicensingConfig({
+                        isSet: true,
+                        mintingFee: 0,
+                        licensingHook: address(0),
+                        hookData: "",
+                        commercialRevShare: 0,
+                        disabled: true,
+                        expectMinimumGroupRewardShare: 0,
+                        expectGroupRewardPool: address(0)
+                    })
+                });
+            }
         }
 
         ipRoyaltyVault = ROYALTY_MODULE.ipRoyaltyVaults(ipId);
@@ -414,6 +403,28 @@ contract RoyaltyTokenDistributionWorkflows is
         }
     }
 
+    /// @dev Mints an NFT and registers the IP.
+    /// @param spgNftContract The address of the SPG NFT contract.
+    /// @param ipMetadata The metadata for the IP.
+    /// @param allowDuplicates Set to true to allow minting an NFT with a duplicate metadata hash.
+    /// @return tokenId The ID of the minted NFT.
+    /// @return ipId The ID of the registered IP.
+    function _mintAndRegisterIp(
+        address spgNftContract,
+        WorkflowStructs.IPMetadata calldata ipMetadata,
+        bool allowDuplicates
+    ) internal returns (uint256 tokenId, address ipId) {
+        tokenId = ISPGNFT(spgNftContract).mintByPeriphery({
+            to: address(this),
+            payer: msg.sender,
+            nftMetadataURI: ipMetadata.nftMetadataURI,
+            nftMetadataHash: ipMetadata.nftMetadataHash,
+            allowDuplicates: allowDuplicates
+        });
+        ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
+        MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
+    }
+
     /// @dev Validates the royalty shares.
     /// @param ipId The ID of the IP.
     /// @param ipRoyaltyVault The address of the royalty vault.
@@ -427,15 +438,12 @@ contract RoyaltyTokenDistributionWorkflows is
         for (uint256 i; i < royaltyShares.length; i++) {
             totalPercentages += royaltyShares[i].percentage;
         }
-
         uint32 ipRoyaltyVaultBalance = uint32(IERC20(ipRoyaltyVault).balanceOf(ipId));
         if (totalPercentages > ipRoyaltyVaultBalance)
             revert Errors.RoyaltyTokenDistributionWorkflows__TotalSharesExceedsIPAccountBalance(
                 totalPercentages,
                 ipRoyaltyVaultBalance
             );
-
-        return totalPercentages;
     }
 
     //
