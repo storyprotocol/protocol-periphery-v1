@@ -109,6 +109,13 @@ interface ISPGNFT is IAccessControl, IERC721Metadata, IERC7572 {
     ///        See https://eips.ethereum.org/EIPS/eip-7572
     function setContractURI(string memory contractURI) external;
 
+    /// @notice Sets the token URI for a specific token.
+    /// @dev Only callable by the owner of the token. This updates the metadata URI
+    ///      for the specified token and emits a MetadataUpdate event.
+    /// @param tokenId The ID of the token to update.
+    /// @param tokenURI_ The new metadata URI to associate with the token.
+    function setTokenURI(uint256 tokenId, string memory tokenURI_) external;
+
     /// @notice Mints an NFT from the collection. Only callable by the minter role.
     /// @param to The address of the recipient of the minted NFT.
     /// @param nftMetadataURI OPTIONAL. The desired metadata for the newly minted NFT.
