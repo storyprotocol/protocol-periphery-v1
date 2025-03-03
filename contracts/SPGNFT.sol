@@ -222,13 +222,13 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @notice Sets the token URI for a specific token.
     /// @dev Only callable by the owner of the token. This updates the metadata URI
     ///      for the specified token and emits a MetadataUpdate event.
-    /// @param tokenId The ID of the token to update.
+    /// @param tokenId_ The ID of the token to update.
     /// @param tokenURI_ The new metadata URI to associate with the token.
-    function setTokenURI(uint256 tokenId, string memory tokenURI_) external {
+    function setTokenURI(uint256 tokenId_, string memory tokenURI_) external {
         // revert if caller is not the owner of the `tokenId` token
-        address owner = ownerOf(tokenId);
-        if (owner != msg.sender) revert Errors.SPGNFT__CallerNotOwner(tokenId, msg.sender, owner);
-        _setTokenURI(tokenId, tokenURI_);
+        address owner = ownerOf(tokenId_);
+        if (owner != msg.sender) revert Errors.SPGNFT__CallerNotOwner(tokenId_, msg.sender, owner);
+        _setTokenURI(tokenId_, tokenURI_);
     }
 
     /// @notice Sets the contract URI for the collection.

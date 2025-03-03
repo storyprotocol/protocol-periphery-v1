@@ -112,9 +112,9 @@ interface ISPGNFT is IAccessControl, IERC721Metadata, IERC7572 {
     /// @notice Sets the token URI for a specific token.
     /// @dev Only callable by the owner of the token. This updates the metadata URI
     ///      for the specified token and emits a MetadataUpdate event.
-    /// @param tokenId The ID of the token to update.
+    /// @param tokenId_ The ID of the token to update.
     /// @param tokenURI_ The new metadata URI to associate with the token.
-    function setTokenURI(uint256 tokenId, string memory tokenURI_) external;
+    function setTokenURI(uint256 tokenId_, string memory tokenURI_) external;
 
     /// @notice Mints an NFT from the collection. Only callable by the minter role.
     /// @param to The address of the recipient of the minted NFT.
