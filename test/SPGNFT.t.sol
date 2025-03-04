@@ -399,4 +399,50 @@ contract SPGNFTTest is BaseTest {
         nftContract.setMintFeeRecipient(u.bob);
         vm.stopPrank();
     }
+
+    function test_SPGNFT_setTokenURI() public {
+        // mint a token to alice
+        vm.startPrank(u.alice);
+        mockToken.mint(address(u.alice), 1000 * 10 ** mockToken.decimals());
+        mockToken.approve(address(nftContract), 1000 * 10 ** mockToken.decimals());
+
+        uint256 tokenId = nftContract.mint(
+            address(u.alice),
+            ipMetadataDefault.nftMetadataURI,
+            ipMetadataDefault.nftMetadataHash,
+            false
+        );
+
+        // alice can set the token URI as the owner
+        string memory newTokenURI = string.concat(testBaseURI, "newTokenURI");
+        nftContract.setTokenURI(tokenId, "newTokenURI");
+
+        // Verify the token URI was updated
+        assertEq(nftContract.tokenURI(tokenId), newTokenURI);
+
+        vm.stopPrank();
+    }
+
+    function test_SPGNFT_setTokenURI_revert_callerNotOwner() public {
+        // mint a token to alice
+        vm.startPrank(u.alice);
+        mockToken.mint(address(u.alice), 1000 * 10 ** mockToken.decimals());
+        mockToken.approve(address(nftContract), 1000 * 10 ** mockToken.decimals());
+
+        uint256 tokenId = nftContract.mint(
+            address(u.alice),
+            ipMetadataDefault.nftMetadataURI,
+            ipMetadataDefault.nftMetadataHash,
+            false
+        );
+        vm.stopPrank();
+
+        // bob cannot set the token URI as he's not the owner
+        vm.startPrank(u.bob);
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.SPGNFT__CallerNotOwner.selector, tokenId, u.bob, u.alice));
+        nftContract.setTokenURI(tokenId, "newTokenURI");
+
+        vm.stopPrank();
+    }
 }

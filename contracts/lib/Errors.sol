@@ -117,6 +117,12 @@ library Errors {
     /// @param nftMetadataHash The hash of the NFT metadata that caused the duplication error.
     error SPGNFT__DuplicatedNFTMetadataHash(address spgNftContract, uint256 tokenId, bytes32 nftMetadataHash);
 
+    /// @notice Caller is not the owner of the `tokenId` token.
+    /// @param tokenId The ID of the token.
+    /// @param caller The address of the caller.
+    /// @param owner The owner of the token.
+    error SPGNFT__CallerNotOwner(uint256 tokenId, address caller, address owner);
+
     ////////////////////////////////////////////////////////////////////////////
     //                               OwnableERC20                             //
     ////////////////////////////////////////////////////////////////////////////
