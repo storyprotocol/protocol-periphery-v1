@@ -16,13 +16,13 @@ contract LockLicenseHook is BaseModule, ILicensingHook {
 
     /// @notice This function is called when the LicensingModule mints license tokens.
     /// @dev This function will always revert to prevent any license token minting.
-    /// @param caller The address of the caller who calling the mintLicenseTokens() function.
+    /// @param caller The address of the caller who is calling the mintLicenseTokens() function.
     /// @param licensorIpId The ID of licensor IP from which issue the license tokens.
     /// @param licenseTemplate The address of the license template.
     /// @param licenseTermsId The ID of the license terms within the license template,
     /// which is used to mint license tokens.
     /// @param amount The amount of license tokens to mint.
-    /// @param receiver The address of the receiver who receive the license tokens.
+    /// @param receiver The address of the receiver who receives the license tokens.
     /// @param hookData The data to be used by the licensing hook.
     /// @return totalMintingFee The total minting fee to be paid when minting amount of license tokens.
     function beforeMintLicenseTokens(
