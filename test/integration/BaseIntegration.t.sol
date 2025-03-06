@@ -6,7 +6,7 @@ pragma solidity 0.8.26;
 import { console2 } from "forge-std/console2.sol";
 import { Script } from "forge-std/Script.sol";
 import { Test } from "forge-std/Test.sol";
-import { SUSD } from "@storyprotocol/test/mocks/token/SUSD.sol";
+import { WIP } from "@wip/WIP.sol";
 import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import { AccessPermission } from "@storyprotocol/core/lib/AccessPermission.sol";
 import { IAccessController } from "@storyprotocol/core/interfaces/access/IAccessController.sol";
@@ -59,8 +59,8 @@ contract BaseIntegration is Test, Script, StoryProtocolCoreAddressManager, Story
     RoyaltyWorkflows internal royaltyWorkflows;
     RoyaltyTokenDistributionWorkflows internal royaltyTokenDistributionWorkflows;
 
-    /// @dev Story USD
-    SUSD internal StoryUSD = SUSD(0xF2104833d386a2734a4eB3B8ad6FC6812F29E38E);
+    /// @dev Wrapped IP token
+    WIP internal wrappedIP = WIP(payable(0x1514000000000000000000000000000000000000));
 
     /// @dev Test data
     string internal testCollectionName;
@@ -116,8 +116,8 @@ contract BaseIntegration is Test, Script, StoryProtocolCoreAddressManager, Story
         testBaseURI = "https://test.com/";
         testContractURI = "https://test-contract-uri.com/";
         testMaxSupply = 100_000;
-        testMintFee = 10 * 10 ** StoryUSD.decimals(); // 10 SUSD
-        testMintFeeToken = address(StoryUSD);
+        testMintFee = 1 * 10 ** wrappedIP.decimals(); // 1 WIP
+        testMintFeeToken = address(wrappedIP);
         testIpMetadata = WorkflowStructs.IPMetadata({
             ipMetadataURI: "test-ip-uri",
             ipMetadataHash: "test-ip-hash",

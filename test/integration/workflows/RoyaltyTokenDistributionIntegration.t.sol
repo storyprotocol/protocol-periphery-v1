@@ -76,8 +76,8 @@ contract RoyaltyTokenDistributionIntegration is BaseIntegration {
         private
         logTest("test_RoyaltyTokenDistributionIntegration_mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens")
     {
-        StoryUSD.mint(testSender, licenseMintingFee);
-        StoryUSD.approve(royaltyTokenDistributionWorkflowsAddr, licenseMintingFee);
+        wrappedIP.deposit{ value: licenseMintingFee }();
+        wrappedIP.approve(royaltyTokenDistributionWorkflowsAddr, licenseMintingFee);
 
         (address ipId, uint256 tokenId) = royaltyTokenDistributionWorkflows
             .mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens({
@@ -193,8 +193,8 @@ contract RoyaltyTokenDistributionIntegration is BaseIntegration {
         });
 
         // register IP, make derivative, and deploy royalty vault
-        StoryUSD.mint(testSender, licenseMintingFee);
-        StoryUSD.approve(address(royaltyTokenDistributionWorkflows), licenseMintingFee);
+        wrappedIP.deposit{ value: licenseMintingFee }();
+        wrappedIP.approve(address(royaltyTokenDistributionWorkflows), licenseMintingFee);
         (address ipId, address ipRoyaltyVault) = royaltyTokenDistributionWorkflows
             .registerIpAndMakeDerivativeAndDeployRoyaltyVault({
                 nftContract: address(spgNftContract),
@@ -276,7 +276,7 @@ contract RoyaltyTokenDistributionIntegration is BaseIntegration {
             )
         );
 
-        licenseMintingFee = 10 * 10 ** StoryUSD.decimals(); // 10 SUSD
+        licenseMintingFee = 1 * 10 ** wrappedIP.decimals(); // 1 WIP
 
         uint32 testCommRevShare = 5 * 10 ** 6; // 5%
 
@@ -286,7 +286,7 @@ contract RoyaltyTokenDistributionIntegration is BaseIntegration {
                     mintingFee: licenseMintingFee,
                     commercialRevShare: testCommRevShare,
                     royaltyPolicy: royaltyPolicyLRPAddr,
-                    currencyToken: address(StoryUSD)
+                    currencyToken: address(wrappedIP)
                 }),
                 licensingConfig: Licensing.LicensingConfig({
                     isSet: true,
@@ -307,7 +307,7 @@ contract RoyaltyTokenDistributionIntegration is BaseIntegration {
                     mintingFee: licenseMintingFee,
                     commercialRevShare: 5_000_000, // 5%
                     royaltyPolicy: royaltyPolicyLRPAddr,
-                    currencyToken: address(StoryUSD)
+                    currencyToken: address(wrappedIP)
                 }),
                 licensingConfig: Licensing.LicensingConfig({
                     isSet: true,
@@ -328,7 +328,7 @@ contract RoyaltyTokenDistributionIntegration is BaseIntegration {
                     mintingFee: licenseMintingFee,
                     commercialRevShare: 8_000_000, // 8%
                     royaltyPolicy: royaltyPolicyLAPAddr,
-                    currencyToken: address(StoryUSD)
+                    currencyToken: address(wrappedIP)
                 }),
                 licensingConfig: Licensing.LicensingConfig({
                     isSet: true,
@@ -345,8 +345,8 @@ contract RoyaltyTokenDistributionIntegration is BaseIntegration {
 
         address[] memory ipIdParent = new address[](1);
         uint256[] memory licenseTermsIds;
-        StoryUSD.mint(testSender, licenseMintingFee);
-        StoryUSD.approve(address(spgNftContract), licenseMintingFee);
+        wrappedIP.deposit{ value: licenseMintingFee }();
+        wrappedIP.approve(address(spgNftContract), licenseMintingFee);
         (ipIdParent[0], , licenseTermsIds) = licenseAttachmentWorkflows.mintAndRegisterIpAndAttachPILTerms({
             spgNftContract: address(spgNftContract),
             recipient: testSender,

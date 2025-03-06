@@ -15,10 +15,6 @@ contract StoryProtocolPeripheryAddressManager is Script {
     address internal royaltyTokenDistributionWorkflowsAddr;
     address internal spgNftBeaconAddr;
     address internal spgNftImplAddr;
-    address internal defaultOrgStoryNftTemplateAddr;
-    address internal defaultOrgStoryNftBeaconAddr;
-    address internal orgNftAddr;
-    address internal orgStoryNftFactoryAddr;
 
     function _readStoryProtocolPeripheryAddresses() internal {
         string memory root = vm.projectRoot();
@@ -35,9 +31,5 @@ contract StoryProtocolPeripheryAddressManager is Script {
         royaltyTokenDistributionWorkflowsAddr = json.readAddress(".main.RoyaltyTokenDistributionWorkflows");
         spgNftBeaconAddr = json.readAddress(".main.SPGNFTBeacon");
         spgNftImplAddr = json.readAddress(".main.SPGNFTImpl");
-        defaultOrgStoryNftTemplateAddr = json.readAddress(".main.DefaultOrgStoryNFTTemplate");
-        defaultOrgStoryNftBeaconAddr = json.readAddress(".main.DefaultOrgStoryNFTBeacon");
-        orgNftAddr = json.readAddress(".main.OrgNFT");
-        orgStoryNftFactoryAddr = json.readAddress(".main.OrgStoryNFTFactory");
     }
 }
