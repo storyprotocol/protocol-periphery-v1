@@ -45,9 +45,9 @@ contract DerivativeIntegration is BaseIntegration {
         private
         logTest("test_DerivativeIntegration_mintAndRegisterIpAndMakeDerivative")
     {
-        StoryUSD.mint(testSender, testMintFee * 2);
-        StoryUSD.approve(address(spgNftContract), testMintFee); // for nft minting fee
-        StoryUSD.approve(derivativeWorkflowsAddr, testMintFee); // for derivative minting fee
+        wrappedIP.deposit{ value: testMintFee * 2 }(); // wrapping native IP
+        wrappedIP.approve(address(spgNftContract), testMintFee); // for nft minting fee
+        wrappedIP.approve(derivativeWorkflowsAddr, testMintFee); // for derivative minting fee
         (address childIpId, uint256 childTokenId) = derivativeWorkflows.mintAndRegisterIpAndMakeDerivative({
             spgNftContract: address(spgNftContract),
             derivData: WorkflowStructs.MakeDerivative({
@@ -87,8 +87,8 @@ contract DerivativeIntegration is BaseIntegration {
         private
         logTest("test_DerivativeIntegration_registerIpAndMakeDerivative")
     {
-        StoryUSD.mint(testSender, testMintFee);
-        StoryUSD.approve(address(spgNftContract), testMintFee); // for nft minting fee
+        wrappedIP.deposit{ value: testMintFee }();
+        wrappedIP.approve(address(spgNftContract), testMintFee); // for nft minting fee
 
         uint256 childTokenId = spgNftContract.mint({
             to: testSender,
@@ -112,8 +112,8 @@ contract DerivativeIntegration is BaseIntegration {
             signerSk: testSenderSk
         });
 
-        StoryUSD.mint(testSender, testMintFee);
-        StoryUSD.approve(derivativeWorkflowsAddr, testMintFee); // for derivative minting fee
+        wrappedIP.deposit{ value: testMintFee }();
+        wrappedIP.approve(derivativeWorkflowsAddr, testMintFee); // for derivative minting fee
         derivativeWorkflows.registerIpAndMakeDerivative({
             nftContract: address(spgNftContract),
             tokenId: childTokenId,
@@ -157,8 +157,8 @@ contract DerivativeIntegration is BaseIntegration {
         private
         logTest("test_DerivativeIntegration_mintAndRegisterIpAndMakeDerivativeWithLicenseTokens")
     {
-        StoryUSD.mint(testSender, testMintFee);
-        StoryUSD.approve(royaltyModuleAddr, testMintFee); // for license token minting fee
+        wrappedIP.deposit{ value: testMintFee }();
+        wrappedIP.approve(royaltyModuleAddr, testMintFee); // for license token minting fee
         uint256 startLicenseTokenId = licensingModule.mintLicenseTokens({
             licensorIpId: parentIpIds[0],
             licenseTemplate: parentLicenseTemplate,
@@ -176,8 +176,8 @@ contract DerivativeIntegration is BaseIntegration {
         uint256[] memory licenseTokenIds = new uint256[](1);
         licenseTokenIds[0] = startLicenseTokenId;
 
-        StoryUSD.mint(testSender, testMintFee);
-        StoryUSD.approve(address(spgNftContract), testMintFee); // for nft minting fee
+        wrappedIP.deposit{ value: testMintFee }();
+        wrappedIP.approve(address(spgNftContract), testMintFee); // for nft minting fee
         (address childIpId, uint256 childTokenId) = derivativeWorkflows
             .mintAndRegisterIpAndMakeDerivativeWithLicenseTokens({
                 spgNftContract: address(spgNftContract),
@@ -213,8 +213,8 @@ contract DerivativeIntegration is BaseIntegration {
         private
         logTest("test_DerivativeIntegration_registerIpAndMakeDerivativeWithLicenseTokens")
     {
-        StoryUSD.mint(testSender, testMintFee);
-        StoryUSD.approve(address(spgNftContract), testMintFee); // for nft minting fee
+        wrappedIP.deposit{ value: testMintFee }();
+        wrappedIP.approve(address(spgNftContract), testMintFee); // for nft minting fee
         uint256 childTokenId = spgNftContract.mint({
             to: testSender,
             nftMetadataURI: testIpMetadata.nftMetadataURI,
@@ -225,8 +225,8 @@ contract DerivativeIntegration is BaseIntegration {
 
         uint256 deadline = block.timestamp + 1000;
 
-        StoryUSD.mint(testSender, testMintFee);
-        StoryUSD.approve(royaltyModuleAddr, testMintFee); // for license token minting fee
+        wrappedIP.deposit{ value: testMintFee }();
+        wrappedIP.approve(royaltyModuleAddr, testMintFee); // for license token minting fee
         uint256 startLicenseTokenId = licensingModule.mintLicenseTokens({
             licensorIpId: parentIpIds[0],
             licenseTemplate: parentLicenseTemplate,
@@ -315,9 +315,9 @@ contract DerivativeIntegration is BaseIntegration {
             );
         }
 
-        StoryUSD.mint(testSender, testMintFee * numCalls * 2);
-        StoryUSD.approve(address(spgNftContract), testMintFee * numCalls);
-        StoryUSD.approve(derivativeWorkflowsAddr, testMintFee * numCalls);
+        wrappedIP.deposit{ value: testMintFee * numCalls * 2 }();
+        wrappedIP.approve(address(spgNftContract), testMintFee * numCalls);
+        wrappedIP.approve(derivativeWorkflowsAddr, testMintFee * numCalls);
 
         bytes[] memory results = derivativeWorkflows.multicall(data);
 
@@ -385,8 +385,8 @@ contract DerivativeIntegration is BaseIntegration {
             })
         );
 
-        StoryUSD.mint(testSender, testMintFee);
-        StoryUSD.approve(address(spgNftContract), testMintFee);
+        wrappedIP.deposit{ value: testMintFee }();
+        wrappedIP.approve(address(spgNftContract), testMintFee);
         address parentIpId;
         (parentIpId, , parentLicenseTermIds) = licenseAttachmentWorkflows.mintAndRegisterIpAndAttachPILTerms({
             spgNftContract: address(spgNftContract),
