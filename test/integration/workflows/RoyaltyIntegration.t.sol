@@ -26,11 +26,11 @@ contract RoyaltyIntegration is BaseIntegration {
     address internal grandChildIpId;
 
     uint256 internal commRemixTermsIdA;
-    uint256 internal defaultMintingFeeA = 1000 * 10 ** StoryUSD.decimals(); // 1000 SUSD
+    uint256 internal defaultMintingFeeA = 1 * 10 ** wrappedIP.decimals(); // 1 WIP
     uint32 internal defaultCommRevShareA = 10 * 10 ** 6; // 10%
 
     uint256 internal commRemixTermsIdC;
-    uint256 internal defaultMintingFeeC = 500 * 10 ** StoryUSD.decimals(); // 500 SUSD
+    uint256 internal defaultMintingFeeC = 2 * 10 ** wrappedIP.decimals(); // 2 WIP
     uint32 internal defaultCommRevShareC = 20 * 10 ** 6; // 20%
 
     WorkflowStructs.LicenseTermsData[] internal commTermsData;
@@ -58,21 +58,21 @@ contract RoyaltyIntegration is BaseIntegration {
 
         childIpIds[0] = childIpIdA;
         royaltyPolicies[0] = royaltyPolicyLRPAddr;
-        currencyTokens[0] = address(StoryUSD);
+        currencyTokens[0] = address(wrappedIP);
 
         childIpIds[1] = childIpIdB;
         royaltyPolicies[1] = royaltyPolicyLRPAddr;
-        currencyTokens[1] = address(StoryUSD);
+        currencyTokens[1] = address(wrappedIP);
 
         childIpIds[2] = grandChildIpId;
         royaltyPolicies[2] = royaltyPolicyLRPAddr;
-        currencyTokens[2] = address(StoryUSD);
+        currencyTokens[2] = address(wrappedIP);
 
         childIpIds[3] = childIpIdC;
         royaltyPolicies[3] = royaltyPolicyLAPAddr;
-        currencyTokens[3] = address(StoryUSD);
+        currencyTokens[3] = address(wrappedIP);
 
-        uint256 claimerBalanceBefore = StoryUSD.balanceOf(ancestorIpId);
+        uint256 claimerBalanceBefore = wrappedIP.balanceOf(ancestorIpId);
 
         uint256[] memory amountsClaimed = royaltyWorkflows.claimAllRevenue({
             ancestorIpId: ancestorIpId,
@@ -82,23 +82,23 @@ contract RoyaltyIntegration is BaseIntegration {
             currencyTokens: currencyTokens
         });
 
-        uint256 claimerBalanceAfter = StoryUSD.balanceOf(ancestorIpId);
+        uint256 claimerBalanceAfter = wrappedIP.balanceOf(ancestorIpId);
 
         assertEq(amountsClaimed.length, 1); // there is 1 currency token
         assertEq(claimerBalanceAfter - claimerBalanceBefore, amountsClaimed[0]);
         assertEq(
             claimerBalanceAfter - claimerBalanceBefore,
             defaultMintingFeeA +
-                defaultMintingFeeA + // 1000 + 1000 from minting fee of childIpA and childIpB
+                defaultMintingFeeA + // 1 + 1 from minting fee of childIpA and childIpB
                 (defaultMintingFeeA * defaultCommRevShareA) /
-                royaltyModule.maxPercent() + // 1000 * 10% = 100 royalty from childIpA
+                royaltyModule.maxPercent() + // 1 * 10% = 0.1 royalty from childIpA
                 (defaultMintingFeeA * defaultCommRevShareA) /
-                royaltyModule.maxPercent() + // 1000 * 10% = 100 royalty from childIpB
+                royaltyModule.maxPercent() + // 1 * 10% = 0.1 royalty from childIpB
                 (((defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent()) * defaultCommRevShareA) /
-                royaltyModule.maxPercent() + // 1000 * 10% * 10% * 2 = 20 royalty from grandChildIp
+                royaltyModule.maxPercent() + // 1 * 10% * 10% * 2 = 0.02 royalty from grandChildIp
                 defaultMintingFeeC +
                 (defaultMintingFeeC * defaultCommRevShareC) /
-                royaltyModule.maxPercent() // 500 from from minting fee of childIpC,500 * 20% = 100 royalty from childIpC
+                royaltyModule.maxPercent() // 2 from from minting fee of childIpC,2 * 20% = 0.4 royalty from childIpC
         );
     }
 
@@ -158,7 +158,7 @@ contract RoyaltyIntegration is BaseIntegration {
                         mintingFee: defaultMintingFeeA,
                         commercialRevShare: defaultCommRevShareA,
                         royaltyPolicy: royaltyPolicyLRPAddr,
-                        currencyToken: address(StoryUSD)
+                        currencyToken: address(wrappedIP)
                     }),
                     licensingConfig: Licensing.LicensingConfig({
                         isSet: true,
@@ -178,7 +178,7 @@ contract RoyaltyIntegration is BaseIntegration {
                         mintingFee: defaultMintingFeeC,
                         commercialRevShare: defaultCommRevShareC,
                         royaltyPolicy: royaltyPolicyLAPAddr,
-                        currencyToken: address(StoryUSD)
+                        currencyToken: address(wrappedIP)
                     }),
                     licensingConfig: Licensing.LicensingConfig({
                         isSet: true,
@@ -236,8 +236,8 @@ contract RoyaltyIntegration is BaseIntegration {
             parentIpIds[0] = ancestorIpId;
             licenseTermsIds[0] = commRemixTermsIdA;
 
-            StoryUSD.mint(testSender, defaultMintingFeeA);
-            StoryUSD.approve(derivativeWorkflowsAddr, defaultMintingFeeA);
+            wrappedIP.deposit{ value: defaultMintingFeeA }();
+            wrappedIP.approve(derivativeWorkflowsAddr, defaultMintingFeeA);
             childIpIdA = derivativeWorkflows.registerIpAndMakeDerivative({
                 nftContract: address(spgNftContract),
                 tokenId: childTokenIdA,
@@ -280,8 +280,8 @@ contract RoyaltyIntegration is BaseIntegration {
             parentIpIds[0] = ancestorIpId;
             licenseTermsIds[0] = commRemixTermsIdA;
 
-            StoryUSD.mint(testSender, defaultMintingFeeA);
-            StoryUSD.approve(derivativeWorkflowsAddr, defaultMintingFeeA);
+            wrappedIP.deposit{ value: defaultMintingFeeA }();
+            wrappedIP.approve(derivativeWorkflowsAddr, defaultMintingFeeA);
             childIpIdB = derivativeWorkflows.registerIpAndMakeDerivative({
                 nftContract: address(spgNftContract),
                 tokenId: childTokenIdB,
@@ -324,8 +324,8 @@ contract RoyaltyIntegration is BaseIntegration {
             parentIpIds[0] = ancestorIpId;
             licenseTermsIds[0] = commRemixTermsIdC;
 
-            StoryUSD.mint(testSender, defaultMintingFeeC);
-            StoryUSD.approve(derivativeWorkflowsAddr, defaultMintingFeeC);
+            wrappedIP.deposit{ value: defaultMintingFeeC }();
+            wrappedIP.approve(derivativeWorkflowsAddr, defaultMintingFeeC);
             childIpIdC = derivativeWorkflows.registerIpAndMakeDerivative({
                 nftContract: address(spgNftContract),
                 tokenId: childTokenIdC,
@@ -371,8 +371,8 @@ contract RoyaltyIntegration is BaseIntegration {
                 licenseTermsIds[i] = commRemixTermsIdA;
             }
 
-            StoryUSD.mint(testSender, defaultMintingFeeA * parentIpIds.length);
-            StoryUSD.approve(derivativeWorkflowsAddr, defaultMintingFeeA * parentIpIds.length);
+            wrappedIP.deposit{ value: defaultMintingFeeA * parentIpIds.length }();
+            wrappedIP.approve(derivativeWorkflowsAddr, defaultMintingFeeA * parentIpIds.length);
             grandChildIpId = derivativeWorkflows.registerIpAndMakeDerivative({
                 nftContract: address(spgNftContract),
                 tokenId: grandChildTokenId,
@@ -397,8 +397,8 @@ contract RoyaltyIntegration is BaseIntegration {
 
         // mints `amountLicenseTokensToMint` grandChildIp and childIpC license tokens
         {
-            StoryUSD.mint(testSender, (defaultMintingFeeA + defaultMintingFeeC) * amountLicenseTokensToMint);
-            StoryUSD.approve(royaltyModuleAddr, (defaultMintingFeeA + defaultMintingFeeC) * amountLicenseTokensToMint);
+            wrappedIP.deposit{ value: (defaultMintingFeeA + defaultMintingFeeC) * amountLicenseTokensToMint }();
+            wrappedIP.approve(royaltyModuleAddr, (defaultMintingFeeA + defaultMintingFeeC) * amountLicenseTokensToMint);
 
             // mint `amountLicenseTokensToMint` grandChildIp's license tokens
             licensingModule.mintLicenseTokens({
