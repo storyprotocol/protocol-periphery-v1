@@ -73,10 +73,15 @@ contract LicenseAttachmentWorkflows is
         __Multicall_init();
     }
 
-    /// @notice Register Programmable IP License Terms (if unregistered) and attach it to IP.
+    /// @notice Register Programmable IP License Terms (if unregistered), attach them to an IP, and optionally sets
+    /// licensing configurations.
+    /// @dev This function will register new PIL terms if they don't exist, and only sets licensing configurations
+    /// for each term where the corresponding licensing config has `isSet` set to true. The function also requires
+    /// appropriate permissions.
     /// @param ipId The ID of the IP.
     /// @param licenseTermsData The PIL terms and licensing configuration data to be attached to the IP.
-    /// @param sigAttachAndConfig Signature data for attachLicenseTerms and setLicensingConfig to the IP via the Licensing Module.
+    /// @param sigAttachAndConfig Signature data for attachLicenseTerms and setLicensingConfig to the IP via the
+    ///                           Licensing Module.
     /// @return licenseTermsIds The IDs of the newly registered PIL terms.
     function registerPILTermsAndAttach(
         address ipId,
@@ -109,9 +114,11 @@ contract LicenseAttachmentWorkflows is
         });
     }
 
-    /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP,
-    /// register Programmable IP License Terms (if unregistered), and attach it to the registered IP.
-    /// @dev Requires caller to have the minter role or the SPG NFT to allow public minting.
+    /// @notice Mint an NFT from a SPGNFT collection, register it with metadata as an IP, register Programmable IP
+    /// License Terms (if unregistered), attach it to the registered IP, and optionally sets licensing configurations.
+    /// @dev Requires caller to have the minter role or the SPG NFT to allow public minting. This function will
+    /// register new PIL terms if they don't exist, and only sets licensing configurations for each term where the
+    /// corresponding licensing config has `isSet` set to true.
     /// @param spgNftContract The address of the SPGNFT collection.
     /// @param recipient The address of the recipient of the minted NFT.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly minted NFT and registered IP.
@@ -154,9 +161,12 @@ contract LicenseAttachmentWorkflows is
         ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
     }
 
-    /// @notice Register a given NFT as an IP and attach Programmable IP License Terms.
-    /// @dev Because IP Account is created in this function, we need to set the permission via signature to allow this
-    /// contract to attach PIL Terms to the newly created IP Account in the same function.
+    /// @notice Register a given NFT as an IP and attach Programmable IP License Terms, and optionally sets licensing
+    /// configurations.
+    /// @dev Since this contract doesn't own the IP Account when IP is registered, a signature is required to grant
+    /// permission for this contract to attach PIL Terms and set licensing configurations to the newly created IP
+    /// Account in the same transaction. This function will also register new PIL terms if they don't exist, and only
+    /// sets licensing configurations for each term where the corresponding licensing config has `isSet` set to true.
     /// @param nftContract The address of the NFT collection.
     /// @param tokenId The ID of the NFT.
     /// @param ipMetadata OPTIONAL. The desired metadata for the newly registered IP.
