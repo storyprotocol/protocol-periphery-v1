@@ -133,7 +133,10 @@ contract TokenizerModule is
     /// @dev Enforced to be only callable by the upgrader admin
     /// @param tokenTemplate The address of the token template to upgrade
     /// @param newTokenImplementation The address of the new token implementation
-    function upgradeWhitelistedTokenTemplate(address tokenTemplate, address newTokenImplementation) external restricted {
+    function upgradeWhitelistedTokenTemplate(
+        address tokenTemplate,
+        address newTokenImplementation
+    ) external restricted {
         if (tokenTemplate == address(0)) revert Errors.TokenizerModule__ZeroTokenTemplate();
         if (newTokenImplementation == address(0)) revert Errors.TokenizerModule__ZeroTokenTemplateImplementation();
         if (!_getTokenizerModuleStorage().isWhitelistedTokenTemplate[tokenTemplate])

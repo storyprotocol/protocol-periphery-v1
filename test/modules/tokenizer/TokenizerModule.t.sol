@@ -327,7 +327,9 @@ contract TokenizerModuleTest is BaseTest {
         address newTokenTemplateImpl = address(new OwnableERC20(address(ownableERC20Beacon)));
 
         vm.startPrank(u.admin);
-        vm.expectRevert(abi.encodeWithSelector(Errors.TokenizerModule__TokenTemplateNotWhitelisted.selector, address(0x1234)));
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.TokenizerModule__TokenTemplateNotWhitelisted.selector, address(0x1234))
+        );
         tokenizerModule.upgradeWhitelistedTokenTemplate(address(0x1234), address(newTokenTemplateImpl));
         vm.stopPrank();
     }
