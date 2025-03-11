@@ -4,5 +4,7 @@
 @storyprotocol/script/=node_modules/@story-protocol/protocol-core/script/foundry/
 @storyprotocol/test/=node_modules/@story-protocol/protocol-core/test/foundry/
 @solady/=node_modules/solady/
+solady/tokens/=node_modules/solady/src/tokens/
+@wip/=node_modules/wip/src/
 ds-test/=lib/forge-std/lib/ds-test/src/
 forge-std/=lib/forge-std/src/

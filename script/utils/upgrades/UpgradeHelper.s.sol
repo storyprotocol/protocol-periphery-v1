@@ -44,6 +44,12 @@ contract UpgradeHelper is
     SPGNFT internal spgNftImpl;
     UpgradeableBeacon internal spgNftBeacon;
 
+    // TODO: change these four addresses when upgrading Story NFTs
+    address public orgNftAddr = address(0x1);
+    address public orgStoryNftFactoryAddr = address(0x2);
+    address public defaultOrgStoryNftBeaconAddr = address(0x3);
+    address public defaultOrgStoryNftTemplateAddr = address(0x4);
+
     constructor() JsonDeploymentHandler("main") {}
 
     function run() public virtual {
@@ -73,7 +79,7 @@ contract UpgradeHelper is
     }
 
     function _writeAllAddresses() internal {
-        string[] memory contractKeys = new string[](12);
+        string[] memory contractKeys = new string[](8);
         contractKeys[0] = "DerivativeWorkflows";
         contractKeys[1] = "GroupingWorkflows";
         contractKeys[2] = "LicenseAttachmentWorkflows";
@@ -82,12 +88,8 @@ contract UpgradeHelper is
         contractKeys[5] = "RoyaltyTokenDistributionWorkflows";
         contractKeys[6] = "SPGNFTBeacon";
         contractKeys[7] = "SPGNFTImpl";
-        contractKeys[8] = "DefaultOrgStoryNFTTemplate";
-        contractKeys[9] = "DefaultOrgStoryNFTBeacon";
-        contractKeys[10] = "OrgNFT";
-        contractKeys[11] = "OrgStoryNFTFactory";
 
-        address[] memory addresses = new address[](12);
+        address[] memory addresses = new address[](8);
         addresses[0] = derivativeWorkflowsAddr;
         addresses[1] = groupingWorkflowsAddr;
         addresses[2] = licenseAttachmentWorkflowsAddr;
@@ -96,10 +98,6 @@ contract UpgradeHelper is
         addresses[5] = royaltyTokenDistributionWorkflowsAddr;
         addresses[6] = spgNftBeaconAddr;
         addresses[7] = spgNftImplAddr;
-        addresses[8] = defaultOrgStoryNftTemplateAddr;
-        addresses[9] = defaultOrgStoryNftBeaconAddr;
-        addresses[10] = orgNftAddr;
-        addresses[11] = orgStoryNftFactoryAddr;
 
         for (uint256 i = 0; i < contractKeys.length; i++) {
             _writeAddress(contractKeys[i], addresses[i]);

@@ -39,8 +39,8 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         private
         logTest("test_LicenseAttachmentIntegration_registerPILTermsAndAttach")
     {
-        StoryUSD.mint(testSender, testMintFee);
-        StoryUSD.approve(address(spgNftContract), testMintFee);
+        wrappedIP.deposit{ value: testMintFee }();
+        wrappedIP.approve(address(spgNftContract), testMintFee);
 
         (address ipId, ) = registrationWorkflows.mintAndRegisterIp({
             spgNftContract: address(spgNftContract),
@@ -79,8 +79,8 @@ contract LicenseAttachmentIntegration is BaseIntegration {
     {
         // IP 1
         {
-            StoryUSD.mint(testSender, testMintFee);
-            StoryUSD.approve(address(spgNftContract), testMintFee);
+            wrappedIP.deposit{ value: testMintFee }();
+            wrappedIP.approve(address(spgNftContract), testMintFee);
 
             (address ipId1, uint256 tokenId1, uint256[] memory licenseTermsIds1) = licenseAttachmentWorkflows
                 .mintAndRegisterIpAndAttachPILTerms({
@@ -104,8 +104,8 @@ contract LicenseAttachmentIntegration is BaseIntegration {
 
         // IP 2
         {
-            StoryUSD.mint(testSender, testMintFee);
-            StoryUSD.approve(address(spgNftContract), testMintFee);
+            wrappedIP.deposit{ value: testMintFee }();
+            wrappedIP.approve(address(spgNftContract), testMintFee);
 
             (address ipId2, uint256 tokenId2, uint256[] memory licenseTermsIds2) = licenseAttachmentWorkflows
                 .mintAndRegisterIpAndAttachPILTerms({
@@ -132,8 +132,8 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         private
         logTest("test_LicenseAttachmentIntegration_registerIpAndAttachPILTerms")
     {
-        StoryUSD.mint(testSender, testMintFee);
-        StoryUSD.approve(address(spgNftContract), testMintFee);
+        wrappedIP.deposit{ value: testMintFee }();
+        wrappedIP.approve(address(spgNftContract), testMintFee);
 
         uint256 tokenId = spgNftContract.mint({
             to: testSender,
@@ -186,8 +186,8 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         private
         logTest("test_LicenseAttachmentWorkflows_mintAndRegisterIpAndAttachDefaultTerms")
     {
-        StoryUSD.mint(testSender, testMintFee);
-        StoryUSD.approve(address(spgNftContract), testMintFee);
+        wrappedIP.deposit{ value: testMintFee }();
+        wrappedIP.approve(address(spgNftContract), testMintFee);
 
         (address ipId1, uint256 tokenId1) = licenseAttachmentWorkflows.mintAndRegisterIpAndAttachDefaultTerms({
             spgNftContract: address(spgNftContract),
@@ -210,8 +210,8 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         private
         logTest("test_LicenseAttachmentWorkflows_registerIpAndAttachDefaultTerms")
     {
-        StoryUSD.mint(testSender, testMintFee);
-        StoryUSD.approve(address(spgNftContract), testMintFee);
+        wrappedIP.deposit{ value: testMintFee }();
+        wrappedIP.approve(address(spgNftContract), testMintFee);
 
         uint256 tokenId = spgNftContract.mint({
             to: testSender,

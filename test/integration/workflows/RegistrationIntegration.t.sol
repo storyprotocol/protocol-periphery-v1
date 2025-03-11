@@ -74,8 +74,8 @@ contract RegistrationIntegration is BaseIntegration {
         private
         logTest("test_RegistrationIntegration_mintAndRegisterIp")
     {
-        StoryUSD.mint(testSender, testMintFee);
-        StoryUSD.approve(address(spgNftContract), testMintFee);
+        wrappedIP.deposit{ value: testMintFee }();
+        wrappedIP.approve(address(spgNftContract), testMintFee);
         (address ipId, uint256 tokenId) = registrationWorkflows.mintAndRegisterIp({
             spgNftContract: address(spgNftContract),
             recipient: testSender,
@@ -90,8 +90,8 @@ contract RegistrationIntegration is BaseIntegration {
     }
 
     function _test_RegistrationIntegration_registerIp() private logTest("test_RegistrationIntegration_registerIp") {
-        StoryUSD.mint(testSender, testMintFee);
-        StoryUSD.approve(address(spgNftContract), testMintFee);
+        wrappedIP.deposit{ value: testMintFee }();
+        wrappedIP.approve(address(spgNftContract), testMintFee);
         uint256 tokenId = spgNftContract.mint(testSender, "", bytes32(0), true);
 
         // get signature for setting IP metadata
@@ -176,8 +176,8 @@ contract RegistrationIntegration is BaseIntegration {
         logTest("test_RegistrationIntegration_multicall_mintAndRegisterIp")
     {
         uint256 totalIps = 10;
-        StoryUSD.mint(testSender, testMintFee * totalIps);
-        StoryUSD.approve(address(spgNftContract), testMintFee * totalIps);
+        wrappedIP.deposit{ value: testMintFee * totalIps }();
+        wrappedIP.approve(address(spgNftContract), testMintFee * totalIps);
 
         bytes[] memory data = new bytes[](totalIps);
         for (uint256 i = 0; i < totalIps; i++) {
