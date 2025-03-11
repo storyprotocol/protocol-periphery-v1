@@ -142,6 +142,9 @@ library Errors {
     /// @notice Zero token template provided.
     error TokenizerModule__ZeroTokenTemplate();
 
+    /// @notice Zero token template implementation provided.
+    error TokenizerModule__ZeroTokenTemplateImplementation();
+
     /// @notice Zero protocol access manager provided.
     error TokenizerModule__ZeroProtocolAccessManager();
 

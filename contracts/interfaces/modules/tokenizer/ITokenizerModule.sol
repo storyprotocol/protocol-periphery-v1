@@ -28,6 +28,12 @@ interface ITokenizerModule is IModule {
     /// @return token The address of the newly created token
     function tokenize(address ipId, address tokenTemplate, bytes calldata initData) external returns (address token);
 
+    /// @dev Upgrades a whitelisted token template
+    /// @dev Enforced to be only callable by the upgrader admin
+    /// @param tokenTemplate The address of the token template to upgrade
+    /// @param newTokenImplementation The address of the new token implementation
+    function upgradeWhitelistedTokenTemplate(address tokenTemplate, address newTokenImplementation) external;
+
     /// @notice Returns the fractionalized token for an IP
     /// @param ipId The address of the IP
     /// @return token The address of the token
