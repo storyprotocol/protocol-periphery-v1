@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.26;
 
+import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
 import { Errors as CoreErrors } from "@storyprotocol/core/lib/Errors.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
@@ -308,5 +309,26 @@ contract TokenizerModuleTest is BaseTest {
             address(ownableERC20Template),
             abi.encode(IOwnableERC20.InitData({ cap: 1000, name: "Test1", symbol: "T1", initialOwner: u.alice }))
         );
+    }
+
+    function test_TokenizerModule_upgradeWhitelistedTokenTemplate() public {
+        address newTokenTemplateImpl = address(new OwnableERC20(address(ownableERC20Beacon)));
+
+        vm.startPrank(u.admin);
+        vm.expectEmit();
+        emit UpgradeableBeacon.Upgraded(address(newTokenTemplateImpl));
+        tokenizerModule.upgradeWhitelistedTokenTemplate(address(ownableERC20Template), newTokenTemplateImpl);
+        vm.stopPrank();
+
+        assertEq(UpgradeableBeacon(ownableERC20Beacon).implementation(), newTokenTemplateImpl);
+    }
+
+    function test_TokenizerModule_revert_upgradeWhitelistedTokenTemplate_NotWhitelisted() public {
+        address newTokenTemplateImpl = address(new OwnableERC20(address(ownableERC20Beacon)));
+
+        vm.startPrank(u.admin);
+        vm.expectRevert(abi.encodeWithSelector(Errors.TokenizerModule__TokenTemplateNotWhitelisted.selector, address(0x1234)));
+        tokenizerModule.upgradeWhitelistedTokenTemplate(address(0x1234), address(newTokenTemplateImpl));
+        vm.stopPrank();
     }
 }

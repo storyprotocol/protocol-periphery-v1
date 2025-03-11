@@ -195,6 +195,9 @@ contract DeployHelper is
             if (spgNftBeacon.owner() != address(registrationWorkflows))
                 revert DeploymentConfigError("RegistrationWorkflows is not the owner of SPGNFTBeacon");
 
+            if (UpgradeableBeacon(ownableERC20Beacon).owner() != address(tokenizerModule))
+                revert DeploymentConfigError("TokenizerModule is not the owner of OwnableERC20Beacon");
+
             if (writeDeploys) _writeDeployment(); // JsonDeploymentHandler.s.sol
             _endBroadcast(); // BroadcastManager.s.sol
         }
@@ -547,6 +550,7 @@ contract DeployHelper is
     function _configurePeripheryContracts() private {
        // Transfer ownership of beacon proxy to RegistrationWorkflows
        spgNftBeacon.transferOwnership(address(registrationWorkflows));
+       UpgradeableBeacon(ownableERC20Beacon).transferOwnership(address(tokenizerModule));
        registrationWorkflows.setNftContractBeacon(address(spgNftBeacon));
        tokenizerModule.whitelistTokenTemplate(address(ownableERC20Template), true);
        IModuleRegistry(moduleRegistryAddr).registerModule("TOKENIZER_MODULE", address(tokenizerModule));

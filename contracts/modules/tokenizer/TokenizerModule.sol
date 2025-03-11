@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { BeaconProxy } from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
@@ -126,6 +127,19 @@ contract TokenizerModule is
         $.fractionalizedTokens[ipId] = token;
 
         emit IPTokenized(ipId, token);
+    }
+
+    /// @dev Upgrades a whitelisted token template
+    /// @dev Enforced to be only callable by the upgrader admin
+    /// @param tokenTemplate The address of the token template to upgrade
+    /// @param newTokenImplementation The address of the new token implementation
+    function upgradeWhitelistedTokenTemplate(address tokenTemplate, address newTokenImplementation) external restricted {
+        if (tokenTemplate == address(0)) revert Errors.TokenizerModule__ZeroTokenTemplate();
+        if (newTokenImplementation == address(0)) revert Errors.TokenizerModule__ZeroTokenTemplateImplementation();
+        if (!_getTokenizerModuleStorage().isWhitelistedTokenTemplate[tokenTemplate])
+            revert Errors.TokenizerModule__TokenTemplateNotWhitelisted(tokenTemplate);
+
+        UpgradeableBeacon(IOwnableERC20(tokenTemplate).upgradableBeacon()).upgradeTo(newTokenImplementation);
     }
 
     /// @notice Returns the fractionalized token for an IP
