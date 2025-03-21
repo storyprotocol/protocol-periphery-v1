@@ -81,7 +81,8 @@ contract RegistrationWorkflows is
         __Multicall_init();
     }
 
-    /// @dev Sets the NFT contract beacon address.
+    /// @notice Sets the NFT contract beacon address.
+    /// @dev Restricted to be only callable by the protocol admin and upgrader.
     /// @param newNftContractBeacon The address of the new NFT contract beacon.
     function setNftContractBeacon(address newNftContractBeacon) external restricted {
         if (newNftContractBeacon == address(0)) revert Errors.RegistrationWorkflows__ZeroAddressParam();
@@ -89,9 +90,10 @@ contract RegistrationWorkflows is
         $.nftContractBeacon = newNftContractBeacon;
     }
 
-    /// @dev Upgrades the NFT contract beacon. Restricted to only the protocol access manager.
+    /// @notice Upgrades the NFT contract beacon.
+    /// @dev Restricted to be only callable by the protocol admin and upgrader.
     /// @param newNftContract The address of the new NFT contract implementation.
-    function upgradeCollections(address newNftContract) public restricted {
+    function upgradeCollections(address newNftContract) external restricted {
         // UpgradeableBeacon checks for newImplementation.bytecode.length > 0, so no need to check for zero address.
         UpgradeableBeacon(_getRegistrationWorkflowsStorage().nftContractBeacon).upgradeTo(newNftContract);
     }
