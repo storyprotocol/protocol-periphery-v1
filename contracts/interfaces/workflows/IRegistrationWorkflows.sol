@@ -45,6 +45,16 @@ interface IRegistrationWorkflows {
         WorkflowStructs.SignatureData calldata sigMetadata
     ) external returns (address ipId);
 
+    /// @notice Sets the NFT contract beacon address.
+    /// @dev Restricted to be only callable by the protocol admin and upgrader.
+    /// @param newNftContractBeacon The address of the new NFT contract beacon.
+    function setNftContractBeacon(address newNftContractBeacon) external;
+
+    /// @notice Upgrades the NFT contract beacon.
+    /// @dev Restricted to be only callable by the protocol admin and upgrader.
+    /// @param newNftContract The address of the new NFT contract implementation.
+    function upgradeCollections(address newNftContract) external;
+
     ////////////////////////////////////////////////////////////////////////////
     //                   DEPRECATED, WILL BE REMOVED IN V1.4                  //
     ////////////////////////////////////////////////////////////////////////////
