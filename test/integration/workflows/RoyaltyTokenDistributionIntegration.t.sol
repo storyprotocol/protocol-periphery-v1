@@ -93,8 +93,8 @@ contract RoyaltyTokenDistributionIntegration is BaseIntegration {
         assertEq(ipAssetRegistry.ipId(block.chainid, address(spgNftContract), tokenId), ipId);
         assertMetadata(ipId, ipMetadata);
         assertParentChild({
-            ipIdParent: derivativeData.parentIpIds[0],
-            ipIdChild: ipId,
+            parentIpId: derivativeData.parentIpIds[0],
+            childIpId: ipId,
             expectedParentCount: 1,
             expectedParentIndex: 0
         });
@@ -236,8 +236,8 @@ contract RoyaltyTokenDistributionIntegration is BaseIntegration {
         assertEq(ipAssetRegistry.ipId(block.chainid, address(spgNftContract), tokenId), ipId);
         assertMetadata(ipId, ipMetadata);
         assertParentChild({
-            ipIdParent: derivativeData.parentIpIds[0],
-            ipIdChild: ipId,
+            parentIpId: derivativeData.parentIpIds[0],
+            childIpId: ipId,
             expectedParentCount: 1,
             expectedParentIndex: 0
         });

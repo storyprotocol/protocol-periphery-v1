@@ -25,7 +25,6 @@ abstract contract CachableNFT is OwnableUpgradeable {
     struct CacheableNFTStorage {
         // tokenId => ipId
         EnumerableMap.UintToAddressMap cache;
-        bool DEPRECATED_cacheMode;
         CacheMode mode;
         uint256 autoCacheBaseFeeThreshold;
     }

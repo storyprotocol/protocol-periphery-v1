@@ -54,16 +54,4 @@ interface IRegistrationWorkflows {
     /// @dev Restricted to be only callable by the protocol admin and upgrader.
     /// @param newNftContract The address of the new NFT contract implementation.
     function upgradeCollections(address newNftContract) external;
-
-    ////////////////////////////////////////////////////////////////////////////
-    //                   DEPRECATED, WILL BE REMOVED IN V1.4                  //
-    ////////////////////////////////////////////////////////////////////////////
-
-    /// @notice Mint an NFT from a SPGNFT collection and register it with metadata as an IP.
-    /// @notice THIS VERSION OF THE FUNCTION IS DEPRECATED, WILL BE REMOVED IN V1.4
-    function mintAndRegisterIp_deprecated(
-        address spgNftContract,
-        address recipient,
-        WorkflowStructs.IPMetadata calldata ipMetadata
-    ) external returns (address ipId, uint256 tokenId);
 }

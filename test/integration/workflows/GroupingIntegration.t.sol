@@ -83,7 +83,13 @@ contract GroupingIntegration is BaseIntegration {
             allowDuplicates: true
         });
 
-        assertEq(IIPAccount(payable(groupId)).state(), expectedState);
+        assertEq(
+            IIPAccount(payable(groupId)).state(),
+            _predictNextState(
+                expectedState,
+                abi.encodeWithSelector(IGroupingModule.addIp.selector, groupId, ipId, 100e6)
+            )
+        );
         assertTrue(ipAssetRegistry.isRegistered(ipId));
         assertTrue(IGroupIPAssetRegistry(ipAssetRegistryAddr).containsIp(groupId, ipId));
         assertEq(spgNftContract.tokenURI(tokenId), string.concat(testBaseURI, testIpMetadata.nftMetadataURI));
@@ -320,6 +326,10 @@ contract GroupingIntegration is BaseIntegration {
                 state: expectedStates,
                 signerSk: testSenderSk
             });
+            expectedStates = _predictNextState(
+                expectedStates,
+                abi.encodeWithSelector(IGroupingModule.addIp.selector, groupId, ipIds[i], 100e6)
+            );
         }
 
         // setup call data for batch calling `numCalls` `mintAndRegisterIpAndAttachLicenseAndAddToGroup`
@@ -421,6 +431,10 @@ contract GroupingIntegration is BaseIntegration {
                 state: expectedStates,
                 signerSk: testSenderSk
             });
+            expectedStates = _predictNextState(
+                expectedStates,
+                abi.encodeWithSelector(IGroupingModule.addIp.selector, groupId, expectedIpIds[i], 100e6)
+            );
         }
 
         // setup call data for batch calling 10 `registerIpAndAttachLicenseAndAddToGroup`

@@ -3,7 +3,9 @@ pragma solidity 0.8.26;
 
 // external
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
+import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
 import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 
@@ -170,7 +172,20 @@ contract LicenseAttachmentIntegration is BaseIntegration {
 
         assertEq(ipId, expectedIpId);
         assertTrue(ipAssetRegistry.isRegistered(ipId));
-        assertEq(IIPAccount(payable(ipId)).state(), expectedState);
+        bytes[] memory calldataSequence = new bytes[](3);
+        calldataSequence[0] = abi.encodeWithSelector(ICoreMetadataModule.setAll.selector, ipId, testIpMetadata);
+        calldataSequence[1] = abi.encodeWithSelector(
+            ILicensingModule.attachLicenseTerms.selector,
+            ipId,
+            pilTemplateAddr,
+            licenseTermsIds[0]
+        );
+        calldataSequence[2] = abi.encodeWithSelector(
+            ILicensingModule.setLicensingConfig.selector,
+            ipId,
+            commTermsData[0].licensingConfig
+        );
+        assertEq(IIPAccount(payable(ipId)).state(), _predictStateSequence(expectedState, calldataSequence));
         for (uint256 i = 0; i < licenseTermsIds.length; i++) {
             (address expectedLicenseTemplate, uint256 expectedLicenseTermsId) = licenseRegistry.getAttachedLicenseTerms(
                 expectedIpId,
@@ -244,12 +259,20 @@ contract LicenseAttachmentIntegration is BaseIntegration {
 
         assertEq(ipId, expectedIpId);
         assertTrue(ipAssetRegistry.isRegistered(ipId));
-        assertEq(IIPAccount(payable(ipId)).state(), expectedState);
         (address defaultLicenseTemplate, uint256 defaultLicenseTermsId) = licenseRegistry.getDefaultLicenseTerms();
         (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId, 0);
         assertEq(defaultLicenseTemplate, defaultLicenseTemplate);
         assertEq(defaultLicenseTermsId, defaultLicenseTermsId);
         assertEq(licenseTermsId, defaultLicenseTermsId);
+        bytes[] memory calldataSequence = new bytes[](2);
+        calldataSequence[0] = abi.encodeWithSelector(ICoreMetadataModule.setAll.selector, ipId, testIpMetadata);
+        calldataSequence[1] = abi.encodeWithSelector(
+            ILicensingModule.attachLicenseTerms.selector,
+            ipId,
+            defaultLicenseTemplate,
+            defaultLicenseTermsId
+        );
+        assertEq(IIPAccount(payable(ipId)).state(), _predictStateSequence(expectedState, calldataSequence));
     }
 
     function _setUpTest() private {

@@ -76,8 +76,8 @@ contract DerivativeIntegration is BaseIntegration {
         assertEq(licenseTermsIdChild, parentLicenseTermIds[0]);
         assertEq(IIPAccount(payable(childIpId)).owner(), testSender);
         assertParentChild({
-            ipIdParent: parentIpIds[0],
-            ipIdChild: childIpId,
+            parentIpId: parentIpIds[0],
+            childIpId: childIpId,
             expectedParentCount: parentIpIds.length,
             expectedParentIndex: 0
         });
@@ -144,10 +144,18 @@ contract DerivativeIntegration is BaseIntegration {
         assertEq(licenseTemplateChild, parentLicenseTemplate);
         assertEq(licenseTermsIdChild, parentLicenseTermIds[0]);
         assertEq(IIPAccount(payable(childIpId)).owner(), testSender);
-        assertEq(IIPAccount(payable(childIpId)).state(), expectedState);
+        bytes[] memory calldataSequence = new bytes[](2);
+        calldataSequence[0] = abi.encodeWithSelector(ICoreMetadataModule.setAll.selector, childIpId, testIpMetadata);
+        calldataSequence[1] = abi.encodeWithSelector(
+            ILicensingModule.attachLicenseTerms.selector,
+            childIpId,
+            parentLicenseTemplate,
+            parentLicenseTermIds[0]
+        );
+        assertEq(IIPAccount(payable(childIpId)).state(), _predictStateSequence(expectedState, calldataSequence));
         assertParentChild({
-            ipIdParent: parentIpIds[0],
-            ipIdChild: childIpId,
+            parentIpId: parentIpIds[0],
+            childIpId: childIpId,
             expectedParentCount: parentIpIds.length,
             expectedParentIndex: 0
         });
@@ -202,8 +210,8 @@ contract DerivativeIntegration is BaseIntegration {
         assertEq(IIPAccount(payable(childIpId)).owner(), testSender);
 
         assertParentChild({
-            ipIdParent: parentIpIds[0],
-            ipIdChild: childIpId,
+            parentIpId: parentIpIds[0],
+            childIpId: childIpId,
             expectedParentCount: parentIpIds.length,
             expectedParentIndex: 0
         });
@@ -242,7 +250,7 @@ contract DerivativeIntegration is BaseIntegration {
         licenseTokenIds[0] = startLicenseTokenId;
         licenseToken.approve(derivativeWorkflowsAddr, startLicenseTokenId);
 
-        (bytes memory signatureMetadataAndRegister, bytes32 expectedState, ) = _getSetBatchPermissionSigForPeriphery({
+        (bytes memory signatureMetadataAndRegister, , ) = _getSetBatchPermissionSigForPeriphery({
             ipId: childIpId,
             permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
                 childIpId,
@@ -279,8 +287,8 @@ contract DerivativeIntegration is BaseIntegration {
             assertEq(childLicenseTermsId, parentLicenseTermIds[0]);
         }
         assertParentChild({
-            ipIdParent: parentIpIds[0],
-            ipIdChild: childIpId,
+            parentIpId: parentIpIds[0],
+            childIpId: childIpId,
             expectedParentCount: parentIpIds.length,
             expectedParentIndex: 0
         });
@@ -335,8 +343,8 @@ contract DerivativeIntegration is BaseIntegration {
             assertEq(childLicenseTermsId, parentLicenseTermIds[0]);
             assertEq(IIPAccount(payable(childIpId)).owner(), testSender);
             assertParentChild({
-                ipIdParent: parentIpIds[0],
-                ipIdChild: childIpId,
+                parentIpId: parentIpIds[0],
+                childIpId: childIpId,
                 expectedParentCount: parentIpIds.length,
                 expectedParentIndex: 0
             });

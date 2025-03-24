@@ -4,13 +4,10 @@ pragma solidity 0.8.26;
 // external
 import { Test } from "forge-std/Test.sol";
 import { Create3Deployer } from "@storyprotocol/script/utils/Create3Deployer.sol";
-import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
-import { AccessPermission } from "@storyprotocol/core/lib/AccessPermission.sol";
 import { IAccessController } from "@storyprotocol/core/interfaces/access/IAccessController.sol";
 import { ICoreMetadataModule } from "@storyprotocol/core/interfaces/modules/metadata/ICoreMetadataModule.sol";
 import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingModule.sol";
-import { MetaTx } from "@storyprotocol/core/lib/MetaTx.sol";
 import { MockArbitrationPolicy } from "@storyprotocol/test/mocks/dispute/MockArbitrationPolicy.sol";
 import { MockIPGraph } from "@storyprotocol/test/mocks/MockIPGraph.sol";
 
@@ -27,12 +24,11 @@ import { DeployHelper } from "../../script/utils/DeployHelper.sol";
 // test
 import { MockERC20 } from "../mocks/MockERC20.sol";
 import { MockERC721 } from "../mocks/MockERC721.sol";
+import { TestHelper } from "./TestHelper.t.sol";
 import { Users, UserSecretKeys, UsersLib } from "../utils/Users.t.sol";
 
 /// @title Base Test Contract
-contract BaseTest is Test, DeployHelper {
-    using MessageHashUtils for bytes32;
-
+contract BaseTest is Test, DeployHelper, TestHelper {
     /// @dev Users struct to abstract away user management when testing
     Users internal u;
 
@@ -92,6 +88,14 @@ contract BaseTest is Test, DeployHelper {
 
         // deploy and set up story NFT contracts
         _setupStoryNftContracts();
+
+        _initializeTestHelper(
+            address(accessController),
+            address(coreMetadataModule),
+            address(coreMetadataViewModule),
+            address(licenseRegistry),
+            address(licensingModule)
+        ); // initialize TestHelper (TestHelper.t.sol)
     }
 
     function _setupUsers() internal {
@@ -282,272 +286,5 @@ contract BaseTest is Test, DeployHelper {
         mockToken.approve(address(nftContract), 10000 * 10 ** mockToken.decimals());
         mockToken.approve(address(workflows), 10000 * 10 ** mockToken.decimals());
         _;
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
-                                      HELPERS
-    //////////////////////////////////////////////////////////////////////////*/
-    /// @dev Get the permission list for setting metadata and registering a derivative for the IP.
-    /// @param ipId The ID of the IP that the permissions are for.
-    /// @param to The address of the periphery contract to receive the permission.
-    /// @return permissionList The list of permissions for setting metadata and registering a derivative.
-    function _getMetadataAndDerivativeRegistrationPermissionList(
-        address ipId,
-        address to,
-        bool withLicenseToken
-    ) internal view returns (AccessPermission.Permission[] memory permissionList) {
-        address[] memory modules = new address[](2);
-        bytes4[] memory selectors = new bytes4[](2);
-        permissionList = new AccessPermission.Permission[](2);
-        modules[0] = coreMetadataModuleAddr;
-        modules[1] = licensingModuleAddr;
-        selectors[0] = ICoreMetadataModule.setAll.selector;
-        if (withLicenseToken) {
-            selectors[1] = ILicensingModule.registerDerivativeWithLicenseTokens.selector;
-        } else {
-            selectors[1] = ILicensingModule.registerDerivative.selector;
-        }
-        for (uint256 i = 0; i < 2; i++) {
-            permissionList[i] = AccessPermission.Permission({
-                ipAccount: ipId,
-                signer: to,
-                to: modules[i],
-                func: selectors[i],
-                permission: AccessPermission.ALLOW
-            });
-        }
-    }
-
-    /// @dev Get the permission list for setting metadata and attaching default license terms for the IP.
-    /// @param ipId The ID of the IP that the permissions are for.
-    /// @param to The address of the periphery contract to receive the permission.
-    /// @return permissionList The list of permissions for setting metadata and attaching default license terms.
-    function _getMetadataAndDefaultTermsPermissionList(
-        address ipId,
-        address to
-    ) internal view returns (AccessPermission.Permission[] memory permissionList) {
-        address[] memory modules = new address[](2);
-        bytes4[] memory selectors = new bytes4[](2);
-        permissionList = new AccessPermission.Permission[](2);
-        modules[0] = coreMetadataModuleAddr;
-        modules[1] = licensingModuleAddr;
-        selectors[0] = ICoreMetadataModule.setAll.selector;
-        selectors[1] = ILicensingModule.attachDefaultLicenseTerms.selector;
-        for (uint256 i = 0; i < 2; i++) {
-            permissionList[i] = AccessPermission.Permission({
-                ipAccount: ipId,
-                signer: to,
-                to: modules[i],
-                func: selectors[i],
-                permission: AccessPermission.ALLOW
-            });
-        }
-    }
-
-    /// @dev Get the permission list for attaching license terms and setting licensing config for the IP.
-    /// @param ipId The ID of the IP that the permissions are for.
-    /// @param to The address of the periphery contract to receive the permission.
-    /// @return permissionList The list of permissions for attaching license terms and setting licensing config.
-    function _getAttachTermsAndConfigPermissionList(
-        address ipId,
-        address to
-    ) internal view returns (AccessPermission.Permission[] memory permissionList) {
-        address[] memory modules = new address[](2);
-        bytes4[] memory selectors = new bytes4[](2);
-        permissionList = new AccessPermission.Permission[](2);
-        modules[0] = licensingModuleAddr;
-        modules[1] = licensingModuleAddr;
-        selectors[0] = ILicensingModule.attachLicenseTerms.selector;
-        selectors[1] = ILicensingModule.setLicensingConfig.selector;
-        for (uint256 i = 0; i < 2; i++) {
-            permissionList[i] = AccessPermission.Permission({
-                ipAccount: ipId,
-                signer: to,
-                to: modules[i],
-                func: selectors[i],
-                permission: AccessPermission.ALLOW
-            });
-        }
-    }
-
-    /// @dev Get the permission list for setting metadata and attaching license terms for the IP.
-    /// @param ipId The ID of the IP that the permissions are for.
-    /// @param to The address of the periphery contract to receive the permission.
-    /// @return permissionList The list of permissions for setting metadata, attaching license terms, and
-    /// setting licensing config.
-    function _getMetadataAndAttachTermsAndConfigPermissionList(
-        address ipId,
-        address to
-    ) internal view returns (AccessPermission.Permission[] memory permissionList) {
-        address[] memory modules = new address[](3);
-        bytes4[] memory selectors = new bytes4[](3);
-        permissionList = new AccessPermission.Permission[](3);
-
-        modules[0] = coreMetadataModuleAddr;
-        modules[1] = licensingModuleAddr;
-        modules[2] = licensingModuleAddr;
-        selectors[0] = ICoreMetadataModule.setAll.selector;
-        selectors[1] = ILicensingModule.attachLicenseTerms.selector;
-        selectors[2] = ILicensingModule.setLicensingConfig.selector;
-        for (uint256 i = 0; i < 3; i++) {
-            permissionList[i] = AccessPermission.Permission({
-                ipAccount: ipId,
-                signer: to,
-                to: modules[i],
-                func: selectors[i],
-                permission: AccessPermission.ALLOW
-            });
-        }
-    }
-
-    /// @dev Get the signature for setting batch permission for the IP by the SPG.
-    /// @param ipId The ID of the IP to set the permissions for.
-    /// @param permissionList A list of permissions to set.
-    /// @param deadline The deadline for the signature.
-    /// @param state IPAccount's internal state
-    /// @param signerSk The secret key of the signer.
-    /// @return signature The signature for setting the batch permission.
-    /// @return expectedState The expected IPAccount's state after setting batch permission.
-    /// @return data The call data for executing the setBatchPermissions function.
-    function _getSetBatchPermissionSigForPeriphery(
-        address ipId,
-        AccessPermission.Permission[] memory permissionList,
-        uint256 deadline,
-        bytes32 state,
-        uint256 signerSk
-    ) internal view returns (bytes memory signature, bytes32 expectedState, bytes memory data) {
-        expectedState = keccak256(
-            abi.encode(
-                state, // ipAccount.state()
-                abi.encodeWithSelector(
-                    IIPAccount.execute.selector,
-                    address(accessControllerAddr),
-                    0, // amount of ether to send
-                    abi.encodeWithSelector(IAccessController.setBatchTransientPermissions.selector, permissionList)
-                )
-            )
-        );
-
-        data = abi.encodeWithSelector(IAccessController.setBatchTransientPermissions.selector, permissionList);
-
-        bytes32 digest = MessageHashUtils.toTypedDataHash(
-            MetaTx.calculateDomainSeparator(ipId),
-            MetaTx.getExecuteStructHash(
-                MetaTx.Execute({
-                    to: address(accessControllerAddr),
-                    value: 0,
-                    data: data,
-                    nonce: expectedState,
-                    deadline: deadline
-                })
-            )
-        );
-
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerSk, digest);
-        signature = abi.encodePacked(r, s, v);
-    }
-
-    /// @dev Get the signature for setting permission for the IP by the SPG.
-    /// @param ipId The ID of the IP.
-    /// @param to The address of the periphery contract to receive the permission.
-    /// @param module The address of the module to set the permission for.
-    /// @param selector The selector of the function to be permitted for execution.
-    /// @param deadline The deadline for the signature.
-    /// @param state IPAccount's internal nonce
-    /// @param signerSk The secret key of the signer.
-    /// @return signature The signature for setting the permission.
-    /// @return expectedState The expected IPAccount's state after setting the permission.
-    /// @return data The call data for executing the setPermission function.
-    function _getSetPermissionSigForPeriphery(
-        address ipId,
-        address to,
-        address module,
-        bytes4 selector,
-        uint256 deadline,
-        bytes32 state,
-        uint256 signerSk
-    ) internal view returns (bytes memory signature, bytes32 expectedState, bytes memory data) {
-        expectedState = keccak256(
-            abi.encode(
-                state, // ipAccount.state()
-                abi.encodeWithSelector(
-                    IIPAccount.execute.selector,
-                    address(accessControllerAddr),
-                    0, // amount of ether to send
-                    abi.encodeWithSelector(
-                        IAccessController.setTransientPermission.selector,
-                        ipId,
-                        to,
-                        address(module),
-                        selector,
-                        AccessPermission.ALLOW
-                    )
-                )
-            )
-        );
-
-        data = abi.encodeWithSelector(
-            IAccessController.setTransientPermission.selector,
-            ipId,
-            to,
-            address(module),
-            selector,
-            AccessPermission.ALLOW
-        );
-
-        bytes32 digest = MessageHashUtils.toTypedDataHash(
-            MetaTx.calculateDomainSeparator(ipId),
-            MetaTx.getExecuteStructHash(
-                MetaTx.Execute({
-                    to: address(accessControllerAddr),
-                    value: 0,
-                    data: data,
-                    nonce: expectedState,
-                    deadline: deadline
-                })
-            )
-        );
-
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerSk, digest);
-        signature = abi.encodePacked(r, s, v);
-    }
-
-    /// @dev Uses `signerSk` to sign `recipient` and return the signature.
-    function _signAddress(uint256 signerSk, address recipient) internal pure returns (bytes memory signature) {
-        bytes32 digest = keccak256(abi.encodePacked(recipient)).toEthSignedMessageHash();
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerSk, digest);
-        signature = abi.encodePacked(r, s, v);
-    }
-
-    /// @dev Uses `signerSk` to sign `recipient` and `badgeAddr` and return the signature.
-    function _signAddress(
-        uint256 signerSk,
-        address recipient,
-        address badgeAddr
-    ) internal pure returns (bytes memory signature) {
-        bytes32 digest = keccak256(abi.encodePacked(recipient, badgeAddr)).toEthSignedMessageHash();
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerSk, digest);
-        signature = abi.encodePacked(r, s, v);
-    }
-
-    /// @dev Assert metadata for the IP.
-    function assertMetadata(address ipId, WorkflowStructs.IPMetadata memory expectedMetadata) internal view {
-        assertEq(coreMetadataViewModule.getMetadataURI(ipId), expectedMetadata.ipMetadataURI);
-        assertEq(coreMetadataViewModule.getMetadataHash(ipId), expectedMetadata.ipMetadataHash);
-        assertEq(coreMetadataViewModule.getNftMetadataHash(ipId), expectedMetadata.nftMetadataHash);
-    }
-
-    /// @dev Assert parent and derivative relationship.
-    function assertParentChild(
-        address parentIpId,
-        address childIpId,
-        uint256 expectedParentCount,
-        uint256 expectedParentIndex
-    ) internal view {
-        assertTrue(licenseRegistry.hasDerivativeIps(parentIpId));
-        assertTrue(licenseRegistry.isDerivativeIp(childIpId));
-        assertTrue(licenseRegistry.isParentIp({ parentIpId: parentIpId, childIpId: childIpId }));
-        assertEq(licenseRegistry.getParentIpCount(childIpId), expectedParentCount);
-        assertEq(licenseRegistry.getParentIp(childIpId, expectedParentIndex), parentIpId);
     }
 }
