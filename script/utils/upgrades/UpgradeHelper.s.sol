@@ -5,6 +5,8 @@ pragma solidity 0.8.26;
 // external
 import { console2 } from "forge-std/console2.sol";
 import { Script } from "forge-std/Script.sol";
+import { BroadcastManager } from "@storyprotocol/script/utils/BroadcastManager.s.sol";
+import { JsonDeploymentHandler } from "@storyprotocol/script/utils/JsonDeploymentHandler.s.sol";
 import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 
 // contract
@@ -17,8 +19,6 @@ import { RoyaltyTokenDistributionWorkflows } from "../../../contracts/workflows/
 import { SPGNFT } from "../../../contracts/SPGNFT.sol";
 
 // script
-import { BroadcastManager } from "../../utils/BroadcastManager.s.sol";
-import { JsonDeploymentHandler } from "../../utils/JsonDeploymentHandler.s.sol";
 import { StoryProtocolCoreAddressManager } from "../../utils/StoryProtocolCoreAddressManager.sol";
 import { StoryProtocolPeripheryAddressManager } from "../../utils/StoryProtocolPeripheryAddressManager.sol";
 import { StringUtil } from "../../utils/StringUtil.sol";

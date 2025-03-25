@@ -116,7 +116,8 @@ contract BaseTest is Test, DeployHelper, TestHelper {
             CREATE3_DEFAULT_SEED,
             false, // runStorageLayoutCheck
             false, // writeDeploys
-            true // isTest
+            true, // isTest
+            "test" // version
         );
 
         // set the NFT contract beacon for workflow contracts
@@ -160,8 +161,8 @@ contract BaseTest is Test, DeployHelper, TestHelper {
                     contractURI: testContractURI,
                     maxSupply: 100_000_000,
                     mintFee: 1 * 10 ** mockToken.decimals(), // 1 token
-                    mintFeeToken: address(mockToken),
                     mintFeeRecipient: feeRecipient,
+                    mintFeeToken: address(mockToken),
                     owner: minter,
                     mintOpen: true,
                     isPublicMinting: false
