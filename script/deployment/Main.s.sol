@@ -8,6 +8,7 @@ import { DeployHelper } from "../utils/DeployHelper.sol";
 contract Main is DeployHelper {
     address internal CREATE3_DEPLOYER = 0x9fBB3DF7C40Da2e5A0dE984fFE2CCB7C47cd0ABf;
     uint256 private constant CREATE3_DEFAULT_SEED = 8;
+    string private version = "v1.3.1";
 
     constructor() DeployHelper(CREATE3_DEPLOYER){}
 
@@ -31,8 +32,9 @@ contract Main is DeployHelper {
             seed, // create3 seed
             false, // runStorageLayoutCheck
             true, // writeDeployments
-            false // isTest
+            false, // isTest,
+            version // version
         );
-        _writeDeployment(); // write deployment json to deployments/deployment-{chainId}.json
+        _writeDeployment(version); // write deployment json to deployments/deployment-{chainId}.json
     }
 }

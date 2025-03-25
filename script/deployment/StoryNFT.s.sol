@@ -8,6 +8,8 @@ import { DeployHelper } from "../utils/DeployHelper.sol";
 contract StoryNFT is DeployHelper {
     address internal CREATE3_DEPLOYER = 0x9fBB3DF7C40Da2e5A0dE984fFE2CCB7C47cd0ABf;
     uint256 private constant CREATE3_DEFAULT_SEED = 1234567890;
+    string private version = "v1.3.1";
+
     constructor() DeployHelper(CREATE3_DEPLOYER) {}
 
     function run() public {
@@ -26,6 +28,6 @@ contract StoryNFT is DeployHelper {
             isTest: false
         });
 
-        _writeDeployment();
+        _writeDeployment(version);
     }
 }

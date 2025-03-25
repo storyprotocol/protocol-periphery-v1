@@ -10,6 +10,7 @@ import { ERC6551Registry } from "erc6551/ERC6551Registry.sol";
 import { AccessManager } from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import { BeaconProxy } from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
+import { BroadcastManager } from "@storyprotocol/script/utils/BroadcastManager.s.sol";
 import { ICreate3Deployer } from "@storyprotocol/script/utils/ICreate3Deployer.sol";
 import { AccessController } from "@storyprotocol/core/access/AccessController.sol";
 import { CoreMetadataModule } from "@storyprotocol/core/modules/metadata/CoreMetadataModule.sol";
@@ -37,6 +38,7 @@ import { AccessManager } from "@openzeppelin/contracts/access/manager/AccessMana
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { TestProxyHelper } from "@storyprotocol/test/utils/TestProxyHelper.sol";
 import { ProtocolAdmin } from "@storyprotocol/core/lib/ProtocolAdmin.sol";
+import { JsonDeploymentHandler } from "@storyprotocol/script/utils/JsonDeploymentHandler.s.sol";
 import { ProtocolPausableUpgradeable } from "@storyprotocol/core/pause/ProtocolPausableUpgradeable.sol";
 
 // contracts
@@ -46,18 +48,18 @@ import { GroupingWorkflows } from "../../contracts/workflows/GroupingWorkflows.s
 import { LicenseAttachmentWorkflows } from "../../contracts/workflows/LicenseAttachmentWorkflows.sol";
 import { OrgNFT } from "../../contracts/story-nft/OrgNFT.sol";
 import { RegistrationWorkflows } from "../../contracts/workflows/RegistrationWorkflows.sol";
+import { IRegistrationWorkflows } from "../../contracts/interfaces/workflows/IRegistrationWorkflows.sol";
 import { RoyaltyWorkflows } from "../../contracts/workflows/RoyaltyWorkflows.sol";
 import { RoyaltyTokenDistributionWorkflows } from "../../contracts/workflows/RoyaltyTokenDistributionWorkflows.sol";
 import { StoryBadgeNFT } from "../../contracts/story-nft/StoryBadgeNFT.sol";
 import { OrgStoryNFTFactory } from "../../contracts/story-nft/OrgStoryNFTFactory.sol";
 import { OwnableERC20 } from "../../contracts/modules/tokenizer/OwnableERC20.sol";
+import { ITokenizerModule } from "../../contracts/interfaces/modules/tokenizer/ITokenizerModule.sol";
 import { TokenizerModule } from "../../contracts/modules/tokenizer/TokenizerModule.sol";
 import { LockLicenseHook } from "../../contracts/hooks/LockLicenseHook.sol";
 import { TotalLicenseTokenLimitHook } from "../../contracts/hooks/TotalLicenseTokenLimitHook.sol";
 
 // script
-import { BroadcastManager } from "./BroadcastManager.s.sol";
-import { JsonDeploymentHandler } from "./JsonDeploymentHandler.s.sol";
 import { StoryProtocolCoreAddressManager } from "./StoryProtocolCoreAddressManager.sol";
 import { StoryProtocolPeripheryAddressManager } from "./StoryProtocolPeripheryAddressManager.sol";
 import { StringUtil } from "./StringUtil.sol";
@@ -118,7 +120,7 @@ contract DeployHelper is
     // Tokenizer Module
     TokenizerModule internal tokenizerModule;
     address internal ownableERC20Template;
-    address internal ownableERC20Beacon;
+    UpgradeableBeacon internal ownableERC20Beacon;
 
     // LicensingHooks
     LockLicenseHook internal lockLicenseHook;
@@ -153,6 +155,8 @@ contract DeployHelper is
     // mock core contract deployer
     address internal mockDeployer;
 
+    string private version;
+
     constructor(
         address create3Deployer_
     ) JsonDeploymentHandler("main") {
@@ -169,10 +173,12 @@ contract DeployHelper is
         uint256 create3SaltSeed_,
         bool runStorageLayoutCheck,
         bool writeDeploys_,
-        bool isTest
+        bool isTest,
+        string memory version_
     ) public virtual {
         create3SaltSeed = create3SaltSeed_;
         writeDeploys = writeDeploys_;
+        version = version_;
 
         // This will run OZ storage layout check for all contracts. Requires --ffi flag.
         if (runStorageLayoutCheck) _validate(); // StorageLayoutChecker.s.sol
@@ -195,10 +201,11 @@ contract DeployHelper is
             if (spgNftBeacon.owner() != address(registrationWorkflows))
                 revert DeploymentConfigError("RegistrationWorkflows is not the owner of SPGNFTBeacon");
 
-            if (UpgradeableBeacon(ownableERC20Beacon).owner() != address(tokenizerModule))
+
+            if (ownableERC20Beacon.owner() != address(tokenizerModule))
                 revert DeploymentConfigError("TokenizerModule is not the owner of OwnableERC20Beacon");
 
-            if (writeDeploys) _writeDeployment(); // JsonDeploymentHandler.s.sol
+            if (writeDeploys) _writeDeployment(version); // JsonDeploymentHandler.s.sol
             _endBroadcast(); // BroadcastManager.s.sol
         }
     }
@@ -313,7 +320,7 @@ contract DeployHelper is
         orgStoryNftFactory.setDefaultOrgStoryNftTemplate(defaultOrgStoryNftTemplate);
 
         if (!isTest) {
-            if (writeDeploys) _writeDeployment();
+            if (writeDeploys) _writeDeployment(version);
             _endBroadcast();
         }
     }
@@ -494,19 +501,24 @@ contract DeployHelper is
 
         // OwnableERC20 template
         _predeploy("OwnableERC20Template");
-        ownableERC20Template = address(new OwnableERC20(
-            _getDeployedAddress("OwnableERC20Beacon")
+        ownableERC20Template = address(create3Deployer.deployDeterministic(
+            abi.encodePacked(type(OwnableERC20).creationCode,
+                abi.encode(
+                    _getDeployedAddress("OwnableERC20Beacon")
+                )
+            ),
+            _getSalt(string.concat(type(OwnableERC20).name))
         ));
         _postdeploy("OwnableERC20Template", ownableERC20Template);
 
         // Upgradeable Beacon for OwnableERC20Template
         _predeploy("OwnableERC20Beacon");
-        ownableERC20Beacon = address(UpgradeableBeacon(
+        ownableERC20Beacon = UpgradeableBeacon(
             create3Deployer.deployDeterministic(
                 abi.encodePacked(type(UpgradeableBeacon).creationCode, abi.encode(ownableERC20Template, deployer)),
                 _getSalt("OwnableERC20Beacon")
             )
-        ));
+        );
         _postdeploy("OwnableERC20Beacon", address(ownableERC20Beacon));
         require(
             UpgradeableBeacon(ownableERC20Beacon).implementation() == address(ownableERC20Template),
@@ -550,7 +562,7 @@ contract DeployHelper is
     function _configurePeripheryContracts() private {
        // Transfer ownership of beacon proxy to RegistrationWorkflows
        spgNftBeacon.transferOwnership(address(registrationWorkflows));
-       UpgradeableBeacon(ownableERC20Beacon).transferOwnership(address(tokenizerModule));
+       ownableERC20Beacon.transferOwnership(address(tokenizerModule));
        registrationWorkflows.setNftContractBeacon(address(spgNftBeacon));
        tokenizerModule.whitelistTokenTemplate(address(ownableERC20Template), true);
        IModuleRegistry(moduleRegistryAddr).registerModule("TOKENIZER_MODULE", address(tokenizerModule));
@@ -559,8 +571,46 @@ contract DeployHelper is
        // add upgrade role and pause role to tokenizer module
        bytes4[] memory selectors = new bytes4[](1);
        selectors[0] = UUPSUpgradeable.upgradeToAndCall.selector;
-       AccessManager(protocolAccessManagerAddr).setTargetFunctionRole(
+        AccessManager(protocolAccessManagerAddr).setTargetFunctionRole(
+            address(derivativeWorkflows),
+            selectors,
+            ProtocolAdmin.UPGRADER_ROLE
+        );
+        AccessManager(protocolAccessManagerAddr).setTargetFunctionRole(
+            address(groupingWorkflows),
+            selectors,
+            ProtocolAdmin.UPGRADER_ROLE
+        );
+        AccessManager(protocolAccessManagerAddr).setTargetFunctionRole(
+            address(licenseAttachmentWorkflows),
+            selectors,
+            ProtocolAdmin.UPGRADER_ROLE
+        );
+        AccessManager(protocolAccessManagerAddr).setTargetFunctionRole(
+            address(royaltyTokenDistributionWorkflows),
+            selectors,
+            ProtocolAdmin.UPGRADER_ROLE
+        );
+        AccessManager(protocolAccessManagerAddr).setTargetFunctionRole(
+            address(royaltyWorkflows),
+            selectors,
+            ProtocolAdmin.UPGRADER_ROLE
+        );
+
+        selectors = new bytes4[](2);
+        selectors[0] = UUPSUpgradeable.upgradeToAndCall.selector;
+        selectors[1] = ITokenizerModule.upgradeWhitelistedTokenTemplate.selector;
+        AccessManager(protocolAccessManagerAddr).setTargetFunctionRole(
             address(tokenizerModule),
+            selectors,
+            ProtocolAdmin.UPGRADER_ROLE
+        );
+
+        selectors = new bytes4[](2);
+        selectors[0] = UUPSUpgradeable.upgradeToAndCall.selector;
+        selectors[1] = IRegistrationWorkflows.upgradeCollections.selector;
+        AccessManager(protocolAccessManagerAddr).setTargetFunctionRole(
+            address(registrationWorkflows),
             selectors,
             ProtocolAdmin.UPGRADER_ROLE
         );
@@ -1045,6 +1095,11 @@ contract DeployHelper is
 
         // add evenSplitGroupPool to whitelist of group pools
         groupingModule.whitelistGroupRewardPool(address(evenSplitGroupPool), true);
+
+        // grant roles
+        protocolAccessManager.grantRole(ProtocolAdmin.UPGRADER_ROLE, mockDeployer, 0);
+        protocolAccessManager.grantRole(ProtocolAdmin.PROTOCOL_ADMIN_ROLE, mockDeployer, 0);
+        protocolAccessManager.grantRole(ProtocolAdmin.PAUSE_ADMIN_ROLE, mockDeployer, 0);
     }
 
     /// @dev get the salt for the contract deployment with CREATE3
