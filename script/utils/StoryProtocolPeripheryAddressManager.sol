@@ -15,6 +15,7 @@ contract StoryProtocolPeripheryAddressManager is Script {
     address internal royaltyTokenDistributionWorkflowsAddr;
     address internal spgNftBeaconAddr;
     address internal spgNftImplAddr;
+    address internal ownableERC20BeaconAddr;
     address internal ownableERC20TemplateAddr;
     address internal tokenizerModuleAddr;
 
@@ -33,6 +34,7 @@ contract StoryProtocolPeripheryAddressManager is Script {
         royaltyTokenDistributionWorkflowsAddr = json.readAddress(".main.RoyaltyTokenDistributionWorkflows");
         spgNftBeaconAddr = json.readAddress(".main.SPGNFTBeacon");
         spgNftImplAddr = json.readAddress(".main.SPGNFTImpl");
+        ownableERC20BeaconAddr = json.readAddress(".main.OwnableERC20Beacon");
         ownableERC20TemplateAddr = json.readAddress(".main.OwnableERC20Template");
         tokenizerModuleAddr = json.readAddress(".main.TokenizerModule");
     }

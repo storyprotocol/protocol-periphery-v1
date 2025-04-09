@@ -615,6 +615,13 @@ contract DeployHelper is
             ProtocolAdmin.UPGRADER_ROLE
         );
 
+        // Module Registry
+        // Upgrading Licensing Hooks requires both removeModule and registerModule
+        selectors = new bytes4[](2);
+        selectors[0] = ModuleRegistry.removeModule.selector;
+        selectors[1] = bytes4(keccak256("registerModule(string,address)"));
+        AccessManager(protocolAccessManagerAddr).setTargetFunctionRole(moduleRegistryAddr, selectors, ProtocolAdmin.UPGRADER_ROLE);
+
         selectors = new bytes4[](2);
         selectors[0] = ProtocolPausableUpgradeable.pause.selector;
         selectors[1] = ProtocolPausableUpgradeable.unpause.selector;
