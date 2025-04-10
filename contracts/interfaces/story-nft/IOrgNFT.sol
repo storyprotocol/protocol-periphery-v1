@@ -47,22 +47,26 @@ interface IOrgNFT is IERC721Metadata {
     ////////////////////////////////////////////////////////////////////////////
     /// @notice Mints the root organization token and register it as an IP.
     /// @param recipient The address of the recipient of the root organization token.
+    /// @param registrationFeePayer The address of the payer of the registration fee.
     /// @param orgIpMetadata OPTIONAL. The desired metadata for the newly minted OrgNFT and registered IP.
     /// @return rootOrgTokenId The ID of the root organization token.
     /// @return rootOrgIpId The ID of the root organization IP.
     function mintRootOrgNft(
         address recipient,
+        address registrationFeePayer,
         WorkflowStructs.IPMetadata calldata orgIpMetadata
     ) external returns (uint256 rootOrgTokenId, address rootOrgIpId);
 
     /// @notice Mints an organization token, register it as an IP,
     /// and makes the IP as a derivative of the root organization IP.
     /// @param recipient The address of the recipient of the minted organization token.
+    /// @param registrationFeePayer The address of the payer of the registration fee.
     /// @param orgIpMetadata OPTIONAL. The desired metadata for the newly minted OrgNFT and registered IP.
     /// @return orgTokenId The ID of the minted organization token.
     /// @return orgIpId The ID of the organization IP.
     function mintOrgNft(
         address recipient,
+        address registrationFeePayer,
         WorkflowStructs.IPMetadata calldata orgIpMetadata
     ) external returns (uint256 orgTokenId, address orgIpId);
 

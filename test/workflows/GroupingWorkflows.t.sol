@@ -196,7 +196,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
         uint256 deadline = block.timestamp + 1000;
         // Get the signature for setting the permission for calling `setAll` (IP metadata) and `attachLicenseTerms`
         // functions in `coreMetadataModule` and `licensingModule` from the IP owner
-        (bytes memory sigMetadataAndAttach, , ) = _getSetBatchPermissionSigForPeriphery({
+        (bytes memory sigMetadataAndAttachAndConfig, , ) = _getSetBatchPermissionSigForPeriphery({
             ipId: expectedIpId,
             permissionList: _getMetadataAndAttachTermsAndConfigPermissionList(expectedIpId, address(groupingWorkflows)),
             deadline: deadline,
@@ -225,7 +225,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
                 signer: groupOwner,
                 deadline: deadline,
-                signature: sigMetadataAndAttach
+                signature: sigMetadataAndAttachAndConfig
             }),
             sigAddToGroup: WorkflowStructs.SignatureData({
                 signer: groupOwner,
@@ -608,6 +608,163 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
                 signature: new bytes(0)
             })
         });
+    }
+
+    function test_GroupingWorkflows_mintAndRegisterIpAndAttachLicenseAndAddToGroup_withRegistrationFee() public {
+        uint96 registrationFee = 1 ether;
+        address treasury = address(0x12345);
+
+        vm.prank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory sigAddToGroup, bytes32 expectedState, ) = _getSetPermissionSigForPeriphery({
+            ipId: groupId,
+            to: address(groupingWorkflows),
+            module: address(groupingModule),
+            selector: IGroupingModule.addIp.selector,
+            deadline: deadline,
+            state: IIPAccount(payable(groupId)).state(),
+            signerSk: groupOwnerSk
+        });
+
+        vm.startPrank(groupOwner);
+        mockToken.mint(groupOwner, spgNftPublic.mintFee() + registrationFee);
+        mockToken.approve(address(spgNftPublic), spgNftPublic.mintFee());
+        mockToken.approve(address(groupingWorkflows), registrationFee);
+
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+        uint256 groupOwnerBalanceBefore = mockToken.balanceOf(groupOwner);
+        groupingWorkflows.mintAndRegisterIpAndAttachLicenseAndAddToGroup({
+            spgNftContract: address(spgNftPublic),
+            groupId: groupId,
+            recipient: groupOwner,
+            maxAllowedRewardShare: 100e6, // 100%
+            ipMetadata: ipMetadataDefault,
+            licensesData: testLicensesData,
+            sigAddToGroup: WorkflowStructs.SignatureData({
+                signer: groupOwner,
+                deadline: deadline,
+                signature: sigAddToGroup
+            }),
+            allowDuplicates: true
+        });
+        vm.stopPrank();
+
+        assertEq(mockToken.balanceOf(treasury), treasuryBalanceBefore + registrationFee);
+        assertEq(mockToken.balanceOf(groupOwner), groupOwnerBalanceBefore - registrationFee - spgNftPublic.mintFee());
+    }
+
+    function test_GroupingWorkflows_registerIpAndAttachLicenseAndAddToGroup_withRegistrationFee() public {
+        uint96 registrationFee = 1 ether;
+        address treasury = address(0x12345);
+
+        vm.prank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+
+        vm.startPrank(groupOwner);
+        uint256 tokenId = MockERC721(mockNft).mint(groupOwner);
+        vm.stopPrank();
+        address expectedIpId = IIPAssetRegistry(ipAssetRegistry).ipId(block.chainid, address(mockNft), tokenId);
+
+        (bytes memory sigMetadataAndAttachAndConfig, , ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: expectedIpId,
+            permissionList: _getMetadataAndAttachTermsAndConfigPermissionList(expectedIpId, address(groupingWorkflows)),
+            deadline: block.timestamp + 1000,
+            state: bytes32(0),
+            signerSk: groupOwnerSk
+        });
+
+        (bytes memory sigAddToGroup, bytes32 expectedState, ) = _getSetPermissionSigForPeriphery({
+            ipId: groupId,
+            to: address(groupingWorkflows),
+            module: address(groupingModule),
+            selector: IGroupingModule.addIp.selector,
+            deadline: block.timestamp + 1000,
+            state: IIPAccount(payable(groupId)).state(),
+            signerSk: groupOwnerSk
+        });
+
+        vm.startPrank(groupOwner);
+        mockToken.mint(groupOwner, registrationFee);
+        mockToken.approve(address(groupingWorkflows), registrationFee);
+
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+        uint256 groupOwnerBalanceBefore = mockToken.balanceOf(groupOwner);
+
+        groupingWorkflows.registerIpAndAttachLicenseAndAddToGroup({
+            nftContract: address(mockNft),
+            tokenId: tokenId,
+            groupId: groupId,
+            maxAllowedRewardShare: 100e6, // 100%
+            licensesData: testLicensesData,
+            ipMetadata: ipMetadataDefault,
+            sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
+                signer: groupOwner,
+                deadline: block.timestamp + 1000,
+                signature: sigMetadataAndAttachAndConfig
+            }),
+            sigAddToGroup: WorkflowStructs.SignatureData({
+                signer: groupOwner,
+                deadline: block.timestamp + 1000,
+                signature: sigAddToGroup
+            })
+        });
+        vm.stopPrank();
+
+        assertEq(mockToken.balanceOf(treasury), treasuryBalanceBefore + registrationFee);
+        assertEq(mockToken.balanceOf(groupOwner), groupOwnerBalanceBefore - registrationFee);
+    }
+
+    function test_GroupingWorkflows_registerGroupAndAttachLicense_withRegistrationFee() public {
+        uint96 registrationFee = 1 ether;
+        address treasury = address(0x12345);
+
+        vm.prank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+
+        vm.startPrank(groupOwner);
+        mockToken.mint(groupOwner, registrationFee);
+        mockToken.approve(address(groupingWorkflows), registrationFee);
+
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+        uint256 groupOwnerBalanceBefore = mockToken.balanceOf(groupOwner);
+
+        address newGroupId = groupingWorkflows.registerGroupAndAttachLicense({
+            groupPool: address(evenSplitGroupPool),
+            licenseData: testGroupLicenseData[0]
+        });
+        vm.stopPrank();
+
+        assertEq(mockToken.balanceOf(treasury), treasuryBalanceBefore + registrationFee);
+        assertEq(mockToken.balanceOf(groupOwner), groupOwnerBalanceBefore - registrationFee);
+    }
+
+    function test_GroupingWorkflows_registerGroupAndAttachLicenseAndAddIps_withRegistrationFee() public {
+        uint96 registrationFee = 1 ether;
+        address treasury = address(0x12345);
+
+        vm.prank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+
+        vm.startPrank(groupOwner);
+        mockToken.mint(groupOwner, registrationFee);
+        mockToken.approve(address(groupingWorkflows), registrationFee);
+
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+        uint256 groupOwnerBalanceBefore = mockToken.balanceOf(groupOwner);
+
+        groupingWorkflows.registerGroupAndAttachLicenseAndAddIps({
+            groupPool: address(evenSplitGroupPool),
+            ipIds: ipIds,
+            maxAllowedRewardShare: 100e6, // 100%
+            licenseData: testGroupLicenseData[0]
+        });
+        vm.stopPrank();
+
+        assertEq(mockToken.balanceOf(treasury), treasuryBalanceBefore + registrationFee);
+        assertEq(mockToken.balanceOf(groupOwner), groupOwnerBalanceBefore - registrationFee);
     }
 
     // setup a group IPA for testing

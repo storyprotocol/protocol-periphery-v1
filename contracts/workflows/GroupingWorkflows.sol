@@ -134,6 +134,7 @@ contract GroupingWorkflows is
             allowDuplicates: allowDuplicates
         });
 
+        _collectRegistrationFeeAndApprove(msg.sender);
         ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 
@@ -182,6 +183,7 @@ contract GroupingWorkflows is
         if (msg.sender != sigAddToGroup.signer)
             revert Errors.GroupingWorkflows__CallerNotSigner(msg.sender, sigAddToGroup.signer);
 
+        _collectRegistrationFeeAndApprove(msg.sender);
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
         address[] memory modules = new address[](3);
@@ -226,6 +228,7 @@ contract GroupingWorkflows is
         address groupPool,
         WorkflowStructs.LicenseData calldata licenseData
     ) external returns (address groupId) {
+        _collectRegistrationFeeAndApprove(msg.sender);
         groupId = GROUPING_MODULE.registerGroup(groupPool);
 
         LicensingHelper.attachLicenseTermsAndSetConfigs(
@@ -253,6 +256,7 @@ contract GroupingWorkflows is
         uint256 maxAllowedRewardShare,
         WorkflowStructs.LicenseData calldata licenseData
     ) external returns (address groupId) {
+        _collectRegistrationFeeAndApprove(msg.sender);
         groupId = GROUPING_MODULE.registerGroup(groupPool);
 
         LicensingHelper.attachLicenseTermsAndSetConfigs(

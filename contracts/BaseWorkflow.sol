@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import { IAccessController } from "@storyprotocol/core/interfaces/access/IAccessController.sol";
 import { IIPAssetRegistry } from "@storyprotocol/core/interfaces/registries/IIPAssetRegistry.sol";
 import { ILicenseRegistry } from "@storyprotocol/core/interfaces/registries/ILicenseRegistry.sol";
@@ -15,6 +18,8 @@ import { Errors } from "./lib/Errors.sol";
 /// @title Base Workflow
 /// @notice The base contract for all Story Protocol Periphery workflows.
 abstract contract BaseWorkflow {
+    using SafeERC20 for IERC20;
+
     /// @notice The address of the Access Controller.
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IAccessController public immutable ACCESS_CONTROLLER;
@@ -66,5 +71,17 @@ abstract contract BaseWorkflow {
             !ISPGNFT(spgNftContract).publicMinting()
         ) revert Errors.Workflow__CallerNotAuthorizedToMint();
         _;
+    }
+
+    /// @notice Collects registration fee from payer and approves IP Asset Registry to spend it.
+    /// @param registrationFeePayer The address of the payer for the IP registration fee.
+    function _collectRegistrationFeeAndApprove(address registrationFeePayer) internal {
+        uint96 registrationFee = IP_ASSET_REGISTRY.getFeeAmount();
+        if (registrationFee > 0) {
+            address feeToken = IP_ASSET_REGISTRY.getFeeToken();
+
+            IERC20(feeToken).safeTransferFrom(registrationFeePayer, address(this), uint256(registrationFee));
+            IERC20(feeToken).forceApprove(address(IP_ASSET_REGISTRY), uint256(registrationFee));
+        }
     }
 }

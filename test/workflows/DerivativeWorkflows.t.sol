@@ -404,6 +404,299 @@ contract DerivativeWorkflowsTest is BaseTest {
         }
     }
 
+    function test_DerivativeWorkflows_mintAndRegisterIpAndMakeDerivative_withRegistrationFee()
+        public
+        withCollection
+        whenCallerHasMinterRole
+        withEnoughTokens(address(derivativeWorkflows))
+        withCommercialParentIp
+    {
+        // stop the prank from `whenCallerHasMinterRole` modifier
+        vm.stopPrank();
+
+        address treasury = address(0x12345);
+        uint96 registrationFee = 1 ether;
+
+        // Set up registration fee
+        vm.prank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+
+        vm.startPrank(caller);
+        (, uint256 licenseTermsIdParent) = licenseRegistry.getAttachedLicenseTerms(ipIdParent, 0);
+
+        address[] memory parentIpIds = new address[](1);
+        parentIpIds[0] = ipIdParent;
+
+        uint256[] memory licenseTermsIds = new uint256[](1);
+        licenseTermsIds[0] = licenseTermsIdParent;
+
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+        uint256 callerBalanceBefore = mockToken.balanceOf(caller);
+
+        derivativeWorkflows.mintAndRegisterIpAndMakeDerivative({
+            spgNftContract: address(nftContract),
+            derivData: WorkflowStructs.MakeDerivative({
+                parentIpIds: parentIpIds,
+                licenseTemplate: address(pilTemplate),
+                licenseTermsIds: licenseTermsIds,
+                royaltyContext: "",
+                maxMintingFee: 0,
+                maxRts: pilTemplate.getLicenseTerms(licenseTermsIdParent).commercialRevShare,
+                maxRevenueShare: 0
+            }),
+            ipMetadata: ipMetadataDefault,
+            recipient: caller,
+            allowDuplicates: true
+        });
+
+        uint256 treasuryBalanceAfter = mockToken.balanceOf(treasury);
+        uint256 callerBalanceAfter = mockToken.balanceOf(caller);
+
+        assertEq(treasuryBalanceAfter, treasuryBalanceBefore + registrationFee);
+        assertEq(
+            callerBalanceAfter,
+            callerBalanceBefore -
+                nftContract.mintFee() -
+                pilTemplate.getLicenseTerms(licenseTermsIdParent).defaultMintingFee -
+                registrationFee
+        );
+    }
+
+    function test_DerivativeWorkflows_registerIpAndMakeDerivative_withRegistrationFee()
+        public
+        withCollection
+        whenCallerHasMinterRole
+        withEnoughTokens(address(derivativeWorkflows))
+        withCommercialParentIp
+    {
+        // stop the prank from `whenCallerHasMinterRole` modifier
+        vm.stopPrank();
+
+        address treasury = address(0x12345);
+        uint96 registrationFee = 1 ether;
+
+        // Set up registration fee
+        vm.prank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+
+        vm.startPrank(caller);
+
+        (, uint256 licenseTermsIdParent) = licenseRegistry.getAttachedLicenseTerms(ipIdParent, 0);
+
+        uint256 tokenIdChild = nftContract.mint({
+            to: caller,
+            nftMetadataURI: ipMetadataDefault.nftMetadataURI,
+            nftMetadataHash: ipMetadataDefault.nftMetadataHash,
+            allowDuplicates: true
+        });
+
+        uint256 deadline = block.timestamp + 1000;
+
+        bytes memory signatureMetadataAndRegister;
+        {
+            address ipIdChild = ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenIdChild);
+            (signatureMetadataAndRegister, , ) = _getSetBatchPermissionSigForPeriphery({
+                ipId: ipIdChild,
+                permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
+                    ipIdChild,
+                    address(derivativeWorkflows),
+                    false
+                ),
+                deadline: deadline,
+                state: bytes32(0),
+                signerSk: sk.alice
+            });
+        }
+
+        address[] memory parentIpIds = new address[](1);
+        parentIpIds[0] = ipIdParent;
+
+        uint256[] memory licenseTermsIds = new uint256[](1);
+        licenseTermsIds[0] = licenseTermsIdParent;
+
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+        uint256 callerBalanceBefore = mockToken.balanceOf(caller);
+
+        derivativeWorkflows.registerIpAndMakeDerivative({
+            nftContract: address(nftContract),
+            tokenId: tokenIdChild,
+            derivData: WorkflowStructs.MakeDerivative({
+                parentIpIds: parentIpIds,
+                licenseTemplate: address(pilTemplate),
+                licenseTermsIds: licenseTermsIds,
+                royaltyContext: "",
+                maxMintingFee: 0,
+                maxRts: pilTemplate.getLicenseTerms(licenseTermsIdParent).commercialRevShare,
+                maxRevenueShare: 0
+            }),
+            ipMetadata: ipMetadataDefault,
+            sigMetadataAndRegister: WorkflowStructs.SignatureData({
+                signer: caller,
+                deadline: deadline,
+                signature: signatureMetadataAndRegister
+            })
+        });
+
+        uint256 treasuryBalanceAfter = mockToken.balanceOf(treasury);
+        uint256 callerBalanceAfter = mockToken.balanceOf(caller);
+
+        assertEq(treasuryBalanceAfter, treasuryBalanceBefore + registrationFee);
+        assertEq(
+            callerBalanceAfter,
+            callerBalanceBefore - pilTemplate.getLicenseTerms(licenseTermsIdParent).defaultMintingFee - registrationFee
+        );
+    }
+
+    function test_DerivativeWorkflows_mintAndRegisterIpAndMakeDerivativeWithLicenseTokens_withRegistrationFee()
+        public
+        withCollection
+        whenCallerHasMinterRole
+        withEnoughTokens(address(derivativeWorkflows))
+        withNonCommercialParentIp
+    {
+        // stop the prank from `whenCallerHasMinterRole` modifier
+        vm.stopPrank();
+
+        address treasury = address(0x12345);
+        uint96 registrationFee = 1 ether;
+
+        // Set up registration fee
+        vm.prank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+
+        vm.startPrank(caller);
+
+        (, uint256 licenseTermsIdParent) = licenseRegistry.getAttachedLicenseTerms(ipIdParent, 0);
+
+        uint32 revShare = pilTemplate.getLicenseTerms(licenseTermsIdParent).commercialRevShare;
+
+        uint256 startLicenseTokenId = licensingModule.mintLicenseTokens({
+            licensorIpId: ipIdParent,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: licenseTermsIdParent,
+            amount: 1,
+            receiver: caller,
+            royaltyContext: "",
+            maxMintingFee: 0,
+            maxRevenueShare: 0
+        });
+
+        // Need so that derivative workflows can transfer the license tokens
+        licenseToken.setApprovalForAll(address(derivativeWorkflows), true);
+
+        uint256[] memory licenseTokenIds = new uint256[](1);
+        licenseTokenIds[0] = startLicenseTokenId;
+
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+        uint256 callerBalanceBefore = mockToken.balanceOf(caller);
+        derivativeWorkflows.mintAndRegisterIpAndMakeDerivativeWithLicenseTokens({
+            spgNftContract: address(nftContract),
+            licenseTokenIds: licenseTokenIds,
+            royaltyContext: "",
+            maxRts: revShare,
+            ipMetadata: ipMetadataDefault,
+            recipient: caller,
+            allowDuplicates: true
+        });
+
+        uint256 treasuryBalanceAfter = mockToken.balanceOf(treasury);
+        uint256 callerBalanceAfter = mockToken.balanceOf(caller);
+
+        assertEq(treasuryBalanceAfter, treasuryBalanceBefore + registrationFee);
+        assertEq(
+            callerBalanceAfter,
+            callerBalanceBefore -
+                nftContract.mintFee() -
+                pilTemplate.getLicenseTerms(licenseTermsIdParent).defaultMintingFee -
+                registrationFee
+        );
+    }
+
+    function test_DerivativeWorkflows_registerIpAndMakeDerivativeWithLicenseTokens_withRegistrationFee()
+        public
+        withCollection
+        whenCallerHasMinterRole
+        withEnoughTokens(address(derivativeWorkflows))
+        withNonCommercialParentIp
+    {
+        // stop the prank from `whenCallerHasMinterRole` modifier
+        vm.stopPrank();
+
+        address treasury = address(0x12345);
+        uint96 registrationFee = 1 ether;
+
+        // Set up registration fee
+        vm.prank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+
+        vm.startPrank(caller);
+
+        (, uint256 licenseTermsIdParent) = licenseRegistry.getAttachedLicenseTerms(ipIdParent, 0);
+
+        uint256 tokenIdChild = nftContract.mint({
+            to: caller,
+            nftMetadataURI: ipMetadataDefault.nftMetadataURI,
+            nftMetadataHash: ipMetadataDefault.nftMetadataHash,
+            allowDuplicates: true
+        });
+        address ipIdChild = ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenIdChild);
+
+        uint256 deadline = block.timestamp + 1000;
+
+        uint256 startLicenseTokenId = licensingModule.mintLicenseTokens({
+            licensorIpId: ipIdParent,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: licenseTermsIdParent,
+            amount: 1,
+            receiver: caller,
+            royaltyContext: "",
+            maxMintingFee: 0,
+            maxRevenueShare: 0
+        });
+
+        uint256[] memory licenseTokenIds = new uint256[](1);
+        licenseTokenIds[0] = startLicenseTokenId;
+        licenseToken.approve(address(derivativeWorkflows), startLicenseTokenId);
+
+        (bytes memory signatureMetadataAndRegister, , ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: ipIdChild,
+            permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
+                ipIdChild,
+                address(derivativeWorkflows),
+                true
+            ),
+            deadline: deadline,
+            state: bytes32(0),
+            signerSk: sk.alice
+        });
+
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+        uint256 callerBalanceBefore = mockToken.balanceOf(caller);
+
+        derivativeWorkflows.registerIpAndMakeDerivativeWithLicenseTokens({
+            nftContract: address(nftContract),
+            tokenId: tokenIdChild,
+            licenseTokenIds: licenseTokenIds,
+            royaltyContext: "",
+            maxRts: pilTemplate.getLicenseTerms(licenseTermsIdParent).commercialRevShare,
+            ipMetadata: ipMetadataDefault,
+            sigMetadataAndRegister: WorkflowStructs.SignatureData({
+                signer: caller,
+                deadline: deadline,
+                signature: signatureMetadataAndRegister
+            })
+        });
+
+        uint256 treasuryBalanceAfter = mockToken.balanceOf(treasury);
+        uint256 callerBalanceAfter = mockToken.balanceOf(caller);
+
+        assertEq(treasuryBalanceAfter, treasuryBalanceBefore + registrationFee);
+        assertEq(
+            callerBalanceAfter,
+            callerBalanceBefore - pilTemplate.getLicenseTerms(licenseTermsIdParent).defaultMintingFee - registrationFee
+        );
+    }
+
     function _mintAndRegisterIpAndMakeDerivativeBaseTest() internal {
         (address licenseTemplateParent, uint256 licenseTermsIdParent) = licenseRegistry.getAttachedLicenseTerms(
             ipIdParent,

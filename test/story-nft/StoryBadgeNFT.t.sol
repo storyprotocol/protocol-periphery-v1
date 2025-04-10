@@ -342,4 +342,28 @@ contract StoryBadgeNFTTest is BaseTest {
         );
         rootOrgStoryNft.mint(u.carl, signature);
     }
+
+    function test_StoryBadgeNFT_mint_WithRegistrationFee() public {
+        uint96 registrationFee = 1 ether;
+        address treasury = address(0x12345);
+
+        vm.startPrank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+        vm.stopPrank();
+
+        bytes memory signature = _signAddress(rootOrgStoryNftSignerSk, u.carl, address(rootOrgStoryNft));
+
+        vm.startPrank(u.carl);
+        mockToken.mint(u.carl, registrationFee);
+        mockToken.approve(address(rootOrgStoryNft), registrationFee);
+
+        uint256 carlBalanceBefore = mockToken.balanceOf(u.carl);
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+
+        rootOrgStoryNft.mint(u.carl, signature);
+
+        assertEq(mockToken.balanceOf(treasury), treasuryBalanceBefore + registrationFee);
+        assertEq(mockToken.balanceOf(u.carl), carlBalanceBefore - registrationFee);
+        vm.stopPrank();
+    }
 }

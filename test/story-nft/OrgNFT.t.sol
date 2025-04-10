@@ -114,7 +114,7 @@ contract OrgNFTTest is BaseTest {
                 address(orgStoryNftFactory)
             )
         );
-        orgNft.mintRootOrgNft(u.bob, ipMetadataDefault);
+        orgNft.mintRootOrgNft(u.bob, u.bob, ipMetadataDefault);
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -123,7 +123,7 @@ contract OrgNFTTest is BaseTest {
                 address(orgStoryNftFactory)
             )
         );
-        orgNft.mintOrgNft(u.bob, ipMetadataDefault);
+        orgNft.mintOrgNft(u.bob, u.bob, ipMetadataDefault);
         vm.stopPrank();
     }
 }
