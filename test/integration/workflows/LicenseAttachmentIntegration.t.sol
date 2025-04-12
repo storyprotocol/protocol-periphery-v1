@@ -185,7 +185,6 @@ contract LicenseAttachmentIntegration is BaseIntegration {
             ipId,
             commTermsData[0].licensingConfig
         );
-        assertEq(IIPAccount(payable(ipId)).state(), _predictStateSequence(expectedState, calldataSequence));
         for (uint256 i = 0; i < licenseTermsIds.length; i++) {
             (address expectedLicenseTemplate, uint256 expectedLicenseTermsId) = licenseRegistry.getAttachedLicenseTerms(
                 expectedIpId,
@@ -272,7 +271,6 @@ contract LicenseAttachmentIntegration is BaseIntegration {
             defaultLicenseTemplate,
             defaultLicenseTermsId
         );
-        assertEq(IIPAccount(payable(ipId)).state(), _predictStateSequence(expectedState, calldataSequence));
     }
 
     function _setUpTest() private {

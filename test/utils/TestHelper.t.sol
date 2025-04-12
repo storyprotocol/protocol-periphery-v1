@@ -270,61 +270,6 @@ contract TestHelper is Test {
         signature = abi.encodePacked(r, s, v);
     }
 
-    /// @dev Predicts the next state given the current state and the calldata of the next function call.
-    /// @notice This function is based on Solady's ERC6551 implementation.
-    /// see: https://github.com/Vectorized/solady/blob/724c39bdfebb593157c2dfa6797c07a25dfb564c/src/accounts/ERC6551.sol#L187
-    /// @param currentState The current state value stored in _ERC6551_STATE_SLOT.
-    /// @param nextCalldata The complete calldata of the next function call.
-    /// @return The predicted next state.
-    function _predictNextState(bytes32 currentState, bytes memory nextCalldata) internal pure returns (bytes32) {
-        bytes memory m = new bytes(0x60 + nextCalldata.length);
-
-        assembly {
-            // Store current state at position 0
-            mstore(add(m, 0x20), currentState)
-            // Store 0x40 at position 0x20
-            mstore(add(m, 0x40), 0x40)
-            // Store calldata length at position 0x40
-            let calldataLength := mload(nextCalldata)
-            mstore(add(m, 0x60), calldataLength)
-
-            // Copy calldata to position 0x60
-            let calldataStart := add(nextCalldata, 0x20)
-            let destPos := add(m, 0x80)
-            // Copy word by word
-            for {
-                let i := 0
-            } lt(i, calldataLength) {
-                i := add(i, 0x20)
-            } {
-                mstore(add(destPos, i), mload(add(calldataStart, i)))
-            }
-
-            // Calculate the length for keccak256
-            // 0x7f + calldatasize rounded up to nearest 32 bytes
-            let length := and(add(0x7f, calldataLength), not(0x1f))
-
-            // Store result
-            mstore(0x00, keccak256(add(m, 0x20), length))
-            return(0x00, 0x20)
-        }
-    }
-
-    /// @dev Predicts the state after multiple function calls
-    /// @param currentState The current state value
-    /// @param calldataSequence Array of calldata for each function call in sequence
-    /// @return The final predicted state
-    function _predictStateSequence(
-        bytes32 currentState,
-        bytes[] memory calldataSequence
-    ) internal pure returns (bytes32) {
-        bytes32 state = currentState;
-        for (uint256 i = 0; i < calldataSequence.length; i++) {
-            state = _predictNextState(state, calldataSequence[i]);
-        }
-        return state;
-    }
-
     /// @dev Uses `signerSk` to sign `recipient` and return the signature.
     function _signAddress(uint256 signerSk, address recipient) internal pure returns (bytes memory signature) {
         bytes32 digest = keccak256(abi.encodePacked(recipient)).toEthSignedMessageHash();

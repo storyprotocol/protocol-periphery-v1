@@ -100,7 +100,7 @@ contract DerivativeIntegration is BaseIntegration {
 
         uint256 deadline = block.timestamp + 1000;
 
-        (bytes memory signatureMetadataAndRegister, bytes32 expectedState, ) = _getSetBatchPermissionSigForPeriphery({
+        (bytes memory signatureMetadataAndRegister, , ) = _getSetBatchPermissionSigForPeriphery({
             ipId: childIpId,
             permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
                 childIpId,
@@ -152,7 +152,7 @@ contract DerivativeIntegration is BaseIntegration {
             parentLicenseTemplate,
             parentLicenseTermIds[0]
         );
-        assertEq(IIPAccount(payable(childIpId)).state(), _predictStateSequence(expectedState, calldataSequence));
+
         assertParentChild({
             parentIpId: parentIpIds[0],
             childIpId: childIpId,

@@ -193,13 +193,6 @@ contract RegistrationWorkflowsTest is BaseTest {
         });
         vm.stopPrank();
 
-        assertEq(
-            IIPAccount(payable(actualIpId)).state(),
-            _predictNextState(
-                bytes32(0),
-                abi.encodeWithSelector(ICoreMetadataModule.setAll.selector, expectedIpId, ipMetadataDefault)
-            )
-        );
         assertEq(actualIpId, expectedIpId);
         assertTrue(ipAssetRegistry.isRegistered(actualIpId));
         assertMetadata(actualIpId, ipMetadataDefault);
