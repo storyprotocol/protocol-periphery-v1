@@ -138,7 +138,7 @@ jobs:
 
       - name: Run DerivativeIntegration Tests
         run: |
-          forge script test/integration/workflows/DerivativeIntegration.t.sol:DerivativeIntegration --rpc-url=$RPC_URL -v --broadcast --priority-gas-price=1 --legacy --skip-simulation
+          forge script test/integration/workflows/DerivativeIntegration.t.sol:DerivativeIntegration --rpc-url=${{ env.RPC_URL }} -v --broadcast --priority-gas-price=1 --legacy --skip-simulation
           # derivative_result=$(forge script test/integration/workflows/DerivativeIntegration.t.sol:DerivativeIntegration --rpc-url=$RPC_URL -v --broadcast --priority-gas-price=1 --legacy --skip-simulation 2>&1)
           # echo $derivative_result
 
