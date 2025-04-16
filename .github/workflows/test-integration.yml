@@ -138,43 +138,31 @@ jobs:
 
       - name: Run DerivativeIntegration Tests
         run: |
-          forge script test/integration/workflows/DerivativeIntegration.t.sol:DerivativeIntegration --rpc-url=${{ env.RPC_URL }} -v --broadcast --priority-gas-price=1 --legacy --skip-simulation > test-results.log
+          forge script test/integration/workflows/DerivativeIntegration.t.sol:DerivativeIntegration --rpc-url=${{ env.RPC_URL }} -vvv --broadcast --priority-gas-price=1 --legacy --skip-simulation > test-results.log
 
       - name: Run GroupingIntegration Tests
         run: |
-          forge script test/integration/workflows/GroupingIntegration.t.sol:GroupingIntegration --rpc-url=${{ env.RPC_URL }} -v --broadcast --priority-gas-price=1 --legacy --skip-simulation >> test-results.log
+          forge script test/integration/workflows/GroupingIntegration.t.sol:GroupingIntegration --rpc-url=${{ env.RPC_URL }} -vvv --broadcast --priority-gas-price=1 --legacy --skip-simulation >> test-results.log
 
       - name: Run LicenseAttachmentIntegration Tests
         run: |
-          forge script test/integration/workflows/LicenseAttachmentIntegration.t.sol:LicenseAttachmentIntegration --rpc-url=${{ env.RPC_URL }} -v --broadcast --priority-gas-price=1 --legacy --skip-simulation >> test-results.log
+          forge script test/integration/workflows/LicenseAttachmentIntegration.t.sol:LicenseAttachmentIntegration --rpc-url=${{ env.RPC_URL }} -vvv --broadcast --priority-gas-price=1 --legacy --skip-simulation >> test-results.log
 
       - name: Run RegistrationIntegration Tests
         run: |
-          forge script test/integration/workflows/RegistrationIntegration.t.sol:RegistrationIntegration --rpc-url=${{ env.RPC_URL }} -v --broadcast --priority-gas-price=1 --legacy --skip-simulation >> test-results.log
+          forge script test/integration/workflows/RegistrationIntegration.t.sol:RegistrationIntegration --rpc-url=${{ env.RPC_URL }} -vvv --broadcast --priority-gas-price=1 --legacy --skip-simulation >> test-results.log
 
       - name: Run RoyaltyIntegration Tests
         run: |
-          forge script test/integration/workflows/RoyaltyIntegration.t.sol:RoyaltyIntegration --rpc-url=${{ env.RPC_URL }} -v --broadcast --priority-gas-price=1 --legacy --skip-simulation >> test-results.log
+          forge script test/integration/workflows/RoyaltyIntegration.t.sol:RoyaltyIntegration --rpc-url=${{ env.RPC_URL }} -vvv --broadcast --priority-gas-price=1 --legacy --skip-simulation >> test-results.log
 
       - name: Run RoyaltyTokenDistributionIntegration Tests
         run: |
-          forge script test/integration/workflows/RoyaltyTokenDistributionIntegration.t.sol:RoyaltyTokenDistributionIntegration --rpc-url=${{ env.RPC_URL }} -v --broadcast --priority-gas-price=1 --legacy --skip-simulation >> test-results.log
+          forge script test/integration/workflows/RoyaltyTokenDistributionIntegration.t.sol:RoyaltyTokenDistributionIntegration --rpc-url=${{ env.RPC_URL }} -vvv --broadcast --priority-gas-price=1 --legacy --skip-simulation >> test-results.log
 
       - name: Merge Test Results
         run: |
           cat test-results.log
-      #     echo "DerivativeIntegration Tests" >> test-results.log
-      #     echo $derivative_result >> test-results.log
-      #     echo "GroupingIntegration Tests" >> test-results.log
-      #     echo $grouping_result >> test-results.log
-      #     echo "LicenseAttachmentIntegration Tests" >> test-results.log
-      #     echo $license_attachment_result >> test-results.log
-      #     echo "RegistrationIntegration Tests" >> test-results.log
-      #     echo $registration_result >> test-results.log
-      #     echo "RoyaltyIntegration Tests" >> test-results.log
-      #     echo $royalty_result >> test-results.log
-      #     echo "RoyaltyTokenDistributionIntegration Tests" >> test-results.log
-      #     echo $royalty_token_distribution_result >> test-results.log
 
       - name: Upload Test Report
         if: always()
