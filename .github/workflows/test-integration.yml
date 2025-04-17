@@ -1,8 +1,8 @@
 name: Integration Test
 
 on:
-  push:
-    branches: [ "integration-test-workflow" ]
+  # push:
+  #   branches: [ "integration-test-workflow" ]
 
   workflow_dispatch:
     inputs:
