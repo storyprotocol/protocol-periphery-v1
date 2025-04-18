@@ -31,9 +31,6 @@ contract SpgNftIntegration is BaseIntegration {
     // Contract instance
     ISPGNFT private spgNftContract;
 
-    // Events for better traceability
-    event TokenURIUpdated(uint256 indexed tokenId, string oldUri, string newUri);
-
     /// @dev To use, run the following command:
     /// forge script test/integration/workflows/SpgNftIntegration.t.sol:SpgNftIntegration \
     /// --rpc-url=$TESTNET_URL -vvvv --broadcast --priority-gas-price=1 --legacy
@@ -106,11 +103,11 @@ contract SpgNftIntegration is BaseIntegration {
      * @return ipId Address of the registered IP
      * @return tokenId ID of the minted token
      */
-    function _mintAndRegisterIp(WorkflowStructs.IPMetadata memory ipMetadata) 
-        private 
-        returns (address ipId, uint256 tokenId) 
-    {
-        return registrationWorkflows.mintAndRegisterIp({
+    function _mintAndRegisterIp(
+        WorkflowStructs.IPMetadata memory ipMetadata
+    ) private returns (address ipId, uint256 tokenId) {
+        return
+            registrationWorkflows.mintAndRegisterIp({
                 spgNftContract: address(spgNftContract),
                 recipient: testSender,
                 ipMetadata: ipMetadata,
