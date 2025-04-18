@@ -1,18 +1,18 @@
 name: Integration Test
 
 on:
-  # push:
-  #   branches: [ "integration-test-workflow" ]
+  push:
+    branches: [ "integration-test-workflow" ]
 
   workflow_dispatch:
     inputs:
       devnet_version:
-        description: 'devnet; mainnet; internal-devnet'
+        description: 'aeneid; mainnet; internal-devnet'
         required: true
         default: 'internal-devnet'
         type: choice
         options:
-          - devnet
+          - aeneid
           - mainnet
           - internal-devnet
 
@@ -33,7 +33,7 @@ jobs:
         id: devnet_version
         run: |
           declare -A devnet_config=(
-            ["devnet"]="1315 http://r1-d.odyssey-devnet.storyrpc.io:8545"
+            ["aeneid"]="1315 https://aeneid.storyrpc.io"
             ["mainnet"]="1514 https://public.storyrpc.io"
             ["internal-devnet"]="1512 https://rpc.devnet.storyrpc.io"
           )
@@ -130,7 +130,10 @@ jobs:
             }
           }'
 
-          echo $PERIPHERY_ADDRESS > ./deploy-out/deployment-${{ needs.set-devnet-constants.outputs.CHAINID }}.json
+          devnet_version="${{ inputs.devnet_version || github.event.inputs.devnet_version || 'internal-devnet' }}"
+          if [[ "$devnet_version" == "internal-devnet" ]]; then
+            echo $PERIPHERY_ADDRESS > ./deploy-out/deployment-${{ needs.set-devnet-constants.outputs.CHAINID }}.json
+          fi
 
       - name: Build Contracts
         run: |
