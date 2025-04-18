@@ -27,10 +27,10 @@ contract SpgNftIntegration is BaseIntegration {
     bytes32 private constant CUSTOM_IP_HASH = bytes32("custom-ip-hash");
     bytes32 private constant CUSTOM_NFT_HASH = bytes32("custom-nft-hash");
     string private constant CUSTOM_IP_URI = "custom-ip-uri";
-    
+
     // Contract instance
     ISPGNFT private spgNftContract;
-    
+
     // Events for better traceability
     event TokenURIUpdated(uint256 indexed tokenId, string oldUri, string newUri);
 
@@ -40,10 +40,10 @@ contract SpgNftIntegration is BaseIntegration {
     function run() public override {
         super.run();
         _beginBroadcast();
-        
+
         // Create NFT collection with empty baseURI to test setTokenURI more effectively
         spgNftContract = _createNftCollection();
-        
+
         // Run the test
         _test_SpgNftIntegration_setTokenURI();
         _endBroadcast();
@@ -54,23 +54,24 @@ contract SpgNftIntegration is BaseIntegration {
      * @return ISPGNFT instance of the created collection
      */
     function _createNftCollection() private returns (ISPGNFT) {
-        return ISPGNFT(
-            registrationWorkflows.createCollection(
-                ISPGNFT.InitParams({
-                    name: testCollectionName,
-                    symbol: testCollectionSymbol,
-                    baseURI: testBaseURI,
-                    contractURI: testContractURI,
-                    maxSupply: testMaxSupply,
-                    mintFee: testMintFee,
-                    mintFeeToken: testMintFeeToken,
-                    mintFeeRecipient: testSender,
-                    owner: testSender,
-                    mintOpen: true,
-                    isPublicMinting: true // Public minting enabled for easy testing
-                })
-            )
-        );
+        return
+            ISPGNFT(
+                registrationWorkflows.createCollection(
+                    ISPGNFT.InitParams({
+                        name: testCollectionName,
+                        symbol: testCollectionSymbol,
+                        baseURI: testBaseURI,
+                        contractURI: testContractURI,
+                        maxSupply: testMaxSupply,
+                        mintFee: testMintFee,
+                        mintFeeToken: testMintFeeToken,
+                        mintFeeRecipient: testSender,
+                        owner: testSender,
+                        mintOpen: true,
+                        isPublicMinting: true // Public minting enabled for easy testing
+                    })
+                )
+            );
     }
 
     /**
@@ -83,7 +84,7 @@ contract SpgNftIntegration is BaseIntegration {
     {
         // Prepare token for minting
         _prepareForMinting();
-        
+
         // Mint and register IP
         (address ipId, uint256 tokenId) = _mintAndRegisterIp(testIpMetadata);
 
@@ -110,11 +111,11 @@ contract SpgNftIntegration is BaseIntegration {
         returns (address ipId, uint256 tokenId) 
     {
         return registrationWorkflows.mintAndRegisterIp({
-            spgNftContract: address(spgNftContract),
-            recipient: testSender,
-            ipMetadata: ipMetadata,
-            allowDuplicates: true
-        });
+                spgNftContract: address(spgNftContract),
+                recipient: testSender,
+                ipMetadata: ipMetadata,
+                allowDuplicates: true
+            });
     }
 
     /**
@@ -126,16 +127,15 @@ contract SpgNftIntegration is BaseIntegration {
         string memory initialUri = spgNftContract.tokenURI(tokenId);
         console2.log("Initial URI:", initialUri);
 
+        assertEq(initialUri, string.concat(testBaseURI, testIpMetadata.nftMetadataURI));
+
         // Update the token URI
         spgNftContract.setTokenURI(tokenId, CUSTOM_TOKEN_URI);
-        
-        // Log the event for tracking
-        emit TokenURIUpdated(tokenId, initialUri, CUSTOM_TOKEN_URI);
-        
+
         // Get and verify the updated URI
         string memory updatedUri = spgNftContract.tokenURI(tokenId);
         console2.log("Updated token URI:", updatedUri);
-        
+
         assertEq(updatedUri, string.concat(testBaseURI, CUSTOM_TOKEN_URI));
     }
 }
