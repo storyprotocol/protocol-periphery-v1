@@ -26,55 +26,50 @@ import { StoryProtocolCoreAddressManager } from "../utils/StoryProtocolCoreAddre
  */
 contract UpgradeExecutorExample is UpgradeExecutor, StoryProtocolPeripheryAddressManager, StoryProtocolCoreAddressManager {
     constructor() UpgradeExecutor(
-        "vx.x.x", // From version (e.g. v1.2.3)
-        "vx.x.x", // To version (e.g. v1.3.2)
-        UpgradeModes.EXECUTE, // Schedule, Cancel or Execute upgrade
-        Output.BATCH_TX_EXECUTION // Output mode
+        "v1.3.1", // From version (e.g. v1.2.3)
+        "v1.3.2", // To version (e.g. v1.3.2)
+        UpgradeModes.SCHEDULE, // Schedule, Cancel or Execute upgrade
+        Output.BATCH_TX_JSON // Output mode
     ) {
         _readStoryProtocolPeripheryAddresses();
         _readStoryProtocolCoreAddresses();
     }
 
     function run() public override {
+        string memory action;
         // Read deployment file for proxy addresses
         _readDeployment(fromVersion); // JsonDeploymentHandler.s.sol
         // Read upgrade proposals file
         _readProposalFile(fromVersion, toVersion); // JsonDeploymentHandler.s.sol
-
         accessManager = AccessManager(protocolAccessManagerAddr);
-
+        _readProposalFile(fromVersion, toVersion); // JsonDeploymentHandler.s.sol
         _beginBroadcast(); // BroadcastManager.s.sol
-        if (outputType == Output.BATCH_TX_JSON) {
+        if (outputType == Output.TX_JSON) {
             console2.log(multisig);
             deployer = multisig;
             console2.log("Generating tx json...");
         }
         // Decide actions based on mode
         if (mode == UpgradeModes.SCHEDULE) {
+            action = "schedule";
             _scheduleUpgrades();
         } else if (mode == UpgradeModes.EXECUTE) {
+            action = "execute";
             _executeUpgrades();
         } else if (mode == UpgradeModes.CANCEL) {
+            action = "cancel";
             _cancelScheduledUpgrades();
         } else {
             revert("Invalid mode");
         }
         // If output is JSON, write the batch txx to file
-        if (outputType == Output.BATCH_TX_JSON) {
-            string memory action;
-            if (mode == UpgradeModes.SCHEDULE) {
-                action = "schedule";
-            } else if (mode == UpgradeModes.EXECUTE) {
-                action = "execute";
-            } else if (mode == UpgradeModes.CANCEL) {
-                action = "cancel";
-            } else {
-                revert("Invalid mode");
-            }
+        if (outputType == Output.TX_JSON) {
             _writeBatchTxsOutput(string.concat(action, "-", fromVersion, "-to-", toVersion)); // JsonBatchTxHelper.s.sol
         } else if (outputType == Output.BATCH_TX_EXECUTION) {
             // If output is BATCH_TX_EXECUTION, execute the batch txs
             _executeBatchTxs();
+        } else if (outputType == Output.BATCH_TX_JSON) {
+            _encodeBatchTxs(action);
         }
         // If output is TX_EXECUTION, no further action is needed
         _endBroadcast(); // BroadcastManager.s.sol
@@ -97,10 +92,6 @@ contract UpgradeExecutorExample is UpgradeExecutor, StoryProtocolPeripheryAddres
         _scheduleUpgrade("SPGNFTImpl");
         _scheduleUpgrade("TokenizerModule");
         _scheduleUpgrade("OwnableERC20Template");
-        _scheduleUpgrade("LockLicenseHook-remove"); // remove from Module Registry
-        _scheduleUpgrade("LockLicenseHook-register"); // re-register in Module Registry
-        _scheduleUpgrade("TotalLicenseTokenLimitHook-remove"); // remove from Module Registry
-        _scheduleUpgrade("TotalLicenseTokenLimitHook-register"); // re-register in Module Registry
     }
 
     /**
@@ -120,10 +111,6 @@ contract UpgradeExecutorExample is UpgradeExecutor, StoryProtocolPeripheryAddres
         _executeUpgrade("SPGNFTImpl");
         _executeUpgrade("TokenizerModule");
         _executeUpgrade("OwnableERC20Template");
-        _executeUpgrade("LockLicenseHook-remove"); // remove from Module Registry
-        _executeUpgrade("LockLicenseHook-register"); // re-register in Module Registry
-        _executeUpgrade("TotalLicenseTokenLimitHook-remove"); // remove from Module Registry
-        _executeUpgrade("TotalLicenseTokenLimitHook-register"); // re-register in Module Registry
     }
 
 
@@ -144,10 +131,6 @@ contract UpgradeExecutorExample is UpgradeExecutor, StoryProtocolPeripheryAddres
         _cancelScheduledUpgrade("SPGNFTImpl");
         _cancelScheduledUpgrade("TokenizerModule");
         _cancelScheduledUpgrade("OwnableERC20Template");
-        _cancelScheduledUpgrade("LockLicenseHook-remove"); // remove from Module Registry
-        _cancelScheduledUpgrade("LockLicenseHook-register"); // re-register in Module Registry
-        _cancelScheduledUpgrade("TotalLicenseTokenLimitHook-remove"); // remove from Module Registry
-        _cancelScheduledUpgrade("TotalLicenseTokenLimitHook-register"); // re-register in Module Registry
     }
 
     /// @dev Returns the data for the upgrade proposal.

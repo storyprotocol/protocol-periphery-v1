@@ -52,8 +52,8 @@ contract UpgradeDeployer is
     uint256 internal CREATE3_DEFAULT_SEED = 8;
 
 
-    string constant PREV_VERSION = "vx.x.x"; // previous version e.g. v1.3.0
-    string constant PROPOSAL_VERSION = "vx.x.x"; // new version e.g. v1.3.1
+    string constant PREV_VERSION = "v1.3.1"; // previous version e.g. v1.3.0
+    string constant PROPOSAL_VERSION = "v1.3.2"; // new version e.g. v1.3.1
 
     address derivativeWorkflowsAddr;
     address groupingWorkflowsAddr;
@@ -220,33 +220,6 @@ contract UpgradeDeployer is
             _getSalt(string.concat(type(OwnableERC20).name, PROPOSAL_VERSION))
         ));
         _addProposal({key: contractKey, proxy: tokenizerModuleAddr, newImpl: impl});
-        impl = address(0);
-
-        contractKey = "LockLicenseHook";
-        _predeploy(contractKey);
-        impl = address(create3Deployer.deployDeterministic(
-            abi.encodePacked(type(LockLicenseHook).creationCode),
-            _getSalt(string.concat(type(LockLicenseHook).name, PROPOSAL_VERSION))
-        ));
-        _addProposal({key: "LockLicenseHook-remove", proxy: moduleRegistryAddr, newImpl: impl});
-        _addProposal({key: "LockLicenseHook-register", proxy: moduleRegistryAddr, newImpl: impl});
-        impl = address(0);
-
-        contractKey = "TotalLicenseTokenLimitHook";
-        _predeploy(contractKey);
-        impl = address(create3Deployer.deployDeterministic(
-            abi.encodePacked(type(TotalLicenseTokenLimitHook).creationCode,
-                abi.encode(
-                    licenseRegistryAddr,
-                    licenseTokenAddr,
-                    accessControllerAddr,
-                    ipAssetRegistryAddr
-                )
-            ),
-            _getSalt(string.concat(type(TotalLicenseTokenLimitHook).name, PROPOSAL_VERSION))
-        ));
-        _addProposal({key: "TotalLicenseTokenLimitHook-remove", proxy: moduleRegistryAddr, newImpl: impl});
-        _addProposal({key: "TotalLicenseTokenLimitHook-register", proxy: moduleRegistryAddr, newImpl: impl});
         impl = address(0);
 
         return _returnProposals();

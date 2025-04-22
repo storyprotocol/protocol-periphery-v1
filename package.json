@@ -39,7 +39,7 @@
     "dependencies": {
         "@openzeppelin/contracts": "5.2.0",
         "@openzeppelin/contracts-upgradeable": "5.2.0",
-        "@story-protocol/protocol-core": "github:storyprotocol/protocol-core-v1#main",
+        "@story-protocol/protocol-core": "github:storyprotocol/protocol-core-v1#schedule-tx",
         "erc6551": "^0.3.1",
         "solady": "^0.0.281",
         "wip": "github:piplabs/wip#main"
