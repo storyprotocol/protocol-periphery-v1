@@ -293,6 +293,15 @@ contract StoryBadgeNFTTest is BaseTest {
         vm.stopPrank();
     }
 
+    function test_StoryBadgeNFT_revert_mint_InvalidSignature_WithoutContractAddress() public {
+        bytes memory signature = _signAddress(rootOrgStoryNftSignerSk, u.carl);
+
+        vm.startPrank(u.carl);
+        vm.expectRevert(IStoryBadgeNFT.StoryBadgeNFT__InvalidSignature.selector);
+        rootOrgStoryNft.mint(u.carl, signature);
+        vm.stopPrank();
+    }
+
     function test_StoryBadgeNFT_revert_mint_InvalidSignature() public {
         bytes memory signature = _signAddress(sk.carl, u.carl, address(rootOrgStoryNft));
 

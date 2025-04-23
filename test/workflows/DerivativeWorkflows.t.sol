@@ -13,6 +13,7 @@ import { PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILi
 
 // contracts
 import { Errors } from "../../contracts/lib/Errors.sol";
+import { LicensingHelper } from "../../contracts/lib/LicensingHelper.sol";
 import { WorkflowStructs } from "../../contracts/lib/WorkflowStructs.sol";
 
 // test
@@ -525,6 +526,49 @@ contract DerivativeWorkflowsTest is BaseTest {
             childIpId: ipIdChild,
             expectedParentCount: 1,
             expectedParentIndex: 0
+        });
+    }
+
+    function test_DerivativeWorkflows_revert_ParentIpIdsAndLicenseTermsIdsMismatch()
+        public
+        withCollection
+        whenCallerHasMinterRole
+        withEnoughTokens(address(derivativeWorkflows))
+        withCommercialParentIp
+    {
+        (address licenseTemplateParent, uint256 licenseTermsIdParent) = licenseRegistry.getAttachedLicenseTerms(
+            ipIdParent,
+            0
+        );
+
+        uint32 revShare = pilTemplate.getLicenseTerms(licenseTermsIdParent).commercialRevShare;
+
+        address[] memory parentIpIds = new address[](1);
+        parentIpIds[0] = ipIdParent;
+
+        uint256[] memory licenseTermsIds = new uint256[](2);
+        licenseTermsIds[0] = licenseTermsIdParent;
+        licenseTermsIds[1] = licenseTermsIdParent;
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LicensingHelper.LicensingHelper__ParentIpIdsAndLicenseTermsIdsMismatch.selector
+            )
+        );
+        derivativeWorkflows.mintAndRegisterIpAndMakeDerivative({
+            spgNftContract: address(nftContract),
+            derivData: WorkflowStructs.MakeDerivative({
+                parentIpIds: parentIpIds,
+                licenseTemplate: address(pilTemplate),
+                licenseTermsIds: licenseTermsIds,
+                royaltyContext: "",
+                maxMintingFee: 0,
+                maxRts: revShare,
+                maxRevenueShare: 0
+            }),
+            ipMetadata: ipMetadataDefault,
+            recipient: caller,
+            allowDuplicates: true
         });
     }
 }
