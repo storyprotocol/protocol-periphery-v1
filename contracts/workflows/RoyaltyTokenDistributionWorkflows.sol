@@ -134,7 +134,7 @@ contract RoyaltyTokenDistributionWorkflows is
             licenseTermsData: licenseTermsData
         });
 
-        _deployRoyaltyVault(ipId);
+        _deployRoyaltyVault(ipId, recipient);
         _distributeRoyaltyTokens({
             ipId: ipId,
             royaltyShares: royaltyShares,
@@ -169,7 +169,7 @@ contract RoyaltyTokenDistributionWorkflows is
             derivData: derivData
         });
 
-        _deployRoyaltyVault(ipId);
+        _deployRoyaltyVault(ipId, recipient);
         _distributeRoyaltyTokens({
             ipId: ipId,
             royaltyShares: royaltyShares,
@@ -230,7 +230,7 @@ contract RoyaltyTokenDistributionWorkflows is
             licenseTermsData: licenseTermsData
         });
 
-        ipRoyaltyVault = _deployRoyaltyVault(ipId);
+        ipRoyaltyVault = _deployRoyaltyVault(ipId, msg.sender);
     }
 
     /// @notice Register an IP, make a derivative, and deploy a royalty vault.
@@ -277,7 +277,7 @@ contract RoyaltyTokenDistributionWorkflows is
             derivData: derivData
         });
 
-        ipRoyaltyVault = _deployRoyaltyVault(ipId);
+        ipRoyaltyVault = _deployRoyaltyVault(ipId, msg.sender);
     }
 
     /// @notice Distribute royalty tokens to the authors of the IP.
@@ -300,8 +300,9 @@ contract RoyaltyTokenDistributionWorkflows is
 
     /// @dev Deploys a royalty vault for the IP.
     /// @param ipId The ID of the IP.
+    /// @param licenseTokenReceiver The address to receive the license token.
     /// @return ipRoyaltyVault The address of the deployed royalty vault.
-    function _deployRoyaltyVault(address ipId) internal returns (address ipRoyaltyVault) {
+    function _deployRoyaltyVault(address ipId, address licenseTokenReceiver) internal returns (address ipRoyaltyVault) {
         if (ROYALTY_MODULE.ipRoyaltyVaults(ipId) == address(0)) {
             uint256 licenseTermsId = PIL_TEMPLATE.registerLicenseTerms(
                 PILFlavors.commercialUse({ mintingFee: 0, currencyToken: WIP, royaltyPolicy: ROYALTY_POLICY_LRP })
@@ -331,7 +332,7 @@ contract RoyaltyTokenDistributionWorkflows is
                 licenseTemplate: address(PIL_TEMPLATE),
                 licenseTermsId: licenseTermsId,
                 amount: 1,
-                receiver: msg.sender,
+                receiver: licenseTokenReceiver,
                 royaltyContext: "",
                 maxMintingFee: 0,
                 maxRevenueShare: 0
