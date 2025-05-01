@@ -1,6 +1,6 @@
 {
     "name": "@story-protocol/protocol-periphery",
-    "version": "v1.3.1",
+    "version": "v1.3.2",
     "description": "Story Proof-of-Creativity protocol periphery smart contracts",
     "main": "",
     "directories": {
@@ -39,9 +39,10 @@
     "dependencies": {
         "@openzeppelin/contracts": "5.2.0",
         "@openzeppelin/contracts-upgradeable": "5.2.0",
-        "@story-protocol/protocol-core": "github:storyprotocol/protocol-core-v1#main",
+        "@story-protocol/protocol-core": "github:storyprotocol/protocol-core-v1#v1.3.2",
         "erc6551": "^0.3.1",
         "solady": "^0.0.281",
         "wip": "github:piplabs/wip#main"
-    }
+    },
+    "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
