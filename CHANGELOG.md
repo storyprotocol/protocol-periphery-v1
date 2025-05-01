@@ -1,5 +1,41 @@
 # CHANGELOG
 
+## v1.3.2
+
+This release focuses on security enhancements, feature additions like token URI updates and template upgrades, and significant improvements to testing and CI workflows.
+
+### Security Improvements
+* fix: add array length matching check in internal library functions ([#181](https://github.com/storyprotocol/protocol-periphery-v1/pull/181))
+* fix: lock pragma version in `CachableNFT` ([#180](https://github.com/storyprotocol/protocol-periphery-v1/pull/180))
+* fix(story-nft): enforce max `balanceOf()` of 1 for each address ([#183](https://github.com/storyprotocol/protocol-periphery-v1/pull/183))
+* fix(story-badge): prevent signature replay in `StoryBadgeNFT` minting ([#182](https://github.com/storyprotocol/protocol-periphery-v1/pull/182))
+* fix: prevent unintended license disablement during royalty vault deployment ([#184](https://github.com/storyprotocol/protocol-periphery-v1/pull/184))
+* fix(upgrade): add upgrade permissions for Licensing Hooks ([#198](https://github.com/storyprotocol/protocol-periphery-v1/pull/198))
+
+### Features
+* feat(SPGNFT): add `setTokenURI` function to `SPGNFT` Contract ([#189](https://github.com/storyprotocol/protocol-periphery-v1/pull/189))
+* feat(ci): add slack notification ([#192](https://github.com/storyprotocol/protocol-periphery-v1/pull/192))
+* feat: enable token template upgrades through `TokenizerModule` ([#193](https://github.com/storyprotocol/protocol-periphery-v1/pull/193))
+* feat(upgrade): revamp upgrade scripts ([#196](https://github.com/storyprotocol/protocol-periphery-v1/pull/196))
+
+### Tests & CI
+* test(integration): replace mock ERC20 with Wrapped IP token (WIP) ([#190](https://github.com/storyprotocol/protocol-periphery-v1/pull/190))
+* fix(tests): remove IP account state assertions and prediction functions ([#200](https://github.com/storyprotocol/protocol-periphery-v1/pull/200))
+* Add test for `setTokenURI` function of the `SPGNFT` contract ([#206](https://github.com/storyprotocol/protocol-periphery-v1/pull/206))
+* Integration test workflow ([#207](https://github.com/storyprotocol/protocol-periphery-v1/pull/207))
+
+### Documentation, Audits & Miscellaneous Fixes
+* fix: typo ([#185](https://github.com/storyprotocol/protocol-periphery-v1/pull/185))
+* add audit report ([#186](https://github.com/storyprotocol/protocol-periphery-v1/pull/186))
+* Update Audit Report ([#187](https://github.com/storyprotocol/protocol-periphery-v1/pull/187))
+* Add Security Audit Report for `SPGNFT.setTokenURI()` Implementation ([#197](https://github.com/storyprotocol/protocol-periphery-v1/pull/197))
+* docs: improve documentation for setting licensing configuration ([#191](https://github.com/storyprotocol/protocol-periphery-v1/pull/191))
+* chore: add upgrade collection functions' declaration to `IRegistrationWorkflows` interface ([#194](https://github.com/storyprotocol/protocol-periphery-v1/pull/194))
+* fix: remove deprecated functions and improve test suite ([#195](https://github.com/storyprotocol/protocol-periphery-v1/pull/195))
+* chore: update deployed contract addresses ([#202](https://github.com/storyprotocol/protocol-periphery-v1/pull/202))
+
+**Full Changelog**: [v1.3.1...v1.3.2](https://github.com/storyprotocol/protocol-periphery-v1/compare/v1.3.1...v1.3.2)
+
 ## v1.3.1
 
 This release builds on v1.3.0 with **enhanced security, improved code efficiency, and expanded test coverage**, while ensuring **workflow contract backward compatibility** and improving **permission handling**.

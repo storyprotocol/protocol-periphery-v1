@@ -1,0 +1,22 @@
+{
+  "main": {
+    "DerivativeWorkflows-NewImpl": "0x59ACa31Cd70a2c528018904272aDf1839E3Bddd8",
+    "DerivativeWorkflows-Proxy": "0x9e2d496f72C547C2C535B167e06ED8729B374a4f",
+    "GroupingWorkflows-NewImpl": "0xED3C90ca4A8bbad272c5998034aA8700c3894432",
+    "GroupingWorkflows-Proxy": "0xD7c0beb3aa4DCD4723465f1ecAd045676c24CDCd",
+    "LicenseAttachmentWorkflows-NewImpl": "0x5346564B748458B33aab2BD258665f7d16a1855C",
+    "LicenseAttachmentWorkflows-Proxy": "0xcC2E862bCee5B6036Db0de6E06Ae87e524a79fd8",
+    "OwnableERC20Template-NewImpl": "0xEBeE23c3699365154EeE69E47BAA450328CFfBD8",
+    "OwnableERC20Template-Proxy": "0xAC937CeEf893986A026f701580144D9289adAC4C",
+    "RegistrationWorkflows-NewImpl": "0x04250adc005b72bD631e9EC9c9f327631817dD68",
+    "RegistrationWorkflows-Proxy": "0xbe39E1C756e921BD25DF86e7AAa31106d1eb0424",
+    "RoyaltyTokenDistributionWorkflows-NewImpl": "0xB8Eb3D632e2F01AeF85fE130CdBEFcF093B2630F",
+    "RoyaltyTokenDistributionWorkflows-Proxy": "0xa38f42B8d33809917f23997B8423054aAB97322C",
+    "RoyaltyWorkflows-NewImpl": "0x1A9A4549d5d490086834e9E405f88AB592054516",
+    "RoyaltyWorkflows-Proxy": "0x9515faE61E0c0447C6AC6dEe5628A2097aFE1890",
+    "SPGNFTImpl-NewImpl": "0xf06808081f6000F17c68D020ec8b159B0A851952",
+    "SPGNFTImpl-Proxy": "0xbe39E1C756e921BD25DF86e7AAa31106d1eb0424",
+    "TokenizerModule-NewImpl": "0x76E23286e71ac0C98C9E83AC77BFdE6c81F11bC6",
+    "TokenizerModule-Proxy": "0xAC937CeEf893986A026f701580144D9289adAC4C"
+  }
+}
