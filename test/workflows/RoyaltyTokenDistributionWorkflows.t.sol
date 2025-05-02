@@ -58,6 +58,8 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
         assertMetadata(ipId, ipMetadataDefault);
         _assertAttachedLicenseTerms(ipId, licenseTermsIds);
         _assertRoyaltyTokenDistribution(ipId);
+        // check that the license token used for royalty vault deployment was minted to the IP owner
+        assertEq(licenseToken.ownerOf(licenseToken.totalMintedTokens() - 1), u.alice);
     }
 
     function test_RoyaltyTokenDistributionWorkflows_mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens()
@@ -161,6 +163,8 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
         assertMetadata(ipId, ipMetadataDefault);
         _assertAttachedLicenseTerms(ipId, licenseTermsIds);
         _assertRoyaltyTokenDistribution(ipId);
+        // check that the license token used for royalty vault deployment was minted to the IP owner
+        assertEq(licenseToken.ownerOf(licenseToken.totalMintedTokens() - 1), u.alice);
     }
 
     function test_RoyaltyTokenDistributionWorkflows_registerIpAndMakeDerivativeAndDistributeRoyaltyTokens() public {
