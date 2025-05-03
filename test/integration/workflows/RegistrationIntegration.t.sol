@@ -119,6 +119,21 @@ contract RegistrationIntegration is BaseIntegration {
         });
 
         assertEq(actualIpId, expectedIpId);
+        assertEq(
+            IIPAccount(payable(actualIpId)).state(),
+            _predictNextState(
+                address(registrationWorkflowsAddr),
+                address(coreMetadataModuleAddr),
+                expectedState,
+                abi.encodeWithSelector(
+                    ICoreMetadataModule.setAll.selector,
+                    actualIpId,
+                    testIpMetadata.ipMetadataURI,
+                    testIpMetadata.ipMetadataHash,
+                    testIpMetadata.nftMetadataHash
+                )
+            )
+        );
         assertTrue(ipAssetRegistry.isRegistered(actualIpId));
         assertEq(spgNftContract.tokenURI(tokenId), string.concat(testBaseURI, tokenId.toString()));
         assertMetadata(actualIpId, testIpMetadata);

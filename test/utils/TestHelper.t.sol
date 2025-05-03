@@ -270,6 +270,43 @@ contract TestHelper is Test {
         signature = abi.encodePacked(r, s, v);
     }
 
+    /// @dev Predicts the next state given the current state and the calldata of the next function call.
+    /// @notice This function is based on Solady's ERC6551 implementation.
+    /// see: https://github.com/Vectorized/solady/blob/724c39bdfebb593157c2dfa6797c07a25dfb564c/src/accounts/ERC6551.sol#L187
+    /// @param currentState The current state value stored in _ERC6551_STATE_SLOT.
+    /// @param nextCalldata The complete calldata of the next function call.
+    /// @return nextState The predicted next state.
+    function _predictNextState(
+        address signer,
+        address to,
+        bytes32 currentState,
+        bytes memory nextCalldata
+    ) internal pure returns (bytes32 nextState) {
+        nextState = keccak256(
+            abi.encode(
+                currentState,
+                abi.encodeWithSelector(IIPAccount.updateStateForValidSigner.selector, signer, to, nextCalldata)
+            )
+        );
+    }
+
+    /// @dev Predicts the state after multiple function calls
+    /// @param currentState The current state value
+    /// @param calldataSequence Array of calldata for each function call in sequence
+    /// @return The final predicted state
+    function _predictStateSequence(
+        bytes32 currentState,
+        address[] memory signers,
+        address[] memory tos,
+        bytes[] memory calldataSequence
+    ) internal pure returns (bytes32) {
+        bytes32 state = currentState;
+        for (uint256 i = 0; i < calldataSequence.length; i++) {
+            state = _predictNextState(signers[i], tos[i], state, calldataSequence[i]);
+        }
+        return state;
+    }
+
     /// @dev Uses `signerSk` to sign `recipient` and return the signature.
     function _signAddress(uint256 signerSk, address recipient) internal pure returns (bytes memory signature) {
         bytes32 digest = keccak256(abi.encodePacked(recipient)).toEthSignedMessageHash();
