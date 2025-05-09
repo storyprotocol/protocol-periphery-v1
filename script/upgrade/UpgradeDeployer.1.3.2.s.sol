@@ -52,8 +52,8 @@ contract UpgradeDeployer is
     uint256 internal CREATE3_DEFAULT_SEED = 8;
 
 
-    string constant PREV_VERSION = "v1.3.1"; // previous version e.g. v1.3.0
-    string constant PROPOSAL_VERSION = "v1.3.2"; // new version e.g. v1.3.1
+    string constant PREV_VERSION = "v1.3.1"; // previous version
+    string constant PROPOSAL_VERSION = "v1.3.2"; // new version
 
     address derivativeWorkflowsAddr;
     address groupingWorkflowsAddr;

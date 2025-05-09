@@ -26,8 +26,8 @@ import { StoryProtocolCoreAddressManager } from "../utils/StoryProtocolCoreAddre
  */
 contract UpgradeExecutorExample is UpgradeExecutor, StoryProtocolPeripheryAddressManager, StoryProtocolCoreAddressManager {
     constructor() UpgradeExecutor(
-        "vx.x.x", // From version (e.g. v1.2.3)
-        "vx.x.x", // To version (e.g. v1.3.2)
+        "vx.x.x", // From version
+        "vx.x.x", // To version
         UpgradeModes.EXECUTE, // Schedule, Cancel or Execute upgrade
         Output.BATCH_TX_EXECUTION // Output mode
     ) {
