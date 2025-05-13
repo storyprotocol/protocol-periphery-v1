@@ -24,7 +24,7 @@ jobs:
       - name: Get version to publish
         id: get_version_to_publish
         run: |
-          content=$(cat packages/protocol-periphery-v1/package.json)
+          content=$(cat package.json)
           echo "PERIPHERY_VERSION_TO_BE_PUBLISHED=$(echo $content | jq -r '.version')" >> $GITHUB_OUTPUT
 
   # Fetch the latest version from NPM
@@ -37,8 +37,8 @@ jobs:
       - name: Get latest package version
         id: get_latest_version
         run: |
-          PERIPHERY_LATEST_VERSION=$(npm view @story-protocol/protocol-periphery-v1 version --silent)
-          echo "Latest version of @story-protocol/protocol-periphery-v1 on NPMJS is $PERIPHERY_LATEST_VERSION"
+          PERIPHERY_LATEST_VERSION=$(npm view @story-protocol/protocol-periphery version --silent)
+          echo "Latest version of @story-protocol/protocol-periphery on NPMJS is $PERIPHERY_LATEST_VERSION"
           echo "PERIPHERY_LATEST_VERSION=$PERIPHERY_LATEST_VERSION" >> $GITHUB_OUTPUT
 
   # Fail the PR if the version to be published is the same as the latest version on NPM
@@ -57,7 +57,7 @@ jobs:
           IS_PUBLISH_PERIPHERY=false
 
           if [ "$PERIPHERY_LATEST_VERSION" == "$PERIPHERY_VERSION_TO_BE_PUBLISHED" ]; then
-            echo "The @story-protocol/protocol-periphery-v1 version to be published is the same as the latest version on NPM."
+            echo "The @story-protocol/protocol-periphery version to be published is the same as the latest version on NPM."
             exit 1
           else
             IS_PUBLISH_PERIPHERY=true
@@ -79,9 +79,40 @@ jobs:
         id: get_last_tag
         run: |
           git fetch --tags
-          PERIPHERY_LATEST_TAG=$(git tag --sort=creatordate | grep -E "@story-protocol/protocol-periphery-v1|protocol-periphery-v1|^v[0-9]" | tail -n1)
+          PERIPHERY_LATEST_TAG=$(git tag --sort=creatordate | grep -E "@story-protocol/protocol-periphery|protocol-periphery|^v[0-9]" | tail -n1)
           echo "PERIPHERY_LATEST_TAG=$PERIPHERY_LATEST_TAG" >> $GITHUB_OUTPUT
-          echo "Last tag for @story-protocol/protocol-periphery-v1 is $PERIPHERY_LATEST_TAG"
+          echo "Last tag for @story-protocol/protocol-periphery is $PERIPHERY_LATEST_TAG"
+
+  create_release:
+    needs: [print_version_to_publish, build-test-publish]
+    if: ${{ needs.fail_if_version_is_same.outputs.IS_PUBLISH_PERIPHERY == 'true' && github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        
+      - name: Create Release
+        id: create_release
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const { PERIPHERY_VERSION_TO_BE_PUBLISHED } = process.env
+            
+            const releaseTag = `@story-protocol/protocol-periphery@${PERIPHERY_VERSION_TO_BE_PUBLISHED}`
+            
+            const release = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: releaseTag,
+              name: releaseTag,
+              body: `Release of @story-protocol/protocol-periphery version ${PERIPHERY_VERSION_TO_BE_PUBLISHED}`,
+              draft: false,
+              prerelease: false
+            })
+            
+            return release.data
+        env:
+          PERIPHERY_VERSION_TO_BE_PUBLISHED: ${{ needs.print_version_to_publish.outputs.PERIPHERY_VERSION_TO_BE_PUBLISHED }}
 
   build-test-publish:
     needs: [fail_if_version_is_same, fetch_last_tag]
@@ -112,7 +143,7 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Publish protocol-periphery-v1 package to npm
+      - name: Publish protocol-periphery package to npm
         if: ${{ github.event_name == 'workflow_dispatch' && needs.fail_if_version_is_same.outputs.IS_PUBLISH_PERIPHERY == 'true'}}
         run: |
             npm publish --access public
