@@ -2,7 +2,12 @@ name: Publish to npm, Tag and create GH Release
 
 on:
   workflow_dispatch:
-    # This allows manual triggering of the workflow
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (no actual publishing)'
+        type: boolean
+        default: false
+        required: false
 
 permissions:
   contents: write
@@ -56,11 +61,22 @@ jobs:
 
           IS_PUBLISH_PERIPHERY=false
 
-          if [ "$PERIPHERY_LATEST_VERSION" == "$PERIPHERY_VERSION_TO_BE_PUBLISHED" ]; then
-            echo "The @story-protocol/protocol-periphery version to be published is the same as the latest version on NPM."
-            exit 1
+          if [[ "${{ github.event.inputs.dry_run }}" == "true" ]]; then
+            echo "DRY RUN: Version check - Latest NPM version: $PERIPHERY_LATEST_VERSION, Version to publish: $PERIPHERY_VERSION_TO_BE_PUBLISHED"
+            if [ "$PERIPHERY_LATEST_VERSION" == "$PERIPHERY_VERSION_TO_BE_PUBLISHED" ]; then
+              echo "DRY RUN: The version to be published is the same as the latest version on NPM."
+              echo "DRY RUN: In a real run, this would fail the workflow."
+            else
+              IS_PUBLISH_PERIPHERY=true
+              echo "DRY RUN: Version check passed. Would proceed with publishing."
+            fi
           else
-            IS_PUBLISH_PERIPHERY=true
+            if [ "$PERIPHERY_LATEST_VERSION" == "$PERIPHERY_VERSION_TO_BE_PUBLISHED" ]; then
+              echo "The @story-protocol/protocol-periphery version to be published is the same as the latest version on NPM."
+              exit 1
+            else
+              IS_PUBLISH_PERIPHERY=true
+            fi
           fi
 
           echo "IS_PUBLISH_PERIPHERY=$IS_PUBLISH_PERIPHERY" >> $GITHUB_OUTPUT
@@ -74,6 +90,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          fetch-depth: 0
 
       - name: Get last tag
         id: get_last_tag
@@ -81,7 +99,13 @@ jobs:
           git fetch --tags
           PERIPHERY_LATEST_TAG=$(git tag --sort=creatordate | grep -E "@story-protocol/protocol-periphery|protocol-periphery|^v[0-9]" | tail -n1)
           echo "PERIPHERY_LATEST_TAG=$PERIPHERY_LATEST_TAG" >> $GITHUB_OUTPUT
-          echo "Last tag for @story-protocol/protocol-periphery is $PERIPHERY_LATEST_TAG"
+          
+          if [[ "${{ github.event.inputs.dry_run }}" == "true" ]]; then
+            echo "DRY RUN: Last tag for @story-protocol/protocol-periphery is $PERIPHERY_LATEST_TAG"
+            echo "DRY RUN: Would create new tag @story-protocol/protocol-periphery@${{ needs.print_version_to_publish.outputs.PERIPHERY_VERSION_TO_BE_PUBLISHED }}"
+          else
+            echo "Last tag for @story-protocol/protocol-periphery is $PERIPHERY_LATEST_TAG"
+          fi
 
   create_release:
     needs: [print_version_to_publish, build-test-publish]
@@ -91,8 +115,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         
+      - name: Create Release (Dry Run)
+        id: dry_run_release
+        if: ${{ github.event.inputs.dry_run == 'true' }}
+        run: |
+          PERIPHERY_VERSION_TO_BE_PUBLISHED="${{ needs.print_version_to_publish.outputs.PERIPHERY_VERSION_TO_BE_PUBLISHED }}"
+          releaseTag="@story-protocol/protocol-periphery@${PERIPHERY_VERSION_TO_BE_PUBLISHED}"
+          echo "DRY RUN: Would create GitHub release with tag: ${releaseTag}"
+          echo "DRY RUN: Would set release name to: ${releaseTag}"
+          echo "DRY RUN: Would set release body to: Release of @story-protocol/protocol-periphery version ${PERIPHERY_VERSION_TO_BE_PUBLISHED}"
+
       - name: Create Release
         id: create_release
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
@@ -118,7 +153,7 @@ jobs:
     needs: [fail_if_version_is_same, fetch_last_tag]
     if: ${{ needs.fail_if_version_is_same.outputs.IS_PUBLISH_PERIPHERY == 'true' && github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
-    environment: "odyssey"
+    environment: ${{ github.event.inputs.dry_run != 'true' && 'odyssey' || '' }}
     env:
       WALLET_PRIVATE_KEY: ${{ secrets.WALLET_PRIVATE_KEY }}
       TEST_WALLET_ADDRESS: ${{ secrets.TEST_WALLET_ADDRESS }}
@@ -146,6 +181,11 @@ jobs:
       - name: Publish protocol-periphery package to npm
         if: ${{ github.event_name == 'workflow_dispatch' && needs.fail_if_version_is_same.outputs.IS_PUBLISH_PERIPHERY == 'true'}}
         run: |
-            npm publish --access public
+            if [[ "${{ github.event.inputs.dry_run }}" == "true" ]]; then
+              echo "DRY RUN: Would publish @story-protocol/protocol-periphery version ${{ needs.print_version_to_publish.outputs.PERIPHERY_VERSION_TO_BE_PUBLISHED }} to NPM"
+              npm publish --dry-run --access public
+            else
+              npm publish --access public
+            fi
         env:
             NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
