@@ -12,9 +12,12 @@ import { IGroupingModule } from "@storyprotocol/core/interfaces/modules/grouping
 import { IGroupIPAssetRegistry } from "@storyprotocol/core/interfaces/registries/IGroupIPAssetRegistry.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
+
 // contracts
 import { Errors } from "../../contracts/lib/Errors.sol";
 import { LicensingHelper } from "../../contracts/lib/LicensingHelper.sol";
+import { IGroupingWorkflows } from "../../contracts/interfaces/workflows/IGroupingWorkflows.sol";
+import { IRegistrationWorkflows } from "../../contracts/interfaces/workflows/IRegistrationWorkflows.sol";
 import { WorkflowStructs } from "../../contracts/lib/WorkflowStructs.sol";
 
 // test
@@ -162,6 +165,18 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
             allowDuplicates: true
         });
         vm.stopPrank();
+
+        address[] memory ipIdsForGroup = new address[](1);
+        ipIdsForGroup[0] = ipId;
+        assertEq(
+            IIPAccount(payable(groupId)).state(),
+            _predictNextState(
+                address(groupingWorkflows),
+                address(groupingModule),
+                expectedState,
+                abi.encodeWithSelector(IGroupingModule.addIp.selector, groupId, ipIdsForGroup, 100e6)
+            )
+        );
         // check the IP is registered
         assertTrue(IIPAssetRegistry(ipAssetRegistry).isRegistered(ipId));
         // check the IP is added to the group
@@ -412,6 +427,163 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
         groupingWorkflows.collectRoyaltiesAndClaimReward(groupId, currencyTokens, ipIds);
     }
 
+    // Multicall (mint → Register IP → Attach PIL terms → Add new IP to group IPA)
+    function test_GroupingWorkflows_multicall_mintAndRegisterIpAndAttachLicenseAndAddToGroup() public {
+        uint256 deadline = block.timestamp + 1000;
+        // Get the signatures for setting the permission for calling `addIp` function in `GroupingModule`
+        // from the Group IP owner
+        bytes[] memory sigsAddToGroup = new bytes[](10);
+        bytes32 expectedStates = IIPAccount(payable(groupId)).state();
+
+        for (uint256 i = 0; i < 10; i++) {
+            (sigsAddToGroup[i], expectedStates, ) = _getSetPermissionSigForPeriphery({
+                ipId: groupId,
+                to: address(groupingWorkflows),
+                module: address(groupingModule),
+                selector: IGroupingModule.addIp.selector,
+                deadline: deadline,
+                state: expectedStates,
+                signerSk: groupOwnerSk
+            });
+            address[] memory predictedIpIdsForGroup = new address[](1);
+            predictedIpIdsForGroup[0] = ipAssetRegistry.ipId(
+                block.chainid,
+                address(spgNftPublic),
+                spgNftPublic.totalSupply() + i + 1
+            );
+            expectedStates = _predictNextState(
+                address(groupingWorkflows),
+                address(groupingModule),
+                expectedStates,
+                abi.encodeWithSelector(IGroupingModule.addIp.selector, groupId, predictedIpIdsForGroup, 100e6)
+            );
+        }
+        // setup call data for batch calling 10 `mintAndRegisterIpAndAttachLicenseAndAddToGroup`
+        bytes[] memory data = new bytes[](10);
+        for (uint256 i = 0; i < 10; i++) {
+            data[i] = abi.encodeWithSelector(
+                IGroupingWorkflows.mintAndRegisterIpAndAttachLicenseAndAddToGroup.selector,
+                address(spgNftPublic),
+                groupId,
+                groupOwner,
+                100e6, // 100%
+                testLicensesData,
+                ipMetadataDefault,
+                WorkflowStructs.SignatureData({ signer: groupOwner, deadline: deadline, signature: sigsAddToGroup[i] }),
+                true
+            );
+        }
+        // batch call `mintAndRegisterIpAndAttachLicenseAndAddToGroup`
+        vm.startPrank(groupOwner);
+        bytes[] memory results = groupingWorkflows.multicall(data);
+        vm.stopPrank();
+        // check each IP is registered, added to the group, and metadata is set, license terms are attached
+        address ipId;
+        uint256 tokenId;
+        for (uint256 i = 0; i < 10; i++) {
+            (ipId, tokenId) = abi.decode(results[i], (address, uint256));
+            assertTrue(IIPAssetRegistry(ipAssetRegistry).isRegistered(ipId));
+            assertTrue(IGroupIPAssetRegistry(ipAssetRegistry).containsIp(groupId, ipId));
+            assertEq(spgNftPublic.tokenURI(tokenId), string.concat(testBaseURI, ipMetadataDefault.nftMetadataURI));
+            assertMetadata(ipId, ipMetadataDefault);
+            (address licenseTemplate, uint256 licenseTermsId) = ILicenseRegistry(licenseRegistry)
+                .getAttachedLicenseTerms(ipId, 0);
+            assertEq(licenseTemplate, address(pilTemplate));
+            assertEq(licenseTermsId, testLicensesData[0].licenseTermsId);
+        }
+    }
+
+    // Multicall (Register IP → Attach PIL terms → Add new IP to group IPA)
+    function test_GroupingWorkflows_multicall_registerIpAndAttachLicenseAndAddToGroup() public {
+        // mint a NFT from the mock ERC721 contract
+        uint256[] memory tokenIds = new uint256[](10);
+        vm.startPrank(groupOwner);
+        for (uint256 i = 0; i < 10; i++) {
+            tokenIds[i] = MockERC721(mockNft).mint(groupOwner);
+        }
+        vm.stopPrank();
+        // get the expected IP ID
+        address[] memory expectedIpIds = new address[](10);
+        for (uint256 i = 0; i < 10; i++) {
+            expectedIpIds[i] = IIPAssetRegistry(ipAssetRegistry).ipId(block.chainid, address(mockNft), tokenIds[i]);
+        }
+        uint256 deadline = block.timestamp + 10000;
+        // Get the signatures for setting the permission for calling `setAll` (IP metadata) and `attachLicenseTerms`
+        // functions in `coreMetadataModule` and `licensingModule` from the IP owner
+        bytes[] memory sigsMetadataAndAttach = new bytes[](10);
+        for (uint256 i = 0; i < 10; i++) {
+            (sigsMetadataAndAttach[i], , ) = _getSetBatchPermissionSigForPeriphery({
+                ipId: expectedIpIds[i],
+                permissionList: _getMetadataAndAttachTermsAndConfigPermissionList(
+                    expectedIpIds[i],
+                    address(groupingWorkflows)
+                ),
+                deadline: deadline,
+                state: bytes32(0),
+                signerSk: groupOwnerSk
+            });
+        }
+        // Get the signatures for setting the permission for calling `addIp` function in `GroupingModule`
+        // from the Group IP owner
+        bytes[] memory sigsAddToGroup = new bytes[](10);
+        bytes32 expectedStates = IIPAccount(payable(groupId)).state();
+        for (uint256 i = 0; i < 10; i++) {
+            (sigsAddToGroup[i], expectedStates, ) = _getSetPermissionSigForPeriphery({
+                ipId: groupId,
+                to: address(groupingWorkflows),
+                module: address(groupingModule),
+                selector: IGroupingModule.addIp.selector,
+                deadline: deadline,
+                state: expectedStates,
+                signerSk: groupOwnerSk
+            });
+            address[] memory predictedIpIdsForGroup = new address[](1);
+            predictedIpIdsForGroup[0] = expectedIpIds[i];
+            expectedStates = _predictNextState(
+                address(groupingWorkflows),
+                address(groupingModule),
+                expectedStates,
+                abi.encodeWithSelector(IGroupingModule.addIp.selector, groupId, predictedIpIdsForGroup, 100e6)
+            );
+        }
+        // setup call data for batch calling 10 `registerIpAndAttachLicenseAndAddToGroup`
+        bytes[] memory data = new bytes[](10);
+        for (uint256 i = 0; i < 10; i++) {
+            data[i] = abi.encodeWithSelector(
+                IGroupingWorkflows.registerIpAndAttachLicenseAndAddToGroup.selector,
+                mockNft,
+                tokenIds[i],
+                groupId,
+                100e6, // 100%
+                testLicensesData,
+                ipMetadataDefault,
+                WorkflowStructs.SignatureData({
+                    signer: groupOwner,
+                    deadline: deadline,
+                    signature: sigsMetadataAndAttach[i]
+                }),
+                WorkflowStructs.SignatureData({ signer: groupOwner, deadline: deadline, signature: sigsAddToGroup[i] })
+            );
+        }
+        // batch call `registerIpAndAttachLicenseAndAddToGroup`
+        vm.startPrank(groupOwner);
+        bytes[] memory results = groupingWorkflows.multicall(data);
+        vm.stopPrank();
+        // check each IP is registered, added to the group, and metadata is set, license terms are attached
+        address ipId;
+        for (uint256 i = 0; i < 10; i++) {
+            ipId = abi.decode(results[i], (address));
+            assertEq(ipId, expectedIpIds[i]);
+            assertTrue(IIPAssetRegistry(ipAssetRegistry).isRegistered(ipId));
+            assertTrue(IGroupIPAssetRegistry(ipAssetRegistry).containsIp(groupId, ipId));
+            assertMetadata(ipId, ipMetadataDefault);
+            (address licenseTemplate, uint256 licenseTermsId) = ILicenseRegistry(licenseRegistry)
+                .getAttachedLicenseTerms(ipId, 0);
+            assertEq(licenseTemplate, address(pilTemplate));
+            assertEq(licenseTermsId, testLicensesData[0].licenseTermsId);
+        }
+    }
+
     function test_GroupingWorkflows_revert_NoLicenseData() public {
         vm.expectRevert(Errors.GroupingWorkflows__NoLicenseData.selector);
         groupingWorkflows.mintAndRegisterIpAndAttachLicenseAndAddToGroup({
@@ -478,7 +650,7 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
         bytes[] memory data = new bytes[](10);
         for (uint256 i = 0; i < 10; i++) {
             data[i] = abi.encodeWithSelector(
-                bytes4(keccak256("mintAndRegisterIp(address,address,(string,bytes32,string,bytes32),bool)")),
+                IRegistrationWorkflows.mintAndRegisterIp.selector,
                 address(spgNftPublic),
                 groupOwner,
                 ipMetadataDefault,

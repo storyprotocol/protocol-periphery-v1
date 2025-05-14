@@ -551,9 +551,7 @@ contract DerivativeWorkflowsTest is BaseTest {
         licenseTermsIds[1] = licenseTermsIdParent;
 
         vm.expectRevert(
-            abi.encodeWithSelector(
-                LicensingHelper.LicensingHelper__ParentIpIdsAndLicenseTermsIdsMismatch.selector
-            )
+            abi.encodeWithSelector(LicensingHelper.LicensingHelper__ParentIpIdsAndLicenseTermsIdsMismatch.selector)
         );
         derivativeWorkflows.mintAndRegisterIpAndMakeDerivative({
             spgNftContract: address(nftContract),
