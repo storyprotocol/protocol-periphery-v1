@@ -26,8 +26,8 @@ import { StoryProtocolCoreAddressManager } from "../utils/StoryProtocolCoreAddre
  */
 contract UpgradeExecutorExample is UpgradeExecutor, StoryProtocolPeripheryAddressManager, StoryProtocolCoreAddressManager {
     constructor() UpgradeExecutor(
-        "vx.x.x", // From version
-        "vx.x.x", // To version
+        "v1.3.1", // From version
+        "v1.3.2", // To version
         UpgradeModes.EXECUTE, // Schedule, Cancel or Execute upgrade
         Output.BATCH_TX_EXECUTION // Output mode
     ) {
@@ -97,10 +97,6 @@ contract UpgradeExecutorExample is UpgradeExecutor, StoryProtocolPeripheryAddres
         _scheduleUpgrade("SPGNFTImpl");
         _scheduleUpgrade("TokenizerModule");
         _scheduleUpgrade("OwnableERC20Template");
-        _scheduleUpgrade("LockLicenseHook-remove"); // remove from Module Registry
-        _scheduleUpgrade("LockLicenseHook-register"); // re-register in Module Registry
-        _scheduleUpgrade("TotalLicenseTokenLimitHook-remove"); // remove from Module Registry
-        _scheduleUpgrade("TotalLicenseTokenLimitHook-register"); // re-register in Module Registry
     }
 
     /**
@@ -120,10 +116,6 @@ contract UpgradeExecutorExample is UpgradeExecutor, StoryProtocolPeripheryAddres
         _executeUpgrade("SPGNFTImpl");
         _executeUpgrade("TokenizerModule");
         _executeUpgrade("OwnableERC20Template");
-        _executeUpgrade("LockLicenseHook-remove"); // remove from Module Registry
-        _executeUpgrade("LockLicenseHook-register"); // re-register in Module Registry
-        _executeUpgrade("TotalLicenseTokenLimitHook-remove"); // remove from Module Registry
-        _executeUpgrade("TotalLicenseTokenLimitHook-register"); // re-register in Module Registry
     }
 
 
@@ -144,10 +136,6 @@ contract UpgradeExecutorExample is UpgradeExecutor, StoryProtocolPeripheryAddres
         _cancelScheduledUpgrade("SPGNFTImpl");
         _cancelScheduledUpgrade("TokenizerModule");
         _cancelScheduledUpgrade("OwnableERC20Template");
-        _cancelScheduledUpgrade("LockLicenseHook-remove"); // remove from Module Registry
-        _cancelScheduledUpgrade("LockLicenseHook-register"); // re-register in Module Registry
-        _cancelScheduledUpgrade("TotalLicenseTokenLimitHook-remove"); // remove from Module Registry
-        _cancelScheduledUpgrade("TotalLicenseTokenLimitHook-register"); // re-register in Module Registry
     }
 
     /// @dev Returns the data for the upgrade proposal.
