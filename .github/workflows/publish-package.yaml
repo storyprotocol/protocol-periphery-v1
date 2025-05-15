@@ -171,8 +171,8 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Build
-        run: yarn build
+      - name: Run tests
+        run: yarn test
 
       - name: Publish protocol-periphery package to npm
         if: ${{ github.event_name == 'workflow_dispatch' && needs.fail_if_version_is_same.outputs.IS_PUBLISH_PERIPHERY == 'true'}}
