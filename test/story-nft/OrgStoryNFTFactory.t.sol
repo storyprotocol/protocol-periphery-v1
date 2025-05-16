@@ -407,4 +407,59 @@ contract OrgStoryNFTFactoryTest is BaseTest {
             storyNftInitParams: storyNftInitParams
         });
     }
+
+    function test_StoryNFTFactory_deployStoryNft_withRegistrationFee() public {
+        uint96 registrationFee = 1 ether;
+        address treasury = address(0x12345);
+
+        vm.prank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+
+        vm.startPrank(u.carl);
+        mockToken.mint(u.carl, registrationFee);
+        mockToken.approve(address(orgNft), registrationFee);
+
+        uint256 carlBalanceBefore = mockToken.balanceOf(u.carl);
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+
+        orgStoryNftFactory.deployOrgStoryNft({
+            orgStoryNftTemplate: address(defaultOrgStoryNftTemplate),
+            orgNftRecipient: u.carl,
+            orgName: orgName,
+            orgIpMetadata: ipMetadataDefault,
+            signature: _signAddress(orgStoryNftFactorySignerSk, u.carl),
+            storyNftInitParams: storyNftInitParams
+        });
+        vm.stopPrank();
+
+        assertEq(mockToken.balanceOf(treasury), treasuryBalanceBefore + registrationFee);
+        assertEq(mockToken.balanceOf(u.carl), carlBalanceBefore - registrationFee);
+    }
+
+    function test_StoryNFTFactory_deployStoryNftByAdmin_withRegistrationFee() public {
+        uint96 registrationFee = 1 ether;
+        address treasury = address(0x12345);
+
+        vm.startPrank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+
+        mockToken.mint(u.admin, registrationFee);
+        mockToken.approve(address(orgNft), registrationFee);
+
+        uint256 adminBalanceBefore = mockToken.balanceOf(u.admin);
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+
+        orgStoryNftFactory.deployOrgStoryNftByAdmin({
+            orgStoryNftTemplate: address(defaultOrgStoryNftTemplate),
+            orgNftRecipient: u.dan,
+            orgName: "Dan's Org",
+            orgIpMetadata: ipMetadataDefault,
+            storyNftInitParams: storyNftInitParams,
+            isRootOrg: false
+        });
+        vm.stopPrank();
+
+        assertEq(mockToken.balanceOf(treasury), treasuryBalanceBefore + registrationFee);
+        assertEq(mockToken.balanceOf(u.admin), adminBalanceBefore - registrationFee);
+    }
 }
