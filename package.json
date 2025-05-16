@@ -20,7 +20,7 @@
       "lint:sol": "prettier --log-level warn --ignore-path .gitignore '{contracts,test}/**/*.sol' --check && solhint '{contracts,test}/**/*.sol'",
       "lint:sol:fix": "prettier --log-level warn --ignore-path .gitignore '{contracts,test}/**/*.sol' --write",
       "solhint": "solhint '{contracts,test}/**/*.sol'",
-      "test": "npx hardhat test",
+      "test": "forge build && forge test",
       "prepare": "husky install"
     },
     "author": "StoryProtocol",
