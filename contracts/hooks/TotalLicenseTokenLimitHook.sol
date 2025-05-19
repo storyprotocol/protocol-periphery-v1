@@ -24,10 +24,7 @@ contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingH
     /// @notice Emitted when the total license token limit is set
     /// @param licensorIpId The licensor IP id
     /// @param limit The total license token limit for the specific license of the licensor IP
-    event SetTotalLicenseTokenLimit(
-        address indexed licensorIpId,
-        uint256 limit
-    );
+    event SetTotalLicenseTokenLimit(address indexed licensorIpId, uint256 limit);
 
     /// @notice Emitted when the total license token limit is exceeded
     /// @param totalSupply The total supply of the license tokens
@@ -61,10 +58,7 @@ contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingH
     /// @notice Set the total license token limit for a specific licensor IP
     /// @param licensorIpId The licensor IP id
     /// @param limit The total license token limit, 0 means no limit
-    function setTotalLicenseTokenLimit(
-        address licensorIpId,
-        uint256 limit
-    ) external verifyPermission(licensorIpId) {
+    function setTotalLicenseTokenLimit(address licensorIpId, uint256 limit) external verifyPermission(licensorIpId) {
         uint256 totalSupply = _getTotalSupply(licensorIpId);
         if (limit != 0 && limit < totalSupply)
             revert TotalLicenseTokenLimitHook_LimitLowerThanTotalSupply(totalSupply, limit);
@@ -93,7 +87,7 @@ contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingH
         address receiver,
         bytes calldata hookData
     ) external returns (uint256 totalMintingFee) {
-        _checkTotalTokenLimit(licensorIpId,  amount);
+        _checkTotalTokenLimit(licensorIpId, amount);
         return _calculateFee(licenseTemplate, licenseTermsId, amount);
     }
 
@@ -115,7 +109,7 @@ contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingH
         uint256 licenseTermsId,
         bytes calldata hookData
     ) external returns (uint256 mintingFee) {
-        _checkTotalTokenLimit(parentIpId,  1);
+        _checkTotalTokenLimit(parentIpId, 1);
         return _calculateFee(licenseTemplate, licenseTermsId, 1);
     }
 
@@ -151,16 +145,11 @@ contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingH
     /// @notice Get the total license token limit for a specific licensor IP
     /// @param licensorIpId The licensor IP id
     /// @return limit The total license token limit
-    function getTotalLicenseTokenLimit(
-        address licensorIpId
-    ) external view returns (uint256 limit) {
+    function getTotalLicenseTokenLimit(address licensorIpId) external view returns (uint256 limit) {
         limit = ipIdToTotalLicenseTokenLimit[licensorIpId];
     }
 
-    function _checkTotalTokenLimit(
-        address licensorIpId,
-        uint256 amount
-    ) internal view {
+    function _checkTotalTokenLimit(address licensorIpId, uint256 amount) internal view {
         uint256 limit = ipIdToTotalLicenseTokenLimit[licensorIpId];
         if (limit != 0) {
             // derivative IPs are also considered as minted license tokens
@@ -184,7 +173,6 @@ contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingH
         return
             LICENSE_REGISTRY.getDerivativeIpCount(licensorIpId) + LICENSE_TOKEN.getTotalTokensByLicensor(licensorIpId);
     }
-
 
     ////////////////////////////////////////////////////////////////////////////
     //       DEPRECATED FUNCTIONS, WILL BE REMOVED IN THE NEXT RELEASE        //
@@ -222,5 +210,4 @@ contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingH
     ) external view returns (uint256 limit) {
         limit = ipIdToTotalLicenseTokenLimit[licensorIpId];
     }
-
 }
