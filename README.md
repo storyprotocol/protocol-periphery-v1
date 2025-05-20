@@ -85,9 +85,6 @@ forge test -vvvv
 forge coverage
 ```
 
-### Deploying & Upgrading
-See [Deploy & Upgrade documentation](./docs/DEPLOY_UPGRADE.md) for more information.
-
 ### Working with a local network
 
 Foundry comes with local network [anvil](https://book.getfoundry.sh/anvil/index.html) baked in, and allows us to deploy to our local network for quick testing locally.
