@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.26;
+pragma solidity 0.8.26;
 /* solhint-disable no-console */
 
 // external
@@ -7,7 +7,7 @@ import { console2 } from "forge-std/console2.sol";
 import { AccessManager } from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import { AccessManaged } from "@openzeppelin/contracts/access/manager/AccessManaged.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { UpgradeExecutor } from "@storyprotocol/script/utils/upgrades/UpgradeExecutor.s.sol";
+import { TxGenerator } from "@storyprotocol/script/utils/upgrades/TxGenerator.s.sol";
 import { UpgradedImplHelper } from "@storyprotocol/script/utils/upgrades/UpgradedImplHelper.sol";
 import { IModuleRegistry } from "@storyprotocol/core/interfaces/registries/IModuleRegistry.sol";
 
@@ -18,18 +18,16 @@ import { StoryProtocolPeripheryAddressManager } from "../utils/StoryProtocolPeri
 import { StoryProtocolCoreAddressManager } from "../utils/StoryProtocolCoreAddressManager.sol";
 
 /**
- * @title UpgradeExecutor
- * @dev Script for scheduling, executing, or canceling upgrades for a set of contracts
+ * @title UpgradeTxGenerator
+ * @dev Script for generating txs for upgrading a set of contracts
  *
  *      To use run the script with the following command:
- *      forge script script/upgrade/UpgradeExecutor.example.s.sol:UpgradeExecutorExample --rpc-url=$RPC_URL --broadcast --priority-gas-price=1 --legacy --private-key=$PRIVATEKEY --skip-simulation
+ *      forge script script/upgrade/UpgradeTxGenerator.1.3.2.s.sol:UpgradeTxGeneratorExample --rpc-url=$STORY_RPC --private-key=$STORY_PRIVATEKEY
  */
-contract UpgradeExecutorExample is UpgradeExecutor, StoryProtocolPeripheryAddressManager, StoryProtocolCoreAddressManager {
-    constructor() UpgradeExecutor(
+contract UpgradeTxGeneratorExample is TxGenerator, StoryProtocolPeripheryAddressManager, StoryProtocolCoreAddressManager {
+    constructor() TxGenerator(
         "v1.3.1", // From version
-        "v1.3.2", // To version
-        UpgradeModes.EXECUTE, // Schedule, Cancel or Execute upgrade
-        Output.BATCH_TX_EXECUTION // Output mode
+        "v1.3.2" // To version
     ) {
         _readStoryProtocolPeripheryAddresses();
         _readStoryProtocolCoreAddresses();
@@ -40,102 +38,30 @@ contract UpgradeExecutorExample is UpgradeExecutor, StoryProtocolPeripheryAddres
         _readDeployment(fromVersion); // JsonDeploymentHandler.s.sol
         // Read upgrade proposals file
         _readProposalFile(fromVersion, toVersion); // JsonDeploymentHandler.s.sol
-
         accessManager = AccessManager(protocolAccessManagerAddr);
+        console2.log("accessManager", address(accessManager));
 
-        _beginBroadcast(); // BroadcastManager.s.sol
-        if (outputType == Output.BATCH_TX_JSON) {
-            console2.log(multisig);
-            deployer = multisig;
-            console2.log("Generating tx json...");
-        }
-        // Decide actions based on mode
-        if (mode == UpgradeModes.SCHEDULE) {
-            _scheduleUpgrades();
-        } else if (mode == UpgradeModes.EXECUTE) {
-            _executeUpgrades();
-        } else if (mode == UpgradeModes.CANCEL) {
-            _cancelScheduledUpgrades();
-        } else {
-            revert("Invalid mode");
-        }
-        // If output is JSON, write the batch txx to file
-        if (outputType == Output.BATCH_TX_JSON) {
-            string memory action;
-            if (mode == UpgradeModes.SCHEDULE) {
-                action = "schedule";
-            } else if (mode == UpgradeModes.EXECUTE) {
-                action = "execute";
-            } else if (mode == UpgradeModes.CANCEL) {
-                action = "cancel";
-            } else {
-                revert("Invalid mode");
-            }
-            _writeBatchTxsOutput(string.concat(action, "-", fromVersion, "-to-", toVersion)); // JsonBatchTxHelper.s.sol
-        } else if (outputType == Output.BATCH_TX_EXECUTION) {
-            // If output is BATCH_TX_EXECUTION, execute the batch txs
-            _executeBatchTxs();
-        }
-        // If output is TX_EXECUTION, no further action is needed
-        _endBroadcast(); // BroadcastManager.s.sol
+        uint256 deployerPrivateKey = vm.envUint("STORY_PRIVATEKEY");
+        deployer = vm.addr(deployerPrivateKey);
+
+        _generateActions();
+
+        _writeBatchTxsOutput(string.concat("schedule", "-", fromVersion, "-to-", toVersion)); // JsonBatchTxHelper.s.sol
+        _writeBatchTxsOutput(string.concat("execute", "-", fromVersion, "-to-", toVersion)); // JsonBatchTxHelper.s.sol
+        _writeBatchTxsOutput(string.concat("cancel", "-", fromVersion, "-to-", toVersion)); // JsonBatchTxHelper.s.sol
     }
 
-    /**
-     * @dev Schedules upgrades for a set of contracts, only called when UpgradeModes.SCHEDULE is used
-     * This is a template listing all upgradeable contracts. Remove any contracts you don't
-     * want to upgrade. For example, if upgrading only IPAssetRegistry and GroupingModule,
-     * keep just those two _scheduleUpgrade() calls and remove the rest.
-     */
-    function _scheduleUpgrades() internal virtual override {
-        console2.log("Scheduling upgrades  -------------");
-        _scheduleUpgrade("DerivativeWorkflows");
-        _scheduleUpgrade("GroupingWorkflows");
-        _scheduleUpgrade("LicenseAttachmentWorkflows");
-        _scheduleUpgrade("RegistrationWorkflows");
-        _scheduleUpgrade("RoyaltyTokenDistributionWorkflows");
-        _scheduleUpgrade("RoyaltyWorkflows");
-        _scheduleUpgrade("SPGNFTImpl");
-        _scheduleUpgrade("TokenizerModule");
-        _scheduleUpgrade("OwnableERC20Template");
-    }
-
-    /**
-     * @dev Executes upgrades for a set of contracts, only called when UpgradeModes.EXECUTE is used
-     * This is a template listing all upgradeable contracts. Remove any contracts you don't
-     * want to upgrade. For example, if upgrading only IPAssetRegistry and GroupingModule,
-     * keep just those two _executeUpgrade() calls and remove the rest.
-     */
-    function _executeUpgrades() internal virtual override {
-        console2.log("Executing upgrades  -------------");
-        _executeUpgrade("DerivativeWorkflows");
-        _executeUpgrade("GroupingWorkflows");
-        _executeUpgrade("LicenseAttachmentWorkflows");
-        _executeUpgrade("RegistrationWorkflows");
-        _executeUpgrade("RoyaltyTokenDistributionWorkflows");
-        _executeUpgrade("RoyaltyWorkflows");
-        _executeUpgrade("SPGNFTImpl");
-        _executeUpgrade("TokenizerModule");
-        _executeUpgrade("OwnableERC20Template");
-    }
-
-
-    /**
-     * @dev Cancels scheduled upgrades for a set of contracts, only called when UpgradeModes.CANCEL is used
-     * This is a template listing all upgradeable contracts. Remove any contracts you don't
-     * want to cancel. For example, if canceling only IPAssetRegistry and GroupingModule,
-     * keep just those two _cancelScheduledUpgrade() calls and remove the rest.
-     */
-    function _cancelScheduledUpgrades() internal virtual override {
-        console2.log("Cancelling upgrades  -------------");
-        _cancelScheduledUpgrade("DerivativeWorkflows");
-        _cancelScheduledUpgrade("GroupingWorkflows");
-        _cancelScheduledUpgrade("LicenseAttachmentWorkflows");
-        _cancelScheduledUpgrade("RegistrationWorkflows");
-        _cancelScheduledUpgrade("RoyaltyTokenDistributionWorkflows");
-        _cancelScheduledUpgrade("RoyaltyWorkflows");
-        _cancelScheduledUpgrade("SPGNFTImpl");
-        _cancelScheduledUpgrade("TokenizerModule");
-        _cancelScheduledUpgrade("OwnableERC20Template");
+    function _generateActions() internal override {
+        console2.log("Generating schedule, execute, and cancel txs -------------");
+        _generateAction("DerivativeWorkflows");
+        _generateAction("GroupingWorkflows");
+        _generateAction("LicenseAttachmentWorkflows");
+        _generateAction("RegistrationWorkflows");
+        _generateAction("RoyaltyTokenDistributionWorkflows");
+        _generateAction("RoyaltyWorkflows");
+        _generateAction("SPGNFTImpl");
+        _generateAction("TokenizerModule");
+        _generateAction("OwnableERC20Template");
     }
 
     /// @dev Returns the data for the upgrade proposal.
