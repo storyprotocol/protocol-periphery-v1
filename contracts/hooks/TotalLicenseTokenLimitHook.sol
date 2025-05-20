@@ -18,20 +18,13 @@ contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingH
     /// @notice The address of the License Token.
     ILicenseToken public immutable LICENSE_TOKEN;
 
-    // keccak256(licensorIpId, licenseTemplate, licenseTermsId) => totalLicenseTokenLimit
-    mapping(bytes32 => uint256) public totalLicenseTokenLimit;
+    // ipId => totalLicenseTokenLimit
+    mapping(address => uint256) public ipIdToTotalLicenseTokenLimit;
 
     /// @notice Emitted when the total license token limit is set
     /// @param licensorIpId The licensor IP id
-    /// @param licenseTemplate The license template address
-    /// @param licenseTermsId The license terms id
     /// @param limit The total license token limit for the specific license of the licensor IP
-    event SetTotalLicenseTokenLimit(
-        address indexed licensorIpId,
-        address indexed licenseTemplate,
-        uint256 indexed licenseTermsId,
-        uint256 limit
-    );
+    event SetTotalLicenseTokenLimit(address indexed licensorIpId, uint256 limit);
 
     /// @notice Emitted when the total license token limit is exceeded
     /// @param totalSupply The total supply of the license tokens
@@ -62,23 +55,15 @@ contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingH
         LICENSE_TOKEN = ILicenseToken(licenseToken);
     }
 
-    /// @notice Set the total license token limit for a specific license
+    /// @notice Set the total license token limit for a specific licensor IP
     /// @param licensorIpId The licensor IP id
-    /// @param licenseTemplate The license template address
-    /// @param licenseTermsId The license terms id
     /// @param limit The total license token limit, 0 means no limit
-    function setTotalLicenseTokenLimit(
-        address licensorIpId,
-        address licenseTemplate,
-        uint256 licenseTermsId,
-        uint256 limit
-    ) external verifyPermission(licensorIpId) {
-        bytes32 key = keccak256(abi.encodePacked(licensorIpId, licenseTemplate, licenseTermsId));
+    function setTotalLicenseTokenLimit(address licensorIpId, uint256 limit) external verifyPermission(licensorIpId) {
         uint256 totalSupply = _getTotalSupply(licensorIpId);
         if (limit != 0 && limit < totalSupply)
             revert TotalLicenseTokenLimitHook_LimitLowerThanTotalSupply(totalSupply, limit);
-        totalLicenseTokenLimit[key] = limit;
-        emit SetTotalLicenseTokenLimit(licensorIpId, licenseTemplate, licenseTermsId, limit);
+        ipIdToTotalLicenseTokenLimit[licensorIpId] = limit;
+        emit SetTotalLicenseTokenLimit(licensorIpId, limit);
     }
 
     /// @notice This function is called when the LicensingModule mints license tokens.
@@ -102,7 +87,7 @@ contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingH
         address receiver,
         bytes calldata hookData
     ) external returns (uint256 totalMintingFee) {
-        _checkTotalTokenLimit(licensorIpId, licenseTemplate, licenseTermsId, amount);
+        _checkTotalTokenLimit(licensorIpId, amount);
         return _calculateFee(licenseTemplate, licenseTermsId, amount);
     }
 
@@ -124,7 +109,7 @@ contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingH
         uint256 licenseTermsId,
         bytes calldata hookData
     ) external returns (uint256 mintingFee) {
-        _checkTotalTokenLimit(parentIpId, licenseTemplate, licenseTermsId, 1);
+        _checkTotalTokenLimit(parentIpId, 1);
         return _calculateFee(licenseTemplate, licenseTermsId, 1);
     }
 
@@ -157,28 +142,15 @@ contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingH
         return interfaceId == type(ILicensingHook).interfaceId || super.supportsInterface(interfaceId);
     }
 
-    /// @notice Get the total license token limit for a specific license
+    /// @notice Get the total license token limit for a specific licensor IP
     /// @param licensorIpId The licensor IP id
-    /// @param licenseTemplate The license template address
-    /// @param licenseTermsId The license terms id
     /// @return limit The total license token limit
-    function getTotalLicenseTokenLimit(
-        address licensorIpId,
-        address licenseTemplate,
-        uint256 licenseTermsId
-    ) external view returns (uint256 limit) {
-        bytes32 key = keccak256(abi.encodePacked(licensorIpId, licenseTemplate, licenseTermsId));
-        limit = totalLicenseTokenLimit[key];
+    function getTotalLicenseTokenLimit(address licensorIpId) external view returns (uint256 limit) {
+        limit = ipIdToTotalLicenseTokenLimit[licensorIpId];
     }
 
-    function _checkTotalTokenLimit(
-        address licensorIpId,
-        address licenseTemplate,
-        uint256 licenseTermsId,
-        uint256 amount
-    ) internal view {
-        bytes32 key = keccak256(abi.encodePacked(licensorIpId, licenseTemplate, licenseTermsId));
-        uint256 limit = totalLicenseTokenLimit[key];
+    function _checkTotalTokenLimit(address licensorIpId, uint256 amount) internal view {
+        uint256 limit = ipIdToTotalLicenseTokenLimit[licensorIpId];
         if (limit != 0) {
             // derivative IPs are also considered as minted license tokens
             uint256 totalSupply = _getTotalSupply(licensorIpId);
@@ -200,5 +172,42 @@ contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingH
     function _getTotalSupply(address licensorIpId) internal view returns (uint256) {
         return
             LICENSE_REGISTRY.getDerivativeIpCount(licensorIpId) + LICENSE_TOKEN.getTotalTokensByLicensor(licensorIpId);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    //       DEPRECATED FUNCTIONS, WILL BE REMOVED IN THE NEXT RELEASE        //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Set the total license token limit for a specific licensor IP
+    /// @dev Deprecated function, will be removed in the next release
+    /// @param licensorIpId The licensor IP id
+    /// @param licenseTemplate Deprecated, no longer used
+    /// @param licenseTermsId Deprecated, no longer used
+    /// @param limit The total license token limit, 0 means no limit
+    function setTotalLicenseTokenLimit(
+        address licensorIpId,
+        address licenseTemplate,
+        uint256 licenseTermsId,
+        uint256 limit
+    ) external verifyPermission(licensorIpId) {
+        uint256 totalSupply = _getTotalSupply(licensorIpId);
+        if (limit != 0 && limit < totalSupply)
+            revert TotalLicenseTokenLimitHook_LimitLowerThanTotalSupply(totalSupply, limit);
+        ipIdToTotalLicenseTokenLimit[licensorIpId] = limit;
+        emit SetTotalLicenseTokenLimit(licensorIpId, limit);
+    }
+
+    /// @notice Get the total license token limit for a specific licensor IP
+    /// @dev Deprecated function, will be removed in the next release
+    /// @param licensorIpId The licensor IP id
+    /// @param licenseTemplate Deprecated, no longer used
+    /// @param licenseTermsId Deprecated, no longer used
+    /// @return limit The total license token limit
+    function getTotalLicenseTokenLimit(
+        address licensorIpId,
+        address licenseTemplate,
+        uint256 licenseTermsId
+    ) external view returns (uint256 limit) {
+        limit = ipIdToTotalLicenseTokenLimit[licensorIpId];
     }
 }
