@@ -283,23 +283,6 @@ contract GroupingWorkflows is
             0
         );
 
-        for (uint256 i = 0; i < memberIpIds.length; i++) {
-            // check if given member IPs already have a royalty vault
-            if (ROYALTY_MODULE.ipRoyaltyVaults(memberIpIds[i]) == address(0)) {
-                // mint license tokens to the member IPs if they don't have a royalty vault
-                LICENSING_MODULE.mintLicenseTokens({
-                    licensorIpId: memberIpIds[i],
-                    licenseTemplate: groupLicenseTemplate,
-                    licenseTermsId: groupLicenseTermsId,
-                    amount: 1,
-                    receiver: msg.sender,
-                    royaltyContext: "",
-                    maxMintingFee: 0,
-                    maxRevenueShare: 0
-                });
-            }
-        }
-
         collectedRoyalties = new uint256[](currencyTokens.length);
         for (uint256 i = 0; i < currencyTokens.length; i++) {
             if (currencyTokens[i] == address(0)) revert Errors.GroupingWorkflows__ZeroAddressParam();
