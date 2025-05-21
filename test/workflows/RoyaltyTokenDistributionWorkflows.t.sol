@@ -9,7 +9,6 @@ import { IIPAccount } from "@storyprotocol/core/interfaces/IIPAccount.sol";
 import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
 import { MetaTx } from "@storyprotocol/core/lib/MetaTx.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
-import { PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 
 // contracts
 import { Errors } from "../../contracts/lib/Errors.sol";
@@ -58,8 +57,6 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
         assertMetadata(ipId, ipMetadataDefault);
         _assertAttachedLicenseTerms(ipId, licenseTermsIds);
         _assertRoyaltyTokenDistribution(ipId);
-        // check that the license token used for royalty vault deployment was minted to the IP owner
-        assertEq(licenseToken.ownerOf(licenseToken.totalMintedTokens() - 1), u.alice);
     }
 
     function test_RoyaltyTokenDistributionWorkflows_mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens()
@@ -163,8 +160,6 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
         assertMetadata(ipId, ipMetadataDefault);
         _assertAttachedLicenseTerms(ipId, licenseTermsIds);
         _assertRoyaltyTokenDistribution(ipId);
-        // check that the license token used for royalty vault deployment was minted to the IP owner
-        assertEq(licenseToken.ownerOf(licenseToken.totalMintedTokens() - 1), u.alice);
     }
 
     function test_RoyaltyTokenDistributionWorkflows_registerIpAndMakeDerivativeAndDistributeRoyaltyTokens() public {

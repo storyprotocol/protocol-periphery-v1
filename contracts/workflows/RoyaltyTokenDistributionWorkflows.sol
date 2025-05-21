@@ -16,7 +16,6 @@ import { ILicensingModule } from "@storyprotocol/core/interfaces/modules/licensi
 import { IRoyaltyModule } from "@storyprotocol/core/interfaces/modules/royalty/IRoyaltyModule.sol";
 import { Licensing } from "@storyprotocol/core/lib/Licensing.sol";
 import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
-import { PILTerms } from "@storyprotocol/core/interfaces/modules/licensing/IPILicenseTemplate.sol";
 
 import { BaseWorkflow } from "../BaseWorkflow.sol";
 import { Errors } from "../lib/Errors.sol";
@@ -134,7 +133,7 @@ contract RoyaltyTokenDistributionWorkflows is
             licenseTermsData: licenseTermsData
         });
 
-        _deployRoyaltyVault(ipId, recipient);
+        if (ROYALTY_MODULE.ipRoyaltyVaults(ipId) == address(0)) ROYALTY_MODULE.deployVault(ipId);
         _distributeRoyaltyTokens({
             ipId: ipId,
             royaltyShares: royaltyShares,
@@ -169,7 +168,7 @@ contract RoyaltyTokenDistributionWorkflows is
             derivData: derivData
         });
 
-        _deployRoyaltyVault(ipId, recipient);
+        // for derivative IPs, the royalty vault is deployed in the derivative registration process
         _distributeRoyaltyTokens({
             ipId: ipId,
             royaltyShares: royaltyShares,
@@ -230,7 +229,8 @@ contract RoyaltyTokenDistributionWorkflows is
             licenseTermsData: licenseTermsData
         });
 
-        ipRoyaltyVault = _deployRoyaltyVault(ipId, msg.sender);
+        ipRoyaltyVault = ROYALTY_MODULE.ipRoyaltyVaults(ipId);
+        ipRoyaltyVault = (ipRoyaltyVault == address(0)) ? ROYALTY_MODULE.deployVault(ipId) : ipRoyaltyVault;
     }
 
     /// @notice Register an IP, make a derivative, and deploy a royalty vault.
@@ -277,7 +277,8 @@ contract RoyaltyTokenDistributionWorkflows is
             derivData: derivData
         });
 
-        ipRoyaltyVault = _deployRoyaltyVault(ipId, msg.sender);
+        // for derivative IPs, the royalty vault is deployed in the derivative registration process
+        ipRoyaltyVault = ROYALTY_MODULE.ipRoyaltyVaults(ipId);
     }
 
     /// @notice Distribute royalty tokens to the authors of the IP.
@@ -296,71 +297,6 @@ contract RoyaltyTokenDistributionWorkflows is
             );
 
         _distributeRoyaltyTokens(ipId, royaltyShares, sigApproveRoyaltyTokens);
-    }
-
-    /// @dev Deploys a royalty vault for the IP.
-    /// @param ipId The ID of the IP.
-    /// @param licenseTokenReceiver The address to receive the license token.
-    /// @return ipRoyaltyVault The address of the deployed royalty vault.
-    function _deployRoyaltyVault(address ipId, address licenseTokenReceiver) internal returns (address ipRoyaltyVault) {
-        if (ROYALTY_MODULE.ipRoyaltyVaults(ipId) == address(0)) {
-            uint256 licenseTermsId = PIL_TEMPLATE.registerLicenseTerms(
-                PILFlavors.commercialUse({ mintingFee: 0, currencyToken: WIP, royaltyPolicy: ROYALTY_POLICY_LRP })
-            );
-
-            // check if the license is already attached to the IP
-            bool hasIpAttachedLicenseTerms = LICENSE_REGISTRY.hasIpAttachedLicenseTerms(
-                ipId,
-                address(PIL_TEMPLATE),
-                licenseTermsId
-            );
-
-            // if the license is not already attached to the IP,
-            // attach a temporary commercial license to the IP for the royalty vault deployment
-            if (!hasIpAttachedLicenseTerms) {
-                LicensingHelper.attachLicenseTerms(
-                    ipId,
-                    address(LICENSING_MODULE),
-                    address(PIL_TEMPLATE),
-                    licenseTermsId
-                );
-            }
-
-            // mint a license token to trigger the royalty vault deployment
-            LICENSING_MODULE.mintLicenseTokens({
-                licensorIpId: ipId,
-                licenseTemplate: address(PIL_TEMPLATE),
-                licenseTermsId: licenseTermsId,
-                amount: 1,
-                receiver: licenseTokenReceiver,
-                royaltyContext: "",
-                maxMintingFee: 0,
-                maxRevenueShare: 0
-            });
-
-            // if the license is not intended to be attached to the IP,
-            // set the licensing configuration to disable the temporary license
-            if (!hasIpAttachedLicenseTerms) {
-                LICENSING_MODULE.setLicensingConfig({
-                    ipId: ipId,
-                    licenseTemplate: address(PIL_TEMPLATE),
-                    licenseTermsId: licenseTermsId,
-                    licensingConfig: Licensing.LicensingConfig({
-                        isSet: true,
-                        mintingFee: 0,
-                        licensingHook: address(0),
-                        hookData: "",
-                        commercialRevShare: 0,
-                        disabled: true,
-                        expectMinimumGroupRewardShare: 0,
-                        expectGroupRewardPool: address(0)
-                    })
-                });
-            }
-        }
-
-        ipRoyaltyVault = ROYALTY_MODULE.ipRoyaltyVaults(ipId);
-        if (ipRoyaltyVault == address(0)) revert Errors.RoyaltyTokenDistributionWorkflows__RoyaltyVaultNotDeployed();
     }
 
     /// @dev Distributes royalty tokens to the authors of the IP.
