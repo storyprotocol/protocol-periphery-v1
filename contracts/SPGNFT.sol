@@ -236,9 +236,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @param contractURI The new contract URI for the collection. Follows ERC-7572 standard.
     ///        See https://eips.ethereum.org/EIPS/eip-7572
     function setContractURI(string memory contractURI) external onlyRole(SPGNFTLib.ADMIN_ROLE) {
-        _getSPGNFTStorage()._contractURI = contractURI;
-
-        emit ContractURIUpdated();
+        _setContractURI(contractURI);
     }
 
     /// @notice Mints an NFT from the collection. Only callable when public minting is enabled or when the caller has minter role.
