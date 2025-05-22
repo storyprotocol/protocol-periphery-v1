@@ -57,19 +57,19 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
 
         vm.startPrank(ipOwner1);
         licensingModule.setLicensingConfig(ipId1, address(pilTemplate), commUseTermsId, licensingConfig);
-        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(ipId1, 10);
-        assertEq(totalLicenseTokenLimitHook.getTotalLicenseTokenLimit(ipId1), 10);
+        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId, 10);
+        assertEq(totalLicenseTokenLimitHook.getTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId), 10);
         vm.stopPrank();
 
         vm.startPrank(ipOwner2);
         licensingModule.setLicensingConfig(ipId2, address(pilTemplate), commUseTermsId, licensingConfig);
-        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(ipId2, 20);
-        assertEq(totalLicenseTokenLimitHook.getTotalLicenseTokenLimit(ipId2), 20);
+        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(ipId2, address(pilTemplate), commUseTermsId, 20);
+        assertEq(totalLicenseTokenLimitHook.getTotalLicenseTokenLimit(ipId2, address(pilTemplate), commUseTermsId), 20);
         vm.stopPrank();
 
         vm.startPrank(ipOwner3);
         licensingModule.setLicensingConfig(ipId3, address(pilTemplate), commUseTermsId, licensingConfig);
-        assertEq(totalLicenseTokenLimitHook.getTotalLicenseTokenLimit(ipId3), 0);
+        assertEq(totalLicenseTokenLimitHook.getTotalLicenseTokenLimit(ipId3, address(pilTemplate), commUseTermsId), 0);
         vm.stopPrank();
 
         licensingModule.mintLicenseTokens({
@@ -156,8 +156,8 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
 
         vm.startPrank(ipOwner1);
         licensingModule.setLicensingConfig(ipId1, address(pilTemplate), commUseTermsId, licensingConfig);
-        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(ipId1, 10);
-        assertEq(totalLicenseTokenLimitHook.getTotalLicenseTokenLimit(ipId1), 10);
+        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId, 10);
+        assertEq(totalLicenseTokenLimitHook.getTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId), 10);
         vm.stopPrank();
 
         vm.startPrank(ipOwner2);
@@ -167,10 +167,10 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
                 ipId1,
                 ipOwner2,
                 address(totalLicenseTokenLimitHook),
-                bytes4(keccak256(bytes("setTotalLicenseTokenLimit(address,uint256)")))
+                totalLicenseTokenLimitHook.setTotalLicenseTokenLimit.selector
             )
         );
-        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(ipId1, 20);
+        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId, 20);
     }
 
     function test_TotalLicenseTokenLimitHook_revert_limitLowerThanTotalSupply_setLimit() public {
@@ -187,8 +187,8 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
 
         vm.startPrank(ipOwner1);
         licensingModule.setLicensingConfig(ipId1, address(pilTemplate), commUseTermsId, licensingConfig);
-        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(ipId1, 10);
-        assertEq(totalLicenseTokenLimitHook.getTotalLicenseTokenLimit(ipId1), 10);
+        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId, 10);
+        assertEq(totalLicenseTokenLimitHook.getTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId), 10);
 
         licensingModule.mintLicenseTokens({
             licensorIpId: ipId1,
@@ -208,6 +208,194 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
                 5
             )
         );
-        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(ipId1, 5);
+        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(ipId1, address(pilTemplate), commUseTermsId, 5);
+    }
+
+    function test_TotalLicenseTokenLimitHook_PerIpPerLicenseLimit() public {
+        // Rename for clarity in this specific test
+        uint256 commUseTermsId1 = commUseTermsId;
+
+        // Register a second set of license terms with a different minting fee to ensure uniqueness
+        uint256 commUseTermsId2 = pilTemplate.registerLicenseTerms(
+            PILFlavors.commercialUse(0, address(mockToken), address(royaltyPolicyLRP)) // Changed mintingFee from 0 to 1
+        );
+
+        // Configure Licensing for ipId1, commUseTermsId1
+        Licensing.LicensingConfig memory licensingConfig1 = Licensing.LicensingConfig({
+            isSet: true,
+            mintingFee: 0,
+            licensingHook: address(totalLicenseTokenLimitHook),
+            hookData: "",
+            commercialRevShare: 0,
+            disabled: false,
+            expectMinimumGroupRewardShare: 0,
+            expectGroupRewardPool: address(0)
+        });
+
+        vm.startPrank(ipOwner1);
+        licensingModule.setLicensingConfig(ipId1, address(pilTemplate), commUseTermsId1, licensingConfig1);
+        licensingModule.attachLicenseTerms(ipId1, address(pilTemplate), commUseTermsId2);
+        licensingModule.setLicensingConfig(ipId1, address(pilTemplate), commUseTermsId2, licensingConfig1);
+        vm.stopPrank();
+
+        // Configure Licensing for ipId2, commUseTermsId1
+        vm.startPrank(ipOwner2);
+        licensingModule.setLicensingConfig(ipId2, address(pilTemplate), commUseTermsId1, licensingConfig1);
+        vm.stopPrank();
+
+        // Set Limits
+        uint256 limitIp1Terms1 = 10;
+        uint256 limitIp1Terms2 = 15;
+        uint256 limitIp2Terms1 = 20;
+
+        vm.startPrank(ipOwner1);
+        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(
+            ipId1,
+            address(pilTemplate),
+            commUseTermsId1,
+            limitIp1Terms1
+        );
+        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(
+            ipId1,
+            address(pilTemplate),
+            commUseTermsId2,
+            limitIp1Terms2
+        );
+        vm.stopPrank();
+
+        vm.startPrank(ipOwner2);
+        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(
+            ipId2,
+            address(pilTemplate),
+            commUseTermsId1,
+            limitIp2Terms1
+        );
+        vm.stopPrank();
+
+        // --- Test Minting for ipId1, commUseTermsId1 ---
+        // Mint up to limit
+        licensingModule.mintLicenseTokens({
+            licensorIpId: ipId1,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: commUseTermsId1,
+            amount: limitIp1Terms1,
+            receiver: u.alice,
+            royaltyContext: "",
+            maxMintingFee: 0,
+            maxRevenueShare: 0
+        });
+        assertEq(
+            totalLicenseTokenLimitHook.getTotalLicenseTokenSupply(ipId1, address(pilTemplate), commUseTermsId1),
+            limitIp1Terms1
+        );
+
+        // Attempt to mint over limit
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TotalLicenseTokenLimitHook.TotalLicenseTokenLimitHook_TotalLicenseTokenLimitExceeded.selector,
+                limitIp1Terms1, // current total supply
+                1, // amount to mint
+                limitIp1Terms1 // limit
+            )
+        );
+        licensingModule.mintLicenseTokens({
+            licensorIpId: ipId1,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: commUseTermsId1,
+            amount: 1,
+            receiver: u.alice,
+            royaltyContext: "",
+            maxMintingFee: 0,
+            maxRevenueShare: 0
+        });
+
+        // --- Test Minting for ipId1, commUseTermsId2 ---
+        // Mint up to limit
+        licensingModule.mintLicenseTokens({
+            licensorIpId: ipId1,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: commUseTermsId2,
+            amount: limitIp1Terms2,
+            receiver: u.bob, // different receiver for clarity
+            royaltyContext: "",
+            maxMintingFee: 0,
+            maxRevenueShare: 0
+        });
+        assertEq(
+            totalLicenseTokenLimitHook.getTotalLicenseTokenSupply(ipId1, address(pilTemplate), commUseTermsId2),
+            limitIp1Terms2
+        );
+
+        // Attempt to mint over limit
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TotalLicenseTokenLimitHook.TotalLicenseTokenLimitHook_TotalLicenseTokenLimitExceeded.selector,
+                limitIp1Terms2, // current total supply
+                1, // amount to mint
+                limitIp1Terms2 // limit
+            )
+        );
+        licensingModule.mintLicenseTokens({
+            licensorIpId: ipId1,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: commUseTermsId2,
+            amount: 1,
+            receiver: u.bob,
+            royaltyContext: "",
+            maxMintingFee: 0,
+            maxRevenueShare: 0
+        });
+
+        // --- Test Minting for ipId2, commUseTermsId1 ---
+        // Mint up to limit
+        licensingModule.mintLicenseTokens({
+            licensorIpId: ipId2,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: commUseTermsId1,
+            amount: limitIp2Terms1,
+            receiver: u.carl, // different receiver for clarity
+            royaltyContext: "",
+            maxMintingFee: 0,
+            maxRevenueShare: 0
+        });
+        assertEq(
+            totalLicenseTokenLimitHook.getTotalLicenseTokenSupply(ipId2, address(pilTemplate), commUseTermsId1),
+            limitIp2Terms1
+        );
+
+        // Attempt to mint over limit
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TotalLicenseTokenLimitHook.TotalLicenseTokenLimitHook_TotalLicenseTokenLimitExceeded.selector,
+                limitIp2Terms1, // current total supply
+                1, // amount to mint
+                limitIp2Terms1 // limit
+            )
+        );
+        licensingModule.mintLicenseTokens({
+            licensorIpId: ipId2,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: commUseTermsId1,
+            amount: 1,
+            receiver: u.carl,
+            royaltyContext: "",
+            maxMintingFee: 0,
+            maxRevenueShare: 0
+        });
+
+        // Verify that ipId1, commUseTermsId1 supply is unchanged
+        uint256 supplyIp1Terms1 = totalLicenseTokenLimitHook.getTotalLicenseTokenSupply(
+            ipId1,
+            address(pilTemplate),
+            commUseTermsId1
+        );
+        assertEq(supplyIp1Terms1, limitIp1Terms1);
+        // Verify that ipId1, commUseTermsId2 supply is unchanged
+        uint256 supplyIp1Terms2 = totalLicenseTokenLimitHook.getTotalLicenseTokenSupply(
+            ipId1,
+            address(pilTemplate),
+            commUseTermsId2
+        );
+        assertEq(supplyIp1Terms2, limitIp1Terms2);
     }
 }
