@@ -148,6 +148,7 @@ contract LicenseAttachmentWorkflows is
             allowDuplicates: allowDuplicates
         });
 
+        _collectRegistrationFeeAndApprove(msg.sender);
         ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 
@@ -186,6 +187,7 @@ contract LicenseAttachmentWorkflows is
         if (msg.sender != sigMetadataAndAttachAndConfig.signer)
             revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigMetadataAndAttachAndConfig.signer);
 
+        _collectRegistrationFeeAndApprove(msg.sender);
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
         address[] memory modules = new address[](3);
@@ -236,6 +238,7 @@ contract LicenseAttachmentWorkflows is
             allowDuplicates: allowDuplicates
         });
 
+        _collectRegistrationFeeAndApprove(msg.sender);
         ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 
@@ -260,6 +263,7 @@ contract LicenseAttachmentWorkflows is
         if (msg.sender != sigMetadataAndDefaultTerms.signer)
             revert Errors.LicenseAttachmentWorkflows__CallerNotSigner(msg.sender, sigMetadataAndDefaultTerms.signer);
 
+        _collectRegistrationFeeAndApprove(msg.sender);
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
         address[] memory modules = new address[](2);
