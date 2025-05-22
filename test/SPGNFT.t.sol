@@ -7,6 +7,7 @@ import { UpgradeableBeacon } from "@openzeppelin/contracts/proxy/beacon/Upgradea
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
 import { IERC20Errors } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
+import { IERC7572 } from "../contracts/interfaces/story-nft/IERC7572.sol";
 import { ISPGNFT } from "../contracts/interfaces/ISPGNFT.sol";
 import { SPGNFT } from "../contracts/SPGNFT.sol";
 import { SPGNFTLib } from "../contracts/lib/SPGNFTLib.sol";
@@ -54,6 +55,8 @@ contract SPGNFTTest is BaseTest {
         address NFT_CONTRACT_BEACON = address(new UpgradeableBeacon(testSpgNftImpl, deployer));
         SPGNFT anotherNftContract = SPGNFT(address(new BeaconProxy(NFT_CONTRACT_BEACON, "")));
 
+        vm.expectEmit(address(anotherNftContract));
+        emit IERC7572.ContractURIUpdated();
         anotherNftContract.initialize(
             ISPGNFT.InitParams({
                 name: "Test Collection",
@@ -273,9 +276,13 @@ contract SPGNFTTest is BaseTest {
         assertEq(nftContract.contractURI(), testContractURI);
 
         vm.startPrank(u.alice); // owner (admin) of the collection
+        vm.expectEmit(address(nftContract));
+        emit IERC7572.ContractURIUpdated();
         nftContract.setContractURI("test");
         assertEq(nftContract.contractURI(), "test");
 
+        vm.expectEmit(address(nftContract));
+        emit IERC7572.ContractURIUpdated();
         nftContract.setContractURI(testContractURI);
         assertEq(nftContract.contractURI(), testContractURI);
         vm.stopPrank();

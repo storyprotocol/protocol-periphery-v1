@@ -117,7 +117,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         $._mintOpen = initParams.mintOpen;
         $._publicMinting = initParams.isPublicMinting;
         $._baseURI = initParams.baseURI;
-        $._contractURI = initParams.contractURI;
+        _setContractURI(initParams.contractURI);
 
         __ERC721_init(initParams.name, initParams.symbol);
         __AccessControl_init();
@@ -236,9 +236,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
     /// @param contractURI The new contract URI for the collection. Follows ERC-7572 standard.
     ///        See https://eips.ethereum.org/EIPS/eip-7572
     function setContractURI(string memory contractURI) external onlyRole(SPGNFTLib.ADMIN_ROLE) {
-        _getSPGNFTStorage()._contractURI = contractURI;
-
-        emit ContractURIUpdated();
+        _setContractURI(contractURI);
     }
 
     /// @notice Mints an NFT from the collection. Only callable when public minting is enabled or when the caller has minter role.
@@ -342,6 +340,18 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         _safeMint(to, tokenId);
 
         if (bytes(nftMetadataURI).length > 0) _setTokenURI(tokenId, nftMetadataURI);
+    }
+
+    /// @dev Sets the contract URI for the collection.
+    /// @param contractURI The new URI string to set for the contract's metadata. Follows ERC-7572 standard.
+    ///        See https://eips.ethereum.org/EIPS/eip-7572
+    function _setContractURI(string memory contractURI) internal {
+        SPGNFTStorage storage $ = _getSPGNFTStorage();
+
+        if (keccak256(abi.encodePacked($._contractURI)) != keccak256(abi.encodePacked(contractURI))) {
+            $._contractURI = contractURI;
+            emit ContractURIUpdated();
+        }
     }
 
     /// @dev Base URI for computing tokenURI.
