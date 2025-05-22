@@ -547,8 +547,6 @@ contract DeployHelper is
                 abi.encodePacked(
                     type(TotalLicenseTokenLimitHook).creationCode,
                     abi.encode(
-                        licenseRegistryAddr,
-                        licenseTokenAddr,
                         accessControllerAddr,
                         ipAssetRegistryAddr
                     )
