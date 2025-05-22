@@ -7,6 +7,15 @@ import { AccessControlled } from "@storyprotocol/core/access/AccessControlled.so
 import { ILicensingHook } from "@storyprotocol/core/interfaces/modules/licensing/ILicensingHook.sol";
 import { ILicenseTemplate } from "@storyprotocol/core/interfaces/modules/licensing/ILicenseTemplate.sol";
 
+/// @title Total License Token Limit Hook
+/// @notice Enforces a maximum limit on the total number of license tokens that can be minted
+///         for a specific license attached to an IP. To use this hook, set the `licensingHook` field
+///         in the licensing config to the address of this hook.
+/// @dev This hook tracks and limits license token minting only for when this license hook is
+///      configured and active on a license. This hook does not account for tokens minted prior to
+///      its activation on a specific license. For instance, if a limit of 20 is set, and 10 tokens
+///      were minted before this hook was active for that license, the hook will still allow an
+///      additional 20 tokens to be minted.
 contract TotalLicenseTokenLimitHook is BaseModule, AccessControlled, ILicensingHook {
     string public constant override name = "TOTAL_LICENSE_TOKEN_LIMIT_HOOK";
 
