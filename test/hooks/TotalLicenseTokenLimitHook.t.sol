@@ -13,25 +13,34 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
     address public ipId1;
     address public ipId2;
     address public ipId3;
+    address public derivativeIpId;
     address public ipOwner1 = address(0x111);
     address public ipOwner2 = address(0x222);
     address public ipOwner3 = address(0x333);
+    address public derivativeOwner = address(0x999);
     uint256 public tokenId1;
     uint256 public tokenId2;
     uint256 public tokenId3;
+    uint256 public derivativeTokenId;
     uint256 public commUseTermsId;
+    uint256 public commRemixTermsId;
 
     function setUp() public override {
         super.setUp();
         commUseTermsId = pilTemplate.registerLicenseTerms(
             PILFlavors.commercialUse(0, address(mockToken), address(royaltyPolicyLAP))
         );
+        commRemixTermsId = pilTemplate.registerLicenseTerms(
+            PILFlavors.commercialRemix(0, 0, address(royaltyPolicyLAP), address(mockToken))
+        );
         tokenId1 = mockNft.mint(ipOwner1);
         tokenId2 = mockNft.mint(ipOwner2);
         tokenId3 = mockNft.mint(ipOwner3);
+        derivativeTokenId = mockNft.mint(derivativeOwner);
         ipId1 = ipAssetRegistry.register(block.chainid, address(mockNft), tokenId1);
         ipId2 = ipAssetRegistry.register(block.chainid, address(mockNft), tokenId2);
         ipId3 = ipAssetRegistry.register(block.chainid, address(mockNft), tokenId3);
+        derivativeIpId = ipAssetRegistry.register(block.chainid, address(mockNft), derivativeTokenId);
         vm.prank(ipOwner1);
         licensingModule.attachLicenseTerms(ipId1, address(pilTemplate), commUseTermsId);
         vm.prank(ipOwner2);
@@ -41,6 +50,7 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
         vm.label(ipId1, "IPAccount1");
         vm.label(ipId2, "IPAccount2");
         vm.label(ipId3, "IPAccount3");
+        vm.label(derivativeIpId, "DerivativeIP");
     }
 
     function test_TotalLicenseTokenLimitHook_setLimit() public {
@@ -397,5 +407,74 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
             commUseTermsId2
         );
         assertEq(supplyIp1Terms2, limitIp1Terms2);
+    }
+
+    function test_TotalLicenseTokenLimitHook_revert_TotalLicenseTokenLimitExceeded_beforeRegisterDerivative() public {
+        Licensing.LicensingConfig memory licensingConfig = Licensing.LicensingConfig({
+            isSet: true,
+            mintingFee: 100,
+            licensingHook: address(totalLicenseTokenLimitHook),
+            hookData: "",
+            commercialRevShare: 0,
+            disabled: false,
+            expectMinimumGroupRewardShare: 0,
+            expectGroupRewardPool: address(0) // not allowed to be added to any group
+        });
+        
+        uint256 limitIp1Terms = 10;
+
+        vm.startPrank(ipOwner1);
+        licensingModule.attachLicenseTerms(ipId1, address(pilTemplate), commRemixTermsId);
+        licensingModule.setLicensingConfig(ipId1, address(pilTemplate), commRemixTermsId, licensingConfig);
+        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(
+            ipId1,
+            address(pilTemplate),
+            commRemixTermsId,
+            limitIp1Terms
+        );
+        assertEq(
+            totalLicenseTokenLimitHook.getTotalLicenseTokenLimit(ipId1, address(pilTemplate), commRemixTermsId),
+            limitIp1Terms
+        );
+        vm.stopPrank();
+
+        licensingModule.mintLicenseTokens({
+            licensorIpId: ipId1,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: commRemixTermsId,
+            amount: limitIp1Terms,
+            receiver: u.alice,
+            royaltyContext: "",
+            maxMintingFee: 0,
+            maxRevenueShare: 0
+        });
+
+        address[] memory parentIpIds = new address[](1);
+        parentIpIds[0] = ipId1;
+        uint256[] memory licenseTermsIds = new uint256[](1);
+        licenseTermsIds[0] = commRemixTermsId;
+        uint256 maxMintingFee = 0;
+        uint32 maxRts = 0;
+        uint32 maxRevenueShare = 0;
+
+        vm.prank(derivativeOwner);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TotalLicenseTokenLimitHook.TotalLicenseTokenLimitHook_TotalLicenseTokenLimitExceeded.selector,
+                limitIp1Terms, // current total supply
+                1, // amount to mint
+                limitIp1Terms // limit
+            )
+        );
+        licensingModule.registerDerivative(
+            derivativeIpId,
+            parentIpIds,
+            licenseTermsIds,
+            address(pilTemplate),
+            "",
+            maxMintingFee,
+            maxRts,
+            maxRevenueShare
+        );
     }
 }
