@@ -154,6 +154,155 @@ contract DerivativeWorkflowsTest is BaseTest {
         });
     }
 
+    function test_DerivativeWorkflows_revert_CallerNotSigner_registerIpAndMakeDerivative()
+        public
+        whenCallerHasMinterRole        
+        withCollection
+        withEnoughTokens(address(derivativeWorkflows))
+        withNonCommercialParentIp
+    {
+        (address licenseTemplateParent, uint256 licenseTermsIdParent) = licenseRegistry.getAttachedLicenseTerms(
+            ipIdParent,
+            0
+        );
+
+        uint32 revShare = pilTemplate.getLicenseTerms(licenseTermsIdParent).commercialRevShare;
+
+        uint256 tokenIdChild = nftContract.mint({
+            to: caller,
+            nftMetadataURI: ipMetadataDefault.nftMetadataURI,
+            nftMetadataHash: ipMetadataDefault.nftMetadataHash,
+            allowDuplicates: true
+        });
+        address ipIdChild = ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenIdChild);
+
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory signatureMetadataAndRegister, bytes32 expectedState, ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: ipIdChild,
+            permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
+                ipIdChild,
+                address(derivativeWorkflows),
+                false
+            ),
+            deadline: deadline,
+            state: bytes32(0),
+            signerSk: sk.alice
+        });
+
+        address[] memory parentIpIds = new address[](1);
+        parentIpIds[0] = ipIdParent;
+
+        uint256[] memory licenseTermsIds = new uint256[](1);
+        licenseTermsIds[0] = licenseTermsIdParent;
+
+        vm.startPrank(u.bob);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.DerivativeWorkflows__CallerNotSigner.selector,
+                u.bob,
+                u.alice
+            )
+        );
+
+        derivativeWorkflows.registerIpAndMakeDerivative({
+            nftContract: address(nftContract),
+            tokenId: tokenIdChild,
+            derivData: WorkflowStructs.MakeDerivative({
+                parentIpIds: parentIpIds,
+                licenseTemplate: address(pilTemplate),
+                licenseTermsIds: licenseTermsIds,
+                royaltyContext: "",
+                maxMintingFee: 0,
+                maxRts: revShare,
+                maxRevenueShare: 0
+            }),
+            ipMetadata: ipMetadataDefault,
+            sigMetadataAndRegister: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: deadline,
+                signature: signatureMetadataAndRegister
+            })
+        });
+    }
+
+    function test_DerivativeWorkflows_revert_CallerNotSigner_registerIpAndMakeDerivativeWithLicenseTokens()
+        public
+        whenCallerHasMinterRole        
+        withCollection
+        withEnoughTokens(address(derivativeWorkflows))
+        withNonCommercialParentIp
+    {
+        (address licenseTemplateParent, uint256 licenseTermsIdParent) = licenseRegistry.getAttachedLicenseTerms(
+            ipIdParent,
+            0
+        );
+
+        uint32 revShare = pilTemplate.getLicenseTerms(licenseTermsIdParent).commercialRevShare;
+
+        uint256 tokenIdChild = nftContract.mint({
+            to: caller,
+            nftMetadataURI: ipMetadataDefault.nftMetadataURI,
+            nftMetadataHash: ipMetadataDefault.nftMetadataHash,
+            allowDuplicates: true
+        });
+        address ipIdChild = ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenIdChild);
+
+        uint256 deadline = block.timestamp + 1000;
+
+        uint256 startLicenseTokenId = licensingModule.mintLicenseTokens({
+            licensorIpId: ipIdParent,
+            licenseTemplate: address(pilTemplate),
+            licenseTermsId: licenseTermsIdParent,
+            amount: 1,
+            receiver: caller,
+            royaltyContext: "",
+            maxMintingFee: 0,
+            maxRevenueShare: 0
+        });
+
+        uint256[] memory licenseTokenIds = new uint256[](1);
+        licenseTokenIds[0] = startLicenseTokenId;
+        licenseToken.approve(address(derivativeWorkflows), startLicenseTokenId);
+
+        (bytes memory signatureMetadataAndRegister, , ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: ipIdChild,
+            permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
+                ipIdChild,
+                address(derivativeWorkflows),
+                true
+            ),
+            deadline: deadline,
+            state: bytes32(0),
+            signerSk: sk.alice
+        });
+
+        vm.startPrank(u.bob);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.DerivativeWorkflows__CallerNotSigner.selector,
+                u.bob,
+                u.alice
+            )
+        );
+
+        derivativeWorkflows.registerIpAndMakeDerivativeWithLicenseTokens({
+            nftContract: address(nftContract),
+            tokenId: tokenIdChild,
+            licenseTokenIds: licenseTokenIds,
+            royaltyContext: "",
+            maxRts: revShare,
+            ipMetadata: ipMetadataDefault,
+            sigMetadataAndRegister: WorkflowStructs.SignatureData({
+                signer: caller,
+                deadline: deadline,
+                signature: signatureMetadataAndRegister
+            })
+        });
+    }
+
     function test_DerivativeWorkflows_mintAndRegisterIpAndMakeDerivative_withNonCommercialLicense()
         public
         withCollection
