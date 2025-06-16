@@ -135,6 +135,119 @@ contract GroupingWorkflowsTest is BaseTest, ERC721Holder {
         vm.stopPrank();
     }
 
+    function test_GroupingWorkflows_revert_CallerNotSigner_mintAndRegisterIpAndAttachLicenseAndAddToGroup() public {
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory sigAddToGroup, bytes32 expectedState, ) = _getSetPermissionSigForPeriphery({
+            ipId: groupId,
+            to: address(groupingWorkflows),
+            module: address(groupingModule),
+            selector: IGroupingModule.addIp.selector,
+            deadline: deadline,
+            state: IIPAccount(payable(groupId)).state(),
+            signerSk: groupOwnerSk
+        });
+
+        vm.startPrank(u.alice);
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.GroupingWorkflows__CallerNotSigner.selector, u.alice, groupOwner)
+        );
+        groupingWorkflows.mintAndRegisterIpAndAttachLicenseAndAddToGroup({
+            spgNftContract: address(spgNftPublic),
+            groupId: groupId,
+            recipient: groupOwner,
+            maxAllowedRewardShare: 100e6, // 100%
+            ipMetadata: ipMetadataDefault,
+            licensesData: testLicensesData,
+            sigAddToGroup: WorkflowStructs.SignatureData({
+                signer: groupOwner,
+                deadline: deadline,
+                signature: sigAddToGroup
+            }),
+            allowDuplicates: false
+        });
+        vm.stopPrank();
+    }
+
+    function test_GroupingWorkflows_revert_CallerNotSigner_registerIpAndAttachLicenseAndAddToGroup() public {
+        uint256 aliceSk = sk.alice;
+        // mint a NFT from the mock ERC721 contract
+        vm.startPrank(groupOwner);
+        uint256 tokenId = MockERC721(mockNft).mint(groupOwner);
+        vm.stopPrank();
+        // get the IP ID
+        address ipId = IIPAssetRegistry(ipAssetRegistry).ipId(block.chainid, address(mockNft), tokenId);
+        uint256 deadline = block.timestamp + 1000;
+        // Get the signature for setting the permission for calling `setAll` (IP metadata) and `attachLicenseTerms`
+        // functions in `coreMetadataModule` and `licensingModule` from Alice (not the Group IP owner)
+        (bytes memory sigMetadataAndAttach, , ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: ipId,
+            permissionList: _getMetadataAndAttachTermsAndConfigPermissionList(ipId, address(groupingWorkflows)),
+            deadline: deadline,
+            state: bytes32(0),
+            signerSk: aliceSk
+        });
+        // Get the signature for setting the permission for calling `addIp` function in `GroupingModule`
+        // from the Group IP owner
+        (bytes memory sigAddToGroup, , ) = _getSetPermissionSigForPeriphery({
+            ipId: groupId,
+            to: address(groupingWorkflows),
+            module: address(groupingModule),
+            selector: IGroupingModule.addIp.selector,
+            deadline: deadline,
+            state: IIPAccount(payable(groupId)).state(),
+            signerSk: groupOwnerSk
+        });
+
+        vm.startPrank(u.alice);
+        // expect revert because the sigAddToGroup signature is signed by the Group IP owner, not Alice
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.GroupingWorkflows__CallerNotSigner.selector, u.alice, groupOwner)
+        );
+        groupingWorkflows.registerIpAndAttachLicenseAndAddToGroup({
+            nftContract: address(mockNft),
+            tokenId: tokenId,
+            groupId: groupId,
+            maxAllowedRewardShare: 100e6, // 100%
+            licensesData: testLicensesData,
+            ipMetadata: ipMetadataDefault,
+            sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: deadline,
+                signature: sigMetadataAndAttach
+            }),
+            sigAddToGroup: WorkflowStructs.SignatureData({
+                signer: groupOwner,
+                deadline: deadline,
+                signature: sigAddToGroup
+            })
+        });
+        vm.stopPrank();
+        vm.startPrank(groupOwner);
+        // expect revert because the sigMetadataAndAttach signature is signed by Alice, not the Group IP owner
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.GroupingWorkflows__CallerNotSigner.selector, groupOwner, u.alice)
+        );
+        groupingWorkflows.registerIpAndAttachLicenseAndAddToGroup({
+            nftContract: address(mockNft),
+            tokenId: tokenId,
+            groupId: groupId,
+            maxAllowedRewardShare: 100e6, // 100%
+            licensesData: testLicensesData,
+            ipMetadata: ipMetadataDefault,
+            sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: deadline,
+                signature: sigMetadataAndAttach
+            }),
+            sigAddToGroup: WorkflowStructs.SignatureData({
+                signer: groupOwner,
+                deadline: deadline,
+                signature: sigAddToGroup
+            })
+        });
+        vm.stopPrank();
+    }
     // Mint → Register IP → Attach license terms → Add new IP to group IPA
     function test_GroupingWorkflows_mintAndRegisterIpAndAttachLicenseAndAddToGroup() public {
         uint256 deadline = block.timestamp + 1000;
