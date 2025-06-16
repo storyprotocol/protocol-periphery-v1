@@ -83,6 +83,126 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         });
     }
 
+    function test_LicenseAttachmentWorkflows_revert_CallerNotSigner_registerPILTermsAndAttach()
+        public
+        withCollection
+        withIp(u.alice)
+    {
+        address payable ipId = ipAsset[1].ipId;
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory signature, , ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: ipId,
+            permissionList: _getAttachTermsAndConfigPermissionList(ipId, address(licenseAttachmentWorkflows)),
+            deadline: deadline,
+            state: IIPAccount(ipId).state(),
+            signerSk: sk.alice
+        });
+
+        uint256 ltAmt = pilTemplate.totalRegisteredLicenseTerms();
+
+        vm.startPrank(u.bob);
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.LicenseAttachmentWorkflows__CallerNotSigner.selector, u.bob, u.alice)
+        );
+        uint256[] memory licenseTermsIds = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+            ipId: ipId,
+            licenseTermsData: commTermsData,
+            sigAttachAndConfig: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: deadline,
+                signature: signature
+            })
+        });
+        vm.stopPrank();
+    }
+
+    function test_LicenseAttachmentWorkflows_revert_CallerNotSigner_registerIpAndAttachPILTerms()
+        public
+        withCollection
+        whenCallerHasMinterRole
+        withEnoughTokens(address(licenseAttachmentWorkflows))
+    {
+        uint256 tokenId = nftContract.mint({
+            to: caller,
+            nftMetadataURI: ipMetadataEmpty.nftMetadataURI,
+            nftMetadataHash: ipMetadataEmpty.nftMetadataHash,
+            allowDuplicates: true
+        });
+        address payable ipId = payable(ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenId));
+
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory sigMetadataAndAttachAndConfig, , ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: ipId,
+            permissionList: _getMetadataAndAttachTermsAndConfigPermissionList(
+                ipId,
+                address(licenseAttachmentWorkflows)
+            ),
+            deadline: deadline,
+            state: bytes32(0),
+            signerSk: sk.alice
+        });
+
+        vm.startPrank(u.bob);
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.LicenseAttachmentWorkflows__CallerNotSigner.selector, u.bob, u.alice)
+        );
+        licenseAttachmentWorkflows.registerIpAndAttachPILTerms({
+            nftContract: address(nftContract),
+            tokenId: tokenId,
+            ipMetadata: ipMetadataDefault,
+            licenseTermsData: commTermsData,
+            sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: deadline,
+                signature: sigMetadataAndAttachAndConfig
+            })
+        });
+        vm.stopPrank();
+    }
+
+    function test_LicenseAttachmentWorkflows_revert_CallerNotSigner_registerIpAndAttachDefaultTerms()
+        public
+        withCollection
+        whenCallerHasMinterRole
+        withEnoughTokens(address(licenseAttachmentWorkflows))
+    {
+        uint256 tokenId = nftContract.mint({
+            to: caller,
+            nftMetadataURI: ipMetadataEmpty.nftMetadataURI,
+            nftMetadataHash: ipMetadataEmpty.nftMetadataHash,
+            allowDuplicates: true
+        });
+        address payable ipId = payable(ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenId));
+
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory sigMetadataAndDefaultTerms, , ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: ipId,
+            permissionList: _getMetadataAndDefaultTermsPermissionList(ipId, address(licenseAttachmentWorkflows)),
+            deadline: deadline,
+            state: bytes32(0),
+            signerSk: sk.alice
+        });
+
+        vm.startPrank(u.bob);
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.LicenseAttachmentWorkflows__CallerNotSigner.selector, u.bob, u.alice)
+        );
+        licenseAttachmentWorkflows.registerIpAndAttachDefaultTerms({
+            nftContract: address(nftContract),
+            tokenId: tokenId,
+            ipMetadata: ipMetadataDefault,
+            sigMetadataAndDefaultTerms: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: deadline,
+                signature: sigMetadataAndDefaultTerms
+            })
+        });
+        vm.stopPrank();
+    }
+
     function test_LicenseAttachmentWorkflows_registerPILTermsAndAttach() public withCollection withIp(u.alice) {
         address payable ipId = ipAsset[1].ipId;
         uint256 deadline = block.timestamp + 1000;
