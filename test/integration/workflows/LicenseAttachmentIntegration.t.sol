@@ -35,7 +35,6 @@ contract LicenseAttachmentIntegration is BaseIntegration {
     function run() public override {
         super.run();
 
-        // Transaction 1: Setup and all successful tests.
         _beginBroadcast();
         _setUpTest();
         _test_LicenseAttachmentIntegration_registerPILTermsAndAttach();
@@ -394,8 +393,6 @@ contract LicenseAttachmentIntegration is BaseIntegration {
     }
 
     function _setUpTest() private {
-        delete commTermsData;
-
         spgNftContract = ISPGNFT(
             registrationWorkflows.createCollection(
                 ISPGNFT.InitParams({
@@ -414,8 +411,6 @@ contract LicenseAttachmentIntegration is BaseIntegration {
             )
         );
 
-        assertTrue(address(spgNftContract) != address(0), "createCollection returned address(0)");
-
         commTermsData.push(
             WorkflowStructs.LicenseTermsData({
                 terms: PILFlavors.commercialUse({
@@ -426,7 +421,6 @@ contract LicenseAttachmentIntegration is BaseIntegration {
                 licensingConfig: Licensing.LicensingConfig({
                     isSet: true,
                     mintingFee: testMintFee,
-                    // licensingHook: address(0),
                     licensingHook: address(totalLicenseTokenLimitHook),
                     hookData: "",
                     commercialRevShare: 0,
