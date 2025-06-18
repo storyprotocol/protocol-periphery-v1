@@ -43,11 +43,6 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         _test_LicenseAttachmentIntegration_registerIpAndAttachPILTerms();
         _test_LicenseAttachmentIntegration_mintAndRegisterIpAndAttachDefaultTerms();
         _test_LicenseAttachmentIntegration_registerIpAndAttachDefaultTerms();
-        _endBroadcast();
-
-        // Transaction 2: The isolated revert test.
-        _beginBroadcast();
-        _setUpTest();
         _test_revert_TotalLicenseTokenLimitHook();
         _endBroadcast();
     }
