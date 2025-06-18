@@ -27,6 +27,7 @@ import { RegistrationWorkflows } from "../../contracts/workflows/RegistrationWor
 import { RoyaltyWorkflows } from "../../contracts/workflows/RoyaltyWorkflows.sol";
 import { RoyaltyTokenDistributionWorkflows } from "../../contracts/workflows/RoyaltyTokenDistributionWorkflows.sol";
 import { WorkflowStructs } from "../../contracts/lib/WorkflowStructs.sol";
+import { TotalLicenseTokenLimitHook } from "../../contracts/hooks/TotalLicenseTokenLimitHook.sol";
 
 // script
 import { TestHelper } from "../utils/TestHelper.t.sol";
@@ -61,6 +62,7 @@ contract BaseIntegration is
     RegistrationWorkflows internal registrationWorkflows;
     RoyaltyWorkflows internal royaltyWorkflows;
     RoyaltyTokenDistributionWorkflows internal royaltyTokenDistributionWorkflows;
+    TotalLicenseTokenLimitHook internal totalLicenseTokenLimitHook;
 
     /// @dev Wrapped IP token
     WIP internal wrappedIP = WIP(payable(0x1514000000000000000000000000000000000000));
@@ -119,6 +121,7 @@ contract BaseIntegration is
         registrationWorkflows = RegistrationWorkflows(registrationWorkflowsAddr);
         royaltyWorkflows = RoyaltyWorkflows(royaltyWorkflowsAddr);
         royaltyTokenDistributionWorkflows = RoyaltyTokenDistributionWorkflows(royaltyTokenDistributionWorkflowsAddr);
+        totalLicenseTokenLimitHook = TotalLicenseTokenLimitHook(totalLicenseTokenLimitHookAddr);
 
         // set up test data
         testCollectionName = "Test Collection";

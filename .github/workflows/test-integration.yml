@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RPC_URL: ${{ needs.set-devnet-constants.outputs.RPCURL }}
-      TEST_SENDER_ADDRESS: ${{ secrets.TEST_SENDER_ADDRESS }}
+      TEST_SENDER_ADDRESS: "0x7D01c62110fb498e6450A7857DD172dDd41EAbD3"
       TEST_SENDER_SECRETKEY: ${{ secrets.TEST_SENDER_SECRETKEY }}
     steps:
       - uses: actions/checkout@v4
@@ -97,7 +97,7 @@ jobs:
               "LicenseRegistry": "0x529a750E02d8E2f15649c13D69a465286a780e24",
               "LicenseToken": "0xFe3838BFb30B34170F00030B52eA4893d8aAC6bC",
               "LicensingModule": "0x04fbd8a2e56dd85CFD5500A4A4DfA955B9f1dE6f",
-              "MockERC20": "0x688abA77b2daA886c0aF029961Dc5fd219cEc3f6",
+              "MockERC20": "0x1514000000000000000000000000000000000000",
               "ModuleRegistry": "0x022DBAAeA5D8fB31a0Ad793335e39Ced5D631fa5",
               "PILicenseTemplate": "0x2E896b0b2Fdb7457499B56AAaA4AE55BCB4Cd316",
               "ProtocolAccessManager": "0xFdece7b8a2f55ceC33b53fd28936B4B1e3153d53",
@@ -124,7 +124,8 @@ jobs:
               "RoyaltyWorkflows": "0x9515faE61E0c0447C6AC6dEe5628A2097aFE1890",
               "SPGNFTBeacon": "0xD2926B9ecaE85fF59B6FB0ff02f568a680c01218",
               "SPGNFTImpl": "0x6Cfa03Bc64B1a76206d0Ea10baDed31D520449F5",
-              "TokenizerModule": "0xAC937CeEf893986A026f701580144D9289adAC4C"
+              "TokenizerModule": "0xAC937CeEf893986A026f701580144D9289adAC4C",
+              "TotalLicenseTokenLimitHook": "0xB72C9812114a0Fc74D49e01385bd266A75960Cda"
             }
           }'
 
@@ -138,26 +139,48 @@ jobs:
           forge build
 
       - name: Run DerivativeIntegration Tests
+        if: always() && !cancelled()
         run: |
-          forge script test/integration/workflows/DerivativeIntegration.t.sol:DerivativeIntegration --rpc-url=${{ env.RPC_URL }} -vvv --broadcast --priority-gas-price=1 --legacy --skip-simulation > test-results.log
+          forge script test/integration/workflows/DerivativeIntegration.t.sol:DerivativeIntegration --rpc-url=${{ env.RPC_URL }} -vvv --broadcast --priority-gas-price=1 --legacy --skip-simulation
 
       - name: Run GroupingIntegration Tests
+        if: always() && !cancelled()
         run: |
           forge script test/integration/workflows/GroupingIntegration.t.sol:GroupingIntegration --rpc-url=${{ env.RPC_URL }} -vvv --broadcast --priority-gas-price=1 --legacy --skip-simulation >> test-results.log
 
       - name: Run LicenseAttachmentIntegration Tests
+        if: always() && !cancelled()
+        id: license_attachment_test
+        continue-on-error: true
         run: |
-          forge script test/integration/workflows/LicenseAttachmentIntegration.t.sol:LicenseAttachmentIntegration --rpc-url=${{ env.RPC_URL }} -vvv --broadcast --priority-gas-price=1 --legacy --skip-simulation >> test-results.log
+          forge script test/integration/workflows/LicenseAttachmentIntegration.t.sol:LicenseAttachmentIntegration --rpc-url=${{ env.RPC_URL }} -vvv --broadcast --priority-gas-price=1 --legacy --skip-simulation > license_attachment_test.log
+  
+      - name: Check LicenseAttachmentIntegration Results and Append Log
+        if: always() && !cancelled()
+        run: |
+          cat license_attachment_test.log >> test-results.log
+          if [[ "${{ steps.license_attachment_test.outcome }}" == "failure" ]]; then
+            if grep -q "SUCCESS: Correctly reverted when exceeding the token limit." license_attachment_test.log; then
+              echo "✅ Transaction failed as expected. Continuing workflow."
+              exit 0
+            else
+              echo "❌ Transaction failed with an unexpected error."
+              exit 1
+            fi
+          fi
 
       - name: Run RegistrationIntegration Tests
+        if: always() && !cancelled()
         run: |
           forge script test/integration/workflows/RegistrationIntegration.t.sol:RegistrationIntegration --rpc-url=${{ env.RPC_URL }} -vvv --broadcast --priority-gas-price=1 --legacy --skip-simulation >> test-results.log
 
       - name: Run RoyaltyIntegration Tests
+        if: always() && !cancelled()
         run: |
           forge script test/integration/workflows/RoyaltyIntegration.t.sol:RoyaltyIntegration --rpc-url=${{ env.RPC_URL }} -vvv --broadcast --priority-gas-price=1 --legacy --skip-simulation >> test-results.log
 
       - name: Run RoyaltyTokenDistributionIntegration Tests
+        if: always() && !cancelled()
         run: |
           forge script test/integration/workflows/RoyaltyTokenDistributionIntegration.t.sol:RoyaltyTokenDistributionIntegration --rpc-url=${{ env.RPC_URL }} -vvv --broadcast --priority-gas-price=1 --legacy --skip-simulation >> test-results.log
 
@@ -172,3 +195,4 @@ jobs:
           name: test-results
           path: |
             ./test-results.log
+            ./license_attachment_test.log

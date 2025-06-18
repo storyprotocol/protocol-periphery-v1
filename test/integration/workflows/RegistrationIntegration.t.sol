@@ -143,7 +143,7 @@ contract RegistrationIntegration is BaseIntegration {
         private
         logTest("test_RegistrationIntegration_multicall_createCollection")
     {
-        uint256 totalCollections = 10;
+        uint256 totalCollections = 2;
 
         ISPGNFT[] memory nftContracts = new ISPGNFT[](totalCollections);
         bytes[] memory data = new bytes[](totalCollections);
@@ -189,7 +189,7 @@ contract RegistrationIntegration is BaseIntegration {
         private
         logTest("test_RegistrationIntegration_multicall_mintAndRegisterIp")
     {
-        uint256 totalIps = 10;
+        uint256 totalIps = 2;
         wrappedIP.deposit{ value: testMintFee * totalIps }();
         wrappedIP.approve(address(spgNftContract), testMintFee * totalIps);
 

@@ -11,6 +11,7 @@ import { console2 } from "forge-std/console2.sol";
 import { ISPGNFT } from "../../../contracts/interfaces/ISPGNFT.sol";
 import { SPGNFTLib } from "../../../contracts/lib/SPGNFTLib.sol";
 import { WorkflowStructs } from "../../../contracts/lib/WorkflowStructs.sol";
+import { IERC7572 } from "../../../contracts/interfaces/story-nft/IERC7572.sol";
 
 // test
 import { BaseIntegration } from "../BaseIntegration.t.sol";
@@ -34,8 +35,9 @@ contract SpgNftIntegration is BaseIntegration {
         // Create SPG NFT collection
         spgNftContract = _createNftCollection();
 
-        // Run the test
+        // Run the tests
         _test_SpgNftIntegration_setTokenURI();
+        _test_SpgNftIntegration_contractURI();
         _endBroadcast();
     }
 
@@ -68,6 +70,27 @@ contract SpgNftIntegration is BaseIntegration {
         console2.log("Updated token URI:", updatedUri);
 
         assertEq(updatedUri, string.concat(testBaseURI, CUSTOM_TOKEN_URI));
+    }
+
+    /**
+     * @dev Test function to verify the contractURI functionality and ContractURIUpdated event
+     */
+    function _test_SpgNftIntegration_contractURI() private logTest("test_SpgNftIntegration_contractURI") {
+        // Verify initial contract URI
+        assertEq(spgNftContract.contractURI(), testContractURI);
+
+        // Test setting new contract URI
+        string memory newContractURI = "new-contract-uri";
+        vm.expectEmit(address(spgNftContract));
+        emit IERC7572.ContractURIUpdated();
+        spgNftContract.setContractURI(newContractURI);
+        assertEq(spgNftContract.contractURI(), newContractURI);
+
+        // Test setting back to original contract URI
+        vm.expectEmit(address(spgNftContract));
+        emit IERC7572.ContractURIUpdated();
+        spgNftContract.setContractURI(testContractURI);
+        assertEq(spgNftContract.contractURI(), testContractURI);
     }
 
     /**
