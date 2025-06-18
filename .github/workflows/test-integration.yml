@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RPC_URL: ${{ needs.set-devnet-constants.outputs.RPCURL }}
-      TEST_SENDER_ADDRESS: ${{ secrets.TEST_SENDER_ADDRESS }}
+      TEST_SENDER_ADDRESS: 0x7D01c62110fb498e6450A7857DD172dDd41EAbD3
       TEST_SENDER_SECRETKEY: ${{ secrets.TEST_SENDER_SECRETKEY }}
     steps:
       - uses: actions/checkout@v4

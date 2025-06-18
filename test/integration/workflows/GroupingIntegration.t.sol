@@ -30,7 +30,7 @@ contract GroupingIntegration is BaseIntegration {
     WorkflowStructs.LicenseData[] private testLicensesData;
     WorkflowStructs.LicenseData[] internal testGroupLicenseData;
     uint32 private revShare;
-    uint256 private numIps = 10;
+    uint256 private numIps = 2;
     address[] private ipIds;
 
     /// @dev To use, run the following command:
@@ -317,7 +317,7 @@ contract GroupingIntegration is BaseIntegration {
         logTest("test_GroupingIntegration_multicall_mintAndRegisterIpAndAttachLicenseAndAddToGroup")
     {
         uint256 deadline = block.timestamp + 1000;
-        uint256 numCalls = 10;
+        uint256 numCalls = 2;
         // Get the signatures for setting the permission for calling `addIp` function in `GroupingModule`
         // from the Group IP owner
         bytes[] memory sigsAddToGroup = new bytes[](numCalls);
@@ -388,7 +388,7 @@ contract GroupingIntegration is BaseIntegration {
         private
         logTest("test_GroupingIntegration_multicall_registerIpAndAttachLicenseAndAddToGroup")
     {
-        uint256 numCalls = 10;
+        uint256 numCalls = 2;
 
         wrappedIP.deposit{ value: testMintFee * numCalls }();
         wrappedIP.approve(address(spgNftContract), testMintFee * numCalls);

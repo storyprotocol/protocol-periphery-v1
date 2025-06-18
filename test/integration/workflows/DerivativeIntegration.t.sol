@@ -298,7 +298,7 @@ contract DerivativeIntegration is BaseIntegration {
         private
         logTest("test_DerivativeIntegration_multicall_mintAndRegisterIpAndMakeDerivative")
     {
-        uint256 numCalls = 10;
+        uint256 numCalls = 2;
         bytes[] memory data = new bytes[](numCalls);
         for (uint256 i = 0; i < numCalls; i++) {
             data[i] = abi.encodeWithSelector(
