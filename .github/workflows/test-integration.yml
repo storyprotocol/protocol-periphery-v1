@@ -154,7 +154,7 @@ jobs:
         id: license_attachment_test
         continue-on-error: true
         run: |
-          forge script test/integration/workflows/LicenseAttachmentIntegration.t.sol:LicenseAttachmentIntegration --rpc-url=${{ env.RPC_URL }} -vvv --broadcast --priority-gas-price=1 --legacy --skip-simulation > license_attachment_test.log
+          forge script test/integration/workflows/LicenseAttachmentIntegration.t.sol:LicenseAttachmentIntegration --rpc-url=${{ env.RPC_URL }} -vvv --broadcast --priority-gas-price=1 --legacy --skip-simulation >> license_attachment_test.log
   
       - name: Check LicenseAttachmentIntegration Results and Append Log
         run: |
@@ -192,3 +192,4 @@ jobs:
           name: test-results
           path: |
             ./test-results.log
+            ./license_attachment_test.log
