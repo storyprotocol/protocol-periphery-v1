@@ -124,7 +124,8 @@ jobs:
               "RoyaltyWorkflows": "0x9515faE61E0c0447C6AC6dEe5628A2097aFE1890",
               "SPGNFTBeacon": "0xD2926B9ecaE85fF59B6FB0ff02f568a680c01218",
               "SPGNFTImpl": "0x6Cfa03Bc64B1a76206d0Ea10baDed31D520449F5",
-              "TokenizerModule": "0xAC937CeEf893986A026f701580144D9289adAC4C"
+              "TokenizerModule": "0xAC937CeEf893986A026f701580144D9289adAC4C",
+              "TotalLicenseTokenLimitHook": "0xB72C9812114a0Fc74D49e01385bd266A75960Cda"
             }
           }'
 
