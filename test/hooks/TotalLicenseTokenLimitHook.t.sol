@@ -420,7 +420,7 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
             expectMinimumGroupRewardShare: 0,
             expectGroupRewardPool: address(0) // not allowed to be added to any group
         });
-        
+
         uint256 limitIp1Terms = 10;
 
         vm.startPrank(ipOwner1);

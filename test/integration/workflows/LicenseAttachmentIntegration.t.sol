@@ -12,12 +12,19 @@ import { PILFlavors } from "@storyprotocol/core/lib/PILFlavors.sol";
 // contracts
 import { ISPGNFT } from "../../../contracts/interfaces/ISPGNFT.sol";
 import { WorkflowStructs } from "../../../contracts/lib/WorkflowStructs.sol";
+import { TotalLicenseTokenLimitHook } from "../../../contracts/hooks/TotalLicenseTokenLimitHook.sol";
 
 // test
 import { BaseIntegration } from "../BaseIntegration.t.sol";
 
 contract LicenseAttachmentIntegration is BaseIntegration {
     using Strings for uint256;
+
+    event DebugLog(string label, address addr);
+    event DebugLogBytes32(string label, bytes32 value);
+    event DebugLogUint(string label, uint256 value);
+    error MintingDidNotRevert();
+    error RevertReasonMismatch(bytes actual, bytes expected);
 
     ISPGNFT private spgNftContract;
     WorkflowStructs.LicenseTermsData[] private commTermsData;
@@ -27,6 +34,8 @@ contract LicenseAttachmentIntegration is BaseIntegration {
     /// --rpc-url=$TESTNET_URL -vvvv --broadcast --priority-gas-price=1 --legacy
     function run() public override {
         super.run();
+
+        // Transaction 1: Setup and all successful tests.
         _beginBroadcast();
         _setUpTest();
         _test_LicenseAttachmentIntegration_registerPILTermsAndAttach();
@@ -34,6 +43,12 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         _test_LicenseAttachmentIntegration_registerIpAndAttachPILTerms();
         _test_LicenseAttachmentIntegration_mintAndRegisterIpAndAttachDefaultTerms();
         _test_LicenseAttachmentIntegration_registerIpAndAttachDefaultTerms();
+        _endBroadcast();
+
+        // Transaction 2: The isolated revert test.
+        _beginBroadcast();
+        _setUpTest();
+        _test_revert_TotalLicenseTokenLimitHook();
         _endBroadcast();
     }
 
@@ -273,7 +288,120 @@ contract LicenseAttachmentIntegration is BaseIntegration {
         );
     }
 
+    function _test_revert_TotalLicenseTokenLimitHook()
+        private
+        logTest("_test_revert_TotalLicenseTokenLimitHook")
+    {
+        // 1. register IP
+        wrappedIP.deposit{ value: testMintFee }();
+        wrappedIP.approve(address(spgNftContract), testMintFee);
+        (address ipId, ) = registrationWorkflows.mintAndRegisterIp({
+            spgNftContract: address(spgNftContract),
+            recipient: testSender,
+            ipMetadata: testIpMetadata,
+            allowDuplicates: true
+        });
+        
+        // 2. register terms and attach to IP
+        uint256 deadline = block.timestamp + 1000;
+        (bytes memory signature, , ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: ipId,
+            permissionList: _getAttachTermsAndConfigPermissionList(ipId, licenseAttachmentWorkflowsAddr),
+            deadline: deadline,
+            state: IIPAccount(payable(ipId)).state(),
+            signerSk: testSenderSk
+        });
+
+        uint256[] memory licenseTermsIds = licenseAttachmentWorkflows.registerPILTermsAndAttach({
+            ipId: ipId,
+            licenseTermsData: commTermsData,
+            sigAttachAndConfig: WorkflowStructs.SignatureData({
+                signer: testSender,
+                deadline: deadline,
+                signature: signature
+            })
+        });
+
+        // 3. set limit
+        address licenseTemplate = pilTemplateAddr;
+        uint256 licenseTermsId = licenseTermsIds[0];  // use the ID returned after registration
+        totalLicenseTokenLimitHook.setTotalLicenseTokenLimit(ipId, licenseTemplate, licenseTermsId, 2);
+        
+        emit DebugLog("Hook address", address(totalLicenseTokenLimitHook));
+        emit DebugLog("License Template", licenseTemplate);
+        emit DebugLog("IP ID", ipId);
+        emit DebugLogUint("License Terms ID", licenseTermsId);
+        
+        // 4. record the number of tokens before minting
+        uint256 supplyBefore = totalLicenseTokenLimitHook.getTotalLicenseTokenSupply(
+            ipId,
+            licenseTemplate,
+            licenseTermsId
+        );
+        emit DebugLogUint("Supply Before", supplyBefore);
+        
+        // 5. mint tokens
+        wrappedIP.deposit{ value: testMintFee * 3 }();
+        wrappedIP.approve(royaltyModuleAddr, testMintFee * 3); 
+        
+        licensingModule.mintLicenseTokens({
+            licensorIpId: ipId,
+            licenseTemplate: licenseTemplate,
+            licenseTermsId: licenseTermsId,
+            amount: 2,
+            receiver: testSender,
+            royaltyContext: "",
+            maxMintingFee: 0,
+            maxRevenueShare: 0
+        });
+        
+        // 6. record the number of tokens after minting
+        uint256 supplyAfter = totalLicenseTokenLimitHook.getTotalLicenseTokenSupply(
+            ipId,
+            licenseTemplate,
+            licenseTermsId
+        );
+        emit DebugLogUint("Supply After", supplyAfter);
+        
+        // 7. verify the number of tokens increased
+        assertEq(supplyAfter, supplyBefore + 2, "Supply should increase by 2");
+
+        // 8. test exceeding the limit using try/catch for live network testing
+        bytes memory expectedError = abi.encodeWithSelector(
+            TotalLicenseTokenLimitHook.TotalLicenseTokenLimitHook_TotalLicenseTokenLimitExceeded.selector,
+            2,  // currentSupply (after minting 2 tokens)
+            1,  // amount trying to mint
+            2   // limit we set
+        );
+
+        try licensingModule.mintLicenseTokens{gas: 500000}({
+            licensorIpId: ipId,
+            licenseTemplate: licenseTemplate,
+            licenseTermsId: licenseTermsId,
+            amount: 1,
+            receiver: testSender,
+            royaltyContext: "",
+            maxMintingFee: 0,
+            maxRevenueShare: 0
+        }) {
+            // If this block is reached, the transaction did not revert, which is an error in our test logic.
+            revert MintingDidNotRevert();
+        } catch (bytes memory reason) {
+            // The call reverted as expected. Now, we check if it's the correct error.
+            if (keccak256(reason) != keccak256(expectedError)) {
+                revert RevertReasonMismatch(reason, expectedError);
+            }
+            // If we reach here, it means the revert was correct. Log success.
+            emit log_string("SUCCESS: Correctly reverted when exceeding the token limit.");
+        }
+
+        // Add a final, successful state change to signal a successful script execution to Forge.
+        emit DebugLog("Revert test completed successfully", address(this));
+    }
+
     function _setUpTest() private {
+        delete commTermsData;
+        
         spgNftContract = ISPGNFT(
             registrationWorkflows.createCollection(
                 ISPGNFT.InitParams({
@@ -292,6 +420,8 @@ contract LicenseAttachmentIntegration is BaseIntegration {
             )
         );
 
+        assertTrue(address(spgNftContract) != address(0), "createCollection returned address(0)");
+
         commTermsData.push(
             WorkflowStructs.LicenseTermsData({
                 terms: PILFlavors.commercialUse({
@@ -302,7 +432,8 @@ contract LicenseAttachmentIntegration is BaseIntegration {
                 licensingConfig: Licensing.LicensingConfig({
                     isSet: true,
                     mintingFee: testMintFee,
-                    licensingHook: address(0),
+                    // licensingHook: address(0),
+                    licensingHook: address(totalLicenseTokenLimitHook),
                     hookData: "",
                     commercialRevShare: 0,
                     disabled: false,
