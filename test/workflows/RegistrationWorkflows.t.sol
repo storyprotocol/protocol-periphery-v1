@@ -102,6 +102,33 @@ contract RegistrationWorkflowsTest is BaseTest {
         });
     }
 
+    function test_RegistrationWorkflows_revert_registerIp_callerNotSigner() public {
+        uint256 tokenId = mockNft.mint(address(u.alice));
+        address ipId = ipAssetRegistry.ipId(block.chainid, address(mockNft), tokenId);
+
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory sigMetadata, bytes32 expectedState, ) = _getSetPermissionSigForPeriphery({
+            ipId: ipId,
+            to: address(registrationWorkflows),
+            module: address(coreMetadataModule),
+            selector: ICoreMetadataModule.setAll.selector,
+            deadline: deadline,
+            state: bytes32(0),
+            signerSk: sk.alice
+        });
+
+        vm.startPrank(u.bob);
+        vm.expectRevert(abi.encodeWithSelector(Errors.RegistrationWorkflows__CallerNotSigner.selector, u.bob, u.alice));
+        registrationWorkflows.registerIp({
+            nftContract: address(mockNft),
+            tokenId: tokenId,
+            ipMetadata: ipMetadataDefault,
+            sigMetadata: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: sigMetadata })
+        });
+        vm.stopPrank();
+    }
+
     function test_RegistrationWorkflows_mintAndRegisterIp_publicMint() public {
         vm.prank(u.alice); // minter and admin of nftContract
         nftContract = ISPGNFT(
