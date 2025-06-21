@@ -48,6 +48,7 @@ contract TestHelper is Test {
     /// @dev Get the permission list for setting metadata and registering a derivative for the IP.
     /// @param ipId The ID of the IP that the permissions are for.
     /// @param to The address of the periphery contract to receive the permission.
+    /// @param withLicenseToken Whether to use license tokens for the derivative registration.
     /// @return permissionList The list of permissions for setting metadata and registering a derivative.
     function _getMetadataAndDerivativeRegistrationPermissionList(
         address ipId,

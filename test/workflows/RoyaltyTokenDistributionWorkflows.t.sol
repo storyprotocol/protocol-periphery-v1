@@ -272,6 +272,154 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
         vm.stopPrank();
     }
 
+    function  test_RoyaltyTokenDistributionWorkflows_revert_CallerNotSigner_registerIpAndAttachPILTermsAndDeployRoyaltyVault() public {
+        uint256 tokenId = mockNft.mint(u.alice);
+        address expectedIpId = ipAssetRegistry.ipId(block.chainid, address(mockNft), tokenId);
+
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory signatureMetadataAndAttachAndConfig, , ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: expectedIpId,
+            permissionList: _getMetadataAndAttachTermsAndConfigPermissionList(
+                expectedIpId,
+                address(royaltyTokenDistributionWorkflows)
+            ),
+            deadline: deadline,
+            state: bytes32(0),
+            signerSk: sk.alice
+        });
+
+        vm.startPrank(u.bob);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.RoyaltyTokenDistributionWorkflows__CallerNotSigner.selector,
+                u.bob,
+                u.alice
+            )
+        );
+        royaltyTokenDistributionWorkflows.registerIpAndAttachPILTermsAndDeployRoyaltyVault({
+            nftContract: address(mockNft),
+            tokenId: tokenId,
+            ipMetadata: ipMetadataDefault,
+            licenseTermsData: commRemixTermsData,
+            sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: deadline,
+                signature: signatureMetadataAndAttachAndConfig
+            })
+        });
+        vm.stopPrank();
+    }
+
+    function test_RoyaltyTokenDistributionWorkflows_revert_CallerNotSigner_registerIpAndMakeDerivativeAndDeployRoyaltyVault() public {
+        uint256 tokenId = mockNft.mint(u.alice);
+        address expectedIpId = ipAssetRegistry.ipId(block.chainid, address(mockNft), tokenId);
+
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory signatureMetadataAndRegister, , ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: expectedIpId,
+            permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
+                expectedIpId,
+                address(royaltyTokenDistributionWorkflows),
+                false
+            ),
+            deadline: deadline,
+            state: bytes32(0),
+            signerSk: sk.alice
+        });
+
+        vm.startPrank(u.bob);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.RoyaltyTokenDistributionWorkflows__CallerNotSigner.selector,
+                u.bob,
+                u.alice
+            )
+        );
+        royaltyTokenDistributionWorkflows.registerIpAndMakeDerivativeAndDeployRoyaltyVault({
+            nftContract: address(mockNft),
+            tokenId: tokenId,
+            ipMetadata: ipMetadataDefault,
+            derivData: derivativeData,
+            sigMetadataAndRegister: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: deadline,
+                signature: signatureMetadataAndRegister
+            })
+        });
+        vm.stopPrank();
+    }
+
+     function test_RoyaltyTokenDistributionWorkflows_revert_CallerNotSigner_distributeRoyaltyTokens() public {
+        uint256 tokenId = mockNft.mint(u.alice);
+        address expectedIpId = ipAssetRegistry.ipId(block.chainid, address(mockNft), tokenId);
+
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory signatureMetadataAndRegister, , ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: expectedIpId,
+            permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
+                expectedIpId,
+                address(royaltyTokenDistributionWorkflows),
+                false
+            ),
+            deadline: deadline,
+            state: bytes32(0),
+            signerSk: sk.alice
+        });
+
+        // register IP, make derivative, and deploy royalty vault
+        vm.startPrank(u.alice);
+        mockToken.mint(u.alice, licenseMintingFee);
+        mockToken.approve(address(royaltyTokenDistributionWorkflows), licenseMintingFee);
+        (address ipId, address ipRoyaltyVault) = royaltyTokenDistributionWorkflows
+            .registerIpAndMakeDerivativeAndDeployRoyaltyVault({
+                nftContract: address(mockNft),
+                tokenId: tokenId,
+                ipMetadata: ipMetadataDefault,
+                derivData: derivativeData,
+                sigMetadataAndRegister: WorkflowStructs.SignatureData({
+                    signer: u.alice,
+                    deadline: deadline,
+                    signature: signatureMetadataAndRegister
+                })
+            });
+        vm.stopPrank();
+
+        (bytes memory signatureApproveRoyaltyTokens, ) = _getSigForExecuteWithSig({
+            ipId: ipId,
+            to: ipRoyaltyVault,
+            deadline: deadline,
+            state: IIPAccount(payable(ipId)).state(),
+            data: abi.encodeWithSelector(
+                IERC20.approve.selector,
+                address(royaltyTokenDistributionWorkflows),
+                95_000_000 // 95%
+            ),
+            signerSk: sk.alice
+        });
+
+        vm.startPrank(u.bob);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.RoyaltyTokenDistributionWorkflows__CallerNotSigner.selector,
+                u.bob,
+                u.alice
+            )
+        );
+        royaltyTokenDistributionWorkflows.distributeRoyaltyTokens({
+            ipId: ipId,
+            royaltyShares: royaltyShares,
+            sigApproveRoyaltyTokens: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: deadline,
+                signature: signatureApproveRoyaltyTokens
+            })
+        });
+        vm.stopPrank();
+     }
+
     function test_RoyaltyTokenDistributionWorkflows_deployRoyaltyVault_LicenseShouldNotBeDisabled() public {
         uint256 tokenId = mockNft.mint(u.alice);
         address expectedIpId = ipAssetRegistry.ipId(block.chainid, address(mockNft), tokenId);
