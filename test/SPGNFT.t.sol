@@ -230,6 +230,17 @@ contract SPGNFTTest is BaseTest {
         vm.stopPrank();
     }
 
+    function test_SPGNFT_mint_revert_MintingDenied() public {
+        vm.startPrank(u.bob);
+        mockToken.mint(address(u.bob), 1000 * 10 ** mockToken.decimals());
+        mockToken.approve(address(nftContract), 1000 * 10 ** mockToken.decimals());
+
+        vm.expectRevert(Errors.SPGNFT__MintingDenied.selector);
+        nftContract.mint(u.bob, ipMetadataDefault.nftMetadataURI, ipMetadataDefault.nftMetadataHash, false);
+
+        vm.stopPrank();
+    }
+
     function test_SPGNFT_setBaseURI() public {
         vm.startPrank(u.alice);
         mockToken.mint(address(u.alice), 1000 * 10 ** mockToken.decimals());
@@ -450,6 +461,42 @@ contract SPGNFTTest is BaseTest {
         vm.expectRevert(abi.encodeWithSelector(Errors.SPGNFT__CallerNotOwner.selector, tokenId, u.bob, u.alice));
         nftContract.setTokenURI(tokenId, "newTokenURI");
 
+        vm.stopPrank();
+    }
+
+    function test_SPGNFT_setMintOpen() public {
+        vm.startPrank(u.alice);
+        nftContract.setMintOpen(false);
+        assertEq(nftContract.mintOpen(), false);
+
+        nftContract.setMintOpen(true);
+        assertEq(nftContract.mintOpen(), true);
+
+        vm.stopPrank();
+
+        vm.startPrank(u.bob);
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, u.bob, SPGNFTLib.ADMIN_ROLE)
+        );
+        nftContract.setMintOpen(false);
+        vm.stopPrank();
+    }
+
+    function test_SPGNFT_setPublicMinting() public {
+        vm.startPrank(u.alice);
+        nftContract.setPublicMinting(false);
+        assertEq(nftContract.publicMinting(), false);
+
+        nftContract.setPublicMinting(true);
+        assertEq(nftContract.publicMinting(), true);
+
+        vm.stopPrank();
+
+        vm.startPrank(u.bob);
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, u.bob, SPGNFTLib.ADMIN_ROLE)
+        );
+        nftContract.setPublicMinting(false);
         vm.stopPrank();
     }
 }
