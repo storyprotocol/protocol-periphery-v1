@@ -311,6 +311,27 @@ contract TokenizerModuleTest is BaseTest {
         );
     }
 
+    function test_TokenizerModule_revert_tokenize_TokenTemplateNotWhitelisted() public {
+        mockToken.mint(address(this), 1 * 10 ** mockToken.decimals());
+        mockToken.approve(address(spgNftPublic), 1 * 10 ** mockToken.decimals());
+        (address ipId, ) = registrationWorkflows.mintAndRegisterIp({
+            spgNftContract: address(spgNftPublic),
+            recipient: u.alice,
+            ipMetadata: ipMetadataDefault,
+            allowDuplicates: true
+        });
+
+        vm.prank(u.alice);
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.TokenizerModule__TokenTemplateNotWhitelisted.selector, address(0x1234))
+        );
+        tokenizerModule.tokenize(
+            ipId,
+            address(0x1234),
+            abi.encode(IOwnableERC20.InitData({ cap: 1000, name: "Test1", symbol: "T1", initialOwner: u.alice }))
+        );
+    }
+
     function test_TokenizerModule_upgradeWhitelistedTokenTemplate() public {
         address newTokenTemplateImpl = address(new OwnableERC20(address(ownableERC20Beacon)));
 
