@@ -156,7 +156,7 @@ contract DerivativeWorkflowsTest is BaseTest {
 
     function test_DerivativeWorkflows_revert_CallerNotSigner_registerIpAndMakeDerivative()
         public
-        whenCallerHasMinterRole        
+        whenCallerHasMinterRole
         withCollection
         withEnoughTokens(address(derivativeWorkflows))
         withNonCommercialParentIp
@@ -198,13 +198,7 @@ contract DerivativeWorkflowsTest is BaseTest {
 
         vm.startPrank(u.bob);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.DerivativeWorkflows__CallerNotSigner.selector,
-                u.bob,
-                u.alice
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.DerivativeWorkflows__CallerNotSigner.selector, u.bob, u.alice));
 
         derivativeWorkflows.registerIpAndMakeDerivative({
             nftContract: address(nftContract),
@@ -229,7 +223,7 @@ contract DerivativeWorkflowsTest is BaseTest {
 
     function test_DerivativeWorkflows_revert_CallerNotSigner_registerIpAndMakeDerivativeWithLicenseTokens()
         public
-        whenCallerHasMinterRole        
+        whenCallerHasMinterRole
         withCollection
         withEnoughTokens(address(derivativeWorkflows))
         withNonCommercialParentIp
@@ -280,13 +274,7 @@ contract DerivativeWorkflowsTest is BaseTest {
 
         vm.startPrank(u.bob);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.DerivativeWorkflows__CallerNotSigner.selector,
-                u.bob,
-                u.alice
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.DerivativeWorkflows__CallerNotSigner.selector, u.bob, u.alice));
 
         derivativeWorkflows.registerIpAndMakeDerivativeWithLicenseTokens({
             nftContract: address(nftContract),

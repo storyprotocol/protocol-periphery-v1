@@ -477,4 +477,34 @@ contract TotalLicenseTokenLimitHookTest is BaseTest {
             maxRevenueShare
         );
     }
+
+    function test_TotalLicenseTokenLimitHook_beforeRegisterDerivative_incrementTotalLicenseTokenSupply() public {
+        address[] memory parentIpIds = new address[](1);
+        parentIpIds[0] = ipId1;
+        uint256[] memory licenseTermsIds = new uint256[](1);
+        licenseTermsIds[0] = commRemixTermsId;
+
+        uint256 totalLicenseTokenMintedBefore = totalLicenseTokenLimitHook.getTotalLicenseTokenSupply(
+            ipId1,
+            address(pilTemplate),
+            commRemixTermsId
+        );
+
+        totalLicenseTokenLimitHook.beforeRegisterDerivative(
+            derivativeOwner,
+            derivativeIpId,
+            ipId1,
+            address(pilTemplate),
+            commRemixTermsId,
+            ""
+        );
+
+        uint256 totalLicenseTokenMintedAfter = totalLicenseTokenLimitHook.getTotalLicenseTokenSupply(
+            ipId1,
+            address(pilTemplate),
+            commRemixTermsId
+        );
+
+        assertEq(totalLicenseTokenMintedAfter, totalLicenseTokenMintedBefore + 1);
+    }
 }
