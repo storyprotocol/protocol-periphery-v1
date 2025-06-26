@@ -199,6 +199,57 @@ contract SPGNFTTest is BaseTest {
         vm.stopPrank();
     }
 
+    function testFuzz_SPGNFT_mint(string memory nftMetadataURI, bytes32 nftMetadataHash) public {
+        vm.assume(bytes(nftMetadataURI).length > 0);
+        vm.startPrank(u.alice);
+
+        mockToken.mint(address(u.alice), 1000 * 10 ** mockToken.decimals());
+        mockToken.approve(address(nftContract), 1000 * 10 ** mockToken.decimals());
+
+        uint256 mintFee = nftContract.mintFee();
+        uint256 balanceBeforeAlice = mockToken.balanceOf(u.alice);
+        uint256 balanceBeforeContract = mockToken.balanceOf(address(nftContract));
+
+        uint256 tokenId = nftContract.mint({
+            to: u.bob,
+            nftMetadataURI: nftMetadataURI,
+            nftMetadataHash: nftMetadataHash,
+            allowDuplicates: true
+        });
+
+        assertEq(nftContract.getTokenIdByMetadataHash(nftMetadataHash), tokenId);
+        assertEq(nftContract.totalSupply(), 1);
+        assertEq(nftContract.balanceOf(u.bob), 1);
+        assertEq(nftContract.ownerOf(tokenId), u.bob);
+        assertEq(mockToken.balanceOf(u.alice), balanceBeforeAlice - mintFee);
+        assertEq(mockToken.balanceOf(address(nftContract)), balanceBeforeContract + mintFee);
+        assertEq(nftContract.tokenURI(tokenId), string.concat(testBaseURI, nftMetadataURI));
+        balanceBeforeAlice = mockToken.balanceOf(u.alice);
+        balanceBeforeContract = mockToken.balanceOf(address(nftContract));
+
+        // change mint cost
+        nftContract.setMintFee(200 * 10 ** mockToken.decimals());
+        mintFee = nftContract.mintFee();
+
+        tokenId = nftContract.mint({
+            to: u.carl,
+            nftMetadataURI: nftMetadataURI,
+            nftMetadataHash: nftMetadataHash,
+            allowDuplicates: true
+        });
+        assertEq(tokenId, 2);
+        assertEq(nftContract.getTokenIdByMetadataHash(nftMetadataHash), 1);
+        assertEq(mockToken.balanceOf(address(nftContract)), 300 * 10 ** mockToken.decimals());
+        assertEq(nftContract.totalSupply(), 2);
+        assertEq(nftContract.balanceOf(u.carl), 1);
+        assertEq(nftContract.ownerOf(tokenId), u.carl);
+        assertEq(mockToken.balanceOf(u.alice), balanceBeforeAlice - mintFee);
+        assertEq(mockToken.balanceOf(address(nftContract)), balanceBeforeContract + mintFee);
+        assertEq(nftContract.tokenURI(tokenId), string.concat(testBaseURI, nftMetadataURI));
+
+        vm.stopPrank();
+    }
+
     function test_SPGNFT_mint_revert_DuplicatedNFTMetadataHash() public {
         vm.startPrank(u.alice);
         mockToken.mint(address(u.alice), 1000 * 10 ** mockToken.decimals());
@@ -237,6 +288,21 @@ contract SPGNFTTest is BaseTest {
 
         vm.expectRevert(Errors.SPGNFT__MintingDenied.selector);
         nftContract.mint(u.bob, ipMetadataDefault.nftMetadataURI, ipMetadataDefault.nftMetadataHash, false);
+
+        vm.stopPrank();
+    }
+
+    function test_SPGNFT_mintByPeriphery_revert_callerNotPeriphery() public {
+        vm.startPrank(u.alice);
+
+        vm.expectRevert(Errors.SPGNFT__CallerNotPeripheryContract.selector);
+        nftContract.mintByPeriphery(
+            u.bob,
+            u.alice,
+            ipMetadataDefault.nftMetadataURI,
+            ipMetadataDefault.nftMetadataHash,
+            false
+        );
 
         vm.stopPrank();
     }
@@ -476,7 +542,11 @@ contract SPGNFTTest is BaseTest {
 
         vm.startPrank(u.bob);
         vm.expectRevert(
-            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, u.bob, SPGNFTLib.ADMIN_ROLE)
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                u.bob,
+                SPGNFTLib.ADMIN_ROLE
+            )
         );
         nftContract.setMintOpen(false);
         vm.stopPrank();
@@ -494,7 +564,11 @@ contract SPGNFTTest is BaseTest {
 
         vm.startPrank(u.bob);
         vm.expectRevert(
-            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, u.bob, SPGNFTLib.ADMIN_ROLE)
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                u.bob,
+                SPGNFTLib.ADMIN_ROLE
+            )
         );
         nftContract.setPublicMinting(false);
         vm.stopPrank();
