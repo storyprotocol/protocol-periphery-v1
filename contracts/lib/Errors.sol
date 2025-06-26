@@ -111,7 +111,7 @@ library Errors {
     /// @notice Caller is not one of the periphery contracts.
     error SPGNFT__CallerNotPeripheryContract();
 
-    /// @notice Error thrown when attempting to mint an NFT with a metadata hash that already exists.
+    /// @notice Error thrown when attempting to mint an NFT with a metadata hash that already exists or set a metadata hash that already exists.
     /// @param spgNftContract The address of the SPGNFT collection contract where the duplicate was detected.
     /// @param tokenId The ID of the original NFT that was first minted with this metadata hash.
     /// @param nftMetadataHash The hash of the NFT metadata that caused the duplication error.
@@ -122,6 +122,12 @@ library Errors {
     /// @param caller The address of the caller.
     /// @param owner The owner of the token.
     error SPGNFT__CallerNotOwner(uint256 tokenId, address caller, address owner);
+
+    /// @notice Error thrown when the passed metadata hash does not match the token's metadata hash.
+    /// @param spgNftContract The address of the SPGNFT collection contract where the duplicate was detected.
+    /// @param tokenId The ID of the token.
+    /// @param metadataHash The metadata hash that does not match the token's metadata hash.
+    error SPGNFT__InvalidNFTMetadataHash(address spgNftContract, uint256 tokenId, bytes32 metadataHash);
 
     ////////////////////////////////////////////////////////////////////////////
     //                               OwnableERC20                             //
