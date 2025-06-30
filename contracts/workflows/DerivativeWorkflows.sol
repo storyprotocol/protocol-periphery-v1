@@ -114,6 +114,7 @@ contract DerivativeWorkflows is
             allowDuplicates: allowDuplicates
         });
 
+        _collectRegistrationFeeAndApprove(msg.sender);
         ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
 
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
@@ -146,6 +147,7 @@ contract DerivativeWorkflows is
         if (msg.sender != sigMetadataAndRegister.signer)
             revert Errors.DerivativeWorkflows__CallerNotSigner(msg.sender, sigMetadataAndRegister.signer);
 
+        _collectRegistrationFeeAndApprove(msg.sender);
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
         address[] memory modules = new address[](2);
@@ -202,6 +204,7 @@ contract DerivativeWorkflows is
             allowDuplicates: allowDuplicates
         });
 
+        _collectRegistrationFeeAndApprove(msg.sender);
         ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
 
@@ -234,6 +237,7 @@ contract DerivativeWorkflows is
             revert Errors.DerivativeWorkflows__CallerNotSigner(msg.sender, sigMetadataAndRegister.signer);
 
         _collectLicenseTokens(licenseTokenIds, address(LICENSE_TOKEN));
+        _collectRegistrationFeeAndApprove(msg.sender);
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
         address[] memory modules = new address[](2);

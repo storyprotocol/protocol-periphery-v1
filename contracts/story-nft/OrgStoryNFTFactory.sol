@@ -278,9 +278,9 @@ contract OrgStoryNFTFactory is IOrgStoryNFTFactory, AccessManagedUpgradeable, UU
 
         // Mint the organization NFT and register it as an IP
         if (isRootOrg) {
-            (orgTokenId, orgIpId) = ORG_NFT.mintRootOrgNft(orgNftRecipient, orgIpMetadata);
+            (orgTokenId, orgIpId) = ORG_NFT.mintRootOrgNft(orgNftRecipient, msg.sender, orgIpMetadata);
         } else {
-            (orgTokenId, orgIpId) = ORG_NFT.mintOrgNft(orgNftRecipient, orgIpMetadata);
+            (orgTokenId, orgIpId) = ORG_NFT.mintOrgNft(orgNftRecipient, msg.sender, orgIpMetadata);
         }
 
         orgNft = address(ORG_NFT);

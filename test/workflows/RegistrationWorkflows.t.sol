@@ -306,4 +306,74 @@ contract RegistrationWorkflowsTest is BaseTest {
             assertMetadata(ipIds[i], ipMetadataDefault);
         }
     }
+
+    function test_mintAndRegisterIp_withRegistrationFee() public withCollection whenCallerHasMinterRole {
+        vm.stopPrank();
+
+        uint96 registrationFee = 1 ether;
+        address treasury = address(0x12345);
+
+        vm.prank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+
+        vm.startPrank(caller);
+        mockToken.mint(address(caller), nftContract.mintFee() + registrationFee);
+        mockToken.approve(address(nftContract), nftContract.mintFee());
+        mockToken.approve(address(registrationWorkflows), registrationFee);
+
+        uint256 callerBalanceBefore = mockToken.balanceOf(caller);
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+
+        (address ipId1, uint256 tokenId1) = registrationWorkflows.mintAndRegisterIp({
+            spgNftContract: address(nftContract),
+            recipient: u.bob,
+            ipMetadata: ipMetadataEmpty,
+            allowDuplicates: true
+        });
+        vm.stopPrank();
+
+        assertEq(mockToken.balanceOf(treasury), treasuryBalanceBefore + registrationFee);
+        assertEq(mockToken.balanceOf(caller), callerBalanceBefore - registrationFee - nftContract.mintFee());
+    }
+
+    function test_registerIp_withRegistrationFee() public {
+        uint96 registrationFee = 1 ether;
+        address treasury = address(0x12345);
+
+        vm.prank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+
+        uint256 tokenId = mockNft.mint(address(u.alice));
+        address expectedIpId = ipAssetRegistry.ipId(block.chainid, address(mockNft), tokenId);
+
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory sigMetadata, , ) = _getSetPermissionSigForPeriphery({
+            ipId: expectedIpId,
+            to: address(registrationWorkflows),
+            module: address(coreMetadataModule),
+            selector: ICoreMetadataModule.setAll.selector,
+            deadline: deadline,
+            state: bytes32(0),
+            signerSk: sk.alice
+        });
+
+        vm.startPrank(u.alice);
+        mockToken.mint(u.alice, registrationFee);
+        mockToken.approve(address(registrationWorkflows), registrationFee);
+
+        uint256 aliceBalanceBefore = mockToken.balanceOf(u.alice);
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+
+        address actualIpId = registrationWorkflows.registerIp({
+            nftContract: address(mockNft),
+            tokenId: tokenId,
+            ipMetadata: ipMetadataDefault,
+            sigMetadata: WorkflowStructs.SignatureData({ signer: u.alice, deadline: deadline, signature: sigMetadata })
+        });
+        vm.stopPrank();
+
+        assertEq(mockToken.balanceOf(treasury), treasuryBalanceBefore + registrationFee);
+        assertEq(mockToken.balanceOf(u.alice), aliceBalanceBefore - registrationFee);
+    }
 }

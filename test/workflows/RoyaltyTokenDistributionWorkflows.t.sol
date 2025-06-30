@@ -472,6 +472,165 @@ contract RoyaltyTokenDistributionWorkflowsTest is BaseTest {
         assertEq(licensingConfig.disabled, false);
     }
 
+    function test_mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens_withRegistrationFee() public {
+        uint96 registrationFee = 1 ether;
+        address treasury = address(0x12345);
+
+        vm.startPrank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+        vm.stopPrank();
+
+        vm.startPrank(u.alice);
+        mockToken.mint(u.alice, nftMintingFee + registrationFee);
+        mockToken.approve(address(spgNftPublic), nftMintingFee);
+        mockToken.approve(address(royaltyTokenDistributionWorkflows), registrationFee);
+
+        uint256 aliceBalanceBefore = mockToken.balanceOf(u.alice);
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+
+        royaltyTokenDistributionWorkflows.mintAndRegisterIpAndAttachPILTermsAndDistributeRoyaltyTokens({
+            spgNftContract: address(spgNftPublic),
+            recipient: u.alice,
+            ipMetadata: ipMetadataDefault,
+            licenseTermsData: commRemixTermsData,
+            royaltyShares: royaltyShares,
+            allowDuplicates: true
+        });
+        vm.stopPrank();
+
+        assertEq(mockToken.balanceOf(treasury), treasuryBalanceBefore + registrationFee);
+        assertEq(mockToken.balanceOf(u.alice), aliceBalanceBefore - registrationFee - nftMintingFee);
+    }
+
+    function test_mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens_withRegistrationFee() public {
+        uint96 registrationFee = 1 ether;
+        address treasury = address(0x12345);
+
+        vm.startPrank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+        vm.stopPrank();
+
+        vm.startPrank(u.alice);
+        mockToken.mint(u.alice, nftMintingFee + licenseMintingFee + registrationFee);
+        mockToken.approve(address(spgNftPublic), nftMintingFee);
+        mockToken.approve(address(royaltyTokenDistributionWorkflows), registrationFee + licenseMintingFee);
+
+        uint256 aliceBalanceBefore = mockToken.balanceOf(u.alice);
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+
+        royaltyTokenDistributionWorkflows.mintAndRegisterIpAndMakeDerivativeAndDistributeRoyaltyTokens({
+            spgNftContract: address(spgNftPublic),
+            recipient: u.alice,
+            ipMetadata: ipMetadataDefault,
+            derivData: derivativeData,
+            royaltyShares: royaltyShares,
+            allowDuplicates: true
+        });
+        vm.stopPrank();
+
+        assertEq(mockToken.balanceOf(treasury), treasuryBalanceBefore + registrationFee);
+        assertEq(
+            mockToken.balanceOf(u.alice),
+            aliceBalanceBefore - registrationFee - nftMintingFee - licenseMintingFee
+        );
+    }
+
+    function test_registerIpAndAttachPILTermsAndDeployRoyaltyVault_withRegistrationFee() public {
+        uint96 registrationFee = 1 ether;
+        address treasury = address(0x12345);
+
+        vm.startPrank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+        vm.stopPrank();
+
+        uint256 tokenId = mockNft.mint(u.alice);
+        address expectedIpId = ipAssetRegistry.ipId(block.chainid, address(mockNft), tokenId);
+
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory signatureMetadataAndAttachAndConfig, , ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: expectedIpId,
+            permissionList: _getMetadataAndAttachTermsAndConfigPermissionList(
+                expectedIpId,
+                address(royaltyTokenDistributionWorkflows)
+            ),
+            deadline: deadline,
+            state: bytes32(0),
+            signerSk: sk.alice
+        });
+
+        vm.startPrank(u.alice);
+        mockToken.mint(u.alice, registrationFee);
+        mockToken.approve(address(royaltyTokenDistributionWorkflows), registrationFee);
+
+        uint256 aliceBalanceBefore = mockToken.balanceOf(u.alice);
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+
+        royaltyTokenDistributionWorkflows.registerIpAndAttachPILTermsAndDeployRoyaltyVault({
+            nftContract: address(mockNft),
+            tokenId: tokenId,
+            ipMetadata: ipMetadataDefault,
+            licenseTermsData: commRemixTermsData,
+            sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: deadline,
+                signature: signatureMetadataAndAttachAndConfig
+            })
+        });
+        vm.stopPrank();
+
+        assertEq(mockToken.balanceOf(treasury), treasuryBalanceBefore + registrationFee);
+        assertEq(mockToken.balanceOf(u.alice), aliceBalanceBefore - registrationFee);
+    }
+
+    function test_registerIpAndMakeDerivativeAndDeployRoyaltyVault_withRegistrationFee() public {
+        uint96 registrationFee = 1 ether;
+        address treasury = address(0x12345);
+
+        vm.startPrank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+        vm.stopPrank();
+
+        uint256 tokenId = mockNft.mint(u.alice);
+        address expectedIpId = ipAssetRegistry.ipId(block.chainid, address(mockNft), tokenId);
+
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory signatureMetadataAndRegister, , ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: expectedIpId,
+            permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
+                expectedIpId,
+                address(royaltyTokenDistributionWorkflows),
+                false
+            ),
+            deadline: deadline,
+            state: bytes32(0),
+            signerSk: sk.alice
+        });
+
+        vm.startPrank(u.alice);
+        mockToken.mint(u.alice, licenseMintingFee + registrationFee);
+        mockToken.approve(address(royaltyTokenDistributionWorkflows), licenseMintingFee + registrationFee);
+
+        uint256 aliceBalanceBefore = mockToken.balanceOf(u.alice);
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+        royaltyTokenDistributionWorkflows.registerIpAndMakeDerivativeAndDeployRoyaltyVault({
+            nftContract: address(mockNft),
+            tokenId: tokenId,
+            ipMetadata: ipMetadataDefault,
+            derivData: derivativeData,
+            sigMetadataAndRegister: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: deadline,
+                signature: signatureMetadataAndRegister
+            })
+        });
+        vm.stopPrank();
+
+        assertEq(mockToken.balanceOf(treasury), treasuryBalanceBefore + registrationFee);
+        assertEq(mockToken.balanceOf(u.alice), aliceBalanceBefore - registrationFee - licenseMintingFee);
+    }
+
     function _setUpTest() private {
         nftMintingFee = 1 * 10 ** mockToken.decimals();
         licenseMintingFee = 1 * 10 ** mockToken.decimals();
