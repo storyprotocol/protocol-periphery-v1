@@ -464,7 +464,8 @@ contract SPGNFTTest is BaseTest {
         vm.stopPrank();
     }
 
-    function test_SPGNFT_setNftMetadataHash() public {
+    function test_SPGNFT_setTokenMetadata() public {
+        // mint a token to alice
         vm.startPrank(u.alice);
         mockToken.mint(address(u.alice), 1000 * 10 ** mockToken.decimals());
         mockToken.approve(address(nftContract), 1000 * 10 ** mockToken.decimals());
@@ -476,14 +477,19 @@ contract SPGNFTTest is BaseTest {
             false
         );
 
-        nftContract.setNftMetadataHash(tokenId, ipMetadataDefault.nftMetadataHash, bytes32(0));
-        assertEq(nftContract.getTokenIdByMetadataHash(ipMetadataDefault.nftMetadataHash), 0);
-        assertEq(nftContract.getTokenIdByMetadataHash(bytes32(0)), tokenId);
+        // alice can set the token URI as the owner
+        string memory newTokenURI = string.concat(testBaseURI, "newTokenURI");
+        nftContract.setTokenMetadata(tokenId, "newTokenURI", bytes32(keccak256(abi.encodePacked(newTokenURI))));
+
+        // Verify the token URI was updated
+        assertEq(nftContract.tokenURI(tokenId), newTokenURI);
+        assertEq(nftContract.getTokenIdByMetadataHash(bytes32(keccak256(abi.encodePacked(newTokenURI)))), tokenId);
 
         vm.stopPrank();
     }
 
-    function test_SPGNFT_setNftMetadataHash_revert_callerNotOwner() public {
+    function test_SPGNFT_setTokenMetadata_revert_callerNotOwner() public {
+        // mint a token to alice
         vm.startPrank(u.alice);
         mockToken.mint(address(u.alice), 1000 * 10 ** mockToken.decimals());
         mockToken.approve(address(nftContract), 1000 * 10 ** mockToken.decimals());
@@ -496,63 +502,11 @@ contract SPGNFTTest is BaseTest {
         );
         vm.stopPrank();
 
+        // bob cannot set the token URI as he's not the owner
         vm.startPrank(u.bob);
+
         vm.expectRevert(abi.encodeWithSelector(Errors.SPGNFT__CallerNotOwner.selector, tokenId, u.bob, u.alice));
-        nftContract.setNftMetadataHash(tokenId, ipMetadataDefault.nftMetadataHash, bytes32(0));
-
-        vm.stopPrank();
-    }
-
-    function test_SPGNFT_setNftMetadataHash_revert_invalidMetadataHash() public {
-        vm.startPrank(u.alice);
-        mockToken.mint(address(u.alice), 1000 * 10 ** mockToken.decimals());
-        mockToken.approve(address(nftContract), 1000 * 10 ** mockToken.decimals());
-
-        uint256 tokenId = nftContract.mint(
-            address(u.alice),
-            ipMetadataDefault.nftMetadataURI,
-            ipMetadataDefault.nftMetadataHash,
-            false
-        );
-
-        // Expect revert since Alice token's current metadata hash is not 0
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SPGNFT__InvalidNFTMetadataHash.selector,
-                address(nftContract),
-                tokenId,
-                bytes32(0)
-            )
-        );
-        nftContract.setNftMetadataHash(tokenId, 0, ipMetadataDefault.nftMetadataHash);
-
-        vm.stopPrank();
-    }
-
-    function test_SPGNFT_setNftMetadataHash_revert_duplicateMetadataHash() public {
-        vm.startPrank(u.alice);
-        mockToken.mint(address(u.alice), 1000 * 10 ** mockToken.decimals());
-        mockToken.approve(address(nftContract), 1000 * 10 ** mockToken.decimals());
-
-        uint256 aliceTokenId = nftContract.mint(
-            address(u.alice),
-            ipMetadataDefault.nftMetadataURI,
-            ipMetadataDefault.nftMetadataHash,
-            false
-        );
-
-        uint256 bobTokenId = nftContract.mint(address(u.bob), "", bytes32(0), false);
-
-        // Expect revert since the new metadata hash Alice tries to set is already used by Bob's token
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.SPGNFT__DuplicatedNFTMetadataHash.selector,
-                address(nftContract),
-                aliceTokenId,
-                bytes32(0)
-            )
-        );
-        nftContract.setNftMetadataHash(aliceTokenId, ipMetadataDefault.nftMetadataHash, bytes32(0));
+        nftContract.setTokenMetadata(tokenId, "newTokenURI", bytes32(keccak256(abi.encodePacked("newTokenURI"))));
 
         vm.stopPrank();
     }

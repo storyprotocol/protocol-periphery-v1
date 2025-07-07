@@ -219,7 +219,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         _getSPGNFTStorage()._baseURI = baseURI;
     }
 
-    /// @notice Sets the token URI for a specific token.
+    /// @notice Sets the token URI for a specific token. This function is deprecated, use {setTokenMetadata} instead.
     /// @dev Only callable by the owner of the token. This updates the metadata URI
     ///      for the specified token and emits a MetadataUpdate event.
     /// @param tokenId The ID of the token to update.
@@ -231,17 +231,18 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         _setTokenURI(tokenId, tokenUri);
     }
 
-    /// @notice Sets the metadata hash for a specific token.
-    /// @dev Only callable by the owner of the token. This updates the metadata hash in the nftMetadataHashToTokenId mapping
-    ///      for the specified token and emits a NFTMetadataHashUpdated event.
+    /// @notice Sets the token metadata for a specific token.
+    /// @dev Only callable by the owner of the token. This updates the metadata URI and hash
+    ///      for the specified token and emits a MetadataUpdate event.
     /// @param tokenId The ID of the token to update.
-    /// @param nftCurrentMetadataHash The current metadata hash of the token.
-    /// @param nftNewMetadataHash The new metadata hash of the token.
-    function setNftMetadataHash(uint256 tokenId, bytes32 nftCurrentMetadataHash, bytes32 nftNewMetadataHash) external {
+    /// @param tokenUri The new metadata URI to associate with the token.
+    /// @param nftMetadataHash The new metadata hash to associate with the token.
+    function setTokenMetadata(uint256 tokenId, string memory tokenUri, bytes32 nftMetadataHash) external {
         // revert if caller is not the owner of the `tokenId` token
         address owner = ownerOf(tokenId);
         if (owner != msg.sender) revert Errors.SPGNFT__CallerNotOwner(tokenId, msg.sender, owner);
-        _setNftMetadataHash(tokenId, nftCurrentMetadataHash, nftNewMetadataHash);
+        _setTokenURI(tokenId, tokenUri);
+        _setNftMetadataHash(tokenId, nftMetadataHash);
     }
 
     /// @notice Sets the contract URI for the collection.
@@ -357,17 +358,10 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
 
     /// @dev Sets the metadata hash for a specific token.
     /// @param tokenId The ID of the token to update.
-    /// @param nftCurrentMetadataHash The current metadata hash of the token.
-    /// @param nftNewMetadataHash The new metadata hash of the token.
-    function _setNftMetadataHash(uint256 tokenId, bytes32 nftCurrentMetadataHash, bytes32 nftNewMetadataHash) internal {
+    /// @param nftMetadataHash The metadata hash of the token.
+    function _setNftMetadataHash(uint256 tokenId, bytes32 nftMetadataHash) internal {
         SPGNFTStorage storage $ = _getSPGNFTStorage();
-        if ($._nftMetadataHashToTokenId[nftCurrentMetadataHash] != tokenId)
-            revert Errors.SPGNFT__InvalidNFTMetadataHash(address(this), tokenId, nftCurrentMetadataHash);
-        if ($._nftMetadataHashToTokenId[nftNewMetadataHash] != 0)
-            revert Errors.SPGNFT__DuplicatedNFTMetadataHash(address(this), tokenId, nftNewMetadataHash);
-        delete $._nftMetadataHashToTokenId[nftCurrentMetadataHash];
-        $._nftMetadataHashToTokenId[nftNewMetadataHash] = tokenId;
-        emit NFTMetadataHashUpdated(tokenId, nftCurrentMetadataHash, nftNewMetadataHash);
+        if ($._nftMetadataHashToTokenId[nftMetadataHash] == 0) $._nftMetadataHashToTokenId[nftMetadataHash] = tokenId;
     }
 
     /// @dev Sets the contract URI for the collection.

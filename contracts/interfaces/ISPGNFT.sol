@@ -37,9 +37,6 @@ interface ISPGNFT is IAccessControl, IERC721Metadata, IERC7572 {
         bool isPublicMinting;
     }
 
-    /// @notice Emitted when the metadata hash for an NFT is updated.
-    event NFTMetadataHashUpdated(uint256 indexed tokenId, bytes32 currentMetadataHash, bytes32 newMetadataHash);
-
     /// @dev Initializes the NFT collection.
     /// @dev If mint fee is non-zero, mint token must be set.
     /// @param params The initialization parameters. See `InitParams`.
@@ -112,20 +109,20 @@ interface ISPGNFT is IAccessControl, IERC721Metadata, IERC7572 {
     ///        See https://eips.ethereum.org/EIPS/eip-7572
     function setContractURI(string memory contractURI) external;
 
-    /// @notice Sets the token URI for a specific token.
+    /// @notice Sets the token URI for a specific token. This function is deprecated, use {setTokenMetadata} instead.
     /// @dev Only callable by the owner of the token. This updates the metadata URI
     ///      for the specified token and emits a MetadataUpdate event.
     /// @param tokenId The ID of the token to update.
     /// @param tokenUri The new metadata URI to associate with the token.
     function setTokenURI(uint256 tokenId, string memory tokenUri) external;
 
-    /// @notice Sets the metadata hash for a specific token.
-    /// @dev Only callable by the owner of the token. This updates the metadata hash in the nftMetadataHashToTokenId mapping
-    ///      for the specified token and emits a NFTMetadataHashUpdated event.
+    /// @notice Sets the token metadata for a specific token.
+    /// @dev Only callable by the owner of the token. This updates the metadata URI and hash
+    ///      for the specified token and emits a MetadataUpdate event.
     /// @param tokenId The ID of the token to update.
-    /// @param nftCurrentMetadataHash The current metadata hash of the token.
-    /// @param nftNewMetadataHash The new metadata hash of the token.
-    function setNftMetadataHash(uint256 tokenId, bytes32 nftCurrentMetadataHash, bytes32 nftNewMetadataHash) external;
+    /// @param tokenUri The new metadata URI to associate with the token.
+    /// @param nftMetadataHash The new metadata hash to associate with the token.
+    function setTokenMetadata(uint256 tokenId, string memory tokenUri, bytes32 nftMetadataHash) external;
 
     /// @notice Mints an NFT from the collection. Only callable by the minter role.
     /// @param to The address of the recipient of the minted NFT.
