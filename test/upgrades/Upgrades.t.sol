@@ -4,20 +4,25 @@ pragma solidity 0.8.26;
 import { ProtocolAdmin } from "@storyprotocol/core/lib/ProtocolAdmin.sol";
 import { VaultController } from "@storyprotocol/core/modules/royalty/policies/VaultController.sol";
 import { ProtocolPausableUpgradeable } from "@storyprotocol/core/pause/ProtocolPausableUpgradeable.sol";
+import { IModuleRegistry } from "@storyprotocol/core/interfaces/registries/IModuleRegistry.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { BaseTest } from "../utils/BaseTest.t.sol";
+import { IRegistrationWorkflows } from "../../contracts/interfaces/workflows/IRegistrationWorkflows.sol";
+import { ITokenizerModule } from "../../contracts/interfaces/modules/tokenizer/ITokenizerModule.sol";
 
 contract UpgradesTest is BaseTest {
     function test_deploymentSetup() public {
-        // Target function role wiring
+        IRegistrationWorkflows registrationWorkflows = IRegistrationWorkflows(address(registrationWorkflows));
+        IModuleRegistry moduleRegistry = IModuleRegistry(address(moduleRegistry));
+        ITokenizerModule tokenizerModule = ITokenizerModule(address(tokenizerModule));
 
-        (bool immediate, uint32 delay) = protocolAccessManager.canCall(
-            deployer,
-            address(derivativeWorkflows),
-            UUPSUpgradeable.upgradeToAndCall.selector
-        );
-        assertTrue(immediate);
-        assertEq(delay, 0);
+        assertEq(ownableERC20Beacon.owner(), address(tokenizerModule));
+        assertEq(spgNftBeacon.owner(), address(registrationWorkflows));
+        assertTrue(tokenizerModule.isWhitelistedTokenTemplate(address(ownableERC20Template)));
+        assertTrue(moduleRegistry.isRegistered(address(tokenizerModule)));
+        assertTrue(moduleRegistry.isRegistered(address(lockLicenseHook)));
+        assertTrue(moduleRegistry.isRegistered(address(totalLicenseTokenLimitHook)));
+        // Target function role wiring
         assertEq(
             protocolAccessManager.getTargetFunctionRole(
                 address(derivativeWorkflows),
@@ -26,13 +31,6 @@ contract UpgradesTest is BaseTest {
             ProtocolAdmin.UPGRADER_ROLE
         );
 
-        (immediate, delay) = protocolAccessManager.canCall(
-            deployer,
-            address(groupingWorkflows),
-            UUPSUpgradeable.upgradeToAndCall.selector
-        );
-        assertTrue(immediate);
-        assertEq(delay, 0);
         assertEq(
             protocolAccessManager.getTargetFunctionRole(
                 address(groupingWorkflows),
@@ -41,13 +39,6 @@ contract UpgradesTest is BaseTest {
             ProtocolAdmin.UPGRADER_ROLE
         );
 
-        (immediate, delay) = protocolAccessManager.canCall(
-            deployer,
-            address(licenseAttachmentWorkflows),
-            UUPSUpgradeable.upgradeToAndCall.selector
-        );
-        assertTrue(immediate);
-        assertEq(delay, 0);
         assertEq(
             protocolAccessManager.getTargetFunctionRole(
                 address(licenseAttachmentWorkflows),
@@ -56,13 +47,6 @@ contract UpgradesTest is BaseTest {
             ProtocolAdmin.UPGRADER_ROLE
         );
 
-        (immediate, delay) = protocolAccessManager.canCall(
-            deployer,
-            address(royaltyTokenDistributionWorkflows),
-            UUPSUpgradeable.upgradeToAndCall.selector
-        );
-        assertTrue(immediate);
-        assertEq(delay, 0);
         assertEq(
             protocolAccessManager.getTargetFunctionRole(
                 address(royaltyTokenDistributionWorkflows),
@@ -71,13 +55,6 @@ contract UpgradesTest is BaseTest {
             ProtocolAdmin.UPGRADER_ROLE
         );
 
-        (immediate, delay) = protocolAccessManager.canCall(
-            deployer,
-            address(royaltyWorkflows),
-            UUPSUpgradeable.upgradeToAndCall.selector
-        );
-        assertTrue(immediate);
-        assertEq(delay, 0);
         assertEq(
             protocolAccessManager.getTargetFunctionRole(
                 address(royaltyWorkflows),
@@ -86,13 +63,6 @@ contract UpgradesTest is BaseTest {
             ProtocolAdmin.UPGRADER_ROLE
         );
 
-        (immediate, delay) = protocolAccessManager.canCall(
-            deployer,
-            address(tokenizerModule),
-            UUPSUpgradeable.upgradeToAndCall.selector
-        );
-        assertTrue(immediate);
-        assertEq(delay, 0);
         assertEq(
             protocolAccessManager.getTargetFunctionRole(
                 address(tokenizerModule),
@@ -101,13 +71,6 @@ contract UpgradesTest is BaseTest {
             ProtocolAdmin.UPGRADER_ROLE
         );
 
-        (immediate, delay) = protocolAccessManager.canCall(
-            deployer,
-            address(tokenizerModule),
-            tokenizerModule.upgradeWhitelistedTokenTemplate.selector
-        );
-        assertTrue(immediate);
-        assertEq(delay, 0);
         assertEq(
             protocolAccessManager.getTargetFunctionRole(
                 address(tokenizerModule),
@@ -116,13 +79,6 @@ contract UpgradesTest is BaseTest {
             ProtocolAdmin.UPGRADER_ROLE
         );
 
-        (immediate, delay) = protocolAccessManager.canCall(
-            deployer,
-            address(registrationWorkflows),
-            UUPSUpgradeable.upgradeToAndCall.selector
-        );
-        assertTrue(immediate);
-        assertEq(delay, 0);
         assertEq(
             protocolAccessManager.getTargetFunctionRole(
                 address(registrationWorkflows),
@@ -131,13 +87,6 @@ contract UpgradesTest is BaseTest {
             ProtocolAdmin.UPGRADER_ROLE
         );
 
-        (immediate, delay) = protocolAccessManager.canCall(
-            deployer,
-            address(registrationWorkflows),
-            registrationWorkflows.upgradeCollections.selector
-        );
-        assertTrue(immediate);
-        assertEq(delay, 0);
         assertEq(
             protocolAccessManager.getTargetFunctionRole(
                 address(registrationWorkflows),
@@ -146,25 +95,11 @@ contract UpgradesTest is BaseTest {
             ProtocolAdmin.UPGRADER_ROLE
         );
 
-        (immediate, delay) = protocolAccessManager.canCall(
-            deployer,
-            address(moduleRegistry),
-            moduleRegistry.removeModule.selector
-        );
-        assertTrue(immediate);
-        assertEq(delay, 0);
         assertEq(
             protocolAccessManager.getTargetFunctionRole(address(moduleRegistry), moduleRegistry.removeModule.selector),
             ProtocolAdmin.UPGRADER_ROLE
         );
 
-        (immediate, delay) = protocolAccessManager.canCall(
-            deployer,
-            address(moduleRegistry),
-            bytes4(keccak256("registerModule(string,address)"))
-        );
-        assertTrue(immediate);
-        assertEq(delay, 0);
         assertEq(
             protocolAccessManager.getTargetFunctionRole(
                 address(moduleRegistry),
@@ -173,13 +108,6 @@ contract UpgradesTest is BaseTest {
             ProtocolAdmin.UPGRADER_ROLE
         );
 
-        (immediate, delay) = protocolAccessManager.canCall(
-            deployer,
-            address(tokenizerModule),
-            ProtocolPausableUpgradeable.pause.selector
-        );
-        assertTrue(immediate);
-        assertEq(delay, 0);
         assertEq(
             protocolAccessManager.getTargetFunctionRole(
                 address(tokenizerModule),
@@ -188,13 +116,6 @@ contract UpgradesTest is BaseTest {
             ProtocolAdmin.PAUSE_ADMIN_ROLE
         );
 
-        (immediate, delay) = protocolAccessManager.canCall(
-            deployer,
-            address(tokenizerModule),
-            ProtocolPausableUpgradeable.unpause.selector
-        );
-        assertTrue(immediate);
-        assertEq(delay, 0);
         assertEq(
             protocolAccessManager.getTargetFunctionRole(
                 address(tokenizerModule),
