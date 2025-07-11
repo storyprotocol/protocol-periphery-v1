@@ -22,6 +22,7 @@ contract RoyaltyWorkflowsTest is BaseTest {
     address internal childIpIdB;
     address internal childIpIdC;
     address internal childIpIdD;
+    address internal childIpIdE;
     address internal grandChildIpId;
 
     uint256 internal commRemixTermsIdA;
@@ -38,6 +39,10 @@ contract RoyaltyWorkflowsTest is BaseTest {
     uint256 internal defaultMintingFeeD = 0;
     uint32 internal defaultCommRevShareD = 0; // 0%
 
+    uint256 internal commRemixTermsIdE;
+    uint256 internal defaultMintingFeeE = 0;
+    uint32 internal defaultCommRevShareE = 0; // 0%
+
     WorkflowStructs.LicenseTermsData[] internal commTermsData;
 
     uint256 internal amountLicenseTokensToMint = 1;
@@ -51,9 +56,9 @@ contract RoyaltyWorkflowsTest is BaseTest {
     function test_RoyaltyWorkflows_claimAllRevenue() public {
         _setupIpGraph();
 
-        address[] memory childIpIds = new address[](5);
-        address[] memory royaltyPolicies = new address[](5);
-        address[] memory currencyTokens = new address[](5);
+        address[] memory childIpIds = new address[](4);
+        address[] memory royaltyPolicies = new address[](4);
+        address[] memory currencyTokens = new address[](4);
 
         childIpIds[0] = childIpIdA;
         royaltyPolicies[0] = address(royaltyPolicyLRP);
@@ -71,14 +76,10 @@ contract RoyaltyWorkflowsTest is BaseTest {
         royaltyPolicies[3] = address(royaltyPolicyLAP);
         currencyTokens[3] = address(mockTokenC);
 
-        childIpIds[4] = childIpIdD;
-        royaltyPolicies[4] = address(royaltyPolicyLAP);
-        currencyTokens[4] = address(mockTokenA);
-
         uint256 claimerBalanceABefore = mockTokenA.balanceOf(ancestorIpId);
         uint256 claimerBalanceCBefore = mockTokenC.balanceOf(ancestorIpId);
 
-        // Expect the call to succeed although childIpD has no claimable royalty
+        // Expect the call to succeed although childIpD (using LAP) has no claimable royalty
         uint256[] memory amountsClaimed = royaltyWorkflows.claimAllRevenue({
             ancestorIpId: ancestorIpId,
             claimer: ancestorIpId,
@@ -112,7 +113,152 @@ contract RoyaltyWorkflowsTest is BaseTest {
         );
     }
 
-    function test_RoyaltyWorkflows_claimAllRevenue_withClaimRevenueData() public {
+    function test_RoyaltyWorkflows_claimAllRevenue_withRoyaltyPolicyLAP_ZeroClaimableRoyalty() public {
+        _setupIpGraph();
+
+        address[] memory childIpIds = new address[](5);
+        address[] memory royaltyPolicies = new address[](5);
+        address[] memory currencyTokens = new address[](5);
+
+        childIpIds[0] = childIpIdA;
+        royaltyPolicies[0] = address(royaltyPolicyLRP);
+        currencyTokens[0] = address(mockTokenA);
+
+        childIpIds[1] = childIpIdB;
+        royaltyPolicies[1] = address(royaltyPolicyLRP);
+        currencyTokens[1] = address(mockTokenA);
+
+        childIpIds[2] = grandChildIpId;
+        royaltyPolicies[2] = address(royaltyPolicyLRP);
+        currencyTokens[2] = address(mockTokenA);
+
+        childIpIds[3] = childIpIdC;
+        royaltyPolicies[3] = address(royaltyPolicyLAP);
+        currencyTokens[3] = address(mockTokenC);
+
+        childIpIds[4] = childIpIdD;
+        royaltyPolicies[4] = address(royaltyPolicyLAP);
+        currencyTokens[4] = address(mockTokenA);
+
+        uint256 claimerBalanceABefore = mockTokenA.balanceOf(ancestorIpId);
+        uint256 claimerBalanceCBefore = mockTokenC.balanceOf(ancestorIpId);
+
+        // Expect the call to succeed although childIpD (using LAP) has no claimable royalty
+        uint256[] memory amountsClaimed = royaltyWorkflows.claimAllRevenue({
+            ancestorIpId: ancestorIpId,
+            claimer: ancestorIpId,
+            childIpIds: childIpIds,
+            royaltyPolicies: royaltyPolicies,
+            currencyTokens: currencyTokens
+        });
+    }
+
+    function test_RoyaltyWorkflows_claimAllRevenue_withRoyaltyPolicyLRP_ZeroClaimableRoyalty() public {
+        _setupIpGraph();
+
+        address[] memory childIpIds = new address[](5);
+        address[] memory royaltyPolicies = new address[](5);
+        address[] memory currencyTokens = new address[](5);
+
+        childIpIds[0] = childIpIdA;
+        royaltyPolicies[0] = address(royaltyPolicyLRP);
+        currencyTokens[0] = address(mockTokenA);
+
+        childIpIds[1] = childIpIdB;
+        royaltyPolicies[1] = address(royaltyPolicyLRP);
+        currencyTokens[1] = address(mockTokenA);
+
+        childIpIds[2] = grandChildIpId;
+        royaltyPolicies[2] = address(royaltyPolicyLRP);
+        currencyTokens[2] = address(mockTokenA);
+
+        childIpIds[3] = childIpIdC;
+        royaltyPolicies[3] = address(royaltyPolicyLAP);
+        currencyTokens[3] = address(mockTokenC);
+
+        childIpIds[4] = childIpIdE;
+        royaltyPolicies[4] = address(royaltyPolicyLRP);
+        currencyTokens[4] = address(mockTokenA);
+
+        uint256 claimerBalanceABefore = mockTokenA.balanceOf(ancestorIpId);
+        uint256 claimerBalanceCBefore = mockTokenC.balanceOf(ancestorIpId);
+
+        // Expect the call to succeed although childIpE (using LRP) has no claimable royalty
+        uint256[] memory amountsClaimed = royaltyWorkflows.claimAllRevenue({
+            ancestorIpId: ancestorIpId,
+            claimer: ancestorIpId,
+            childIpIds: childIpIds,
+            royaltyPolicies: royaltyPolicies,
+            currencyTokens: currencyTokens
+        });
+    }
+
+    function test_RoyaltyWorkflows_claimAllRevenue_withClaimRevenueDataStruct() public {
+        _setupIpGraph();
+
+        WorkflowStructs.ClaimRevenueData[] memory claimRevenueData = new WorkflowStructs.ClaimRevenueData[](4);
+
+        claimRevenueData[0] = WorkflowStructs.ClaimRevenueData({
+            childIpId: childIpIdA,
+            royaltyPolicy: address(royaltyPolicyLRP),
+            currencyToken: address(mockTokenA)
+        });
+
+        claimRevenueData[1] = WorkflowStructs.ClaimRevenueData({
+            childIpId: childIpIdB,
+            royaltyPolicy: address(royaltyPolicyLRP),
+            currencyToken: address(mockTokenA)
+        });
+
+        claimRevenueData[2] = WorkflowStructs.ClaimRevenueData({
+            childIpId: grandChildIpId,
+            royaltyPolicy: address(royaltyPolicyLRP),
+            currencyToken: address(mockTokenA)
+        });
+
+        claimRevenueData[3] = WorkflowStructs.ClaimRevenueData({
+            childIpId: childIpIdC,
+            royaltyPolicy: address(royaltyPolicyLAP),
+            currencyToken: address(mockTokenC)
+        });
+
+        uint256 claimerBalanceABefore = mockTokenA.balanceOf(ancestorIpId);
+        uint256 claimerBalanceCBefore = mockTokenC.balanceOf(ancestorIpId);
+
+        uint256[] memory amountsClaimed = royaltyWorkflows.claimAllRevenue({
+            ancestorIpId: ancestorIpId,
+            claimer: ancestorIpId,
+            claimRevenueData: claimRevenueData
+        });
+
+        uint256 claimerBalanceAAfter = mockTokenA.balanceOf(ancestorIpId);
+        uint256 claimerBalanceCAfter = mockTokenC.balanceOf(ancestorIpId);
+
+        assertEq(amountsClaimed.length, 2); // there are 2 currency tokens
+        assertEq(claimerBalanceAAfter - claimerBalanceABefore, amountsClaimed[0]);
+        assertEq(claimerBalanceCAfter - claimerBalanceCBefore, amountsClaimed[1]);
+        assertEq(
+            claimerBalanceAAfter - claimerBalanceABefore,
+            defaultMintingFeeA +
+                defaultMintingFeeA + // 1000 + 1000 from minting fee of childIpA and childIpB
+                (defaultMintingFeeA * defaultCommRevShareA) /
+                royaltyModule.maxPercent() + // 1000 * 10% = 100 royalty from childIpA
+                (defaultMintingFeeA * defaultCommRevShareA) /
+                royaltyModule.maxPercent() + // 1000 * 10% = 100 royalty from childIpB
+                (((defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent()) * defaultCommRevShareA) /
+                royaltyModule.maxPercent() // 1000 * 10% * 10% = 10 royalty from grandChildIp
+            // TODO(SP-XXX): Value should be 20 but MockIPGraph in @storyprotocol/test currently only supports
+            // single-path calculation. This needs to be updated once MockIPGraph supports multi-path calculations.
+        );
+        assertEq(
+            claimerBalanceCAfter - claimerBalanceCBefore,
+            defaultMintingFeeC + (defaultMintingFeeC * defaultCommRevShareC) / royaltyModule.maxPercent() // 500 from from minting fee of childIpC, 500 * 20% = 100 royalty from childIpC
+        );
+    }
+
+    function test_RoyaltyWorkflows_claimAllRevenue_withClaimRevenueDataStruct_withRoyaltyPolicyLAP_ZeroClaimableRoyalty()
+        public
+    {
         _setupIpGraph();
 
         WorkflowStructs.ClaimRevenueData[] memory claimRevenueData = new WorkflowStructs.ClaimRevenueData[](5);
@@ -147,39 +293,57 @@ contract RoyaltyWorkflowsTest is BaseTest {
             currencyToken: address(mockTokenA)
         });
 
-        uint256 claimerBalanceABefore = mockTokenA.balanceOf(ancestorIpId);
-        uint256 claimerBalanceCBefore = mockTokenC.balanceOf(ancestorIpId);
-
-        // Expect the call to succeed although childIpD has no claimable royalty
+        // Expect the call to succeed although childIpD (using LAP) has no claimable royalty
         uint256[] memory amountsClaimed = royaltyWorkflows.claimAllRevenue({
             ancestorIpId: ancestorIpId,
             claimer: ancestorIpId,
             claimRevenueData: claimRevenueData
         });
+    }
 
-        uint256 claimerBalanceAAfter = mockTokenA.balanceOf(ancestorIpId);
-        uint256 claimerBalanceCAfter = mockTokenC.balanceOf(ancestorIpId);
+    function test_RoyaltyWorkflows_claimAllRevenue_withClaimRevenueDataStruct_withRoyaltyPolicyLRP_ZeroClaimableRoyalty()
+        public
+    {
+        _setupIpGraph();
 
-        assertEq(amountsClaimed.length, 2); // there are 2 currency tokens
-        assertEq(claimerBalanceAAfter - claimerBalanceABefore, amountsClaimed[0]);
-        assertEq(claimerBalanceCAfter - claimerBalanceCBefore, amountsClaimed[1]);
-        assertEq(
-            claimerBalanceAAfter - claimerBalanceABefore,
-            defaultMintingFeeA +
-                defaultMintingFeeA + // 1000 + 1000 from minting fee of childIpA and childIpB
-                (defaultMintingFeeA * defaultCommRevShareA) /
-                royaltyModule.maxPercent() + // 1000 * 10% = 100 royalty from childIpA
-                (defaultMintingFeeA * defaultCommRevShareA) /
-                royaltyModule.maxPercent() + // 1000 * 10% = 100 royalty from childIpB
-                (((defaultMintingFeeA * defaultCommRevShareA) / royaltyModule.maxPercent()) * defaultCommRevShareA) /
-                royaltyModule.maxPercent() // 1000 * 10% * 10% = 10 royalty from grandChildIp
-            // TODO(SP-XXX): Value should be 20 but MockIPGraph in @storyprotocol/test currently only supports
-            // single-path calculation. This needs to be updated once MockIPGraph supports multi-path calculations.
-        );
-        assertEq(
-            claimerBalanceCAfter - claimerBalanceCBefore,
-            defaultMintingFeeC + (defaultMintingFeeC * defaultCommRevShareC) / royaltyModule.maxPercent() // 500 from from minting fee of childIpC, 500 * 20% = 100 royalty from childIpC
-        );
+        WorkflowStructs.ClaimRevenueData[] memory claimRevenueData = new WorkflowStructs.ClaimRevenueData[](5);
+
+        claimRevenueData[0] = WorkflowStructs.ClaimRevenueData({
+            childIpId: childIpIdA,
+            royaltyPolicy: address(royaltyPolicyLRP),
+            currencyToken: address(mockTokenA)
+        });
+
+        claimRevenueData[1] = WorkflowStructs.ClaimRevenueData({
+            childIpId: childIpIdB,
+            royaltyPolicy: address(royaltyPolicyLRP),
+            currencyToken: address(mockTokenA)
+        });
+
+        claimRevenueData[2] = WorkflowStructs.ClaimRevenueData({
+            childIpId: grandChildIpId,
+            royaltyPolicy: address(royaltyPolicyLRP),
+            currencyToken: address(mockTokenA)
+        });
+
+        claimRevenueData[3] = WorkflowStructs.ClaimRevenueData({
+            childIpId: childIpIdC,
+            royaltyPolicy: address(royaltyPolicyLAP),
+            currencyToken: address(mockTokenC)
+        });
+
+        claimRevenueData[4] = WorkflowStructs.ClaimRevenueData({
+            childIpId: childIpIdE,
+            royaltyPolicy: address(royaltyPolicyLRP),
+            currencyToken: address(mockTokenA)
+        });
+
+        // Expect the call to succeed although childIpE (using LRP) has no claimable royalty
+        uint256[] memory amountsClaimed = royaltyWorkflows.claimAllRevenue({
+            ancestorIpId: ancestorIpId,
+            claimer: ancestorIpId,
+            claimRevenueData: claimRevenueData
+        });
     }
 
     // This test is to ensure that the claimAllRevenue function reverts when the transferToVault function reverts with an error that is not that the royalty policy has no claimable royalty
@@ -204,7 +368,8 @@ contract RoyaltyWorkflowsTest is BaseTest {
         });
     }
 
-    // This test is to ensure that the claimAllRevenue function reverts when the transferToVault function reverts with an error that is not that the royalty policy has no claimable royalty
+    // This test is to ensure that the claimAllRevenue function reverts when the transferToVault function
+    // reverts with an error that is not that the royalty policy has no claimable royalty
     function test_RoyaltyWorkflows_claimAllRevenue_withClaimRevenueData_revert_RoyaltyPolicyLAP__SameIpTransfer()
         public
     {
@@ -243,14 +408,14 @@ contract RoyaltyWorkflowsTest is BaseTest {
         royaltyModule.whitelistRoyaltyToken(address(mockTokenC), true);
     }
 
-    /// @dev Builds an IP graph as follows (TermsA is LRP, TermsC and TermsD are LAP):
+    /// @dev Builds an IP graph as follows (TermsA and TermsE are LRP, TermsC and TermsD are LAP):
     ///                                        ancestorIp (root)
-    ///                                (owner: admin, TermsA + TermsC + TermsD)
-    ///                      _________________________|______________________________________________________
-    ///                    /                          |                           \                          \
-    ///                   /                           |                            \                          \
-    ///                childIpA                   childIpB                      childIpC                   childIpD
-    ///        (owner: alice, TermsA)        (owner: bob, TermsA)          (owner: carl, TermsC)      (owner: dan, TermsD)
+    ///                        (owner: admin, TermsA + TermsC + TermsD + TermsE)
+    ///                      _________________________________________________________________________________________________________
+    ///                    /                            /                         |                         \                         \
+    ///                   /                            /                          |                          \                         \
+    ///                childIpA                   childIpB                      childIpC                   childIpD                   childIpE
+    ///        (owner: alice, TermsA)        (owner: bob, TermsA)          (owner: carl, TermsC)      (owner: dan, TermsD)        (owner: dan, TermsE)
     ///                   \                          /                             /
     ///                    \________________________/                             /
     ///                                |                                         /
@@ -261,10 +426,12 @@ contract RoyaltyWorkflowsTest is BaseTest {
     ///                                                    |
     ///    user 0xbeef mints `amountLicenseTokensToMint` grandChildIp and childIpC license tokens.
     ///
-    /// - `ancestorIp`: It has 3 different commercial remix license terms attached. It has 3 child and 1 grandchild IPs.
+    /// - `ancestorIp`: It has 4 different commercial remix license terms attached. It has 5 children and 1 grandchild IPs.
     /// - `childIpA`: It has licenseTermsA attached, has 1 parent `ancestorIp`, and has 1 grandchild `grandChildIp`.
     /// - `childIpB`: It has licenseTermsA attached, has 1 parent `ancestorIp`, and has 1 grandchild `grandChildIp`.
-    /// - `childIpC`: It has licenseTermsC attached, has 1 parent `ancestorIp`, and has 1 grandchild `grandChildIp`.
+    /// - `childIpC`: It has licenseTermsC attached, has 1 parent `ancestorIp`
+    /// - `childIpD`: It has licenseTermsD attached, has 1 parent `ancestorIp`
+    /// - `childIpE`: It has licenseTermsE attached, has 1 parent `ancestorIp`
     /// - `grandChildIp`: It has licenseTermsA attached. It has 2 parents and 1 grandparent IPs.
     function _setupIpGraph() private {
         uint256 ancestorTokenId = mockNft.mint(u.admin);
@@ -272,6 +439,7 @@ contract RoyaltyWorkflowsTest is BaseTest {
         uint256 childTokenIdB = mockNft.mint(u.bob);
         uint256 childTokenIdC = mockNft.mint(u.carl);
         uint256 childTokenIdD = mockNft.mint(u.dan);
+        uint256 childTokenIdE = mockNft.mint(u.dan);
         uint256 grandChildTokenId = mockNft.mint(u.dan);
 
         WorkflowStructs.IPMetadata memory emptyIpMetadata = WorkflowStructs.IPMetadata({
@@ -355,6 +523,26 @@ contract RoyaltyWorkflowsTest is BaseTest {
                     })
                 })
             );
+            commTermsData.push(
+                WorkflowStructs.LicenseTermsData({
+                    terms: PILFlavors.commercialRemix({
+                        mintingFee: defaultMintingFeeE,
+                        commercialRevShare: defaultCommRevShareE,
+                        royaltyPolicy: address(royaltyPolicyLRP),
+                        currencyToken: address(mockTokenA)
+                    }),
+                    licensingConfig: Licensing.LicensingConfig({
+                        isSet: true,
+                        mintingFee: defaultMintingFeeE,
+                        licensingHook: address(0),
+                        hookData: "",
+                        commercialRevShare: defaultCommRevShareE,
+                        disabled: false,
+                        expectMinimumGroupRewardShare: 0,
+                        expectGroupRewardPool: evenSplitGroupPoolAddr
+                    })
+                })
+            );
 
             (bytes memory signature, , ) = _getSetBatchPermissionSigForPeriphery({
                 ipId: ancestorIpId,
@@ -367,7 +555,7 @@ contract RoyaltyWorkflowsTest is BaseTest {
                 signerSk: sk.admin
             });
 
-            // register and attach Terms A, C and D to ancestor IP
+            // register and attach Terms A, C, D and E to ancestor IP
             uint256[] memory licenseTermsIds = licenseAttachmentWorkflows.registerPILTermsAndAttach({
                 ipId: ancestorIpId,
                 licenseTermsData: commTermsData,
@@ -380,6 +568,7 @@ contract RoyaltyWorkflowsTest is BaseTest {
             commRemixTermsIdA = licenseTermsIds[0];
             commRemixTermsIdC = licenseTermsIds[1];
             commRemixTermsIdD = licenseTermsIds[2];
+            commRemixTermsIdE = licenseTermsIds[3];
         }
 
         // register childIpA as derivative of ancestorIp under Terms A
@@ -560,6 +749,52 @@ contract RoyaltyWorkflowsTest is BaseTest {
             });
             vm.stopPrank();
             vm.label(childIpIdD, "ChildIpD");
+        }
+
+        // register childIpE as derivative of ancestorIp under Terms E
+        {
+            address childIpId = ipAssetRegistry.ipId(block.chainid, address(mockNft), childTokenIdE);
+            (bytes memory signatureMetadataAndRegister, , ) = _getSetBatchPermissionSigForPeriphery({
+                ipId: childIpId,
+                permissionList: _getMetadataAndDerivativeRegistrationPermissionList(
+                    childIpId,
+                    address(derivativeWorkflows),
+                    false
+                ),
+                deadline: deadline,
+                state: bytes32(0),
+                signerSk: sk.dan
+            });
+
+            address[] memory parentIpIds = new address[](1);
+            uint256[] memory licenseTermsIds = new uint256[](1);
+            parentIpIds[0] = ancestorIpId;
+            licenseTermsIds[0] = commRemixTermsIdE;
+
+            vm.startPrank(u.dan);
+
+            mockTokenA.approve(address(derivativeWorkflows), defaultMintingFeeE);
+            childIpIdE = derivativeWorkflows.registerIpAndMakeDerivative({
+                nftContract: address(mockNft),
+                tokenId: childTokenIdE,
+                derivData: WorkflowStructs.MakeDerivative({
+                    parentIpIds: parentIpIds,
+                    licenseTemplate: address(pilTemplate),
+                    licenseTermsIds: licenseTermsIds,
+                    royaltyContext: "",
+                    maxMintingFee: 0,
+                    maxRts: defaultCommRevShareE,
+                    maxRevenueShare: 0
+                }),
+                ipMetadata: emptyIpMetadata,
+                sigMetadataAndRegister: WorkflowStructs.SignatureData({
+                    signer: u.dan,
+                    deadline: deadline,
+                    signature: signatureMetadataAndRegister
+                })
+            });
+            vm.stopPrank();
+            vm.label(childIpIdE, "ChildIpE");
         }
 
         // register grandChildIp as derivative for childIp A and B under Terms A

@@ -48,6 +48,95 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
     /// @notice Transfers all available royalties from various royalty policies to the royalty
     ///         vault of an ancestor IP, and claims all the revenue for each currency token
     ///         from the ancestor IP's royalty vault to the claimer.
+    /// @param ancestorIpId The address of the ancestor IP from which the revenue is being claimed.
+    /// @param claimer The address of the claimer of the currency (revenue) tokens.
+    /// @param claimRevenueData The data for claiming revenue from each child IP.
+    /// @return amountsClaimed The amounts of successfully claimed revenue for each specified currency token.
+    function claimAllRevenue(
+        address ancestorIpId,
+        address claimer,
+        WorkflowStructs.ClaimRevenueData[] calldata claimRevenueData
+    ) external returns (uint256[] memory amountsClaimed) {
+        for (uint256 i = 0; i < claimRevenueData.length; i++) {
+            // Transfer all available revenue tokens to the ancestor's vault
+            try
+                IGraphAwareRoyaltyPolicy(claimRevenueData[i].royaltyPolicy).transferToVault({
+                    ipId: claimRevenueData[i].childIpId,
+                    ancestorIpId: ancestorIpId,
+                    token: claimRevenueData[i].currencyToken
+                })
+            {} catch (bytes memory reason) {
+                // If the error is not that the royalty policy has no claimable royalty, revert with the original error
+                if (
+                    CoreErrors.RoyaltyPolicyLAP__ZeroClaimableRoyalty.selector != bytes4(reason) &&
+                    CoreErrors.RoyaltyPolicyLRP__ZeroClaimableRoyalty.selector != bytes4(reason)
+                ) {
+                    assembly {
+                        revert(add(reason, 32), mload(reason))
+                    }
+                }
+            }
+        }
+
+        // Gets the ancestor IP's royalty vault
+        IIpRoyaltyVault ancestorIpRoyaltyVault = IIpRoyaltyVault(ROYALTY_MODULE.ipRoyaltyVaults(ancestorIpId));
+
+        // Claims revenue for each specified currency token
+        amountsClaimed = ancestorIpRoyaltyVault.claimRevenueOnBehalfByTokenBatch({
+            claimer: claimer,
+            tokenList: _getUniqueCurrencyTokens(claimRevenueData)
+        });
+    }
+
+    /// @notice Returns an array of unique currency token addresses, filtering out duplicates.
+    /// @param claimRevenueData The data for claiming revenue from each child IP.
+    /// @return uniqueCurrencyTokens An array containing only unique currency token addresses.
+    function _getUniqueCurrencyTokens(
+        WorkflowStructs.ClaimRevenueData[] calldata claimRevenueData
+    ) internal pure returns (address[] memory uniqueCurrencyTokens) {
+        uint256 length = claimRevenueData.length;
+        address[] memory tempUniqueTokenList = new address[](length);
+        uint256 uniqueCount = 0;
+
+        for (uint256 i = 0; i < length; i++) {
+            address currencyToken = claimRevenueData[i].currencyToken;
+            bool isDuplicate = false;
+
+            // Check if `currencyToken` already exists in `tempUniqueTokenList`
+            for (uint256 j = 0; j < uniqueCount; j++) {
+                if (tempUniqueTokenList[j] == currencyToken) {
+                    isDuplicate = true;
+                    break;
+                }
+            }
+
+            // Add `currencyToken` to `tempUniqueTokenList` if it's unique
+            if (!isDuplicate) {
+                tempUniqueTokenList[uniqueCount] = currencyToken;
+                uniqueCount++;
+            }
+        }
+
+        // Populate `uniqueCurrencyTokens` array with unique tokens
+        uniqueCurrencyTokens = new address[](uniqueCount);
+        for (uint256 i = 0; i < uniqueCount; i++) {
+            uniqueCurrencyTokens[i] = tempUniqueTokenList[i];
+        }
+    }
+
+    //
+    // Upgrade
+    //
+
+    /// @dev Hook to authorize the upgrade according to UUPSUpgradeable
+    /// @param newImplementation The address of the new implementation
+    function _authorizeUpgrade(address newImplementation) internal override restricted {}
+
+    // >>>>>>>>>>>>>>>>>>>>>>>>>>> DEPRECATED FUNCTIONS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// @notice Transfers all available royalties from various royalty policies to the royalty
+    ///         vault of an ancestor IP, and claims all the revenue for each currency token
+    ///         from the ancestor IP's royalty vault to the claimer.
     /// @dev This function is deprecated and will be removed in a future version of the protocol.
     ///      Use `claimAllRevenue(ancestorIpId, claimer, claimRevenueData)` instead.
     /// @param ancestorIpId The address of the ancestor IP from which the revenue is being claimed.
@@ -95,50 +184,7 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
         });
     }
 
-    /// @notice Transfers all available royalties from various royalty policies to the royalty
-    ///         vault of an ancestor IP, and claims all the revenue for each currency token
-    ///         from the ancestor IP's royalty vault to the claimer.
-    /// @param ancestorIpId The address of the ancestor IP from which the revenue is being claimed.
-    /// @param claimer The address of the claimer of the currency (revenue) tokens.
-    /// @param claimRevenueData The data for claiming revenue from each child IP.
-    /// @return amountsClaimed The amounts of successfully claimed revenue for each specified currency token.
-    function claimAllRevenue(
-        address ancestorIpId,
-        address claimer,
-        WorkflowStructs.ClaimRevenueData[] calldata claimRevenueData
-    ) external returns (uint256[] memory amountsClaimed) {
-        for (uint256 i = 0; i < claimRevenueData.length; i++) {
-            // Transfer all available revenue tokens to the ancestor's vault
-            try
-                IGraphAwareRoyaltyPolicy(claimRevenueData[i].royaltyPolicy).transferToVault({
-                    ipId: claimRevenueData[i].childIpId,
-                    ancestorIpId: ancestorIpId,
-                    token: claimRevenueData[i].currencyToken
-                })
-            {} catch (bytes memory reason) {
-                // If the error is not that the royalty policy has no claimable royalty, revert with the original error
-                if (
-                    CoreErrors.RoyaltyPolicyLAP__ZeroClaimableRoyalty.selector != bytes4(reason) &&
-                    CoreErrors.RoyaltyPolicyLRP__ZeroClaimableRoyalty.selector != bytes4(reason)
-                ) {
-                    assembly {
-                        revert(add(reason, 32), mload(reason))
-                    }
-                }
-            }
-        }
-
-        // Gets the ancestor IP's royalty vault
-        IIpRoyaltyVault ancestorIpRoyaltyVault = IIpRoyaltyVault(ROYALTY_MODULE.ipRoyaltyVaults(ancestorIpId));
-
-        // Claims revenue for each specified currency token
-        amountsClaimed = ancestorIpRoyaltyVault.claimRevenueOnBehalfByTokenBatch({
-            claimer: claimer,
-            tokenList: _getUniqueCurrencyTokens(claimRevenueData)
-        });
-    }
-
-    /// @notice Returns an array of unique currency token addresses, filtering out duplicates.
+      /// @notice Returns an array of unique currency token addresses, filtering out duplicates.
     /// @param currencyTokens The addresses of the currency (revenue) tokens to filter.
     /// @return uniqueCurrencyTokens An array containing only unique currency token addresses.
     function _getUniqueCurrencyTokens(
@@ -173,48 +219,4 @@ contract RoyaltyWorkflows is IRoyaltyWorkflows, MulticallUpgradeable, AccessMana
             uniqueCurrencyTokens[i] = tempUniqueTokenList[i];
         }
     }
-
-    /// @notice Returns an array of unique currency token addresses, filtering out duplicates.
-    /// @param claimRevenueData The data for claiming revenue from each child IP.
-    /// @return uniqueCurrencyTokens An array containing only unique currency token addresses.
-    function _getUniqueCurrencyTokens(
-        WorkflowStructs.ClaimRevenueData[] calldata claimRevenueData
-    ) internal pure returns (address[] memory uniqueCurrencyTokens) {
-        uint256 length = claimRevenueData.length;
-        address[] memory tempUniqueTokenList = new address[](length);
-        uint256 uniqueCount = 0;
-
-        for (uint256 i = 0; i < length; i++) {
-            address currencyToken = claimRevenueData[i].currencyToken;
-            bool isDuplicate = false;
-
-            // Check if `currencyToken` already exists in `tempUniqueTokenList`
-            for (uint256 j = 0; j < uniqueCount; j++) {
-                if (tempUniqueTokenList[j] == currencyToken) {
-                    isDuplicate = true;
-                    break;
-                }
-            }
-
-            // Add `currencyToken` to `tempUniqueTokenList` if it's unique
-            if (!isDuplicate) {
-                tempUniqueTokenList[uniqueCount] = currencyToken;
-                uniqueCount++;
-            }
-        }
-
-        // Populate `uniqueCurrencyTokens` array with unique tokens
-        uniqueCurrencyTokens = new address[](uniqueCount);
-        for (uint256 i = 0; i < uniqueCount; i++) {
-            uniqueCurrencyTokens[i] = tempUniqueTokenList[i];
-        }
-    }
-
-    //
-    // Upgrade
-    //
-
-    /// @dev Hook to authorize the upgrade according to UUPSUpgradeable
-    /// @param newImplementation The address of the new implementation
-    function _authorizeUpgrade(address newImplementation) internal override restricted {}
 }
