@@ -219,7 +219,7 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         _getSPGNFTStorage()._baseURI = baseURI;
     }
 
-    /// @notice Sets the token metadata for a specific token.
+    /// @notice Sets the token URI for a specific token.
     /// @dev Only callable by the owner of the token. This updates the metadata URI and hash
     ///      for the specified token and emits a MetadataUpdate event.
     /// @param tokenId The ID of the token to update.
@@ -391,6 +391,8 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
             $.slot := SPGNFTStorageLocation
         }
     }
+
+    // >>>>>>>>>>>>>>>>>>>>>>>>>>> DEPRECATED FUNCTIONS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// @notice Sets the token URI for a specific token.
     /// @dev This function is deprecated, use setTokenURI(uint256 tokenId, string memory tokenUri, bytes32 nftMetadataHash) instead.

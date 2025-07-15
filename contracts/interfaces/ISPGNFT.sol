@@ -109,7 +109,7 @@ interface ISPGNFT is IAccessControl, IERC721Metadata, IERC7572 {
     ///        See https://eips.ethereum.org/EIPS/eip-7572
     function setContractURI(string memory contractURI) external;
 
-    /// @notice Sets the token metadata for a specific token.
+    /// @notice Sets the token URI for a specific token.
     /// @dev Only callable by the owner of the token. This updates the metadata URI and hash
     ///      for the specified token and emits a MetadataUpdate event.
     /// @param tokenId The ID of the token to update.
@@ -149,6 +149,8 @@ interface ISPGNFT is IAccessControl, IERC721Metadata, IERC7572 {
     /// @param token The token to withdraw.
     function withdrawToken(address token) external;
 
+    // >>>>>>>>>>>>>>>>>>>>>>>>>>> DEPRECATED FUNCTIONS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
     /// @notice Sets the token URI for a specific token.
     /// @dev This function is deprecated, use setTokenURI(uint256 tokenId, string memory tokenUri, bytes32 nftMetadataHash) instead.
     /// @dev Only callable by the owner of the token. This updates the metadata URI
@@ -157,5 +159,3 @@ interface ISPGNFT is IAccessControl, IERC721Metadata, IERC7572 {
     /// @param tokenUri The new metadata URI to associate with the token.
     function setTokenURI(uint256 tokenId, string memory tokenUri) external;
 }
-
-
