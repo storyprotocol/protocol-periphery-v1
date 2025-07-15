@@ -73,4 +73,14 @@ library WorkflowStructs {
         address recipient;
         uint32 percentage;
     }
+
+    /// @notice Struct for claiming revenue from an IP.
+    /// @param childIpId The address of the child IP from which the revenue is being claimed.
+    /// @param royaltyPolicy The address of the royalty policy which governs the royalty flow for the child IP.
+    /// @param currencyToken The address of the currency token in which the revenue is being claimed.
+    struct ClaimRevenueData {
+        address childIpId;
+        address royaltyPolicy;
+        address currencyToken;
+    }
 }
