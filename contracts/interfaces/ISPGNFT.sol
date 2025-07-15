@@ -109,20 +109,13 @@ interface ISPGNFT is IAccessControl, IERC721Metadata, IERC7572 {
     ///        See https://eips.ethereum.org/EIPS/eip-7572
     function setContractURI(string memory contractURI) external;
 
-    /// @notice Sets the token URI for a specific token. This function is deprecated, use {setTokenMetadata} instead.
-    /// @dev Only callable by the owner of the token. This updates the metadata URI
-    ///      for the specified token and emits a MetadataUpdate event.
-    /// @param tokenId The ID of the token to update.
-    /// @param tokenUri The new metadata URI to associate with the token.
-    function setTokenURI(uint256 tokenId, string memory tokenUri) external;
-
     /// @notice Sets the token metadata for a specific token.
     /// @dev Only callable by the owner of the token. This updates the metadata URI and hash
     ///      for the specified token and emits a MetadataUpdate event.
     /// @param tokenId The ID of the token to update.
     /// @param tokenUri The new metadata URI to associate with the token.
     /// @param nftMetadataHash The new metadata hash to associate with the token.
-    function setTokenMetadata(uint256 tokenId, string memory tokenUri, bytes32 nftMetadataHash) external;
+    function setTokenURI(uint256 tokenId, string memory tokenUri, bytes32 nftMetadataHash) external;
 
     /// @notice Mints an NFT from the collection. Only callable by the minter role.
     /// @param to The address of the recipient of the minted NFT.
@@ -155,4 +148,14 @@ interface ISPGNFT is IAccessControl, IERC721Metadata, IERC7572 {
     /// @dev Withdraws the contract's token balance to the fee recipient.
     /// @param token The token to withdraw.
     function withdrawToken(address token) external;
+
+    /// @notice Sets the token URI for a specific token.
+    /// @dev This function is deprecated, use setTokenURI(uint256 tokenId, string memory tokenUri, bytes32 nftMetadataHash) instead.
+    /// @dev Only callable by the owner of the token. This updates the metadata URI
+    ///      for the specified token and emits a MetadataUpdate event.
+    /// @param tokenId The ID of the token to update.
+    /// @param tokenUri The new metadata URI to associate with the token.
+    function setTokenURI(uint256 tokenId, string memory tokenUri) external;
 }
+
+

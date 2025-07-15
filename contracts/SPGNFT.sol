@@ -219,25 +219,13 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         _getSPGNFTStorage()._baseURI = baseURI;
     }
 
-    /// @notice Sets the token URI for a specific token. This function is deprecated, use {setTokenMetadata} instead.
-    /// @dev Only callable by the owner of the token. This updates the metadata URI
-    ///      for the specified token and emits a MetadataUpdate event.
-    /// @param tokenId The ID of the token to update.
-    /// @param tokenUri The new metadata URI to associate with the token.
-    function setTokenURI(uint256 tokenId, string memory tokenUri) external {
-        // revert if caller is not the owner of the `tokenId` token
-        address owner = ownerOf(tokenId);
-        if (owner != msg.sender) revert Errors.SPGNFT__CallerNotOwner(tokenId, msg.sender, owner);
-        _setTokenURI(tokenId, tokenUri);
-    }
-
     /// @notice Sets the token metadata for a specific token.
     /// @dev Only callable by the owner of the token. This updates the metadata URI and hash
     ///      for the specified token and emits a MetadataUpdate event.
     /// @param tokenId The ID of the token to update.
     /// @param tokenUri The new metadata URI to associate with the token.
     /// @param nftMetadataHash The new metadata hash to associate with the token.
-    function setTokenMetadata(uint256 tokenId, string memory tokenUri, bytes32 nftMetadataHash) external {
+    function setTokenURI(uint256 tokenId, string memory tokenUri, bytes32 nftMetadataHash) external {
         // revert if caller is not the owner of the `tokenId` token
         address owner = ownerOf(tokenId);
         if (owner != msg.sender) revert Errors.SPGNFT__CallerNotOwner(tokenId, msg.sender, owner);
@@ -402,5 +390,18 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         assembly {
             $.slot := SPGNFTStorageLocation
         }
+    }
+
+    /// @notice Sets the token URI for a specific token.
+    /// @dev This function is deprecated, use setTokenURI(uint256 tokenId, string memory tokenUri, bytes32 nftMetadataHash) instead.
+    /// @dev Only callable by the owner of the token. This updates the metadata URI
+    ///      for the specified token and emits a MetadataUpdate event.
+    /// @param tokenId The ID of the token to update.
+    /// @param tokenUri The new metadata URI to associate with the token.
+    function setTokenURI(uint256 tokenId, string memory tokenUri) external {
+        // revert if caller is not the owner of the `tokenId` token
+        address owner = ownerOf(tokenId);
+        if (owner != msg.sender) revert Errors.SPGNFT__CallerNotOwner(tokenId, msg.sender, owner);
+        _setTokenURI(tokenId, tokenUri);
     }
 }
