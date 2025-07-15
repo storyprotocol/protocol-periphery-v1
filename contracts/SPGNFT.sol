@@ -241,8 +241,9 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         // revert if caller is not the owner of the `tokenId` token
         address owner = ownerOf(tokenId);
         if (owner != msg.sender) revert Errors.SPGNFT__CallerNotOwner(tokenId, msg.sender, owner);
+        SPGNFTStorage storage $ = _getSPGNFTStorage();
+        if ($._nftMetadataHashToTokenId[nftMetadataHash] == 0) $._nftMetadataHashToTokenId[nftMetadataHash] = tokenId;
         _setTokenURI(tokenId, tokenUri);
-        _setNftMetadataHash(tokenId, nftMetadataHash);
     }
 
     /// @notice Sets the contract URI for the collection.
@@ -354,14 +355,6 @@ contract SPGNFT is ISPGNFT, ERC721URIStorageUpgradeable, AccessControlUpgradeabl
         _safeMint(to, tokenId);
 
         if (bytes(nftMetadataURI).length > 0) _setTokenURI(tokenId, nftMetadataURI);
-    }
-
-    /// @dev Sets the metadata hash for a specific token.
-    /// @param tokenId The ID of the token to update.
-    /// @param nftMetadataHash The metadata hash of the token.
-    function _setNftMetadataHash(uint256 tokenId, bytes32 nftMetadataHash) internal {
-        SPGNFTStorage storage $ = _getSPGNFTStorage();
-        if ($._nftMetadataHashToTokenId[nftMetadataHash] == 0) $._nftMetadataHashToTokenId[nftMetadataHash] = tokenId;
     }
 
     /// @dev Sets the contract URI for the collection.
