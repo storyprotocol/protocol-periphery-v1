@@ -526,6 +526,174 @@ contract LicenseAttachmentWorkflowsTest is BaseTest {
         assertEq(licenseTermsId, licenseTemplates[0]);
     }
 
+    function test_LicenseAttachmentWorkflows_mintAndRegisterIpAndAttachPILTerms_withRegistrationFee()
+        public
+        withCollection
+        whenCallerHasMinterRole
+        withEnoughTokens(address(licenseAttachmentWorkflows))
+    {
+        vm.stopPrank();
+
+        uint96 registrationFee = 1 ether;
+        address treasury = address(0x12345);
+
+        vm.prank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+        uint256 callerBalanceBefore = mockToken.balanceOf(caller);
+
+        vm.prank(caller);
+        licenseAttachmentWorkflows.mintAndRegisterIpAndAttachPILTerms({
+            spgNftContract: address(nftContract),
+            recipient: caller,
+            ipMetadata: ipMetadataEmpty,
+            licenseTermsData: commTermsData,
+            allowDuplicates: true
+        });
+
+        assertEq(mockToken.balanceOf(treasury), treasuryBalanceBefore + registrationFee);
+        assertEq(mockToken.balanceOf(caller), callerBalanceBefore - registrationFee - nftContract.mintFee());
+    }
+
+    function test_LicenseAttachmentWorkflows_registerIpAndAttachPILTerms_withRegistrationFee()
+        public
+        withCollection
+        whenCallerHasMinterRole
+        withEnoughTokens(address(licenseAttachmentWorkflows))
+    {
+        vm.stopPrank();
+
+        uint96 registrationFee = 1 ether;
+        address treasury = address(0x12345);
+
+        vm.prank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+
+        vm.prank(caller);
+        uint256 tokenId = nftContract.mint({
+            to: caller,
+            nftMetadataURI: ipMetadataEmpty.nftMetadataURI,
+            nftMetadataHash: ipMetadataEmpty.nftMetadataHash,
+            allowDuplicates: true
+        });
+        address payable ipId = payable(ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenId));
+
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory sigMetadataAndAttachAndConfig, , ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: ipId,
+            permissionList: _getMetadataAndAttachTermsAndConfigPermissionList(
+                ipId,
+                address(licenseAttachmentWorkflows)
+            ),
+            deadline: deadline,
+            state: bytes32(0),
+            signerSk: sk.alice
+        });
+
+        vm.startPrank(caller);
+
+        uint256 callerBalanceBefore = mockToken.balanceOf(caller);
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+
+        licenseAttachmentWorkflows.registerIpAndAttachPILTerms({
+            nftContract: address(nftContract),
+            tokenId: tokenId,
+            ipMetadata: ipMetadataDefault,
+            licenseTermsData: commTermsData,
+            sigMetadataAndAttachAndConfig: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: deadline,
+                signature: sigMetadataAndAttachAndConfig
+            })
+        });
+
+        assertEq(mockToken.balanceOf(treasury), treasuryBalanceBefore + registrationFee);
+        assertEq(mockToken.balanceOf(caller), callerBalanceBefore - registrationFee);
+    }
+
+    function test_LicenseAttachmentWorkflows_mintAndRegisterIpAndAttachDefaultTerms_withRegistrationFee()
+        public
+        withCollection
+        whenCallerHasMinterRole
+        withEnoughTokens(address(licenseAttachmentWorkflows))
+    {
+        vm.stopPrank();
+
+        uint96 registrationFee = 1 ether;
+        address treasury = address(0x12345);
+
+        vm.prank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+
+        uint256 callerBalanceBefore = mockToken.balanceOf(caller);
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+
+        vm.prank(caller);
+        licenseAttachmentWorkflows.mintAndRegisterIpAndAttachDefaultTerms({
+            spgNftContract: address(nftContract),
+            recipient: caller,
+            ipMetadata: ipMetadataEmpty,
+            allowDuplicates: true
+        });
+
+        assertEq(mockToken.balanceOf(treasury), treasuryBalanceBefore + registrationFee);
+        assertEq(mockToken.balanceOf(caller), callerBalanceBefore - registrationFee - nftContract.mintFee());
+    }
+
+    function test_LicenseAttachmentWorkflows_registerIpAndAttachDefaultTerms_withRegistrationFee()
+        public
+        withCollection
+        whenCallerHasMinterRole
+        withEnoughTokens(address(licenseAttachmentWorkflows))
+    {
+        vm.stopPrank();
+
+        uint96 registrationFee = 1 ether;
+        address treasury = address(0x12345);
+
+        vm.prank(u.admin);
+        ipAssetRegistry.setRegistrationFee(treasury, address(mockToken), registrationFee);
+
+        vm.prank(caller);
+        uint256 tokenId = nftContract.mint({
+            to: caller,
+            nftMetadataURI: ipMetadataEmpty.nftMetadataURI,
+            nftMetadataHash: ipMetadataEmpty.nftMetadataHash,
+            allowDuplicates: true
+        });
+        address payable ipId = payable(ipAssetRegistry.ipId(block.chainid, address(nftContract), tokenId));
+
+        uint256 deadline = block.timestamp + 1000;
+
+        (bytes memory sigMetadataAndDefaultTerms, , ) = _getSetBatchPermissionSigForPeriphery({
+            ipId: ipId,
+            permissionList: _getMetadataAndDefaultTermsPermissionList(ipId, address(licenseAttachmentWorkflows)),
+            deadline: deadline,
+            state: bytes32(0),
+            signerSk: sk.alice
+        });
+
+        uint256 callerBalanceBefore = mockToken.balanceOf(caller);
+        uint256 treasuryBalanceBefore = mockToken.balanceOf(treasury);
+
+        vm.prank(caller);
+        licenseAttachmentWorkflows.registerIpAndAttachDefaultTerms({
+            nftContract: address(nftContract),
+            tokenId: tokenId,
+            ipMetadata: ipMetadataDefault,
+            sigMetadataAndDefaultTerms: WorkflowStructs.SignatureData({
+                signer: u.alice,
+                deadline: deadline,
+                signature: sigMetadataAndDefaultTerms
+            })
+        });
+
+        assertEq(mockToken.balanceOf(treasury), treasuryBalanceBefore + registrationFee);
+        assertEq(mockToken.balanceOf(caller), callerBalanceBefore - registrationFee);
+    }
+
     function _assertAttachedLicenseTerms(address ipId, uint256[] memory licenseTermsIds) internal {
         for (uint256 i = 0; i < commTermsData.length; i++) {
             (address licenseTemplate, uint256 licenseTermsId) = licenseRegistry.getAttachedLicenseTerms(ipId, i);

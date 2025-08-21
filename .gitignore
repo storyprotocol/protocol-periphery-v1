@@ -31,3 +31,5 @@ typechain
 
 # converage
 lcov.info
+
+.cursor

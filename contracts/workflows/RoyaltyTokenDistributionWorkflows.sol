@@ -202,6 +202,7 @@ contract RoyaltyTokenDistributionWorkflows is
                 sigMetadataAndAttachAndConfig.signer
             );
 
+        _collectRegistrationFeeAndApprove(msg.sender);
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
         address[] memory modules = new address[](3);
@@ -252,6 +253,7 @@ contract RoyaltyTokenDistributionWorkflows is
         if (msg.sender != sigMetadataAndRegister.signer)
             revert Errors.RoyaltyTokenDistributionWorkflows__CallerNotSigner(msg.sender, sigMetadataAndRegister.signer);
 
+        _collectRegistrationFeeAndApprove(msg.sender);
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
 
         address[] memory modules = new address[](2);
@@ -358,6 +360,8 @@ contract RoyaltyTokenDistributionWorkflows is
             nftMetadataHash: ipMetadata.nftMetadataHash,
             allowDuplicates: allowDuplicates
         });
+
+        _collectRegistrationFeeAndApprove(msg.sender);
         ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
     }

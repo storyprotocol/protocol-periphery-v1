@@ -129,6 +129,7 @@ contract RegistrationWorkflows is
             allowDuplicates: allowDuplicates
         });
 
+        _collectRegistrationFeeAndApprove(msg.sender);
         ipId = IP_ASSET_REGISTRY.register(block.chainid, spgNftContract, tokenId);
         MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
         ISPGNFT(spgNftContract).safeTransferFrom(address(this), recipient, tokenId, "");
@@ -149,6 +150,7 @@ contract RegistrationWorkflows is
         if (msg.sender != address(0) && msg.sender != sigMetadata.signer)
             revert Errors.RegistrationWorkflows__CallerNotSigner(msg.sender, sigMetadata.signer);
 
+        _collectRegistrationFeeAndApprove(msg.sender);
         ipId = IP_ASSET_REGISTRY.register(block.chainid, nftContract, tokenId);
         MetadataHelper.setMetadataWithSig(
             ipId,

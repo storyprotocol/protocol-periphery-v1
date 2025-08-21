@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 /* solhint-disable-next-line max-line-length */
 import { ERC721URIStorageUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -18,6 +20,8 @@ import { IStoryNFT } from "../interfaces/story-nft/IStoryNFT.sol";
 ///         Note: the new StoryNFT must be whitelisted in `StoryNFTFactory` by the Story governance in order
 ///         to use the Story NFT Factory features.
 abstract contract BaseStoryNFT is IStoryNFT, ERC721URIStorageUpgradeable, OwnableUpgradeable {
+    using SafeERC20 for IERC20;
+
     /// @notice Story Proof-of-Creativity IP Asset Registry address.
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     IIPAssetRegistry public immutable IP_ASSET_REGISTRY;
@@ -104,6 +108,14 @@ abstract contract BaseStoryNFT is IStoryNFT, ERC721URIStorageUpgradeable, Ownabl
         tokenId = _getBaseStoryNFTStorage().totalSupply++;
         _safeMint(recipient, tokenId);
         _setTokenURI(tokenId, tokenURI_);
+
+        uint256 registrationFee = IP_ASSET_REGISTRY.getFeeAmount();
+        if (registrationFee > 0) {
+            address feeToken = IP_ASSET_REGISTRY.getFeeToken();
+
+            IERC20(feeToken).safeTransferFrom(msg.sender, address(this), registrationFee);
+            IERC20(feeToken).forceApprove(address(IP_ASSET_REGISTRY), registrationFee);
+        }
 
         ipId = IP_ASSET_REGISTRY.register(block.chainid, address(this), tokenId);
 
